@@ -208,6 +208,9 @@ profile specs over the tracked R300 operation file select 729/729,
 ranking surface: profile specs with visible \texttt{rank\_rules} emit ranked
 operation-stack groups over the same six tasks, improving AP over width on
 4 of 6 tasks while preserving counterexamples for richer group-level rankers.
+R323 adds a \texttt{rank\_mode} probe: score-first ranking improves AP over
+width-boost on 4 of 6 tasks and reduces SATraj first-positive work from 0.6376
+to 0.0842, while side-effect and OSWorld-Human remain counterexamples.
 
 \subsection{RQ3: Do Mappings Help Without Adding Objects?}
 
@@ -289,6 +292,11 @@ surface. It shows that visible stack-text rules can be replayed from profile
 specs and scored after ranking, but it also exposes a limitation: SATraj safety
 and AgentRewardBench side-effect need group-level feature density rather than
 binary stack-text boosts alone.
+R323 turns that limitation into a rank-policy ablation. Switching the same
+visible rules from width-boosted ranking to score-first ranking improves AP on
+4 of 6 tasks and top-five lift on 4 of 6 tasks, but hurts side-effect and
+OSWorld-Human, which points to deeper side-effect mappings and boundary-derived
+fields rather than one universal ranker.
 
 \begin{table*}[t]
 \centering
@@ -369,9 +377,11 @@ on top-five F1 for only 2 of 6 tasks, so field derivation is task-sensitive.
 Query-aware ranking improves AP over width-only operation-stack ranking on all
 six tasks, but top-five F1 and work still expose calibration and prevalence
 counterexamples. R322's Rust \texttt{rank\_rules} improve AP over width on 4 of
-6 tasks, which is useful implementation evidence but weaker than R320's full
-query-aware ranker. The right design implication is to expose stack fields,
-mapping rules, and ranker policies to the user, not to hard-code one hierarchy.
+6 tasks, and R323's \texttt{rule-score} mode improves AP over \texttt{width-boost}
+on 4 of 6 tasks. This is useful implementation evidence but weaker than R320's
+full query-aware ranker. The right design implication is to expose stack fields,
+mapping rules, rank modes, and ranker policies to the user, not to hard-code one
+hierarchy.
 
 \section{Conclusion}
 
