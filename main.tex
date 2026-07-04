@@ -204,7 +204,10 @@ result supports query-time recursive stack choice rather than a fixed
 prompt/session hierarchy. R321 adds an implementation probe for query predicates:
 profile specs over the tracked R300 operation file select 729/729,
 714/714, and 4,285/4,285 expected operations with mapping-derived
-\texttt{where\_rules} before folding.
+\texttt{where\_rules} before folding. R322 adds the corresponding Rust JSON
+ranking surface: profile specs with visible \texttt{rank\_rules} emit ranked
+operation-stack groups over the same six tasks, improving AP over width on
+4 of 6 tasks while preserving counterexamples for richer group-level rankers.
 
 \subsection{RQ3: Do Mappings Help Without Adding Objects?}
 
@@ -281,6 +284,11 @@ optimization is prevalence-aware ranking. Side-effect has large oracle
 headroom, pointing to deeper write/input mappings. AgentNet step-quality tasks
 need action-family localization followed by fixed-session examples. OSWorld
 boundary tasks need boundary-derived fields rather than action depth alone.
+R322 moves a bounded version of the ranking policy into the Rust profiler
+surface. It shows that visible stack-text rules can be replayed from profile
+specs and scored after ranking, but it also exposes a limitation: SATraj safety
+and AgentRewardBench side-effect need group-level feature density rather than
+binary stack-text boosts alone.
 
 \begin{table*}[t]
 \centering
@@ -360,7 +368,9 @@ The negative results are also useful. Mapping beats a raw action/status stack
 on top-five F1 for only 2 of 6 tasks, so field derivation is task-sensitive.
 Query-aware ranking improves AP over width-only operation-stack ranking on all
 six tasks, but top-five F1 and work still expose calibration and prevalence
-counterexamples. The right design implication is to expose stack fields,
+counterexamples. R322's Rust \texttt{rank\_rules} improve AP over width on 4 of
+6 tasks, which is useful implementation evidence but weaker than R320's full
+query-aware ranker. The right design implication is to expose stack fields,
 mapping rules, and ranker policies to the user, not to hard-code one hierarchy.
 
 \section{Conclusion}
