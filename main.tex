@@ -1,8 +1,3 @@
-%%
-%% This is file `main.tex',
-%% Sandlock Workshop Paper
-%%
-
 \documentclass[sigconf]{acmart}
 
 \setcopyright{none}
@@ -10,341 +5,395 @@
 \renewcommand\footnotetextcopyrightpermission[1]{}
 \pagestyle{plain}
 
-%%
-%% \BibTeX command to typeset BibTeX logo in the docs
-\AtBeginDocument{%
-  \providecommand\BibTeX{{%
-    Bib\TeX}}}
-
-\usepackage{microtype}
-\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{array}
 \usepackage{xspace}
-\usepackage{pifont}
-\usepackage{tikz}
-\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit,backgrounds,calc}
-\newcommand{\cmark}{\ding{51}}
-\newcommand{\xmark}{\ding{55}}
+\usepackage{url}
 
-\newcommand{\sys}{\textsc{Sandlock}\xspace}
-
-\lstset{
-  basicstyle=\ttfamily\small,
-  breaklines=true,
-  frame=single,
-  language=C,
-  morekeywords={uint32_t,uint64_t,pid_t,__u32,__u64,__s32,async,await,fn,let,mut,struct,impl,pub}
-}
+\newcommand{\toolname}{\textsc{AgentPProf}\xspace}
+\newcommand{\operation}{\texttt{operation}\xspace}
+\newcommand{\opstack}{\texttt{operation stack}\xspace}
 
 \begin{document}
 
-\title{Sandlock: Kernel-Enforced Per-Tool Sandboxing for AI Agents}
-
-% \acmConference[Agentic OS Workshop]{Agentic OS Workshop, ASPLOS 2026}{March 23, 2026}{Pittsburgh, USA}
-% \acmConference[AgenticOS '26]{2nd Workshop on OS Design for AI Agents}{September 29, 2026}{Prague, Czechia}
-
-% \author{Cong Wang}
-% \authornote{Corresponding author.}
-% \affiliation{%
-% 	\institution{Multikernel Technologies, Inc.}
-% 	\country{USA}
-% }
-% \email{cwang@multikernel.io}
-
-% \author{Yusheng Zheng}
-% \affiliation{%
-% 	\institution{University of California, Santa Cruz}
-% 	\country{USA}
-% }
-% \email{yzhen165@ucsc.edu}
+\title{AgentPProf: Operation-Stack Profiling for AI Agent Traces}
 
 \begin{abstract}
-	AI agents are vulnerable to attacks that no amount of prompting can close, because conventional deployments share capability across tools: every tool of an MCP server runs in one process or one container holding the union of all tools' filesystem, network, and environment access. A prompt injection in one tool's output can then drive a \emph{second} tool into abusing capabilities the first never needed, reading \texttt{\~{}/.ssh/id\_rsa} or exfiltrating an API key, and a single shared sandbox stops none of this while adding root, image management, and startup costs ill-suited to short-lived tool calls. We present \sys, kernel-enforced per-tool sandboxing for AI agents, built from Landlock and seccomp with no root, no Docker, and no images. Each tool invocation forks into its own deny-by-default process before the tool runs: it receives only the filesystem paths, network endpoints, and environment variables it explicitly declares, so a prompt-injected tool is contained to its declared capabilities rather than the agent's union. Per-tool confinement adds roughly 5\,ms per call. The same substrate composes into pipelines of stages with disjoint capabilities; as a use case, we build an execute-only pipeline, a planner that reaches the model but never observes data and an executor that reads data but has no network, realizing the Execute-Only Agent architecture in the kernel at under 20\,ms per pipeline. We run a cross-tool and a data-exfiltration attack against \sys and confirm each is blocked at the kernel, where an unconfined deployment leaks. \sys is open source; we omit the repository link for double-blind review.
+AI-agent executions are no longer well described by one prompt, one session, or
+one trace tree. A single run can contain prompts, tool calls, GUI actions,
+browser actions, process events, plans, subagents, safety labels, failure
+labels, and human subtask boundaries. Existing observability systems usually
+make one boundary primary, such as a session, span, or prompt tree. Classic
+profilers make another boundary primary, such as a function call stack. This
+paper argues that agent profiling needs a smaller abstraction: an
+\operation is a weighted record with fields, and an \opstack is a recursive
+projection over those fields chosen at query time. Aggregation is not a separate
+object or a fixed trace tree; it is the result of choosing a stack shape over the
+same operations. This is not merely a claim about query-time aggregation, which
+classic profilers and trace processors also support in different forms. The
+scoped novelty is the combination of an agent-operation record model, recursive
+multi-field operation-stack projections, and a hidden-label cross-dataset
+localization benchmark.
+
+We implement this model in the Rust \toolname profiler and evaluate it on
+public labeled agent trajectories. Across 15 public sources, the profiler maps
+47,590 samples into the same operation layer. On four oracle-rich families,
+AgentRewardBench, SATraj-OS, AgentNet, and OSWorld-Human, we build six
+localization tasks over 34,539 operations and 3,699 positive labels. The main
+R320 experiment treats profile groups as ranked localization outputs and scores
+144 view/ranker policies with hidden labels. Query-aware operation-stack
+profiling inspects a median 9.37\% of operations in the top five groups,
+compared with 100\% for flat summaries. Against fixed-session drilldown,
+operation stacks improve top-five recall on 5 of 6 tasks and reduce median
+group fragmentation from 285.0 to 157.5 groups. Query-aware ranking improves
+average precision over width-only operation-stack ranking on all six tasks.
+The result supports a profiling claim rather than a user-study claim:
+operation/operation-stack profiling can faithfully localize and rank
+task-relevant failures, quality problems, and semantic boundaries on real
+labeled traces, while exposing actionable tradeoffs among stack fields,
+mappings, rankers, and drilldown depth.
 \end{abstract}
-
-% TODO(camera-ready): regenerate CCS XML with the ACM CCS tool (https://dl.acm.org/ccs)
-\begin{CCSXML}
-<ccs2012>
-<concept>
-<concept_id>10002978.10003006</concept_id>
-<concept_desc>Security and privacy~Systems security</concept_desc>
-<concept_significance>500</concept_significance>
-</concept>
-<concept>
-<concept_id>10011007.10010940.10010941</concept_id>
-<concept_desc>Software and its engineering~Operating systems</concept_desc>
-<concept_significance>300</concept_significance>
-</concept>
-</ccs2012>
-\end{CCSXML}
-\ccsdesc[500]{Security and privacy~Systems security}
-\ccsdesc[300]{Software and its engineering~Operating systems}
-
-\keywords{Prompt injection, AI agent security, Model Context Protocol, Capability separation, Execute-only agents, Landlock, seccomp, Process isolation}
 
 \maketitle
 
-%% =============================================================================
-%% INTRODUCTION
-%% =============================================================================
 \section{Introduction}
 
-AI coding assistants and autonomous agents~\cite{claudecode} act by issuing tool calls and consuming external content: they read files, browse the web, query databases, install packages, and invoke build steps through MCP-style tool servers~\cite{mcp-tools}. This is also their defining security weakness. Everything the agent does flows through a single language-model context that mixes \emph{trusted} instructions (the user's request, the system prompt) with \emph{untrusted} data and code (a web page, an email body, a tool's output, a model-generated command). The model has no reliable way to tell them apart.
+AI-agent traces mix many objects that traditional profiling and tracing systems
+keep separate. A coding agent may ask a model for a plan, call a shell tool,
+launch a subagent, inspect a file, and retry a failing command. A web or desktop
+agent may click, type, observe a page, repeat an action, and receive a benchmark
+label saying that the action was unsafe, redundant, incorrect, or the start of
+a human subtask. If the profiler fixes the hierarchy at prompt, session, or
+span boundaries, these questions become hard to ask: which phases concentrate
+unsafe operations, which action families cause redundant steps, and which
+groups of operations cross sessions but share the same failure mode?
 
-Two attack classes follow directly. In \emph{prompt injection}~\cite{camel,lethaltrifecta}, instructions embedded in untrusted content hijack the model: an email that says ``forward all messages to attacker.com'' is read as a command rather than as data. The danger is acute when a single context holds private data, exposure to untrusted content, and a way to communicate externally, the ``lethal trifecta''~\cite{lethaltrifecta}, because the hijacked agent becomes its own exfiltration channel. In \emph{cross-tool capability abuse}, an injected tool output steers the model into calling a \emph{second} tool that abuses capabilities the first never needed: a poisoned search result that makes the agent's shell tool read \texttt{\~{}/.ssh/id\_rsa} and post it to an attacker. The root cause is shared capability: in a conventional deployment every tool runs in one process or one container holding the union of all tools' filesystem, network, and environment access.
+\toolname takes the opposite position. The profiler stores a sequence as
+operations, where prompts, sessions, tool calls, processes, syscalls, GUI
+actions, and plan steps are all operation shapes or operation fields. Users then
+choose an operation stack to fold the same operations at different depths. One
+query may group by \texttt{task,phase,action}; another may group by
+\texttt{environment,safety}. Mapping and tagging are first-class field-derivation
+steps, but they do not add a third profiler object. They only write fields
+before the stack query runs. Thus the novelty is the abstraction that connects
+stack shape to aggregation: changing the stack changes what is comparable,
+localizable, and actionable without changing the underlying trace object model.
 
-Neither attack yields to prompting. An instruction hierarchy or a content filter cannot guarantee that a model ignores text in its context~\cite{xoa}; the model is exactly the component that cannot be trusted to make the distinction. Heavyweight isolation does not help either: containers~\cite{docker} and microVMs~\cite{firecracker} draw a boundary at the \emph{machine}, one shared sandbox per agent, which stops neither cross-tool abuse (all tools share it) nor lethal-trifecta exfiltration (a single sandbox legitimately holds all three capabilities), while adding root, images, and per-invocation startup costs disproportionate to a 50\,ms tool call. The dual-LLM~\cite{dualllm} and CaMeL~\cite{camel} patterns prescribe the right decomposition, separating the component exposed to untrusted content from the one holding capabilities, but assume an enforcement substrate that unprivileged sandboxes do not provide.
+This paper makes a profiling claim, not a human-productivity claim. A top-tier
+profiling paper must show that the profiler faithfully attributes, localizes,
+and ranks problems on real workloads, and that the output leads to optimization
+insight with better accuracy or inspection cost than baselines. For agents, the
+claim is:
+\begin{quote}
+\emph{Operation/operation-stack profiling can accurately localize
+task-relevant failures, quality problems, and semantic boundaries in real
+labeled agent traces, while requiring less inspection work than flat summaries
+and less fragmentation than the fixed-session drilldown used here as a
+span-tree proxy.}
+\end{quote}
 
-Our thesis is that the defense must be \emph{architectural} and \emph{kernel-enforced}, and that it can be made \emph{unprivileged}. We present \sys, per-tool sandboxing for the agent workstation. Each tool invocation forks into its own deny-by-default process, confined by Landlock and seccomp before the tool runs: a tool gets only the filesystem paths, network endpoints, and environment variables it explicitly declares; the rest of the filesystem and network, including other tools' secrets, is denied by the kernel, and the environment is cleared to the declared set. The blast radius of a hijacked tool shrinks from the agent's union of capabilities to that one tool's declared set (Section~\ref{sec:pertool}).
+We evaluate this claim with public labeled traces rather than a human study. A
+human or agent analyst study would be useful for productivity claims, but it is
+not required to test profiler fidelity. Our evaluation therefore uses hidden
+labels as the oracle for ranked profile groups and asks six research questions:
+RQ1 tests whether the two abstractions cover heterogeneous trajectories. RQ2
+tests whether recursive stacks avoid fixed-boundary fragmentation. RQ3 tests
+whether mappings derive useful fields without creating extra objects. RQ4 tests
+whether folded boundaries align with human subtask labels. RQ5, the main R320
+experiment, tests localization and ranking accuracy. RQ6 tests whether the
+profiler output produces actionable tuning decisions.
 
-Per-tool confinement rests on a substrate (Section~\ref{sec:substrate}) that splits enforcement between static policy, compiled into kernel-enforced Landlock and seccomp-bpf rules, and a narrow supervisor that handles the runtime-dependent decisions, all unprivileged, under a uniform rule: use the earliest enforcement point that can decide soundly, otherwise deny. The contribution is not a new kernel primitive but a mapping from declared per-tool capabilities onto this substrate, and the substrate composes beyond single tools, into pipelines of stages with disjoint capabilities joined by unidirectional kernel pipes. As a use case, we build an execute-only pipeline (Section~\ref{sec:xoa}) realizing the Execute-Only Agent (XOA) architecture~\cite{xoa}: a planner stage that reaches the model API but never observes data, and an executor stage that reads data but has no network, so an injection hidden in the data reaches neither a decision-maker nor an exfiltration path. This paper makes the following contributions:
+\section{Design}
 
-\begin{itemize}
-	\item A statement of two agent attack classes, cross-tool capability abuse and lethal-trifecta exfiltration, and an argument that both require architectural rather than prompt-level defense (Section~\ref{sec:threat}).
-	\item A per-tool sandboxing model for MCP tool servers that confines each invocation in a deny-by-default capability process, breaking cross-tool attacks, with capabilities declared once and enforced at both client and server (Section~\ref{sec:pertool}).
-	\item A split-enforcement substrate that maps declared capabilities onto stacked Landlock rulesets, a seccomp-bpf default-deny filter, and a narrow seccomp-notification supervisor with a host-level network allowlist, unprivileged end to end (Section~\ref{sec:substrate}).
-	\item A security evaluation: deny/allow checks mapped to attacker actions, two attack case studies, including an execute-only pipeline that carries the XOA planner/executor split~\cite{xoa}, and overhead measurements showing $\sim$5.6\,ms per-tool startup and a $<$20\,ms two-stage pipeline (Section~\ref{sec:eval}).
-\end{itemize}
+\subsection{Operations}
 
-\sys is open source; the repository link is omitted for double-blind review.
+An \operation is the only sample-level object in \toolname. It is a weighted
+record with string fields. The same representation can encode a prompt, a tool
+call, an API call, a browser action, a PyAutoGUI action, a process event, or a
+derived label such as \texttt{looping=yes} or \texttt{step\_correct=incorrect}.
+External datasets enter the system as operation JSONL. Local Codex or Claude
+sessions can also be exported as an agent-session trace, imported back, or
+converted to operation JSONL before profiling.
 
-%% =============================================================================
-%% THREAT MODEL
-%% =============================================================================
-\section{Threat Model and Motivation}
-\label{sec:threat}
+\subsection{Operation Stacks}
 
-\subsection{Attacker Model}
+An \opstack is an ordered list of fields. Folding operations by that list yields
+the usual folded-stack representation, but the stack is chosen at query time.
+The same operation file can be folded as a flat task summary, a fixed-session
+tree, a dataset-native hierarchy, a raw action stack, a semantic operation
+stack, or an oracle label-drilldown. Fixed sessions and spans are therefore
+baselines and exchange containers, not core profiler abstractions.
 
-We assume the sandboxed unit, a tool invocation or a pipeline stage, may execute attacker-influenced code or consume attacker-controlled data: package scripts, downloaded files, tool outputs, web pages, email bodies, and model-generated commands. The host kernel, the \sys supervisor, and the embedding agent runtime are trusted. Kernel vulnerabilities, hardware side channels, privileged local attackers, and deliberate exhaustion of global kernel resources are out of scope; for those, a microVM remains the right tool. Within this model, the host is a developer machine running alongside the user's editor, SSH keys, and source trees, so confinement must be unprivileged (developer accounts rarely have free \texttt{sudo}) and must default-deny the rest of the home directory.
+\subsection{Mapping and Tagging}
 
-\subsection{Two Attack Classes}
+Mapping and tagging derive new operation fields before folding. For example,
+desktop actions such as \texttt{type} and \texttt{key} can map to
+\texttt{phase=input}, while tool/API rows can map to a tool phase before generic
+action rules run. The Rust CLI exposes inline rules, rule files, profile specs,
+and stack overrides. Profile specs record operation files, mappings, views,
+stacks, and outputs for reproducibility, while command-line flags can still
+override the stack query.
 
-\paragraph{Cross-tool capability abuse.} An MCP server exposes many tools to one agent: a web-search tool, a shell tool, a database tool. Conventionally they run in one process, or one container, that holds the \emph{union} of their capabilities, all of the environment variables, filesystem paths, and network endpoints any tool needs. A prompt injection in one tool's output (a poisoned search result) can then steer the model into calling a \emph{different} tool to abuse capabilities the first never required: read \texttt{\~{}/.ssh/id\_rsa}, exfiltrate an API key from the environment, or reach an internal endpoint. The vulnerability is structural: capability is shared across tools that have no reason to trust one another.
+\section{Evaluation Setup}
 
-\paragraph{Lethal-trifecta data exfiltration.} A growing class of failures comes not from untrusted \emph{code} but from untrusted \emph{data}~\cite{camel}. When one model context combines access to private data, the ability to communicate externally, and exposure to untrusted content, an injected instruction turns the agent into an exfiltration channel~\cite{lethaltrifecta}. Confining the agent as a single process cannot break this, because a legitimate step often needs all three capabilities at once. Breaking it requires splitting the task into stages of asymmetric trust: the stage exposed to untrusted content holds no network, and the stage with network never sees that content. Dual-LLM and capability-separation patterns~\cite{dualllm,camel} prescribe exactly this decomposition but assume an enforcement substrate unprivileged sandboxes lack.
-
-\subsection{Workload Constraints}
-
-Two properties shape the design. Tool calls are \emph{short-lived and frequent} (an agent may invoke \texttt{npm install}, \texttt{pytest}, or generated snippets dozens of times per minute), so container-class startup of hundreds of milliseconds is visible in human-facing latency. And network access is \emph{essential but dangerous}: agents must call model APIs and registries, but IP-layer allowlisting is insufficient, since a model that may reach \texttt{api.openai.com:443} can reach an attacker through the same address, so policy must live at the host level.
-
-\subsection{Why Existing Mechanisms Fall Short}
-
-Table~\ref{tab:comparison} compares \sys against representative isolation mechanisms. Containers and microVMs are designed for service deployment; their image and namespace machinery imposes deployment overhead disproportionate to a single short tool call, and, more importantly, they isolate at the machine boundary, one sandbox per agent, which is the wrong granularity for both attack classes above. gVisor's user kernel adds compatibility and performance costs for build tools. Tools such as \texttt{firejail} and \texttt{bubblewrap}~\cite{firejail,bubblewrap} reduce deployment cost but lack host-level network control. None of these natively expresses a per-tool capability split or a kernel-enforced data-flow boundary between stages.
+Table~\ref{tab:datasets} summarizes the public trace families. We do not create
+new test sets, sync complete image corpora, or depend on gated data. The 15
+sources establish generality, while the main accuracy results use the four
+oracle-rich families with failure, safety, quality, and human-boundary labels.
 
 \begin{table*}[t]
-	\centering
-	\caption{Comparison of unprivileged isolation mechanisms for the agent workstation.}
-	\label{tab:comparison}
-	\small
-	\begin{tabular}{lccccc}
-		\toprule
-		Property             & \sys             & Docker & Firecracker & gVisor       & firejail/bwrap \\
-		\midrule
-		No root required     & \cmark           & \cmark$^{\dagger}$ & \xmark      & \cmark       & \cmark         \\
-		Startup latency$^{\ddagger}$ & $\sim$5.6\,ms & $\sim$249\,ms & $\sim$125\,ms & $\sim$200\,ms & $\sim$30\,ms \\
-		Host-level network   & on-behalf path   & netns            & TAP         & netns        & netns          \\
-		Per-tool capability  & deny-by-default  & N/A              & N/A         & N/A          & N/A            \\
-		Data-flow stage split& \texttt{|} operator & N/A           & N/A         & N/A          & N/A            \\
-		\bottomrule
-	\end{tabular}
-
-	\smallskip
-	{\scriptsize $^{\dagger}$Rootless Docker requires user-namespace support and \texttt{/etc/subuid} configuration~\cite{docker-rootless}. $^{\ddagger}$\sys and Docker (rootful) are measured in Section~\ref{sec:eval}; Firecracker is as reported by its authors~\cite{firecracker}; gVisor and firejail/bwrap are representative magnitudes.}
+\centering
+\small
+\caption{Public labeled trace families used by the evaluation. The main R320
+accuracy benchmark uses the four oracle-rich rows in the bottom half.}
+\label{tab:datasets}
+\begin{tabular}{p{0.18\linewidth}p{0.29\linewidth}p{0.21\linewidth}p{0.22\linewidth}}
+\toprule
+Family & Native labels & Access path & Evaluation role \\
+\midrule
+WebLINX, Mind2Web, AgentTrek, WebShop & Web actions, demos, tasks, rewards, action history & Hugging Face viewer or public shards & Web navigation coverage \\
+API-Bank, ToolBench, tau-bench & API calls, tool messages, solution paths, outcomes & Hugging Face rows or repo JSONL & Tool/API and dialogue coverage \\
+SWE-agent & Issue trajectory, command actions, target outcome & Hugging Face viewer & Software-agent coverage \\
+AndroidControl, GUI-Odyssey, ScaleCUA & Mobile or GUI actions, instructions, history context & Public/HF samples & Mobile and GUI coverage \\
+AgentRewardBench & Expert success, side-effect, looping, optimality & HF annotations plus cleaned BrowserGym steps & Failure and looping tasks \\
+SATraj-OS & Desktop actions, safety, reward, attack type & HF safety config & Safety task \\
+OSWorld-Human & Human single-action and grouped-action traces & Public GitHub JSON & Human-boundary task \\
+AgentNet & Human desktop PyAutoGUI, step correctness, redundancy & HF repo JSONL streaming & Step-quality tasks \\
+\bottomrule
+\end{tabular}
 \end{table*}
 
-%% =============================================================================
-%% DEFENSE 1: PER-TOOL SANDBOXING
-%% =============================================================================
-\section{Per-Tool Sandboxing for MCP}
-\label{sec:pertool}
+For R320, we build six tasks: AgentRewardBench looping, AgentRewardBench
+side-effect, SATraj unsafe operation, AgentNet incorrect step, AgentNet
+redundant step, and OSWorld-Human group start. Each task has an oracle-positive
+field, but non-oracle rankers never read that field. We compare six views:
+flat, fixed-session, dataset-native hierarchy, raw action stack, semantic
+operation stack, and label-drilldown. We compare four rankers: width,
+visible-risk, query-aware, and oracle upper bound. Label-drilldown and oracle
+upper bound are marked as hidden upper bounds.
 
-\subsection{The Problem with Shared Tool Capability}
+The metrics match a profiler paper's main claim. Fidelity uses precision@k,
+recall@operation-budget, F1@k, average precision as a block-level AUPRC-style
+score, nDCG over positive operation counts, and work-to-first-positive.
+Fragmentation uses group count, positive group count, and work or groups to
+reach 50\% positive recall. Actionability uses per-task comparisons among
+stack fields, mapping choices, ranker choices, and oracle headroom.
 
-In the conventional deployment, an MCP server's tools share one process or container holding the \emph{union} of their capabilities: every tool's environment, filesystem, and network. A prompt injection in one tool's output can then drive another, a poisoned search result that makes the shell tool read \texttt{\~{}/.ssh/id\_rsa} and POST it, two capabilities no single tool needed but the deployment granted anyway.
+\section{Results}
 
-\subsection{One Sandbox per Tool Call}
+\subsection{RQ1: Do Two Abstractions Cover Heterogeneous Traces?}
 
-\sys inverts this. Each \texttt{call\_tool} invocation forks a fresh child and confines it with Landlock and seccomp \emph{before} the tool function runs (the mechanism is detailed in Section~\ref{sec:substrate}). The model is deny-by-default: a tool that declares no capabilities receives read-only access to system libraries and the workspace, no filesystem writes, no network, and no environment variables. The environment is cleared before every call, so a tool that needs \texttt{DATABASE\_URL} must \emph{declare} it; it cannot inherit another tool's secrets ambiently. A tool widens its sandbox only by declaring capabilities explicitly:
+The 14 core public sources produce 42,590 operations. Adding the supplemental
+ScaleCUA stream brings the smoke set to 47,590 operations. These operations
+cover web, mobile, desktop, software, API, tool-agent-user dialogue, expert
+failure labels, safety labels, human grouped-action labels, and desktop
+step-quality labels. No source required a prompt-specific, GUI-specific, or
+safety-specific profiler object.
 
-\begin{itemize}
-	\item \texttt{fs\_readable} / \texttt{fs\_writable}: the exact paths the tool may read or write.
-	\item \texttt{net\_allow\_hosts}: the hosts the tool may reach, enforced by the supervisor's connect-allowlist (Section~\ref{sec:net}). \sys also pins the allowed hosts' addresses in a virtualized \texttt{/etc/hosts}; combined with denied DNS egress, this leaves the child able to resolve only allowed hosts.
-	\item \texttt{env}: the named environment variables to pass through.
-\end{itemize}
+\subsection{RQ2: Is Stack Depth a Query?}
 
-A Landlock ruleset can only be \emph{tightened} after it is applied, and a nested ruleset stacks on the outer one, so a server that is itself confined can confine each tool \emph{tighter} still: the per-tool sandbox inherits the server's outer restrictions and adds its own. The capability spec lives in one place. In the server-side model, tools declare capabilities via \texttt{sandlock:*} annotations in their MCP tool definitions; the same declaration informs a client-side \texttt{McpSandbox} wrapper and is enforced server-side. One definition, two enforcement points.
+On the same 13,265 operations, a depth sweep folds to 9 dataset stacks, 57
+phase stacks, 226 tool/semantic stacks, 455 action stacks, and 3,757
+fixed-session stacks. A fixed session boundary therefore increases stack count
+by 417.4$\times$ relative to dataset depth. On AgentNet, a tracked profile spec
+folds 16,741 operations into 608 diagnostic stacks, while a CLI stack override
+changes the output to 83 stacks without changing the operation input. The
+result supports query-time recursive stack choice rather than a fixed
+prompt/session hierarchy.
 
-\subsection{Why It Stops Cross-Tool Abuse}
+\subsection{RQ3: Do Mappings Help Without Adding Objects?}
 
-Under per-tool confinement, the search-result injection above fails at the kernel. The shell tool runs with only the capabilities the shell tool declared. \texttt{\~{}/.ssh/id\_rsa} is outside its readable scope, so Landlock denies the open; an attacker host is absent from \texttt{net\_allow\_hosts}, so the supervisor refuses the connection, and the virtualized \texttt{/etc/hosts} with DNS egress denied prevents its resolution as a second layer. The blast radius of a hijacked tool is its own declared capabilities, never the agent's union. Cross-tool abuse requires a capability the abused tool was never granted, which is exactly what the per-tool boundary withholds.
+Held-out mapping rules improve compression from 14.049 to 19.091 on 3,990
+operations. Leave-dataset-out mapping reduces unique stacks on 6 of 9 held-out
+datasets with no negative stack-reduction regressions after API/tool phase
+precedence is fixed. A supervised OSWorld-Human boundary backend reaches F1
+0.7735 on held-out adjacent pairs and writes predicted boundary fields that the
+Rust profiler folds as ordinary operation fields. Boundary backends therefore
+extend field derivation, not the profiler object model.
 
-%% =============================================================================
-%% ENFORCEMENT AND IMPLEMENTATION
-%% =============================================================================
-\section{Enforcement and Implementation}
-\label{sec:substrate}
+\subsection{RQ4: Do Stacks Match Human Boundaries?}
 
-Per-tool sandboxing, and the stage pipelines built on it (Section~\ref{sec:xoa}), rest on one mechanism: a split between policy whose verdict is known before the child runs and policy that depends on syscall-time state. \sys follows a single rule, use the earliest enforcement point that can decide a policy soundly. Static invariants (readable and writable path prefixes, denied paths, TCP ports, IPC scope, unconditional syscall denials) compile into Landlock~\cite{landlock} and seccomp-bpf~\cite{seccomp}, which the kernel enforces with no supervisor involvement. Runtime decisions (the resolved destination of a \texttt{connect}) route through seccomp user notification~\cite{seccomp-unotify}. If neither layer can enforce a policy without a race or a semantic mismatch, \sys denies the operation rather than weakening it. This split is what makes confinement cheap enough to apply per tool call and precise enough to separate stages.
+OSWorld-Human gives the strongest direct boundary oracle. On 320 exact-aligned
+tasks with 4,011 operations and 2,075 human groups, grouped-depth stacks reduce
+482 action stacks to 106 grouped stacks. A conservative \texttt{group\_pattern}
+projection has human-group boundary F1 0.627 with precision 1.0 and recall
+0.456. This is not complete intent discovery, but it shows that the same
+single-action sequence can be folded at action depth or human-group depth and
+scored against a human boundary oracle.
 
-After \texttt{fork()} the child applies confinement in a fixed, unprivileged order, \texttt{setpgid}, \texttt{PR\_SET\_NO\_NEW\_PRIVS}, the Landlock ruleset, then the seccomp-bpf filter, and blocks before \texttt{exec()} until the parent has attached the supervisor to the seccomp notification fd, so no tool code runs before the supervisor is live.
+\subsection{RQ5: Does the Profiler Localize and Rank Labeled Problems?}
 
-\subsection{Landlock Spine and seccomp Filter}
+Table~\ref{tab:r320} gives the main R320 accuracy result. Flat summaries recover
+all positives, but only by inspecting the whole task, so their median work@5 is
+1.0 and their work-to-first-positive is 1.0. Fixed-session drilldown finds an
+early positive with median work-to-first-positive 0.0044 and median work@5
+0.0163, but its median recall@5 is only 0.0233 and it fragments the workload
+into 285.0 groups. Query-aware operation stacks inspect median 0.0937 work in
+the top five groups, reach median recall@budget30 of 0.3900, and reduce the
+median group count to 157.5.
 
-Landlock~\cite{landlock} provides the static layer: filesystem read/write scope, TCP-port scope, and IPC boundaries, denied or allowed by the kernel without involving the supervisor. \sys requires Landlock ABI~6 or later (Linux~6.12+), which supplies filesystem rules, TCP-port rules, and abstract-socket and signal scoping for IPC~\cite{landlock-man}; it queries the runtime ABI at startup and refuses to run below this floor rather than silently downgrading. Crucially for both per-tool confinement and stage separation, a Landlock ruleset can only be \emph{tightened}: once applied, a process cannot relax its own restrictions, and a nested ruleset stacks on top of the outer one, so an inner sandbox inherits every outer restriction and adds its own. After Landlock, \sys installs a seccomp-bpf filter that denies syscalls outside Landlock's scope and routes supervisor-visible syscalls to seccomp user notification. Landlock scopes only TCP \texttt{connect}/\texttt{bind}, abstract UNIX sockets, and signals, so the remaining egress and cross-process channels (UDP, ICMP and raw sockets, SysV and POSIX shared memory and message queues, and \texttt{io\_uring}, whose in-ring operations would otherwise bypass syscall interception) are closed by the seccomp default-deny set; a stage's ``no network'' is thus the conjunction of its Landlock TCP rules and seccomp denial of the rest, and the planner/executor disjointness argument (Section~\ref{sec:xoa}) relies on no unscoped back-channel remaining open.
+\begin{table*}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\caption{R320 profiler accuracy benchmark. Hidden policies read oracle labels
+and are included only as upper bounds. WTFP is work-to-first-positive.}
+\label{tab:r320}
+\begin{tabular}{lrrrrrrrrr}
+\toprule
+Policy & Hidden & AP & nDCG & P@5 & R@5 & F1@5 & Work@5 & R@30\% & WTFP \\
+\midrule
+flat:width & 0 & 0.1678 & 1.0000 & 0.1678 & 1.0000 & 0.2868 & 1.0000 & 0.0000 & 1.0000 \\
+fixed-session:query-aware & 0 & 0.3476 & 0.7642 & 0.2555 & 0.0233 & 0.0427 & 0.0163 & 0.3559 & 0.0044 \\
+dataset-native:query-aware & 0 & 0.3572 & 0.7445 & 0.1712 & 0.8665 & 0.2822 & 0.8539 & 0.3377 & 0.0582 \\
+raw-action:query-aware & 0 & 0.2744 & 0.5012 & 0.2513 & 0.2442 & 0.2195 & 0.1507 & 0.3325 & 0.0374 \\
+operation-stack:width & 0 & 0.1610 & 0.9364 & 0.1398 & 0.4746 & 0.2147 & 0.5424 & 0.3372 & 0.1694 \\
+operation-stack:query-aware & 0 & 0.3117 & 0.5487 & 0.1991 & 0.1880 & 0.1981 & 0.0937 & 0.3900 & 0.0378 \\
+operation-stack:oracle-upper & 1 & 0.5993 & 0.6372 & 0.8984 & 0.3004 & 0.4029 & 0.0441 & 0.5640 & 0.0122 \\
+label-drilldown:oracle-upper & 1 & 1.0000 & 1.0000 & 1.0000 & 0.6703 & 0.7972 & 0.1150 & 1.0000 & 0.0377 \\
+\bottomrule
+\end{tabular}
+\end{table*}
 
-\subsection{The seccomp Notification Supervisor}
+The strongest comparison is not universal dominance. Operation stacks improve
+top-five recall over fixed-session query-aware drilldown on 5 of 6 tasks and
+reduce group fragmentation from median 285.0 to 157.5 groups, but fixed-session
+often finds the first positive with less work. Operation stacks also save work
+against flat summaries on all tasks, but flat remains a complete full-recall
+counterpoint. Dataset-native hierarchy sometimes has higher recall, but at high
+inspection work. These mixed results are the desired profiling-paper evidence:
+operation stacks occupy a useful Pareto region between flat summaries and
+fixed-session drilldown.
 
-The dynamic layer is an async (tokio) task in the parent that dequeues notifications from the seccomp fd and replies with \texttt{Allow}, \texttt{Deny(errno)}, or \texttt{Continue} after performing an on-behalf operation; it intercepts the network syscalls \texttt{connect}/\texttt{send*}/\texttt{bind} for the host-level allowlist. To act on behalf of the child (for example, to \texttt{connect} to a parent-validated address), the supervisor uses \texttt{pidfd\_getfd}~\cite{pidfd} to dup the child's socket into the parent. This is TOCTOU-safe: the original syscall is never \texttt{Continue}d, so the kernel never re-reads the child's pointer arguments, and pointer-passed arguments are read once, validated, and reissued from the supervisor's own copy, each read bracketed by \texttt{SECCOMP\_IOCTL\_NOTIF\_ID\_VALID}.
+\subsection{RQ6: Are the Results Actionable?}
 
-\subsection{Network Model}
-\label{sec:net}
+R320 turns each task into an optimization diagnosis, summarized in
+Table~\ref{tab:actionability}. SATraj unsafe is the clearest operation-stack
+win: environment, phase, and action fields plus query-aware risk ranking give
+the best visible top-five F1. AgentRewardBench looping shows that
+\texttt{repeat\_signal} is useful, but positives are prevalent, so the next
+optimization is prevalence-aware ranking. Side-effect has large oracle
+headroom, pointing to deeper write/input mappings. AgentNet step-quality tasks
+need action-family localization followed by fixed-session examples. OSWorld
+boundary tasks need boundary-derived fields rather than action depth alone.
 
-\sys uses a single endpoint allowlist of \emph{protocol} $\times$ \emph{destination}. Hostnames are resolved once at start and pinned for the child, eliminating DNS-rebinding; wildcards are excluded by design. The pinning needs no mount namespace: the supervisor answers any \texttt{open} of \texttt{/etc/hosts} with a \texttt{memfd} holding the pinned entries for the allowed hosts, so the host's on-disk file never reaches the child. Port-only TCP policy is enforced directly by Landlock with no per-syscall overhead; host-specific rules and non-TCP protocols route through the supervisor, which validates the destination and then performs or denies the operation. This host-level allowlist, which both case studies depend on, expresses the host identity that Landlock's port-only rules cannot.
+\begin{table*}[t]
+\centering
+\small
+\caption{R320 actionability summary. Each row identifies the stack or ranker
+change suggested by the profiler accuracy results.}
+\label{tab:actionability}
+\begin{tabular}{p{0.18\linewidth}p{0.22\linewidth}p{0.50\linewidth}}
+\toprule
+Task & Best visible policy & Optimization insight \\
+\midrule
+Looping & dataset-native:query-aware & Keep repeat-signal fields but add prevalence-aware ranking because positives are common. \\
+Side-effect & fixed-session:width & Increase write/input weights or use a deeper side-effect mapping before ranking. \\
+Unsafe operation & operation-stack:query-aware & Use environment, phase, and action stack fields and prioritize risky write actions. \\
+Incorrect step & raw-action:width & Use desktop action family first, then drill into fixed sessions for examples. \\
+Redundant step & raw-action:width & Raw action/status currently beats mapped stack depth, so tune quality-specific fields. \\
+Group start & flat:width & Add boundary-derived fields because action-depth stacks fragment starts. \\
+\bottomrule
+\end{tabular}
+\end{table*}
 
-\subsection{Implementation}
+\section{Related Work and Novelty}
 
-\sys is $\sim$7K lines of Rust: a core library (Landlock rules, seccomp filters, the async supervisor, the pipeline) plus a CLI and an FFI layer exposing the same policy model to shell and Python. Each pipeline stage is its own \sys process tree, so a compromise of one cannot read another's private paths.
+\textbf{Classic profiling and trace analysis.}
+Flame graphs and pprof establish the folded-stack lineage for profiling:
+profiles consist of weighted samples attached to a location hierarchy, can carry
+sample labels, and pprof can visualize labels as pseudo stack frames through
+tag-root or tag-leaf options~\cite{flamegraphs,pprof}. Perfetto generalizes
+trace ingestion and SQL analysis over many trace formats and can derive new
+events from trace contents~\cite{perfetto}. These systems are closer than a
+simple ``fixed hierarchy'' baseline. \toolname therefore does not claim novelty
+for query-time aggregation alone. The difference is the domain object and
+evaluation target: the sample is an agent operation, the frames are recursive
+multi-field operation projections, and the groups are scored against hidden
+agent-trajectory labels across datasets.
 
-%% =============================================================================
-%% USE CASE: EXECUTE-ONLY PIPELINES
-%% =============================================================================
-\section{Use Case: Execute-Only Pipelines}
-\label{sec:xoa}
+\textbf{Agent tracing and LLM observability.}
+OpenTelemetry GenAI and OpenInference standardize GenAI spans, LLM calls, agent
+reasoning steps, tool invocations, retrieval operations, MCP, and
+provider-specific telemetry~\cite{otel,openinference}. LangSmith, Langfuse, and
+Phoenix expose traces, sessions, observations, evaluations, dashboards, datasets,
+and prompt iteration workflows~\cite{langsmith,langfuse,phoenix}. AgentOps gives
+the closest academic same-problem framing by arguing that agent observability
+should trace goals, plans, tools, artifacts, and associated data~\cite{agentops}.
+These systems are strong prior work, so the safe novelty claim is not generic
+``agent observability.'' In this paper, traces, spans, sessions, and observations
+are exchange containers or baseline shapes. R320 evaluates fixed-session
+drilldown as the current span-tree proxy; real OpenTelemetry/OpenInference or
+Phoenix span-tree imports remain future interoperability baselines. The profiler
+abstractions are only operations and operation stacks, and the central mechanism
+is that stack shape determines semantic aggregation at query time.
 
-\subsection{Why Prompt Injection Resists Prompting}
+\textbf{Public labeled agent trajectories.}
+AgentRewardBench, OSWorld-Human, OpenCUA/AgentNet, SATraj-OS, and OSWorld
+provide the labels and workloads that make R320 possible~\cite{agentrewardpaper,
+osworldhuman,opencua,safactory,osworld}. Prior benchmark papers use these labels
+to evaluate agents, reward models, safety behavior, or efficiency. We use them
+as hidden oracles for a profiler benchmark: different stack-shaped aggregates
+become ranked outputs, and the evaluation measures precision, recall, AP, nDCG,
+inspection work, fragmentation, and optimization insight. This is the paper's
+scoped novelty.
 
-Per-tool sandboxing bounds what a hijacked tool can do, but it does not stop the hijack itself: if untrusted data enters the model's context, no prompt guarantees the model will not act on it~\cite{xoa}. The model is the component that cannot reliably separate instruction from data. Defending the data path therefore means keeping the untrusted data away from the model, not instructing the model to behave.
+\section{Discussion}
 
-\subsection{The XOA Architecture}
+The result scope is deliberately narrow. R320 supports profiler fidelity,
+localization/ranking accuracy, work tradeoffs, fragmentation reduction, and
+actionable optimization insight on six real labeled tasks. It does not show
+that humans or agents answer questions faster with the tool. It also does not
+show automatic discovery of all intent boundaries, nor complete compatibility
+with OpenTelemetry, Phoenix, LangSmith, Langfuse, or Perfetto producers. Those
+systems remain related work and baselines. In this paper, trace formats are
+containers; fixed sessions are the evaluated drilldown baseline, while real
+span-tree imports remain future baselines. The profiler abstractions remain only
+operations and operation stacks.
 
-Tiwari and Williams observe that many agent tasks are \emph{scriptable}: a program the model writes from the task and tool schemas can do the work without the model ever seeing the data it processes~\cite{xoa}. Their Execute-Only Agent (XOA) architecture has two requirements, the model generates the program with no data visibility, and the program runs with full data access but its output never returns to the model, and finds roughly 78\% of AgentDojo~\cite{agentdojo} tasks completable this way. XOA defines the architecture; it needs a substrate that enforces ``no data visibility'' and ``no feedback'' as more than convention.
+The negative results are also useful. Mapping beats a raw action/status stack
+on top-five F1 for only 2 of 6 tasks, so field derivation is task-sensitive.
+Query-aware ranking improves AP over width-only operation-stack ranking on all
+six tasks, but top-five F1 and work still expose calibration and prevalence
+counterexamples. The right design implication is to expose stack fields,
+mapping rules, and ranker policies to the user, not to hard-code one hierarchy.
 
-\subsection{Kernel-Enforced XOA in \sys}
-
-\sys realizes XOA as a two-stage pipeline whose stages carry disjoint capabilities (Figure~\ref{fig:stage-pipeline}). The \emph{planner} stage may reach the model API (\texttt{net\_allow\_hosts=["api.anthropic.com"]}) but cannot read the workspace; it emits a program. The \emph{executor} stage may read and write the workspace but has no network (\texttt{net\_connect=[]}); it runs that program over the data. Two properties, each enforced by the kernel rather than by discipline, make the separation sound:
-
-\begin{figure}[t]
-\begin{lstlisting}
-planner = Sandbox(                    # talks to LLM,
-    net_allow_hosts=["api.anthropic.com"],
-    fs_readable=["/usr", "/lib"])     #   never sees data
-executor = Sandbox(                   # touches data,
-    fs_readable=["/usr", "/lib", "/work"],
-    fs_writable=["/work"],
-    net_connect=[])                   #   never talks out
-result = (
-    planner.cmd(["plan", task, schemas])  # writes program
-  | executor.cmd(["sh"])                  # runs program
-).run()
-	\end{lstlisting}
-		\caption{Execute-only pipeline. The planner reaches the model but not data; the executor reaches data but not the network. The pipe carries the generated program one way.}
-		\Description{Python pseudocode composing a planner stage with network-but-no-data and an executor stage with data-but-no-network, connected by a one-way pipe.}
-		\label{fig:stage-pipeline}
-	\end{figure}
-
-\paragraph{Disjoint capabilities.} The planner's and executor's Landlock rulesets are mutually exclusive over data and network. Because a Landlock ruleset cannot be relaxed after it is applied, neither stage can acquire the other's capability at runtime: the executor cannot grow a network, the planner cannot grow data access.
-
-\paragraph{Unidirectional data flow.} The stages are joined by a single \texttt{pipe(2)}: planner stdout to executor stdin, one read end and one write end, with no reverse channel. The parent creates the pipe, forks both children, and immediately closes its own copies of the pipe descriptors, so after setup the parent holds no descriptor that can read the inter-stage data. The kernel enforces the directionality of the endpoints, and seccomp's default-deny closes every other channel between the stages (Section~\ref{sec:substrate}). The executor may begin running the program while the planner is still emitting it, but no byte the executor reads can flow back to alter the plan; the one residual signal, backpressure timing on the pipe, is a low-bandwidth side channel outside the threat model.
-
-\subsection{Why It Stops Injection}
-
-The only component a prompt injection could hijack, the model, never sees the data: it sees the task and schemas and writes a program. The component that sees the data, the executor, is fixed code with no path back to the model and no network. An instruction hidden in an email body reaches neither a decision-maker nor an output channel. This is the dual-LLM and CaMeL separation~\cite{dualllm,camel} made kernel-enforced, in its strongest form: the model does not quarantine the data, it never observes it.
-
-Three caveats bound the claim. \sys separates stage \emph{capabilities}, not pipe \emph{content}: a compromised upstream stage can still shape the bytes a downstream stage consumes, so data-provenance defenses~\cite{camel} remain complementary. XOA applies only to scriptable tasks, so the roughly 22\% that require the model to read data~\cite{xoa} fall outside it. And the kernel closes the channels into the executor and its path to the network, but not its result: if the agent loop re-feeds that output into a later model turn, the injection re-enters the model's context outside \sys's boundary, so the guarantee holds only for single-shot pipelines whose output terminates at the user or storage.
-
-%% =============================================================================
-%% EVALUATION
-%% =============================================================================
-\section{Security Evaluation}
-\label{sec:eval}
-
-\paragraph{Setup.} Experiments run on a typical Linux workstation: an AMD Ryzen 5 5500U (6~cores / 12~threads, up to 4.0\,GHz) with 8\,GB of RAM and NVMe SSD, running Pop!\_OS 24.04 LTS on Linux 6.18 with unprivileged user namespaces enabled. Startup latency is the median of 20 runs after warm-up. We report bare-metal, \sys, and rootful Docker for context.
-
-\subsection{Defenses Hold}
-
-Table~\ref{tab:effectiveness} reports deterministic deny/allow cases drawn from the two attack classes; each is run against \sys and the outcome recorded. Reads and writes outside the granted scope are denied while in-scope access succeeds; a \texttt{connect} to a host outside the allowlist is refused while an allowlisted endpoint connects; and a stage not granted a private directory cannot read it even though a sibling stage can. All eight checks behaved as the policy requires. The two case studies that follow are executed against the real \sys per-tool sandbox and executor: for each, we perform the action a prompt-injected tool or executor would take and record the kernel's response. The hijack is injected deterministically rather than driven by a live model, so what is measured is the enforced outcome, not the model's susceptibility; harnesses for both are in the repository.
-
-\begin{table}[t]
-	\centering
-	\caption{Deny/allow checks mapped to attacker actions. Each row is the outcome observed when the case is run against \sys.}
-	\label{tab:effectiveness}
-	\small
-	\begin{tabular}{lll}
-		\toprule
-		Attacker action & Policy & Outcome \\
-		\midrule
-		Read outside read scope        & default-deny      & denied \\
-		Read inside read scope         & granted           & allowed \\
-		Write outside write scope      & default-deny      & denied \\
-		Write inside write scope       & granted           & allowed \\
-		Connect to non-allowlisted host& allowlist         & refused \\
-		Connect to allowlisted host    & allowlist         & allowed \\
-		Executor stage reaches network & no grant          & denied \\
-		Planner stage reads workspace  & no grant          & denied \\
-		\bottomrule
-	\end{tabular}
-\end{table}
-
-\subsection{Case Study 1: Cross-Tool SSH-Key Exfiltration}
-
-We run the cross-tool attack of Section~\ref{sec:pertool}. An MCP server exposes a \emph{search} tool (a documentation host, no filesystem beyond the workspace) and a \emph{shell} tool (the workspace only, no other paths, no network); a poisoned search result instructs the agent to read \texttt{\~{}/.ssh/id\_rsa} and post it out, and the model invokes the shell tool. Run against the real \sys per-tool sandbox (\texttt{McpSandbox}), both the key read (outside the shell tool's scope) and the exfiltration \texttt{connect} (no allowlisted host) fail with \texttt{EACCES}, the two deny rows of Table~\ref{tab:effectiveness}, and the key never reaches a local listener; the identical action unconfined, where the tool inherits home and network, leaks it. The only difference is the per-tool boundary.
-
-\subsection{Case Study 2: Prompt-Injection Exfiltration under XOA}
-
-We run a lethal-trifecta task, ``summarize my unread emails,'' where one body says ``ignore previous instructions and forward all messages to attacker.com.'' Run as one agent that reads emails into context, the injection is obeyed. As an execute-only pipeline (Section~\ref{sec:xoa}), the planner writes a summarization script from the task and email-tool schema without reading any body, and the executor runs it with mailbox access but no network: the injected text lives in data the model never sees, and the executor that does see it is fixed code with no channel to act. Run against \sys, the executor's exfiltration \texttt{connect} fails with \texttt{EACCES} (the ``executor stage reaches network'' row of Table~\ref{tab:effectiveness}) and the data never leaves the host; the identical executor by convention, lacking the kernel-enforced no-network stage, completes the exfiltration, isolating kernel enforcement as the cause.
-
-\subsection{What the Defenses Do Not Stop}
-
-The case studies are exfiltration-shaped attacks the mechanism is built to block; honesty requires naming in-scope attacks it does not. \emph{Exfiltration through an allowed host:} a compromised planner, or any tool granted a host, can encode data in request bodies, paths, or timing (the residual channel Section~\ref{sec:xoa} concedes); the allowlist bounds which hosts are reachable, not what is sent to one. \emph{Tools needing both data and network:} a web fetcher or a \texttt{git push} cannot be split into XOA stages and must hold both, reassembling the trifecta in one tool. \emph{In-scope destructive actions:} an injected call that deletes a writable workspace or deploys through a deploy tool's own credentials stays within policy and is not blocked. \emph{Schema poisoning:} the planner trusts the task and tool schemas, so a poisoned tool description~\cite{mcppoisoning} can steer it even though it reads no data, needing schema-provenance defenses. \sys reduces blast radius and removes the model from the data path for scriptable tasks; it does not adjudicate misuse of legitimately granted capabilities.
-
-\subsection{Security at Near-Zero Cost}
-
-\begin{figure*}[t]
-	\centering
-	\includegraphics[width=\textwidth]{figures/benchmarks.pdf}
-	\caption{Overhead measurements: (a) \texttt{/bin/echo} startup wall time, (b) Redis throughput, and (c) Redis p99 latency, for bare metal, \sys, and Docker. \sys keeps per-call startup at $\sim$5.6\,ms and matches bare-metal steady-state performance; Docker pays roughly 44$\times$ more per invocation.}
-	\Description{Three bar charts comparing bare metal, Sandlock, and Docker on startup latency, Redis throughput, and Redis p99 latency.}
-	\label{fig:benchmarks}
-\end{figure*}
-
-For these defenses to be usable on every tool call, their overhead must be negligible. For \texttt{/bin/echo} wall time (median of 20 runs, Figure~\ref{fig:benchmarks}a), per-tool confinement runs in $\sim$5.6\,ms ($\sim$1.3\,ms bare metal, so $\sim$4--5\,ms of confinement overhead from Landlock ruleset construction and seccomp-fd setup), against Docker's $\sim$249\,ms, roughly 44$\times$ slower. A two-stage execute-only pipeline is two confined \texttt{fork()}s and one \texttt{pipe()}, so its startup is about twice the per-tool cost, under 20\,ms, against the seconds a container-based two-stage split would spend starting containers and configuring a bridge. Steady-state overhead is likewise low: on \texttt{redis-benchmark} (Figure~\ref{fig:benchmarks}b,c) \sys matches bare-metal throughput and p99 tail latency to within run-to-run variance, while Docker reaches only $\sim$76\% of bare-metal throughput at roughly 3$\times$ the tail.
-% TODO(eval): state the Docker network mode (bridge vs --network=host) for the redis comparison; with host networking Docker's gap narrows, so naming the mode preempts a fairness objection.
-Common build tools (\texttt{python3}, \texttt{make}, \texttt{node}, \texttt{pytest}, including native-extension imports) run unmodified once their scratch paths are granted; a systematic compatibility study is future work.
-
-%% =============================================================================
-%% RELATED WORK
-%% =============================================================================
-\section{Related Work}
-
-\paragraph{Prompt-injection defenses.} The dual-LLM pattern~\cite{dualllm} and CaMeL~\cite{camel} separate the component exposed to untrusted content from the one holding capabilities, and Execute-Only Agents~\cite{xoa} strengthen this to never letting the model observe untrusted data. These define the decompositions and quantify their reach on AgentDojo~\cite{agentdojo}; \sys contributes the unprivileged, kernel-enforced substrate they run on, turning ``the model should not see the data'' from convention into a Landlock-and-pipe boundary. The lethal-trifecta framing~\cite{lethaltrifecta} explains why a single sandbox cannot be the unit of defense.
-
-\paragraph{Agent systems and isolation.} Closest to \sys's per-tool defense, IsolateGPT~\cite{isolategpt} isolates each LLM app's execution behind well-defined interfaces, and Progent~\cite{progent} enforces least privilege over an agent's tool calls through a programmable policy layer; \sys is the unprivileged, kernel-enforcement complement to these runtime-level designs, confining each invocation per call rather than mediating it inside the agent. MVVM~\cite{mvvm} deploys agents in WebAssembly enclaves; Kgent~\cite{kgent} explores model-driven kernel extensions; AgentCgroup~\cite{agentcgroup} controls agents' OS resource use; Agentry~\cite{agentry} mediates agent-to-external communication through a gateway. \sys is complementary, confining the local execution side per tool and per stage while gateways mediate communication.
-
-\paragraph{Unprivileged sandboxing.} \sys builds on Landlock~\cite{landlock}, seccomp-bpf~\cite{seccomp}, and seccomp user notification~\cite{seccomp-unotify}, with \texttt{pidfd\_getfd}~\cite{pidfd} for safe fd transfer; Capsicum~\cite{capsicum} is its spiritual ancestor. Container runtimes embody the same notification split at a coarser grain~\cite{oci-runtime-spec}. Among unprivileged process sandboxes, \texttt{nsjail}~\cite{nsjail}, \texttt{minijail}~\cite{minijail}, and birdcage~\cite{birdcage} enforce static policy but expose neither a per-tool capability model nor host-level network rules; BPF-LSM sandboxes such as bpfbox~\cite{bpfbox} need \texttt{CAP\_BPF} or root~\cite{capabilities}, which \sys avoids. The classic hazards of syscall interposition~\cite{garfinkel-traps} motivate \sys's TOCTOU-safe on-behalf path.
-
-\paragraph{Containers, microVMs, and speculation.} Docker~\cite{docker} composes namespaces~\cite{namespaces}, cgroups~\cite{cgroups}, and seccomp; gVisor~\cite{gvisor} adds a user-mode kernel; Firecracker~\cite{firecracker} cuts microVM startup. These isolate at the machine boundary for multi-tenant hosting, orthogonal to \sys's per-tool, per-stage granularity.
-
-%% =============================================================================
-%% DISCUSSION AND FUTURE WORK
-%% =============================================================================
-\section{Discussion and Future Work}
-
-\paragraph{Threat-model boundaries.} \sys is unprivileged by design and inherits the limits of unprivileged Linux: kernel vulnerabilities, side channels, and resource-exhaustion attacks against shared kernel structures are out of scope, and for multi-tenant adversarial workloads a microVM remains the right answer. \sys raises the bar for the common case, prompt injection and cross-tool abuse on a developer machine, not for a kernel-level adversary.
-
-\paragraph{Read-required tasks.} Execute-only pipelines cover scriptable tasks. The tasks that genuinely require the model to read data~\cite{xoa} need complementary defenses, such as a quarantined model whose output is treated as untrusted, or data-provenance tracking~\cite{camel}, layered on the same per-stage substrate.
-
-\paragraph{Policy correctness is the author's burden.} \sys enforces whatever policy it is handed, not whether it is right. An author who over-declares (granting \texttt{\~{}/} ``to be safe'') silently reopens the hole while the kernel still reports the policy enforced, the documented fate of opt-in allowlists; and execute-only separation is only as sound as the decomposition the author writes. Tight declarations and sound decompositions are prerequisites \sys relies on, not properties it supplies; tooling to flag over-grant and narrow dynamic tools is future work.
-
-\paragraph{Integration and retrofit.} \sys supports two retrofit modes. In \emph{wrap-the-child}, the host forks, confines, and execs each command an agent already spawns, a drop-in for shell and tool calls; MCP tool servers are the natural fit, confining each invocation under a per-tool policy without re-architecting the agent. In \emph{self-confinement}, the static Landlock layer is applied in place so an agent runtime can drop its own privileges after startup.
-
-%% =============================================================================
-%% CONCLUSION
-%% =============================================================================
 \section{Conclusion}
 
-Cross-tool capability abuse and prompt injection are the defining security problems of AI agents, and neither yields to prompting or to a single shared container. \sys confines every tool invocation in its own kernel-enforced, deny-by-default sandbox, without root: a hijacked tool holds only the capabilities it declared, never the agent's union. The same unprivileged substrate composes into capability-disjoint stage pipelines, with which we realize the execute-only agent architecture~\cite{xoa}, keeping untrusted data out of the model's context for scriptable tasks via disjoint Landlock capabilities and a one-way pipe. Confinement is cheap enough to apply on every call ($\sim$5.6\,ms per tool, under 20\,ms per pipeline). \sys is open source; the repository link is omitted for double-blind review.
+\toolname reduces agent profiling to two abstractions. Operations carry all
+observed and derived fields, while operation stacks fold those fields at the
+depth chosen by the query. Across 15 public labeled trace sources, this model
+covers web, mobile, desktop, software, API, dialogue, failure, safety, human
+boundary, and step-quality trajectories. On the four oracle-rich families used
+for R320, operation-stack profiling localizes and ranks real labeled problems
+with less work than flat summaries and less fragmentation than fixed-session
+drilldown. The paper's central claim is therefore a profiler claim: the
+operation/operation-stack model faithfully exposes task-relevant failures,
+quality problems, and semantic boundaries, and it produces actionable
+optimization insight without relying on prompt/session/span boundaries.
 
-\bibliographystyle{ACM-Reference-Format}
-\bibliography{references}
+\begin{thebibliography}{20}
+\bibitem{flamegraphs} Brendan Gregg. Flame Graphs. \url{https://www.brendangregg.com/flamegraphs.html}.
+\bibitem{pprof} Google pprof documentation. \url{https://github.com/google/pprof/blob/main/doc/README.md}.
+\bibitem{perfetto} Perfetto Trace Processor documentation. \url{https://perfetto.dev/docs/analysis/trace-processor}.
+\bibitem{otel} OpenTelemetry GenAI semantic conventions. \url{https://github.com/open-telemetry/semantic-conventions-genai}.
+\bibitem{openinference} OpenInference specification. \url{https://arize-ai.github.io/openinference/spec/}.
+\bibitem{langsmith} LangSmith Observability. \url{https://docs.langchain.com/langsmith/observability}.
+\bibitem{langfuse} Langfuse Observability. \url{https://langfuse.com/docs/observability/overview}.
+\bibitem{phoenix} Arize Phoenix documentation. \url{https://arize.com/docs/phoenix}.
+\bibitem{agentops} Liming Dong, Qinghua Lu, and Liming Zhu. AgentOps: Enabling Observability of LLM Agents. \url{https://arxiv.org/abs/2411.05285}.
+\bibitem{weblinx} McGill-NLP WebLINX. \url{https://huggingface.co/datasets/McGill-NLP/WebLINX}.
+\bibitem{guiodyssey} OpenGVLab GUI-Odyssey. \url{https://huggingface.co/datasets/OpenGVLab/GUI-Odyssey}.
+\bibitem{osworldhuman} WukLab OSWorld-Human. \url{https://github.com/WukLab/osworld-human}.
+\bibitem{agentnet} xlangai AgentNet. \url{https://huggingface.co/datasets/xlangai/AgentNet}.
+\bibitem{agentrewardbench} McGill-NLP AgentRewardBench. \url{https://huggingface.co/datasets/McGill-NLP/agent-reward-bench}.
+\bibitem{satrajos} AI45Research SATraj-OS. \url{https://huggingface.co/datasets/AI45Research/SATraj-OS}.
+\bibitem{taubench} AgentSuite tau-bench trajectories. \url{https://huggingface.co/datasets/AgentSuite/tau-bench-trajectories}.
+\bibitem{scalecua} OpenGVLab ScaleCUA-Data. \url{https://huggingface.co/datasets/OpenGVLab/ScaleCUA-Data}.
+\bibitem{agentrewardpaper} Xing Han Lù et al. AgentRewardBench: Evaluating Automatic Evaluations of Web Agent Trajectories. \url{https://arxiv.org/abs/2504.08942}.
+\bibitem{osworld} Tianbao Xie et al. OSWorld: Benchmarking Multimodal Agents for Open-Ended Tasks in Real Computer Environments. \url{https://arxiv.org/abs/2404.07972}.
+\bibitem{opencua} Xinyuan Wang et al. OpenCUA: Open Foundations for Computer-Use Agents. \url{https://arxiv.org/abs/2508.09123}.
+\bibitem{safactory} Shanghai AI Lab. Safactory: A Scalable Agentic Infrastructure for Training Trustworthy Autonomous Intelligence. \url{https://arxiv.org/abs/2605.06230}.
+\end{thebibliography}
 
 \end{document}
