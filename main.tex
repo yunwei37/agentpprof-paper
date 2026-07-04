@@ -130,9 +130,11 @@ Mapping and tagging derive new operation fields before folding. For example,
 desktop actions such as \texttt{type} and \texttt{key} can map to
 \texttt{phase=input}, while tool/API rows can map to a tool phase before generic
 action rules run. The Rust CLI exposes inline rules, rule files, profile specs,
-and stack overrides. Profile specs record operation files, mappings, views,
-stacks, and outputs for reproducibility, while command-line flags can still
-override the stack query.
+operation predicates, and stack overrides. \texttt{--where} predicates run after
+mapping and before stack construction, implementing the query predicate without
+adding a profiler object. Profile specs record operation files, mappings,
+predicates, views, stacks, and outputs for reproducibility, while command-line
+flags can still override the stack query.
 
 \section{Evaluation Setup}
 
@@ -199,7 +201,10 @@ by 417.4$\times$ relative to dataset depth. On AgentNet, a tracked profile spec
 folds 16,741 operations into 608 diagnostic stacks, while a CLI stack override
 changes the output to 83 stacks without changing the operation input. The
 result supports query-time recursive stack choice rather than a fixed
-prompt/session hierarchy.
+prompt/session hierarchy. R321 adds an implementation probe for query predicates:
+profile specs over the tracked R300 operation file select 729/729,
+714/714, and 4,285/4,285 expected operations with mapping-derived
+\texttt{where\_rules} before folding.
 
 \subsection{RQ3: Do Mappings Help Without Adding Objects?}
 
@@ -362,7 +367,9 @@ mapping rules, and ranker policies to the user, not to hard-code one hierarchy.
 
 \toolname reduces agent profiling to two abstractions. Operations carry all
 observed and derived fields, while operation stacks fold those fields at the
-depth chosen by the query. Across 15 public labeled trace sources, this model
+depth chosen by the query. Mapping and \texttt{--where} predicates choose fields
+and operation subsets before folding, but they remain query components rather
+than profiler objects. Across 15 public labeled trace sources, this model
 covers web, mobile, desktop, software, API, dialogue, failure, safety, human
 boundary, and step-quality trajectories. On the four oracle-rich families used
 for R320, operation-stack profiling localizes and ranks real labeled problems
