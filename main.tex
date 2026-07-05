@@ -65,6 +65,11 @@ A view/depth task-fit audit shows that best visible AP is split across
 operation-stack, fixed-session, and dataset-native views, and that best top-five
 F1 spans five view families; no single hierarchy or source-task selector is
 enough.
+An inspection-efficiency audit reruns the R320 scorer over tracked operation
+inputs and shows that, within a 30\% inspected-work budget, query-aware
+operation stacks reach median recall 0.3900, versus 0 for flat summaries, 0.3559
+for fixed-session drilldown, 0.3377 for dataset-native views, and 0.3325 for raw
+action stacks.
 The result supports a profiling claim rather than a user-study claim:
 operation/operation-stack profiling can faithfully localize and rank
 task-relevant failures, quality problems, and semantic boundaries on real
@@ -370,6 +375,21 @@ must remain query-time configuration over the same operations; fixed sessions,
 span trees, and dataset-native hierarchies remain baselines or drilldown views,
 not profiler abstractions.
 
+R333 turns the same comparison into an inspection-efficiency curve. It reruns
+the R320 local scorer over the tracked operation JSONL inputs, yielding 810
+visible top-k/work-budget inspection points and 252 task-policy curve rows; it
+does not fetch, sync, or create data. Within a 30\% inspected-work budget,
+operation-stack query-aware reaches median recall 0.3900, compared with 0 for
+flat width, 0.3559 for fixed-session query-aware, 0.3377 for dataset-native
+query-aware, and 0.3325 for raw-action query-aware. At 20\% work, the same
+operation-stack policy reaches median recall 0.2763 versus 0.2422 for
+fixed-session query-aware. Against flat width, operation-stack query-aware uses
+lower top-five inspected work on all six tasks and has positive 30\%-budget
+recall where flat has none. Against fixed-session query-aware, it has higher
+top-five recall on 5 of 6 tasks and fewer groups on 4 of 6 tasks, but lower
+work-to-first-positive on only 2 of 6 tasks. R333 therefore supports an
+inspection-cost and fragmentation tradeoff, not dominance on every cost metric.
+
 \subsection{RQ6: Are the Results Actionable?}
 
 R320 turns each task into an optimization diagnosis, summarized in
@@ -432,6 +452,9 @@ top-five F1 are not monopolized by one hierarchy, and leave-task source
 selection cannot reliably pick the best visible view. Actionability is therefore
 not a hard-coded ``best tree''; it is the ability to change stack depth, field
 mapping, predicates, and rank policy while scoring the same operations.
+R333 adds the budget axis to this diagnosis: query-aware operation-stack ranking
+improves AP over width on 6 of 6 tasks and 30\%-budget recall on 5 of 6 tasks,
+showing that ranker choice changes both accuracy and inspection cost.
 
 \begin{table*}[t]
 \centering
@@ -571,7 +594,9 @@ label-permutation negative control for prevalence and group-size explanations,
 but it does not upgrade top-five precision, first-positive work, or label-free
 deployment claims. R332 adds a view/depth task-fit audit and shows that best
 visible policies vary by task and objective, so it supports a configurable
-analysis surface rather than an automatic view selector. These
+analysis surface rather than an automatic view selector. R333 adds
+inspection-efficiency curves and strengthens the budgeted-recall evidence while
+keeping fixed-session first-positive work as a counterpoint. These
 results do not show that humans or agents answer questions
 faster with the tool, nor do they measure live eBPF overhead. They also do not
 show automatic discovery of all intent boundaries, nor complete compatibility
@@ -601,6 +626,10 @@ above the label-permutation null on 6 of 6 tasks and budgeted recall on 5 of 6,
 but top-five precision and first-positive work remain null-limited. R332 shows
 that best AP and best top-five F1 are split across multiple view families, and
 that leave-task source selection is exact-best on neither AP nor top-five F1.
+R333 shows that the strongest budgeted-recall point is at 30\% inspected work,
+where operation stacks beat flat, fixed-session, dataset-native, and raw-action
+core policies in median recall, while still preserving fixed-session
+first-positive work as a real tradeoff.
 The right design implication is to expose stack fields, mapping rules, rank
 modes, operation-level rank features, global defaults, and task-specific ranker
 policies to the user, not to hard-code one hierarchy.
@@ -619,11 +648,11 @@ with less work than flat summaries and less fragmentation than fixed-session
 drilldown. R324--R329 show that visible operation-level rank features, feature
 ablations, equal-weight/global-bank policies, ablation-guided repairs, and
 target-held-out transfer can turn those rankings into concrete optimization
-guidance while preserving hidden-label separation. R330--R332 then stress-test
+guidance while preserving hidden-label separation. R330--R333 then stress-test
 the same comparisons with task-paired uncertainty, label-permutation negative
-controls, and view/depth task-fit audits. The paper's central claim is therefore
-a profiler claim: the operation/operation-stack model faithfully exposes
-task-relevant failures,
+controls, view/depth task-fit audits, and inspection-efficiency curves. The
+paper's central claim is therefore a profiler claim: the operation/operation-stack
+model faithfully exposes task-relevant failures,
 quality problems, and semantic boundaries, and it produces actionable
 optimization insight without relying on prompt/session/span boundaries. R327
 adds that these claims are carried by repeatable profile specs whose semantic
