@@ -111,9 +111,13 @@ operation files, predicates, operation-level rank rules, rule-score ranking, and
 explicit stack depth without prompt/session frames; visible operation-feature
 ranking improves AP over width on 9/12 variants and coarse depth reduces groups
 on 6/6 tasks with median reduction 0.8267.
-A paper claim-integrity audit then checks the paper-facing R320--R342 numbers,
+Finally, a metric-consistency audit checks that this is a multi-metric tradeoff
+rather than an AP-only result: 30/50 baseline-metric comparisons support the
+operation-stack query-aware policy, 16/50 are explicit counterpoints, and nDCG
+and coarse top-k recall remain secondary metrics.
+A paper claim-integrity audit then checks the paper-facing R320--R344 numbers,
 source policy, guardrails, and the two-abstraction boundary across the Chinese
-and English drafts. All 141 result invariants, 49 source-policy checks, and 16
+and English drafts. All 165 result invariants, 51 source-policy checks, and 16
 guardrail checks pass.
 The result supports a profiling claim rather than a user-study claim:
 operation/operation-stack profiling can localize and rank task-relevant
@@ -580,11 +584,17 @@ and explicit stack depth without prompt/session frames. The same composed
 variants improve AP over width on 9/12 variants and first-positive work on
 10/12 variants; coarse depth reduces groups on 6/6 tasks with median reduction
 0.8267, while the best AP depth still splits between semantic and coarse stacks.
+R344 then audits the R320 metric surface directly. Across 50 baseline-metric
+comparisons, 30 support operation-stack query-aware, 16 are counterpoints, and
+4 are mixed or weak. AP, 30\% work-budget recall/F1, inspection work,
+work-to-first-positive, and group fragmentation carry the main profiling
+tradeoff; nDCG and coarse top-k recall remain secondary counterpoints because
+flat or dataset-native groups can score well by inspecting broad groups.
 R338 audits the paper claim itself rather than adding a new empirical result.
-It reads tracked-clean R320/R333/R334/R335/R336/R337/R339/R340/R341/R342 artifacts, hashes the
+It reads tracked-clean R320/R333/R334/R335/R336/R337/R339/R340/R341/R342/R344 artifacts, hashes the
 current Chinese and English drafts, and checks paper-facing numbers, source
 policy, must-not-claim guardrails, and the two-abstraction boundary. The audit
-passes 141 of 141 result invariants, 49 of 49 source-policy checks, and 16 of
+passes 165 of 165 result invariants, 51 of 51 source-policy checks, and 16 of
 16 guardrail checks, so it is a submission-readiness gate rather than evidence
 for human utility, automatic boundary discovery, ecosystem compatibility, or a
 universal selector.
@@ -747,10 +757,12 @@ flat baselines on 72/96, 69/96, and 41/96 decisions, while operation-stack views
 are selected on 16/96 decisions. R341 attributes the remaining actionability
 and failure modes: 36/36 objective rows have optimization actions, 27/36 best
 visible policies are non-default, and 34/96 transfer misses are classified by
-view/ranker or baseline-counterpoint explanations. R338 checks that the
-paper-facing R320--R342
+view/ranker or baseline-counterpoint explanations. R344 records that 30/50
+baseline-metric comparisons support operation-stack query-aware, while 16/50
+are counterpoints and nDCG/top-k recall remain secondary. R338 checks that the
+paper-facing R320--R344
 numbers, source policy, guardrails, and two-abstraction boundary remain aligned,
-with 141/141 result invariants, 49/49 source-policy checks, and 16/16 guardrail
+with 165/165 result invariants, 51/51 source-policy checks, and 16/16 guardrail
 checks passing.
 These
 results do not show that humans or agents answer questions
@@ -825,10 +837,11 @@ task-level actionability cards, R336 maps the cards to objective-specific
 visible policy choices, R337 maps ranked outputs to fixed-recall
 inspection-cost targets, R339 scores sequence-scope adequacy, R340 tests
 non-target policy transfer, R341 classifies mechanism and transfer-error
-attribution, R342 checks profile-spec composition and stack-depth tradeoffs, and
+attribution, R342 checks profile-spec composition and stack-depth tradeoffs, R344
+checks multi-metric consistency and counterpoints, and
 R338
-mechanically checks that the R320--R342 paper-facing numbers and guardrails
-remain aligned with 141/141 result invariants passing. The
+mechanically checks that the R320--R344 paper-facing numbers and guardrails
+remain aligned with 165/165 result invariants passing. The
 paper's central claim is therefore a profiler claim: the operation/operation-stack
 model exposes dataset-labeled task-relevant failures,
 quality problems, and semantic boundaries, and it produces actionable
