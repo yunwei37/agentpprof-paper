@@ -97,13 +97,14 @@ span-tree proxy.}
 We evaluate this claim with public labeled traces rather than a human study. A
 human or agent analyst study would be useful for productivity claims, but it is
 not required to test profiler fidelity. Our evaluation therefore uses hidden
-labels as the oracle for ranked profile groups and asks six research questions:
+labels as the oracle for ranked profile groups and asks seven research questions:
 RQ1 tests whether the two abstractions cover heterogeneous trajectories. RQ2
 tests whether recursive stacks avoid fixed-boundary fragmentation. RQ3 tests
 whether mappings derive useful fields without creating extra objects. RQ4 tests
 whether folded boundaries align with human subtask labels. RQ5, the main R320
 experiment, tests localization and ranking accuracy. RQ6 tests whether the
-profiler output produces actionable tuning decisions.
+profiler output produces actionable tuning decisions. RQ7 tests whether the
+profile-spec path is reproducible and low-cost on the same tracked inputs.
 
 \section{Design}
 
@@ -182,6 +183,10 @@ score, nDCG over positive operation counts, and work-to-first-positive.
 Fragmentation uses group count, positive group count, and work or groups to
 reach 50\% positive recall. Actionability uses per-task comparisons among
 stack fields, mapping choices, ranker choices, and oracle headroom.
+Reproducibility uses repeated Rust \texttt{agentpprof --profile-spec}
+executions over tracked specs and tracked operation JSONL inputs, checking
+semantic output hashes, sample counts, unique-stack counts, runtime, and output
+size. Build time is excluded from the profiler runtime measurement.
 
 \section{Results}
 
@@ -363,6 +368,43 @@ Group start & flat:width & Add boundary-derived fields because action-depth stac
 \end{tabular}
 \end{table*}
 
+\subsection{RQ7: Are Profile Specs Reproducible and Cheap to Run?}
+
+R327 reruns the existing profile-spec artifacts used by R300, R324, and R326.
+The workload contains 76 tracked specs: four view specs, 12 operation-feature
+rank specs, and 60 robustness specs. Each spec is executed twice by the Rust
+profiler against tracked operation JSONL inputs, for 152 profiler invocations.
+No dataset is downloaded or synced. The determinism gate hashes the semantic
+profile content after removing the JSON \texttt{generated\_at} timestamp, and
+separately reports raw-byte hashes.
+
+\begin{table}[t]
+\centering
+\small
+\caption{R327 profile-spec reproducibility and offline execution cost. Runtime
+is per spec, measured after the Rust binary exists. Semantic hashes exclude the
+JSON \texttt{generated\_at} field; raw-byte hashes are reported separately.}
+\label{tab:r327}
+\begin{tabular}{lrrrr}
+\toprule
+Workload & Specs & Median ms & P95 ms & Median stacks \\
+\midrule
+R300 view specs & 4 & 3448.0200 & 4272.6763 & 631.0 \\
+R324 rank-feature specs & 12 & 1538.8800 & 2691.5278 & 41.0 \\
+R326 robustness specs & 60 & 1541.8825 & 2640.3084 & 41.0 \\
+All specs & 76 & 1581.3334 & 2719.3206 & 42.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All 76 specs reproduce the same semantic profile hash, sample count, and
+unique-stack count across repetitions. Raw-byte determinism is only 4 of 76,
+because JSON outputs intentionally include a generation timestamp; the stable
+semantic hash keeps the reproducibility claim on the profile content. Median
+output size is 37,546 bytes, the largest output is 306,099 bytes, and the
+largest profile has 2,012 unique stacks. This supports an offline artifact and
+profile-spec reproducibility claim, not live eBPF overhead or human utility.
+
 \section{Related Work and Novelty}
 
 \textbf{Classic profiling and trace analysis.}
@@ -408,8 +450,10 @@ scoped novelty.
 
 The result scope is deliberately narrow. R320 supports profiler fidelity,
 localization/ranking accuracy, work tradeoffs, fragmentation reduction, and
-actionable optimization insight on six real labeled tasks. It does not show
-that humans or agents answer questions faster with the tool. It also does not
+actionable optimization insight on six real labeled tasks. R327 supports
+offline profile-spec reproducibility and local execution cost for the tracked
+artifacts. These results do not show that humans or agents answer questions
+faster with the tool, nor do they measure live eBPF overhead. They also do not
 show automatic discovery of all intent boundaries, nor complete compatibility
 with OpenTelemetry, Phoenix, LangSmith, Langfuse, or Perfetto producers. Those
 systems remain related work and baselines. In this paper, trace formats are
@@ -451,7 +495,9 @@ turn those rankings into concrete optimization guidance while preserving
 hidden-label separation. The paper's central claim is therefore a profiler claim: the
 operation/operation-stack model faithfully exposes task-relevant failures,
 quality problems, and semantic boundaries, and it produces actionable
-optimization insight without relying on prompt/session/span boundaries.
+optimization insight without relying on prompt/session/span boundaries. R327
+adds that these claims are carried by repeatable profile specs whose semantic
+outputs reproduce across runs on tracked inputs.
 
 \begin{thebibliography}{20}
 \bibitem{flamegraphs} Brendan Gregg. Flame Graphs. \url{https://www.brendangregg.com/flamegraphs.html}.
