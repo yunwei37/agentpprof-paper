@@ -218,6 +218,11 @@ mapped \texttt{field=value} operation tokens and aggregate matched weight inside
 each folded group. On semantic stacks, AP improves over width on 5 of 6 tasks
 and first-positive work improves on 5 of 6 tasks; on coarser stacks, AP
 improves on 4 of 6 tasks while group counts fall.
+R325 replays the same scrubbed profiler input and stack projections with newly
+generated profile specs that remove one visible feature at a time. It finds 7
+critical feature instances, 3 misleading feature instances, and a stack-depth
+tradeoff: coarse stacks are AP-preferred on 2 of 6 tasks but reduce group
+counts on all six tasks.
 
 \subsection{RQ3: Do Mappings Help Without Adding Objects?}
 
@@ -308,12 +313,20 @@ R324 closes more of that implementation gap by moving group-feature ranking
 into the Rust profiler. The profile spec records \texttt{rank\_op\_rules}; the
 R324 harness first derives a scrubbed visible-operation profiler input from the
 R300 source, so the profiler matches visible operation fields before folding,
-aggregates feature density per stack group, emits the ranked JSON, and only then
-are hidden labels used for scoring. Semantic-stack operation-feature ranking improves AP over
-width on 5 of 6 tasks, top-five lift on 4 of 6 tasks, and first-positive work
-on 5 of 6 tasks. The coarse-stack variant improves AP on 4 of 6 tasks while
+and aggregates feature density per stack group. Hidden labels are not passed to
+Rust and are used only for offline scoring. Semantic-stack operation-feature
+ranking improves AP over width on 5 of 6 tasks, top-five lift on 4 of 6 tasks,
+and first-positive work on 5 of 6 tasks. The coarse-stack variant improves AP
+on 4 of 6 tasks while
 reducing group fragmentation, but OSWorld-Human remains a counterexample that
 needs boundary-derived fields.
+R325 then asks which knobs matter. Leave-one-feature ablation identifies
+\texttt{repeat\_signal} as critical for looping, write-action features as
+critical for side effects, and \texttt{status=success} as the strongest SATraj
+safety feature. It also identifies misleading features: a SATraj loop-like rule
+and OSWorld-Human input-phase rules can hurt AP or first-positive work. This is
+the concrete actionability result: the profiler points to which field mappings,
+rank features, and stack depths should be changed for each task family.
 
 \begin{table*}[t]
 \centering
@@ -395,12 +408,13 @@ Query-aware ranking improves AP over width-only operation-stack ranking on all
 six tasks, but top-five F1 and work still expose calibration and prevalence
 counterexamples. R322's Rust \texttt{rank\_rules} improve AP over width on 4 of
 6 tasks, R323's \texttt{rule-score} mode improves AP over \texttt{width-boost}
-on 4 of 6 tasks, and R324's operation-feature ranking improves semantic-stack
-AP over width on 5 of 6 tasks. This is useful implementation evidence and moves
-closer to R320's full query-aware ranker, but it still preserves OSWorld-Human
-as a boundary-field counterexample. The right design implication is to expose
-stack fields, mapping rules, rank modes, operation-level rank features, and
-ranker policies to the user, not to hard-code one hierarchy.
+on 4 of 6 tasks, R324's operation-feature ranking improves semantic-stack AP
+over width on 5 of 6 tasks, and R325 finds 7 critical and 3 misleading feature
+instances. This is useful implementation evidence and moves closer to R320's
+full query-aware ranker, but it still preserves OSWorld-Human as a
+boundary-field counterexample. The right design implication is to expose stack
+fields, mapping rules, rank modes, operation-level rank features, and ranker
+policies to the user, not to hard-code one hierarchy.
 
 \section{Conclusion}
 
