@@ -115,10 +115,15 @@ Finally, a metric-consistency audit checks that this is a multi-metric tradeoff
 rather than an AP-only result: 30/50 baseline-metric comparisons support the
 operation-stack query-aware policy, 16/50 are explicit counterpoints, and nDCG
 and coarse top-k recall remain secondary metrics.
-A paper claim-integrity audit then checks the paper-facing R320--R344 numbers,
+R345 then turns actionability into a diagnostic-lens portfolio: 6 diagnostic
+lenses cover 36 objective rows, operation-stack-family views win 11/36
+objectives, non-operation-stack counterpoints win 25/36, and 6/6 tasks need at
+least three best views. This supports lens-specific optimization rather than a
+single flamegraph or universal selector.
+A paper claim-integrity audit then checks the paper-facing R320--R345 numbers,
 source policy, guardrails, and the two-abstraction boundary across the Chinese
-and English drafts. All 165 result invariants, 51 source-policy checks, and 16
-guardrail checks pass.
+and English drafts. All 186 result invariants, 56 source-policy checks, and
+16 guardrail checks pass.
 The result supports a profiling claim rather than a user-study claim:
 operation/operation-stack profiling can localize and rank task-relevant
 failures, quality problems, and semantic boundaries against dataset-provided
@@ -590,14 +595,20 @@ comparisons, 30 support operation-stack query-aware, 16 are counterpoints, and
 work-to-first-positive, and group fragmentation carry the main profiling
 tradeoff; nDCG and coarse top-k recall remain secondary counterpoints because
 flat or dataset-native groups can score well by inspecting broad groups.
+R345 then summarizes the actionability evidence as a diagnostic-lens portfolio
+over tracked R335/R341/R344 artifacts. Six lenses cover 36 objective rows:
+ranked-stack AP, hot-stack F1, budgeted inspection, first-positive drilldown,
+recall fragmentation, and group-fragmentation overview. Operation-stack-family
+views win 11/36 objectives, non-operation-stack counterpoints win 25/36, and
+6/6 tasks require at least three best views, so the profiler exposes a set of
+task-specific analysis lenses rather than a single default hierarchy.
 R338 audits the paper claim itself rather than adding a new empirical result.
-It reads tracked-clean R320/R333/R334/R335/R336/R337/R339/R340/R341/R342/R344 artifacts, hashes the
+It reads tracked-clean R320/R333/R334/R335/R336/R337/R339/R340/R341/R342/R344/R345 artifacts, hashes the
 current Chinese and English drafts, and checks paper-facing numbers, source
 policy, must-not-claim guardrails, and the two-abstraction boundary. The audit
-passes 165 of 165 result invariants, 51 of 51 source-policy checks, and 16 of
-16 guardrail checks, so it is a submission-readiness gate rather than evidence
-for human utility, automatic boundary discovery, ecosystem compatibility, or a
-universal selector.
+passes all 186 result invariants, 56 source-policy checks, and 16 guardrail
+checks, so it is a submission-readiness gate, not evidence for human utility,
+automatic boundary discovery, ecosystem compatibility, or a universal selector.
 
 \begin{table*}[t]
 \centering
@@ -759,11 +770,13 @@ and failure modes: 36/36 objective rows have optimization actions, 27/36 best
 visible policies are non-default, and 34/96 transfer misses are classified by
 view/ranker or baseline-counterpoint explanations. R344 records that 30/50
 baseline-metric comparisons support operation-stack query-aware, while 16/50
-are counterpoints and nDCG/top-k recall remain secondary. R338 checks that the
-paper-facing R320--R344
-numbers, source policy, guardrails, and two-abstraction boundary remain aligned,
-with 165/165 result invariants, 51/51 source-policy checks, and 16/16 guardrail
-checks passing.
+are counterpoints and nDCG/top-k recall remain secondary. R345 adds the
+diagnostic-lens portfolio: 6 lenses over 36 objective rows, 11/36
+operation-stack-family objective wins, 25/36 non-operation-stack counterpoints,
+and 6/6 tasks requiring at least three best views. R338 checks that the
+paper-facing R320--R345
+numbers, 186 result invariants, 56 source-policy checks, 16 guardrail checks,
+and two-abstraction boundary remain aligned.
 These
 results do not show that humans or agents answer questions
 faster with the tool, nor do they measure live eBPF overhead. They also do not
@@ -838,10 +851,12 @@ visible policy choices, R337 maps ranked outputs to fixed-recall
 inspection-cost targets, R339 scores sequence-scope adequacy, R340 tests
 non-target policy transfer, R341 classifies mechanism and transfer-error
 attribution, R342 checks profile-spec composition and stack-depth tradeoffs, R344
-checks multi-metric consistency and counterpoints, and
+checks multi-metric consistency and counterpoints, R345 turns those results into
+a diagnostic-lens portfolio, and
 R338
-mechanically checks that the R320--R344 paper-facing numbers and guardrails
-remain aligned with 165/165 result invariants passing. The
+mechanically checks that the R320--R345 paper-facing numbers and guardrails
+remain aligned with 186 result invariants, 56 source-policy checks, and 16
+guardrail checks passing. The
 paper's central claim is therefore a profiler claim: the operation/operation-stack
 model exposes dataset-labeled task-relevant failures,
 quality problems, and semantic boundaries, and it produces actionable
