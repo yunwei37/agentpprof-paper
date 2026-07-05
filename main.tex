@@ -48,7 +48,9 @@ operation stacks improve top-five recall on 5 of 6 tasks and reduce median
 group fragmentation from 285.0 to 157.5 groups. Query-aware ranking improves
 average precision over width-only operation-stack ranking on all six tasks.
 The Rust profile-spec implementation of operation-level rank features improves
-semantic-stack AP over width on 5 of 6 tasks.
+semantic-stack AP over width on 5 of 6 tasks. A reproducibility probe reruns
+76 tracked profile specs and an opt-in deterministic-output mode makes all 76
+raw profile artifacts byte-stable across repeated runs.
 The result supports a profiling claim rather than a user-study claim:
 operation/operation-stack profiling can faithfully localize and rank
 task-relevant failures, quality problems, and semantic boundaries on real
@@ -104,7 +106,8 @@ whether mappings derive useful fields without creating extra objects. RQ4 tests
 whether folded boundaries align with human subtask labels. RQ5, the main R320
 experiment, tests localization and ranking accuracy. RQ6 tests whether the
 profiler output produces actionable tuning decisions. RQ7 tests whether the
-profile-spec path is reproducible and low-cost on the same tracked inputs.
+profile-spec path is reproducible, byte-stable when requested, and has
+reportable local execution cost on the same tracked inputs.
 
 \section{Design}
 
@@ -368,7 +371,7 @@ Group start & flat:width & Add boundary-derived fields because action-depth stac
 \end{tabular}
 \end{table*}
 
-\subsection{RQ7: Are Profile Specs Reproducible and Cheap to Run?}
+\subsection{RQ7: Are Profile Specs Reproducible with Reportable Cost?}
 
 R327 reruns the existing profile-spec artifacts used by R300, R324, and R326.
 The workload contains 76 tracked specs: four view specs, 12 operation-feature
@@ -382,17 +385,18 @@ separately reports raw-byte hashes.
 \centering
 \small
 \caption{R327 profile-spec reproducibility and offline execution cost. Runtime
-is per spec, measured after the Rust binary exists. Semantic hashes exclude the
-JSON \texttt{generated\_at} field; raw-byte hashes are reported separately.}
+is seconds per spec, measured after the Rust binary exists. Semantic hashes
+exclude the JSON \texttt{generated\_at} field; raw-byte hashes are reported
+separately.}
 \label{tab:r327}
 \begin{tabular}{lrrrr}
 \toprule
-Workload & Specs & Median ms & P95 ms & Median stacks \\
+Workload & Specs & Med. s & P95 s & Med. stacks \\
 \midrule
-R300 view specs & 4 & 3448.0200 & 4272.6763 & 631.0 \\
-R324 rank-feature specs & 12 & 1538.8800 & 2691.5278 & 41.0 \\
-R326 robustness specs & 60 & 1541.8825 & 2640.3084 & 41.0 \\
-All specs & 76 & 1581.3334 & 2719.3206 & 42.0 \\
+R300 view specs & 4 & 3.448 & 4.273 & 631.0 \\
+R324 rank-feature specs & 12 & 1.539 & 2.692 & 41.0 \\
+R326 robustness specs & 60 & 1.542 & 2.640 & 41.0 \\
+All specs & 76 & 1.581 & 2.719 & 42.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -404,6 +408,31 @@ semantic hash keeps the reproducibility claim on the profile content. Median
 output size is 37,546 bytes, the largest output is 306,099 bytes, and the
 largest profile has 2,012 unique stacks. This supports an offline artifact and
 profile-spec reproducibility claim, not live eBPF overhead or human utility.
+
+R328 closes the raw-artifact caveat with an explicit deterministic-output mode.
+The Rust CLI accepts \texttt{--deterministic-output}, and profile specs may set
+\texttt{deterministic\_output}; the mode replaces JSON \texttt{generated\_at}
+and pprof profile time with fixed values while leaving profile content
+unchanged. R328 reruns the same 76 specs and 152 invocations with this flag.
+Both semantic and raw-byte determinism are 76 of 76. The median runtime in this
+run is 1,577.5383 ms and the p95 is 2,730.9206 ms; we report these as artifact
+costs for this run, not as a performance comparison with R327.
+
+\begin{table}[t]
+\centering
+\small
+\caption{R327/R328 determinism checks over the same 76 profile specs. R328 uses
+\texttt{--deterministic-output}.}
+\label{tab:r328}
+\begin{tabular}{llrrrr}
+\toprule
+Run & Mode & Sem. & Raw & Med. s & P95 s \\
+\midrule
+R327 & default & 76/76 & 4/76 & 1.581 & 2.719 \\
+R328 & deterministic & 76/76 & 76/76 & 1.578 & 2.731 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Related Work and Novelty}
 
@@ -452,7 +481,8 @@ The result scope is deliberately narrow. R320 supports profiler fidelity,
 localization/ranking accuracy, work tradeoffs, fragmentation reduction, and
 actionable optimization insight on six real labeled tasks. R327 supports
 offline profile-spec reproducibility and local execution cost for the tracked
-artifacts. These results do not show that humans or agents answer questions
+artifacts; R328 adds opt-in byte-stable output for those artifacts. These
+results do not show that humans or agents answer questions
 faster with the tool, nor do they measure live eBPF overhead. They also do not
 show automatic discovery of all intent boundaries, nor complete compatibility
 with OpenTelemetry, Phoenix, LangSmith, Langfuse, or Perfetto producers. Those
@@ -497,7 +527,8 @@ operation/operation-stack model faithfully exposes task-relevant failures,
 quality problems, and semantic boundaries, and it produces actionable
 optimization insight without relying on prompt/session/span boundaries. R327
 adds that these claims are carried by repeatable profile specs whose semantic
-outputs reproduce across runs on tracked inputs.
+outputs reproduce across runs on tracked inputs; R328 makes the same tracked
+profile outputs byte-stable when deterministic artifact mode is enabled.
 
 \begin{thebibliography}{20}
 \bibitem{flamegraphs} Brendan Gregg. Flame Graphs. \url{https://www.brendangregg.com/flamegraphs.html}.
