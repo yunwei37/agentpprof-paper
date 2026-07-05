@@ -75,10 +75,15 @@ operation-stack query-aware reaches 50\% positives with fewer ranked groups than
 fixed-session query-aware on 5 of 6 tasks and inspects fewer groups at the same
 30\% work budget on 5 of 6 tasks, while lowering work-to-first-positive on only
 2 of 6 tasks.
+An actionability synthesis then merges the accuracy, ablation, robustness,
+transfer, view-depth, and fragmentation audits into six task cards: all six
+contain concrete optimization actions and AP gains from query-aware ranking,
+while mapping, rank features, stack depth, transfer policy, and fixed-session
+drilldown remain task-specific tradeoffs.
 The result supports a profiling claim rather than a user-study claim:
-operation/operation-stack profiling can faithfully localize and rank
-task-relevant failures, quality problems, and semantic boundaries on real
-labeled traces, while exposing actionable tradeoffs among stack fields,
+operation/operation-stack profiling can localize and rank task-relevant
+failures, quality problems, and semantic boundaries against dataset-provided
+labels in this benchmark, while exposing actionable tradeoffs among stack fields,
 mappings, rankers, and drilldown depth.
 \end{abstract}
 
@@ -108,9 +113,9 @@ stack shape to aggregation: changing the stack changes what is comparable,
 localizable, and actionable without changing the underlying trace object model.
 
 This paper makes a profiling claim, not a human-productivity claim. A top-tier
-profiling paper must show that the profiler faithfully attributes, localizes,
-and ranks problems on real workloads, and that the output leads to optimization
-insight with better accuracy or inspection cost than baselines. For agents, the
+profiling paper must show that the profiler attributes, localizes, and ranks
+problems against explicit workload labels, and that the output leads to
+optimization insight with better accuracy or inspection cost than baselines. For agents, the
 claim is:
 \begin{quote}
 \emph{Operation/operation-stack profiling can accurately localize
@@ -122,7 +127,7 @@ span-tree proxy.}
 
 We evaluate this claim with public labeled traces rather than a human study. A
 human or agent analyst study would be useful for productivity claims, but it is
-not required to test profiler fidelity. Our evaluation therefore uses hidden
+not required to test label-scored profiler fidelity. Our evaluation therefore uses hidden
 labels as the oracle for ranked profile groups and asks seven research questions:
 RQ1 tests whether the two abstractions cover heterogeneous trajectories. RQ2
 tests whether recursive stacks avoid fixed-boundary fragmentation. RQ3 tests
@@ -477,6 +482,16 @@ R334 adds a second cost axis: reducing visible group fragmentation and reducing
 first-positive operation work are different objectives, so fixed-session
 drilldown should remain available even when operation stacks are the better
 cross-session grouping.
+R335 makes that diagnosis explicit in a mechanism ledger. It reads only tracked
+R320/R325/R326/R329/R332/R334 artifacts and creates six task-level
+actionability cards. All 6 of 6 cards contain a concrete optimization action,
+and query-aware ranking improves AP over width on all 6. The same cards preserve
+the counterpoints: mapping helps only 2 of 6 tasks and hurts 4 of 6, critical
+features appear on 4 of 6 tasks, misleading features on 2 of 6, coarse depth
+reduces groups on all 6 tasks but is AP-preferred on only 2 of 6, and
+fixed-session drilldown has lower work-to-first-positive on 4 of 6. Thus the
+actionability claim is that the profiler identifies which knobs to tune, not
+that one knob is universally correct.
 
 \begin{table*}[t]
 \centering
@@ -604,7 +619,7 @@ scoped novelty.
 
 \section{Discussion}
 
-The result scope is deliberately narrow. R320 supports profiler fidelity,
+The result scope is deliberately narrow. R320 supports profiler fidelity with respect to dataset-provided labels,
 localization/ranking accuracy, work tradeoffs, fragmentation reduction, and
 actionable optimization insight on six real labeled tasks. R327 supports
 offline profile-spec reproducibility and local execution cost for the tracked
@@ -656,7 +671,10 @@ core policies in median recall, while still preserving fixed-session
 first-positive work as a real tradeoff. R334 then shows why that wording should
 say fragmentation, not work dominance: operation stacks use fewer ranked groups
 than fixed-session to reach 50\% positives on 5 of 6 tasks, but lower
-work-to-first-positive on only 2 of 6 tasks.
+work-to-first-positive on only 2 of 6 tasks. R335 turns the mixed results into
+six concrete task cards and a mechanism ledger, showing that every task has an
+optimization action while mapping, feature, depth, transfer, and fixed-session
+choices remain task-specific.
 The right design implication is to expose stack fields, mapping rules, rank
 modes, operation-level rank features, global defaults, and task-specific ranker
 policies to the user, not to hard-code one hierarchy.
@@ -678,9 +696,10 @@ target-held-out transfer can turn those rankings into concrete optimization
 guidance while preserving hidden-label separation. R330--R333 then stress-test
 the same comparisons with task-paired uncertainty, label-permutation negative
 controls, view/depth task-fit audits, and inspection-efficiency curves. R334
-adds the corresponding fragmentation audit. The
+adds the corresponding fragmentation audit, and R335 turns those results into
+task-level actionability cards. The
 paper's central claim is therefore a profiler claim: the operation/operation-stack
-model faithfully exposes task-relevant failures,
+model exposes dataset-labeled task-relevant failures,
 quality problems, and semantic boundaries, and it produces actionable
 optimization insight without relying on prompt/session/span boundaries. R327
 adds that these claims are carried by repeatable profile specs whose semantic
