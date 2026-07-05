@@ -94,10 +94,16 @@ trajectories that actually contain positives. At a 30\% operation budget,
 operation-stack query-aware reaches median 0.4669 positive-session recall
 versus 0.3230 for fixed-session while touching median 0.3467 sessions; raw
 action reaches 0.5147 positive-session recall but touches 0.9103 sessions.
-A paper claim-integrity audit then checks the paper-facing R320--R339 numbers,
+A cross-task and cross-dataset policy-transfer audit then selects visible
+policies from non-target tasks or non-target datasets before held-out scoring.
+Across 96 decisions, selection stays within tolerance on 62 decisions and beats
+width, fixed-session, and flat baselines on 72, 69, and 41 decisions. Since
+operation-stack views are selected on only 16 decisions, the result supports
+objective-specific policy transfer rather than a universal default view.
+A paper claim-integrity audit then checks the paper-facing R320--R340 numbers,
 source policy, guardrails, and the two-abstraction boundary across the Chinese
-and English drafts: 83 of 83 result invariants, 35 of 35 source-policy checks,
-and 16 of 16 guardrail checks pass.
+and English drafts. All 100 result invariants, 41 source-policy checks, and 16
+guardrail checks pass.
 The result supports a profiling claim rather than a user-study claim:
 operation/operation-stack profiling can localize and rank task-relevant
 failures, quality problems, and semantic boundaries against dataset-provided
@@ -540,13 +546,23 @@ positive-operation recall and 0.4669 positive-session recall while touching
 median 0.3467 sessions. Fixed-session reaches 0.3230 positive-session recall;
 raw action reaches higher positive-session recall, 0.5147, but touches 0.9103
 sessions. The result supports sequence-scope triage, not single-view dominance.
+R340 evaluates whether objective-specific policy choice can transfer without
+looking at target labels during selection. It reuses the already-scored R320 and
+R339 artifacts, selects visible policies from non-target tasks or non-target
+datasets, and uses the held-out labels only for final scoring. Across 96
+decisions, 31 are exact-best and 62 are within tolerance of the held-out best
+visible policy. The selected policies beat width, fixed-session, and flat
+baselines on 72, 69, and 41 decisions, respectively. Because operation-stack
+views are selected on only 16 decisions, the conclusion is audited
+policy/view/stack-depth actionability, not an automatic selector or default
+hierarchy dominance.
 R338 audits the paper claim itself rather than adding a new empirical result.
-It reads tracked-clean R320/R333/R334/R335/R336/R337/R339 artifacts, hashes the
+It reads tracked-clean R320/R333/R334/R335/R336/R337/R339/R340 artifacts, hashes the
 current Chinese and English drafts, and checks paper-facing numbers, source
 policy, must-not-claim guardrails, and the two-abstraction boundary. The audit
-passes 83 of 83 result invariants, 35 of 35 source-policy checks, and 16 of 16
-guardrail checks, so it is a submission-readiness gate rather than evidence for
-human utility, automatic boundary discovery, ecosystem compatibility, or a
+passes 100 of 100 result invariants, 41 of 41 source-policy checks, and 16 of
+16 guardrail checks, so it is a submission-readiness gate rather than evidence
+for human utility, automatic boundary discovery, ecosystem compatibility, or a
 universal selector.
 
 \begin{table*}[t]
@@ -701,10 +717,14 @@ reaches all six tasks with median work 0.2000 versus flat 1.0000 and median
 counterpoint. R339 adds sequence-scope adequacy: at 30\% work,
 operation-stack query-aware reaches median 0.4669 positive-session recall
 versus fixed-session 0.3230, while raw action reaches 0.5147 but touches 0.9103
-sessions. R338 checks that the paper-facing R320--R339 numbers, source
-policy, guardrails, and two-abstraction boundary remain aligned, with 83/83
-result invariants, 35/35 source-policy checks, and 16/16 guardrail checks
-passing. These
+sessions. R340 adds non-target policy transfer: selected visible policies stay
+within tolerance on 62/96 held-out decisions and beat width, fixed-session, and
+flat baselines on 72/96, 69/96, and 41/96 decisions, while operation-stack views
+are selected on 16/96 decisions. R338 checks that the paper-facing R320--R340
+numbers, source policy, guardrails, and two-abstraction boundary remain aligned,
+with 100/100 result invariants, 41/41 source-policy checks, and 16/16 guardrail
+checks passing.
+These
 results do not show that humans or agents answer questions
 faster with the tool, nor do they measure live eBPF overhead. They also do not
 show automatic discovery of all intent boundaries, nor complete compatibility
@@ -776,8 +796,8 @@ adds the corresponding fragmentation audit, R335 turns those results into
 task-level actionability cards, R336 maps the cards to objective-specific
 visible policy choices, R337 maps ranked outputs to fixed-recall
 inspection-cost targets, R339 scores sequence-scope adequacy, and R338
-mechanically checks that the R320--R339 paper-facing numbers and guardrails
-remain aligned. The
+mechanically checks that the R320--R340 paper-facing numbers and guardrails
+remain aligned with 100/100 result invariants passing. The
 paper's central claim is therefore a profiler claim: the operation/operation-stack
 model exposes dataset-labeled task-relevant failures,
 quality problems, and semantic boundaries, and it produces actionable
