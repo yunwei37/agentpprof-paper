@@ -223,6 +223,13 @@ generated profile specs that remove one visible feature at a time. It finds 7
 critical feature instances, 3 misleading feature instances, and a stack-depth
 tradeoff: coarse stacks are AP-preferred on 2 of 6 tasks but reduce group
 counts on all six tasks.
+R326 tests whether these rank policies are brittle hand-tuned weights. A global
+equal-weight visible feature bank improves AP over width on 4 of 6 semantic
+tasks and 5 of 6 coarse tasks. Equal-weight task policies stay within 0.02 AP
+of their weighted counterparts on 8 of 12 task/depth variants. R325-guided
+repairs improve AP on 2 of 3 misleading-feature cases and first-positive work
+on 2 of 3 cases; 1 of 3 improves both metrics. This is post-hoc actionability
+evidence, not a label-free deployment ranker.
 
 \subsection{RQ3: Do Mappings Help Without Adding Objects?}
 
@@ -327,6 +334,14 @@ safety feature. It also identifies misleading features: a SATraj loop-like rule
 and OSWorld-Human input-phase rules can hurt AP or first-positive work. This is
 the concrete actionability result: the profiler points to which field mappings,
 rank features, and stack depths should be changed for each task family.
+R326 checks that this actionability is not only a single weight vector. Global
+equal visible features beat width on 4 of 6 semantic and 5 of 6 coarse tasks,
+task-equal policies remain within 0.02 AP of weighted policies on 8 of 12
+variants, and R325-guided repairs improve AP on 2 of 3 misleading-feature cases
+and first-positive work on 2 of 3 cases, with 1 of 3 improving both. The
+repair result is intentionally scoped: it uses offline ablation feedback to show
+how profiler output can guide policy changes, not to claim an automatically
+learned universal ranker.
 
 \begin{table*}[t]
 \centering
@@ -409,11 +424,14 @@ six tasks, but top-five F1 and work still expose calibration and prevalence
 counterexamples. R322's Rust \texttt{rank\_rules} improve AP over width on 4 of
 6 tasks, R323's \texttt{rule-score} mode improves AP over \texttt{width-boost}
 on 4 of 6 tasks, R324's operation-feature ranking improves semantic-stack AP
-over width on 5 of 6 tasks, and R325 finds 7 critical and 3 misleading feature
-instances. This is useful implementation evidence and moves closer to R320's
-full query-aware ranker, but it still preserves OSWorld-Human as a
-boundary-field counterexample. The right design implication is to expose stack
-fields, mapping rules, rank modes, operation-level rank features, and ranker
+over width on 5 of 6 tasks, R325 finds 7 critical and 3 misleading feature
+instances, and R326 shows equal-weight/global-bank policies often preserve the
+gains while ablation-guided repairs improve AP on 2 of 3 misleading cases and
+first-positive work on 2 of 3 cases. This is useful implementation evidence and
+moves closer to R320's full query-aware ranker, but it still preserves
+OSWorld-Human as a boundary-field counterexample.
+The right design implication is to expose stack fields, mapping rules, rank
+modes, operation-level rank features, global defaults, and task-specific ranker
 policies to the user, not to hard-code one hierarchy.
 
 \section{Conclusion}
@@ -427,7 +445,10 @@ covers web, mobile, desktop, software, API, dialogue, failure, safety, human
 boundary, and step-quality trajectories. On the four oracle-rich families used
 for R320, operation-stack profiling localizes and ranks real labeled problems
 with less work than flat summaries and less fragmentation than fixed-session
-drilldown. The paper's central claim is therefore a profiler claim: the
+drilldown. R324--R326 show that visible operation-level rank features, feature
+ablations, equal-weight/global-bank policies, and ablation-guided repairs can
+turn those rankings into concrete optimization guidance while preserving
+hidden-label separation. The paper's central claim is therefore a profiler claim: the
 operation/operation-stack model faithfully exposes task-relevant failures,
 quality problems, and semantic boundaries, and it produces actionable
 optimization insight without relying on prompt/session/span boundaries.
