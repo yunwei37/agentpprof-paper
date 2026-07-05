@@ -67,7 +67,7 @@ F1 spans five view families; no single hierarchy or source-task selector is
 enough.
 An inspection-efficiency audit reruns the R320 scorer over tracked operation
 inputs and shows that, within a 30\% inspected-work budget, query-aware
-operation stacks reach median recall 0.3900, versus 0 for flat summaries, 0.3559
+operation stacks reach median recall 0.3900, versus 0.0000 for flat summaries, 0.3559
 for fixed-session drilldown, 0.3377 for dataset-native views, and 0.3325 for raw
 action stacks.
 A fragmentation audit separates group fragmentation from operation work:
@@ -89,6 +89,10 @@ A fixed-recall target audit further shows that operation-stack query-aware
 reaches a 25\% positive-recall target on all six tasks with median work 0.2000
 and median 16.0 groups; flat reaches the same target only at median work 1.0000,
 and fixed-session reaches it with median 50.0 groups.
+A paper claim-integrity audit then checks the paper-facing R320--R337 numbers,
+source policy, guardrails, and the two-abstraction boundary across the Chinese
+and English drafts: 58 of 58 result invariants, 31 of 31 source-policy checks,
+and 16 of 16 guardrail checks pass.
 The result supports a profiling claim rather than a user-study claim:
 operation/operation-stack profiling can localize and rank task-relevant
 failures, quality problems, and semantic boundaries against dataset-provided
@@ -398,7 +402,7 @@ R333 turns the same comparison into an inspection-efficiency curve. It reruns
 the R320 local scorer over the tracked operation JSONL inputs, yielding 810
 visible top-k/work-budget inspection points and 252 task-policy curve rows; it
 does not fetch, sync, or create data. Within a 30\% inspected-work budget,
-operation-stack query-aware reaches median recall 0.3900, compared with 0 for
+operation-stack query-aware reaches median recall 0.3900, compared with 0.0000 for
 flat width, 0.3559 for fixed-session query-aware, 0.3377 for dataset-native
 query-aware, and 0.3325 for raw-action query-aware. At 20\% work, the same
 operation-stack policy reaches median recall 0.2763 versus 0.2422 for
@@ -520,6 +524,14 @@ operation-stack width, dataset-native, and raw-action policies become best-work
 counterpoints. The target-cost result therefore strengthens the
 inspection-cost and fragmentation claim without making the default policy
 universal.
+R338 audits the paper claim itself rather than adding a new empirical result.
+It reads tracked-clean R320/R333/R334/R335/R336/R337 artifacts, hashes the
+current Chinese and English drafts, and checks paper-facing numbers, source
+policy, must-not-claim guardrails, and the two-abstraction boundary. The audit
+passes 58 of 58 result invariants, 31 of 31 source-policy checks, and 16 of 16
+guardrail checks, so it is a submission-readiness gate rather than evidence for
+human utility, automatic boundary discovery, ecosystem compatibility, or a
+universal selector.
 
 \begin{table*}[t]
 \centering
@@ -670,7 +682,10 @@ across objectives, so the result is not an automatic universal selector. R337
 adds fixed-recall target costs: at 25\% recall, operation-stack query-aware
 reaches all six tasks with median work 0.2000 versus flat 1.0000 and median
 16.0 groups versus fixed-session 50.0, while the 50\% target remains a
-counterpoint. These
+counterpoint. R338 checks that the paper-facing R320--R337 numbers, source
+policy, guardrails, and two-abstraction boundary remain aligned, with 58/58
+result invariants, 31/31 source-policy checks, and 16/16 guardrail checks
+passing. These
 results do not show that humans or agents answer questions
 faster with the tool, nor do they measure live eBPF overhead. They also do not
 show automatic discovery of all intent boundaries, nor complete compatibility
@@ -740,8 +755,9 @@ the same comparisons with task-paired uncertainty, label-permutation negative
 controls, view/depth task-fit audits, and inspection-efficiency curves. R334
 adds the corresponding fragmentation audit, R335 turns those results into
 task-level actionability cards, R336 maps the cards to objective-specific
-visible policy choices, and R337 maps ranked outputs to fixed-recall
-inspection-cost targets. The
+visible policy choices, R337 maps ranked outputs to fixed-recall
+inspection-cost targets, and R338 mechanically checks that the final paper
+keeps those numbers and guardrails aligned. The
 paper's central claim is therefore a profiler claim: the operation/operation-stack
 model exposes dataset-labeled task-relevant failures,
 quality problems, and semantic boundaries, and it produces actionable
