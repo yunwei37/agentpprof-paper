@@ -70,6 +70,11 @@ inputs and shows that, within a 30\% inspected-work budget, query-aware
 operation stacks reach median recall 0.3900, versus 0 for flat summaries, 0.3559
 for fixed-session drilldown, 0.3377 for dataset-native views, and 0.3325 for raw
 action stacks.
+A fragmentation audit separates group fragmentation from operation work:
+operation-stack query-aware reaches 50\% positives with fewer ranked groups than
+fixed-session query-aware on 5 of 6 tasks and inspects fewer groups at the same
+30\% work budget on 5 of 6 tasks, while lowering work-to-first-positive on only
+2 of 6 tasks.
 The result supports a profiling claim rather than a user-study claim:
 operation/operation-stack profiling can faithfully localize and rank
 task-relevant failures, quality problems, and semantic boundaries on real
@@ -390,6 +395,19 @@ top-five recall on 5 of 6 tasks and fewer groups on 4 of 6 tasks, but lower
 work-to-first-positive on only 2 of 6 tasks. R333 therefore supports an
 inspection-cost and fragmentation tradeoff, not dominance on every cost metric.
 
+R334 separates the fragmentation part of that claim from operation-work cost. It
+reads the tracked R320 policy scores and R333 inspection curves; it does not
+fetch, sync, create, or relabel data. Against fixed-session query-aware,
+operation-stack query-aware reduces total groups and positive groups on 4 of 6
+tasks, and reaches 50\% positive recall with fewer ranked groups on 5 of 6 tasks
+(median delta -31.5 groups). At the same 30\% inspected-work budget, it inspects
+fewer groups on 5 of 6 tasks (median delta -54.0 groups) while its median recall
+delta is 0.0275. The same audit preserves the fixed-session work counterpoint:
+operation stacks have lower work-to-50\%-recall on only 1 of 6 tasks, lower
+top-five work on only 2 of 6 tasks, and lower work-to-first-positive on only 2
+of 6 tasks. Thus the supported claim is fixed-session fragmentation reduction
+and budgeted-recall tradeoff, not work dominance over span-tree drilldown.
+
 \subsection{RQ6: Are the Results Actionable?}
 
 R320 turns each task into an optimization diagnosis, summarized in
@@ -455,6 +473,10 @@ mapping, predicates, and rank policy while scoring the same operations.
 R333 adds the budget axis to this diagnosis: query-aware operation-stack ranking
 improves AP over width on 6 of 6 tasks and 30\%-budget recall on 5 of 6 tasks,
 showing that ranker choice changes both accuracy and inspection cost.
+R334 adds a second cost axis: reducing visible group fragmentation and reducing
+first-positive operation work are different objectives, so fixed-session
+drilldown should remain available even when operation stacks are the better
+cross-session grouping.
 
 \begin{table*}[t]
 \centering
@@ -596,7 +618,9 @@ deployment claims. R332 adds a view/depth task-fit audit and shows that best
 visible policies vary by task and objective, so it supports a configurable
 analysis surface rather than an automatic view selector. R333 adds
 inspection-efficiency curves and strengthens the budgeted-recall evidence while
-keeping fixed-session first-positive work as a counterpoint. These
+keeping fixed-session first-positive work as a counterpoint. R334 strengthens
+the fixed-session fragmentation claim while showing that first-positive and
+work-to-50\% metrics remain fixed-session counterpoints. These
 results do not show that humans or agents answer questions
 faster with the tool, nor do they measure live eBPF overhead. They also do not
 show automatic discovery of all intent boundaries, nor complete compatibility
@@ -629,7 +653,10 @@ that leave-task source selection is exact-best on neither AP nor top-five F1.
 R333 shows that the strongest budgeted-recall point is at 30\% inspected work,
 where operation stacks beat flat, fixed-session, dataset-native, and raw-action
 core policies in median recall, while still preserving fixed-session
-first-positive work as a real tradeoff.
+first-positive work as a real tradeoff. R334 then shows why that wording should
+say fragmentation, not work dominance: operation stacks use fewer ranked groups
+than fixed-session to reach 50\% positives on 5 of 6 tasks, but lower
+work-to-first-positive on only 2 of 6 tasks.
 The right design implication is to expose stack fields, mapping rules, rank
 modes, operation-level rank features, global defaults, and task-specific ranker
 policies to the user, not to hard-code one hierarchy.
@@ -650,7 +677,8 @@ ablations, equal-weight/global-bank policies, ablation-guided repairs, and
 target-held-out transfer can turn those rankings into concrete optimization
 guidance while preserving hidden-label separation. R330--R333 then stress-test
 the same comparisons with task-paired uncertainty, label-permutation negative
-controls, view/depth task-fit audits, and inspection-efficiency curves. The
+controls, view/depth task-fit audits, and inspection-efficiency curves. R334
+adds the corresponding fragmentation audit. The
 paper's central claim is therefore a profiler claim: the operation/operation-stack
 model faithfully exposes task-relevant failures,
 quality problems, and semantic boundaries, and it produces actionable
