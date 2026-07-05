@@ -51,6 +51,9 @@ The Rust profile-spec implementation of operation-level rank features improves
 semantic-stack AP over width on 5 of 6 tasks. A reproducibility probe reruns
 76 tracked profile specs and an opt-in deterministic-output mode makes all 76
 raw profile artifacts byte-stable across repeated runs.
+A held-out transfer probe selects rank policies without using target-task
+labels; leave-task and leave-dataset selection both improve semantic/coarse AP
+over width on 4 of 6 tasks and semantic first-positive work on all six tasks.
 The result supports a profiling claim rather than a user-study claim:
 operation/operation-stack profiling can faithfully localize and rank
 task-relevant failures, quality problems, and semantic boundaries on real
@@ -238,6 +241,13 @@ of their weighted counterparts on 8 of 12 task/depth variants. R325-guided
 repairs improve AP on 2 of 3 misleading-feature cases and first-positive work
 on 2 of 3 cases; 1 of 3 improves both metrics. This is post-hoc actionability
 evidence, not a label-free deployment ranker.
+R329 adds a target-held-out transfer probe. Candidate policies include the
+global equal feature bank and six source-task equal-weight policies. Leave-task
+and leave-dataset selection use only non-target task scores, while target labels
+are reserved for final scoring. Both protocols improve semantic/coarse AP over
+width on 4 of 6 tasks and semantic first-positive work on 6 of 6 tasks, but
+side-effect, SATraj, and boundary counterexamples remain; the result isolates
+policy transfer from target-label tuning without claiming a universal ranker.
 
 \subsection{RQ3: Do Mappings Help Without Adding Objects?}
 
@@ -350,6 +360,16 @@ and first-positive work on 2 of 3 cases, with 1 of 3 improving both. The
 repair result is intentionally scoped: it uses offline ablation feedback to show
 how profiler output can guide policy changes, not to claim an automatically
 learned universal ranker.
+R329 checks a stronger leakage boundary for policy selection. The profiler
+evaluates 96 policy/task/stack combinations, then selects a transfer policy
+using leave-target-task or leave-dataset scores before looking at the target
+labels. Held-out scoring improves semantic/coarse AP over width on 4 of 6 tasks
+and semantic first-positive work on all six tasks. The mean AP gap to the
+oracle-best candidate is about 0.032, which leaves headroom for task-family
+selection and calibration. The supported conclusion is mechanism isolation:
+operation-level rank features and source-task policies transfer enough to guide
+tuning, while still requiring task-aware choice rather than a fixed universal
+ranker.
 
 \begin{table*}[t]
 \centering
@@ -481,7 +501,9 @@ The result scope is deliberately narrow. R320 supports profiler fidelity,
 localization/ranking accuracy, work tradeoffs, fragmentation reduction, and
 actionable optimization insight on six real labeled tasks. R327 supports
 offline profile-spec reproducibility and local execution cost for the tracked
-artifacts; R328 adds opt-in byte-stable output for those artifacts. These
+artifacts; R328 adds opt-in byte-stable output for those artifacts. R329 adds
+held-out rank-policy transfer evidence, but selection still uses labeled
+training tasks. These
 results do not show that humans or agents answer questions
 faster with the tool, nor do they measure live eBPF overhead. They also do not
 show automatic discovery of all intent boundaries, nor complete compatibility
@@ -501,7 +523,10 @@ on 4 of 6 tasks, R324's operation-feature ranking improves semantic-stack AP
 over width on 5 of 6 tasks, R325 finds 7 critical and 3 misleading feature
 instances, and R326 shows equal-weight/global-bank policies often preserve the
 gains while ablation-guided repairs improve AP on 2 of 3 misleading cases and
-first-positive work on 2 of 3 cases. This is useful implementation evidence and
+first-positive work on 2 of 3 cases. R329 held-out transfer improves AP on
+4 of 6 semantic and 4 of 6 coarse tasks and semantic first-positive work on
+6 of 6 tasks, but still leaves side-effect, SATraj, and boundary-field
+counterexamples. This is useful implementation evidence and
 moves closer to R320's full query-aware ranker, but it still preserves
 OSWorld-Human as a boundary-field counterexample.
 The right design implication is to expose stack fields, mapping rules, rank
@@ -519,10 +544,10 @@ covers web, mobile, desktop, software, API, dialogue, failure, safety, human
 boundary, and step-quality trajectories. On the four oracle-rich families used
 for R320, operation-stack profiling localizes and ranks real labeled problems
 with less work than flat summaries and less fragmentation than fixed-session
-drilldown. R324--R326 show that visible operation-level rank features, feature
-ablations, equal-weight/global-bank policies, and ablation-guided repairs can
-turn those rankings into concrete optimization guidance while preserving
-hidden-label separation. The paper's central claim is therefore a profiler claim: the
+drilldown. R324--R329 show that visible operation-level rank features, feature
+ablations, equal-weight/global-bank policies, ablation-guided repairs, and
+target-held-out transfer can turn those rankings into concrete optimization
+guidance while preserving hidden-label separation. The paper's central claim is therefore a profiler claim: the
 operation/operation-stack model faithfully exposes task-relevant failures,
 quality problems, and semantic boundaries, and it produces actionable
 optimization insight without relying on prompt/session/span boundaries. R327
