@@ -54,6 +54,9 @@ raw profile artifacts byte-stable across repeated runs.
 A held-out transfer probe selects rank policies without using target-task
 labels; leave-task and leave-dataset selection both improve semantic/coarse AP
 over width on 4 of 6 tasks and semantic first-positive work on all six tasks.
+A paired-bootstrap uncertainty audit over the same six task families finds
+stable directions for the main AP, work, recall, and fragmentation comparisons
+while preserving flat-recall and fixed-session-work counterpoints.
 The result supports a profiling claim rather than a user-study claim:
 operation/operation-stack profiling can faithfully localize and rank
 task-relevant failures, quality problems, and semantic boundaries on real
@@ -313,6 +316,22 @@ inspection work. These mixed results are the desired profiling-paper evidence:
 operation stacks occupy a useful Pareto region between flat summaries and
 fixed-session drilldown.
 
+R330 audits uncertainty over these R320 comparisons without rerunning the
+profiler or creating data. It bootstraps paired task-family deltas for 10,000
+resamples. Against flat width, operation-stack query-aware has stable positive
+AP delta (mean 0.1219, 95\% CI [0.0406, 0.2175]), stable lower top-five work
+(mean -0.8168, CI [-0.9653, -0.6568]), stable higher 30\% budget recall (mean
+0.4510, CI [0.3450, 0.6143]), and stable lower work-to-first-positive (mean
+-0.9303, CI [-0.9855, -0.8650]). Against fixed-session query-aware, operation
+stacks have stable higher top-five recall (mean 0.1801, CI [0.0542, 0.3127]),
+higher top-five F1 (mean 0.1702, CI [0.0549, 0.2870]), and fewer groups (mean
+-178.0, CI [-340.0, -39.0]). Against width-only operation stacks, query-aware
+ranking has stable higher AP (mean 0.0932, CI [0.0110, 0.2184]) and lower
+top-five work (mean -0.3101, CI [-0.4209, -0.1997]). The same audit marks flat
+top-five recall, fixed-session first-positive work, and raw-action mapping
+comparisons as mixed or counterpoints; it is a task-level uncertainty audit, not
+a per-operation independence or human-utility claim.
+
 \subsection{RQ6: Are the Results Actionable?}
 
 R320 turns each task into an optimization diagnosis, summarized in
@@ -503,7 +522,8 @@ actionable optimization insight on six real labeled tasks. R327 supports
 offline profile-spec reproducibility and local execution cost for the tracked
 artifacts; R328 adds opt-in byte-stable output for those artifacts. R329 adds
 held-out rank-policy transfer evidence, but selection still uses labeled
-training tasks. These
+training tasks. R330 adds task-paired uncertainty evidence over R320 point
+estimates, but it is not a per-operation independence analysis. These
 results do not show that humans or agents answer questions
 faster with the tool, nor do they measure live eBPF overhead. They also do not
 show automatic discovery of all intent boundaries, nor complete compatibility
@@ -526,7 +546,9 @@ gains while ablation-guided repairs improve AP on 2 of 3 misleading cases and
 first-positive work on 2 of 3 cases. R329 held-out transfer improves AP on
 4 of 6 semantic and 4 of 6 coarse tasks and semantic first-positive work on
 6 of 6 tasks, but still leaves side-effect, SATraj, and boundary-field
-counterexamples. This is useful implementation evidence and
+counterexamples. R330 classifies 10 task-paired metric checks as directionally
+stable and 10 as mixed or counterpoints, which keeps the actionability claim
+auditable rather than absolute. This is useful implementation evidence and
 moves closer to R320's full query-aware ranker, but it still preserves
 OSWorld-Human as a boundary-field counterexample.
 The right design implication is to expose stack fields, mapping rules, rank
@@ -544,10 +566,11 @@ covers web, mobile, desktop, software, API, dialogue, failure, safety, human
 boundary, and step-quality trajectories. On the four oracle-rich families used
 for R320, operation-stack profiling localizes and ranks real labeled problems
 with less work than flat summaries and less fragmentation than fixed-session
-drilldown. R324--R329 show that visible operation-level rank features, feature
-ablations, equal-weight/global-bank policies, ablation-guided repairs, and
-target-held-out transfer can turn those rankings into concrete optimization
-guidance while preserving hidden-label separation. The paper's central claim is therefore a profiler claim: the
+drilldown. R324--R330 show that visible operation-level rank features, feature
+ablations, equal-weight/global-bank policies, ablation-guided repairs,
+target-held-out transfer, and task-paired uncertainty audits can turn those
+rankings into concrete optimization guidance while preserving hidden-label
+separation. The paper's central claim is therefore a profiler claim: the
 operation/operation-stack model faithfully exposes task-relevant failures,
 quality problems, and semantic boundaries, and it produces actionable
 optimization insight without relying on prompt/session/span boundaries. R327
