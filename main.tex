@@ -89,6 +89,11 @@ A fixed-recall target audit further shows that operation-stack query-aware
 reaches a 25\% positive-recall target on all six tasks with median work 0.2000
 and median 16.0 groups; flat reaches the same target only at median work 1.0000,
 and fixed-session reaches it with median 50.0 groups.
+A sequence-scope adequacy audit then scores whether ranked groups hit
+trajectories that actually contain positives. At a 30\% operation budget,
+operation-stack query-aware reaches median 0.4669 positive-session recall
+versus 0.3230 for fixed-session while touching median 0.3467 sessions; raw
+action reaches 0.5147 positive-session recall but touches 0.9103 sessions.
 A paper claim-integrity audit then checks the paper-facing R320--R337 numbers,
 source policy, guardrails, and the two-abstraction boundary across the Chinese
 and English drafts: 58 of 58 result invariants, 31 of 31 source-policy checks,
@@ -128,14 +133,14 @@ localizable, and actionable without changing the underlying trace object model.
 This paper makes a profiling claim, not a human-productivity claim. A top-tier
 profiling paper must show that the profiler attributes, localizes, and ranks
 problems against explicit workload labels, and that the output leads to
-optimization insight with better accuracy or inspection cost than baselines. For agents, the
+optimization insight with better label-scored ranking or inspection cost than baselines. For agents, the
 claim is:
 \begin{quote}
-\emph{Operation/operation-stack profiling can accurately localize
-task-relevant failures, quality problems, and semantic boundaries in real
-labeled agent traces, while requiring less inspection work than flat summaries
-and less fragmentation than the fixed-session drilldown used here as a
-span-tree proxy.}
+\emph{Operation/operation-stack profiling provides label-scored localization
+and ranking for task-relevant failures, quality problems, and semantic
+boundaries in real labeled agent traces, while requiring less inspection work
+than flat summaries and less fragmentation than the fixed-session drilldown
+used here as a span-tree proxy.}
 \end{quote}
 
 We evaluate this claim with public labeled traces rather than a human study. A
@@ -188,14 +193,14 @@ flags can still override the stack query.
 
 Table~\ref{tab:datasets} summarizes the public trace families. We do not create
 new test sets, sync complete image corpora, or depend on gated data. The 15
-sources establish generality, while the main accuracy results use the four
+sources establish generality, while the main hidden-label ranking results use the four
 oracle-rich families with failure, safety, quality, and human-boundary labels.
 
 \begin{table*}[t]
 \centering
 \small
 \caption{Public labeled trace families used by the evaluation. The main R320
-accuracy benchmark uses the four oracle-rich rows in the bottom half.}
+hidden-label profiler benchmark uses the four oracle-rich rows in the bottom half.}
 \label{tab:datasets}
 \begin{tabular}{p{0.18\linewidth}p{0.29\linewidth}p{0.21\linewidth}p{0.22\linewidth}}
 \toprule
@@ -323,7 +328,7 @@ median group count to 157.5.
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\caption{R320 profiler accuracy benchmark. Hidden policies read oracle labels
+\caption{R320 hidden-label profiler benchmark. Hidden policies read oracle labels
 and are included only as upper bounds. WTFP is work-to-first-positive.}
 \label{tab:r320}
 \begin{tabular}{lrrrrrrrrr}
@@ -524,6 +529,17 @@ operation-stack width, dataset-native, and raw-action policies become best-work
 counterpoints. The target-cost result therefore strengthens the
 inspection-cost and fragmentation claim without making the default policy
 universal.
+R339 evaluates sequence-scope adequacy over the same ranked outputs. It treats
+sessions/trajectories as the inspection scope a profiler user may enter after a
+hot group is ranked, then measures positive-session recall and session work.
+At top five groups, operation-stack query-aware inspects median 0.0937 operation
+work and reaches median 0.2629 positive-session recall, while fixed-session
+reaches 0.0160 positive-session recall and flat requires 1.0000 work. At a
+30\% operation budget, operation-stack query-aware reaches median 0.3900
+positive-operation recall and 0.4669 positive-session recall while touching
+median 0.3467 sessions. Fixed-session reaches 0.3230 positive-session recall;
+raw action reaches higher positive-session recall, 0.5147, but touches 0.9103
+sessions. The result supports sequence-scope triage, not single-view dominance.
 R338 audits the paper claim itself rather than adding a new empirical result.
 It reads tracked-clean R320/R333/R334/R335/R336/R337 artifacts, hashes the
 current Chinese and English drafts, and checks paper-facing numbers, source
@@ -660,7 +676,7 @@ scoped novelty.
 \section{Discussion}
 
 The result scope is deliberately narrow. R320 supports profiler fidelity with respect to dataset-provided labels,
-localization/ranking accuracy, work tradeoffs, fragmentation reduction, and
+label-scored localization/ranking, work tradeoffs, fragmentation reduction, and
 actionable optimization insight on six real labeled tasks. R327 supports
 offline profile-spec reproducibility and local execution cost for the tracked
 artifacts; R328 adds opt-in byte-stable output for those artifacts. R329 adds
@@ -682,7 +698,10 @@ across objectives, so the result is not an automatic universal selector. R337
 adds fixed-recall target costs: at 25\% recall, operation-stack query-aware
 reaches all six tasks with median work 0.2000 versus flat 1.0000 and median
 16.0 groups versus fixed-session 50.0, while the 50\% target remains a
-counterpoint. R338 checks that the paper-facing R320--R337 numbers, source
+counterpoint. R339 adds sequence-scope adequacy: at 30\% work,
+operation-stack query-aware reaches median 0.4669 positive-session recall
+versus fixed-session 0.3230, while raw action reaches 0.5147 but touches 0.9103
+sessions. R338 checks that the paper-facing R320--R337 numbers, source
 policy, guardrails, and two-abstraction boundary remain aligned, with 58/58
 result invariants, 31/31 source-policy checks, and 16/16 guardrail checks
 passing. These
@@ -756,8 +775,9 @@ controls, view/depth task-fit audits, and inspection-efficiency curves. R334
 adds the corresponding fragmentation audit, R335 turns those results into
 task-level actionability cards, R336 maps the cards to objective-specific
 visible policy choices, R337 maps ranked outputs to fixed-recall
-inspection-cost targets, and R338 mechanically checks that the final paper
-keeps those numbers and guardrails aligned. The
+inspection-cost targets, R339 scores sequence-scope adequacy, and R338
+mechanically checks that the R320--R337 paper-facing numbers and guardrails
+remain aligned. The
 paper's central claim is therefore a profiler claim: the operation/operation-stack
 model exposes dataset-labeled task-relevant failures,
 quality problems, and semantic boundaries, and it produces actionable
