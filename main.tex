@@ -61,6 +61,10 @@ A label-permutation negative-control audit keeps visible rankings fixed and
 shows that operation-stack query-aware AP exceeds the prevalence/group-size
 null on all six tasks, while top-five precision and first-positive work remain
 limited.
+A view/depth task-fit audit shows that best visible AP is split across
+operation-stack, fixed-session, and dataset-native views, and that best top-five
+F1 spans five view families; no single hierarchy or source-task selector is
+enough.
 The result supports a profiling claim rather than a user-study claim:
 operation/operation-stack profiling can faithfully localize and rank
 task-relevant failures, quality problems, and semantic boundaries on real
@@ -349,6 +353,23 @@ AP on 5 of 6, and fixed-session/raw-action AP on 6 of 6. R331 therefore supports
 mechanism isolation and baseline realism, not single-view dominance or a
 label-free deployment ranker.
 
+R332 asks whether a single visible view/depth policy can be fixed after R320.
+It reuses the R320 visible policy scores, does not rerun profiling, and excludes
+oracle policies from selection. Best visible AP is split across operation-stack,
+fixed-session, and dataset-native views: 3 of 6, 2 of 6, and 1 of 6 tasks,
+respectively. Best top-five F1 is more dispersed: raw-action stacks win 2 of 6
+tasks, while dataset-native, fixed-session, flat, and operation-stack each win
+1 of 6. Operation-stack query-aware is best for AP on 3 of 6 tasks and best for
+30\% budget recall on 3 of 6 tasks, but only 1 of 6 for top-five F1 and 2 of 6
+for work-to-first-positive. It still reduces group fragmentation relative to
+fixed-session query-aware on 4 of 6 tasks, with median group ratio 0.5543.
+Leave-task source selection does not solve view choice universally:
+selected-equals-best is 0 of 6 for AP and 0 of 6 for top-five F1. R332 therefore
+supports the design implication that view, stack fields, predicates, and rankers
+must remain query-time configuration over the same operations; fixed sessions,
+span trees, and dataset-native hierarchies remain baselines or drilldown views,
+not profiler abstractions.
+
 \subsection{RQ6: Are the Results Actionable?}
 
 R320 turns each task into an optimization diagnosis, summarized in
@@ -406,6 +427,11 @@ selection and calibration. The supported conclusion is mechanism isolation:
 operation-level rank features and source-task policies transfer enough to guide
 tuning, while still requiring task-aware choice rather than a fixed universal
 ranker.
+R332 makes the same point at the view/depth level: best visible AP and best
+top-five F1 are not monopolized by one hierarchy, and leave-task source
+selection cannot reliably pick the best visible view. Actionability is therefore
+not a hard-coded ``best tree''; it is the ability to change stack depth, field
+mapping, predicates, and rank policy while scoring the same operations.
 
 \begin{table*}[t]
 \centering
@@ -543,7 +569,9 @@ training tasks. R330 adds task-paired uncertainty evidence over R320 point
 estimates, but it is not a per-operation independence analysis. R331 adds a
 label-permutation negative control for prevalence and group-size explanations,
 but it does not upgrade top-five precision, first-positive work, or label-free
-deployment claims. These
+deployment claims. R332 adds a view/depth task-fit audit and shows that best
+visible policies vary by task and objective, so it supports a configurable
+analysis surface rather than an automatic view selector. These
 results do not show that humans or agents answer questions
 faster with the tool, nor do they measure live eBPF overhead. They also do not
 show automatic discovery of all intent boundaries, nor complete compatibility
@@ -570,10 +598,9 @@ counterexamples. R330 classifies 10 task-paired metric checks as directionally
 stable and 10 as mixed or counterpoints, which keeps the actionability claim
 auditable rather than absolute. R331 shows operation-stack query-aware AP is
 above the label-permutation null on 6 of 6 tasks and budgeted recall on 5 of 6,
-but top-five precision and first-positive work remain null-limited. This is
-useful implementation evidence and
-moves closer to R320's full query-aware ranker, but it still preserves
-OSWorld-Human as a boundary-field counterexample.
+but top-five precision and first-positive work remain null-limited. R332 shows
+that best AP and best top-five F1 are split across multiple view families, and
+that leave-task source selection is exact-best on neither AP nor top-five F1.
 The right design implication is to expose stack fields, mapping rules, rank
 modes, operation-level rank features, global defaults, and task-specific ranker
 policies to the user, not to hard-code one hierarchy.
@@ -592,10 +619,11 @@ with less work than flat summaries and less fragmentation than fixed-session
 drilldown. R324--R329 show that visible operation-level rank features, feature
 ablations, equal-weight/global-bank policies, ablation-guided repairs, and
 target-held-out transfer can turn those rankings into concrete optimization
-guidance while preserving hidden-label separation. R330--R331 then stress-test
-the same comparisons with task-paired uncertainty and label-permutation
-negative controls. The paper's central claim is therefore a profiler claim: the
-operation/operation-stack model faithfully exposes task-relevant failures,
+guidance while preserving hidden-label separation. R330--R332 then stress-test
+the same comparisons with task-paired uncertainty, label-permutation negative
+controls, and view/depth task-fit audits. The paper's central claim is therefore
+a profiler claim: the operation/operation-stack model faithfully exposes
+task-relevant failures,
 quality problems, and semantic boundaries, and it produces actionable
 optimization insight without relying on prompt/session/span boundaries. R327
 adds that these claims are carried by repeatable profile specs whose semantic
