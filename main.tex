@@ -355,16 +355,16 @@ changes the output to 83 stacks without changing the operation input. The
 result supports query-time recursive stack choice rather than a fixed
 prompt/session hierarchy.
 
-The implementation probes keep the same claim boundary. R321 adds query
-predicates: profile specs over the tracked R300 operation file select 729/729,
-714/714, and 4,285/4,285 expected operations with mapping-derived
-\texttt{where\_rules} before folding. R342 checks that 12/12 profile specs
-compose operation sources, predicates, visible ranking rules, rank mode, and
-explicit stack depth without introducing prompt/session frames. R353 shows the
-same operation-file prefix can round-trip through a standard trace container
-and still fold to the same 512 samples and 11 stacks. These are E1 evidence
-because they test whether the operation layer stays fixed while views change;
-the localization and ranker gains from those specs are evaluated under E2/E3.
+The implementation probes are grouped as interface evidence, not additional
+main experiments. They show that profile specs can select mapped subsets before
+folding (729/729, 714/714, and 4,285/4,285 expected operations), compose
+operation files, predicates, visible ranking rules, rank modes, and explicit
+stack depths without prompt/session frames (12/12 specs), and round-trip a real
+operation-file prefix through a standard trace container while preserving 512
+samples and 11 folded stacks. The corresponding run IDs (R321, R342, and R353)
+are provenance for E1: they test whether the operation layer stays fixed while
+views change; the localization and ranker gains from those specs are evaluated
+under E2/E3.
 
 \paragraph{Field derivation and boundary probes.}
 
@@ -555,19 +555,21 @@ actionability result is not that one view wins; it is that the profiler
 identifies which stack field, mapping, ranker, or drilldown should change for
 each task family.
 
-The Rust mechanism ablations isolate where those diagnoses come from. Stack-text
-rules and rank-mode variants (R322/R323) are replayable from profile specs, but
-they are too coarse for safety and side-effect tasks. Operation-level rank
-features (R324) close that gap by matching visible mapped operation tokens
-before folding: semantic-stack feature ranking improves AP over width on 5 of 6
-tasks, top-five lift on 4 of 6, and first-positive work on 5 of 6; coarse depth
-improves AP on 4 of 6 while reducing groups. Leave-one-feature and robustness
-ablations (R325/R326) make the knobs concrete: \texttt{repeat\_signal},
-write-action features, and \texttt{status=success} are critical in different
-families, while misleading safety-like or input-phase features can hurt AP or
-first-positive work. Equal/global feature banks often preserve the gains, and
-R325-guided repairs improve AP on 2 of 3 misleading-feature cases, but these
-repairs use offline scored feedback and are not an automatic learned ranker.
+The Rust mechanism ablations isolate where those diagnoses come from without
+turning the paper into a run list. First, stack-text rules and rank-mode
+variants are replayable from profile specs but too coarse for safety and
+side-effect tasks. Second, operation-level rank features close that gap by
+matching visible mapped operation tokens before folding: semantic-stack feature
+ranking improves AP over width on 5 of 6 tasks, top-five lift on 4 of 6, and
+first-positive work on 5 of 6; coarse depth improves AP on 4 of 6 while
+reducing groups. Third, leave-one-feature and robustness ablations make the
+knobs concrete: \texttt{repeat\_signal}, write-action features, and
+\texttt{status=success} are critical in different families, while misleading
+safety-like or input-phase features can hurt AP or first-positive work.
+Equal/global feature banks often preserve the gains, and guided repairs improve
+AP on 2 of 3 misleading-feature cases, but these repairs use offline scored
+feedback and are not an automatic learned ranker. The run IDs (R322--R326) are
+the provenance for this single E3 mechanism block.
 
 The view and policy audits show the same mechanism at the analysis-surface
 level. Best AP and best top-five F1 are split across operation-stack,
@@ -593,36 +595,35 @@ baseline-metric comparisons, 16 explicit counterpoints, and nDCG cases where
 flat or dataset-native views can win.
 
 The actionability portfolio turns those comparisons into reviewer-auditable
-profile-configuration tuning insight. R335/R341 show that all 36 objective rows have a concrete
-configuration action, but 27/36 best visible policies are not the default operation-stack
-query-aware view; transfer misses are mostly view or ranker changes rather than
-opaque errors. R345/R346/R347 present the same evidence as diagnostic lenses,
-case packets, and baseline contrasts: six lenses cover 36 objectives, top-five
-case groups contain positives on 6/6 tasks, top-one groups on 5/6, median
-top-five lift is 1.6508 at 0.0937 work, and operation stacks beat flat top-five
-work on 6/6 and fixed-session top-five recall on 5/6 while preserving
-fixed-session first-positive and flat full-recall counterpoints. R348/R349 then
-separate visible counterfactual actions from target-label leakage: 36/36 best
-rows are visible non-oracle, 27/36 require a non-default action, 25/36 require a
-view change, and held-out action transfer stays within tolerance on 35/60
-aligned decisions but exactly transfers the action class only 7 of 60 times and
-only 2 of 42 times on non-default target actions.
-R350 packages this into bounded evidence packets: top-five positives on 6/6
-tasks, top-one positives on 5/6, strict 30\% work budget on 4/6, and the same
-transfer guardrail. The actionable claim is therefore a tunable diagnosis
-surface, not a label-free automatic selector.
+profile-configuration tuning insight. Across 36 objective rows, every row has a
+concrete configuration action, but 27/36 best visible policies are not the
+default operation-stack query-aware view; transfer misses are mostly view or
+ranker changes rather than opaque errors. The same evidence is presented as
+diagnostic lenses, case packets, and baseline contrasts: six lenses cover 36
+objectives, top-five case groups contain positives on 6/6 tasks, top-one groups
+on 5/6, median top-five lift is 1.6508 at 0.0937 work, and operation stacks beat
+flat top-five work on 6/6 and fixed-session top-five recall on 5/6 while
+preserving fixed-session first-positive and flat full-recall counterpoints.
+Counterfactual and held-out transfer checks separate visible actions from
+target-label leakage: 36/36 best rows are visible non-oracle, 27/36 require a
+non-default action, 25/36 require a view change, held-out action transfer stays
+within tolerance on 35/60 aligned decisions, but exact action-class transfer is
+only 7/60 overall and 2/42 on non-default target actions. These supporting runs
+(R335, R341, and R345--R350) form one E3 actionability block. The actionable
+claim is therefore a tunable diagnosis surface, not a label-free automatic
+selector.
 
 Finally, executable patches close one loop from diagnosis to profiler
-configuration. R354 writes default and profile-guided Rust profile specs over
-the same visible operation input and scores hidden labels only after
+configuration. Default and profile-guided Rust profile specs run over the same
+visible operation input, and hidden labels are scored only after
 \texttt{agentpprof --profile-spec}. Five of six patches improve AP, top-five
 lift, and first-positive work, with median AP delta 0.0376 and median top-five
 lift delta 0.5750. The failure interpretation matters here too: the rejected
 OSWorld-Human patch shows that visible phase/action rank features are
-insufficient for a human-boundary objective. R358 follows that diagnosis by
-folding held-out boundary-derived operation fields; learned-boundary profiles
-improve AP to 0.2583 versus 0.2402 for semantic width and reduce groups to 74
-versus 108, while top-five work and first-positive work increase. This supports
+insufficient for a human-boundary objective. Folding held-out boundary-derived
+operation fields then improves AP to 0.2583 versus 0.2402 for semantic width
+and reduces groups to 74 versus 108, while top-five work and first-positive
+work increase. These patch and boundary-field runs (R354/R358) support
 boundary fields as an actionable operation-field knob, not automatic boundary
 discovery or automatic patch selection. The result belongs to
 mechanism/actionability, not a fifth core experiment.
@@ -663,14 +664,15 @@ Claim-test: RQ4/E4 asks whether reviewers can replay the offline profile-spec pa
 that source provenance, paper numbers, two-abstraction wording, and non-claims
 remain aligned.
 
-R327/R328 are the empirical content of this subsection. They rerun the existing
-profile-spec artifacts used by the labeled-trace experiments: 76 tracked specs
-over tracked operation JSONL inputs, executed twice for 152 profiler
-invocations. The semantic profile content is stable for 76/76 specs in both
-modes; deterministic output also makes raw-byte profile files stable for 76/76
-specs by fixing profile timestamps. The clean deterministic rerun reports median
-runtime 1.601s and p95 2.767s per spec. This supports replayable offline
-profiling artifacts, not live eBPF overhead or analyst productivity.
+The empirical content of this subsection is one replayability/cost block. It
+reruns the profile-spec artifacts used by the labeled-trace experiments: 76
+tracked specs over tracked operation JSONL inputs, executed twice for 152
+profiler invocations. The semantic profile content is stable for 76/76 specs in
+both modes; deterministic output also makes raw-byte profile files stable for
+76/76 specs by fixing profile timestamps. The clean deterministic rerun reports
+median runtime 1.601s and p95 2.767s per spec. The run IDs (R327/R328) are
+provenance for this E4 block. This supports replayable offline profiling
+artifacts, not live eBPF overhead or analyst productivity.
 
 The remaining paper gates are artifact hygiene, not empirical evidence. They
 check that table generation, claim wording, source provenance, non-claims, and
