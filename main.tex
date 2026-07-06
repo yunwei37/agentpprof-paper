@@ -440,8 +440,8 @@ trace-tree proxy. Success is therefore a Pareto condition, not a single winning
 metric: operation stacks must reduce flat inspection work, improve a meaningful
 fixed-session localization or fragmentation objective, and keep fixed-session
 early-hit counterpoints visible. Table~\ref{tab:e2-localization} is the main E2
-localization display; source artifacts remain in the evaluation ledger rather
-than becoming separate paper experiments. Flat summaries recover all positives, but only by inspecting the
+localization display; supporting case views explain the result without becoming
+separate paper experiments. Flat summaries recover all positives, but only by inspecting the
 whole task, so their median work@5 and work-to-first-positive are both 1.0.
 Fixed-session drilldown finds an early
 positive with median work-to-first-positive 0.0044 and median work@5 0.0163,
@@ -486,13 +486,13 @@ label-drilldown:oracle-upper & 1 & 1.0000 & 1.0000 & 1.0000 & 0.6703 & 0.7972 & 
 \end{tabular}
 \end{table*}
 
-The same scored outputs are packaged into non-flamegraph paper views instead
-of making flamegraphs the only presentation artifact. The main body keeps one
+The same scored outputs are also shown through non-flamegraph paper views
+instead of making flamegraphs the only presentation. The main body keeps one
 representative figure because it directly serves E2 and E3: the left panel
 shows the localization/work/fragmentation tradeoff, and the right panel shows
 which profile-configuration knobs the evidence activates. The remaining
 portfolio table, headline rows, task case cards, and verdict matrix stay in the
-supplementary artifacts as paper-integration material rather than additional
+supporting views as explanatory material rather than additional
 main-body experiments.
 
 \begin{figure*}[t]
@@ -571,8 +571,8 @@ patches should improve the scored output without turning into an automatic
 selector.
 
 Table~\ref{tab:actionability} is the main E3 display. It compresses the
-task-card evidence into a paper-facing diagnosis table; those source artifacts
-remain provenance rather than additional main experiments.
+task-card evidence into a paper-facing diagnosis table; the supporting case
+views remain provenance rather than additional main experiments.
 SATraj unsafe is the cleanest operation-stack win: environment, phase, and
 action fields plus query-aware risk ranking give the best visible top-five F1.
 Looping exposes the value and limit of \texttt{repeat\_signal}: it helps
@@ -702,14 +702,14 @@ overhead, human utility, complete ecosystem compatibility, or a universal
 selector.
 
 The empirical content of this subsection is only one replayability/cost block. It
-reruns the profile-spec artifacts used by the labeled-trace experiments: 76
+reruns the profile specs used by the labeled-trace experiments: 76
 tracked specs over tracked operation JSONL inputs, executed twice for 152
 profiler invocations. The semantic profile content is stable for 76/76 specs in
 both modes; deterministic output also makes raw-byte profile files stable for
 76/76 specs by fixing profile timestamps. The clean deterministic rerun reports
-median runtime 1.601s and p95 2.767s per spec. The source artifacts are
+median runtime 1.601s and p95 2.767s per spec. The replayed files provide
 provenance for this E4 block. This supports replayable offline
-profiling artifacts, not live eBPF overhead or analyst productivity, or another
+profiler outputs, not live eBPF overhead or analyst productivity, or another
 empirical profiling experiment.
 
 Input-source replay checks belong to the same E4 block. The Rust
@@ -729,7 +729,7 @@ while their row labels name source-spec families rather than additional
 accuracy experiments.
 
 The remaining consistency checks support reproducibility and scope control, not
-new empirical evidence. They reuse tracked artifacts and the current paper text
+new empirical evidence. They reuse tracked inputs, tracked outputs, and the current paper text
 without reranking, downloading, syncing, creating, relabeling, rerunning the
 profiler, or running a human or agent analyst task. The checks verify replay
 paths, source provenance, paper-number alignment, two-abstraction wording, and
@@ -739,7 +739,7 @@ overhead claims.
 
 \paragraph{Profile-spec determinism and local cost.}
 
-The replay workload reruns the existing profile-spec artifacts used by the E2
+The replay workload reruns the existing profile specs used by the E2
 and E3 views, rankers, and robustness checks.
 The workload contains 76 tracked specs: four view specs, 12 operation-feature
 rank specs, and 60 robustness specs. Each spec is executed twice by the Rust
@@ -772,10 +772,10 @@ unique-stack count across repetitions. Raw-byte determinism is only 4 of 76,
 because JSON outputs intentionally include a generation timestamp; the stable
 semantic hash keeps the reproducibility claim on the profile content. Median
 output size is 37,546 bytes, the largest output is 306,099 bytes, and the
-largest profile has 2,012 unique stacks. This supports an offline artifact and
+largest profile has 2,012 unique stacks. This supports the offline profiler path and
 profile-spec reproducibility claim, not live eBPF overhead or human utility.
 
-The deterministic-output replay closes the raw-artifact caveat with an explicit
+The deterministic-output replay closes the raw-byte caveat with an explicit
 deterministic-output mode.
 The Rust CLI accepts \texttt{--deterministic-output}, and profile specs may set
 \texttt{deterministic\_output}; the mode replaces JSON \texttt{generated\_at}
@@ -783,7 +783,7 @@ and pprof profile time with fixed values while leaving profile content
 unchanged. It reruns the same 76 specs and 152 invocations with this flag.
 Both semantic and raw-byte determinism are 76 of 76. The clean rerun records
 empty git and code status. The median runtime in this run is 1,601.0827 ms and
-the p95 is 2,767.1653 ms; we report these as artifact costs for this run, not
+the p95 is 2,767.1653 ms; we report these as offline replay costs for this run, not
 as a performance comparison against the default-output replay.
 
 \begin{table}[t]
