@@ -291,6 +291,18 @@ organization gate, not a profiler run.}
 \input{figures/experiment-role-table.tex}
 \end{table*}
 
+R375 keeps the full claim-gate table in the artifact ledger rather than adding
+another main-body table. Its gate decisions are: E1 is supported with scoped
+limits; E2 is supported as a hidden-label profiler benchmark; E3 is supported
+as profile-configuration actionability; and E4 is supported as offline artifact
+replayability. The failure rules require narrowing the claim when flat or
+fixed-session views dominate a metric, transfer fails, or replay stops being
+deterministic. The forbidden wording remains metric dominance, human or agent
+analyst productivity, automatic boundary discovery, automatic patch selection,
+and full trace-ecosystem compatibility. R375 reads tracked
+R361/R364/R370/R373/R374 artifacts and current paper text only; it does not
+fetch, sync, or create data, relabel traces, or rerun the profiler.
+
 \section{Results}
 
 \subsection{RQ1/E1: Generality and Recursive Folding}
