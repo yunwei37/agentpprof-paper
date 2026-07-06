@@ -64,10 +64,11 @@ and two-abstraction checks remain artifact hygiene rather than empirical
 profiler accuracy evidence.
 
 The supported claim is therefore a scoped profiling claim: operation-stack
-profiling can localize, rank, and explain task-relevant failures, quality
-problems, and semantic boundaries in public labeled traces, with less inspection
-work than flat summaries and less fragmentation than fixed-session drilldown.
-Fixed-session drilldown is the current trace-tree-shaped baseline; real
+profiling can localize, rank, and explain dataset-labeled failures, quality
+problems, and semantic boundaries in public traces, with less inspection work
+than flat summaries and a better median-fragmentation tradeoff than the
+fixed-session drilldown proxy. Fixed-session drilldown is the current
+trace-tree-shaped baseline; real
 OpenTelemetry/OpenInference/Phoenix-style span-tree imports remain future
 baselines. The paper does not claim human-productivity gains, automatic
 discovery of all intent boundaries, metric dominance, or complete compatibility
@@ -89,10 +90,12 @@ unsafe operations, which action families cause redundant steps, and which
 groups of operations cross sessions but share the same failure mode?
 
 \toolname takes the opposite position. The profiler stores a sequence as
-operations, where prompts, sessions, tool calls, processes, syscalls, GUI
-actions, and plan steps are all operation shapes or operation fields. Users then
-choose an operation stack to fold the same operations at different depths. One
-query may group by \texttt{task,phase,action}; another may group by
+operations, where prompts, tool calls, processes, syscalls, GUI actions, and
+plan steps are operation records or derived fields. Session, span, task, and
+trace identifiers are fields, exchange containers, or baseline shapes rather
+than separate profiler objects. Users then choose an operation stack to fold the
+same operations at different depths. One query may group by
+\texttt{task,phase,action}; another may group by
 \texttt{environment,safety}. Mapping and tagging are first-class field-derivation
 steps, but they do not add a third profiler object. They only write fields
 before the stack query runs. Thus the novelty is the abstraction that connects
@@ -106,9 +109,10 @@ optimization insight with better label-scored ranking or inspection cost than ba
 claim is:
 \begin{quote}
 \emph{Operation/operation-stack profiling provides label-scored localization
-and ranking for task-relevant failures, quality problems, and semantic
-boundaries in real labeled agent traces, while requiring less inspection work
-than flat summaries and less fragmentation than fixed-session drilldown.}
+and ranking for task-relevant failures, quality problems, and dataset-provided
+semantic boundaries in real labeled agent traces, while requiring less
+inspection work than flat summaries and improving the median fragmentation
+tradeoff relative to fixed-session drilldown.}
 \end{quote}
 
 We evaluate this claim with public labeled traces rather than a human study. A
@@ -220,47 +224,46 @@ rerun.
 \scriptsize
 \setlength{\tabcolsep}{2.6pt}
 \caption{Four core research questions: three empirical profiling RQs plus one
-systems/reproducibility RQ. R360 regenerates the table from tracked artifacts;
-individual R-runs remain provenance and counterpoint records.}
+systems/reproducibility RQ. The table is regenerated from tracked artifacts;
+R-numbered runs remain provenance and counterpoint records.}
 \label{tab:core-results}
 \begin{tabular}{p{0.17\linewidth}p{0.22\linewidth}p{0.36\linewidth}p{0.18\linewidth}}
 \toprule
-RQ / core experiment & Workload & Generated headline evidence & Scoped conclusion \\
+RQ / core experiment & Workload & Headline evidence & Scoped conclusion \\
 \midrule
 RQ1/E1: generality and recursive folding &
 15 public labeled trace families / 47,590 operations, plus local-session and
 standard-trace exchange fixtures &
-R286 folds the same 13,265 operations across 8 depths, from 9 to 3,757 stacks;
-R285 has 6/9 positive leave-dataset-out stack reductions; R342 has 12/12
-prompt/session-free profile specs; R353 round-trips 512 real operations with
-512 samples and 11 stacks preserved; R366 shows boundary backends beat the
-best simple baseline on 4/5 field-derivation rows. &
+The same 13,265 operations fold across eight depths, from 9 to 3,757 stacks;
+leave-dataset-out mapping reduces stacks on 6/9 held-out datasets; 12/12
+profile specs remain prompt/session-free; standard-trace exchange round-trips
+512 real operations with 512 samples and 11 stacks preserved; boundary backends
+beat the best simple baseline on 4/5 field-derivation rows. &
 Two abstractions cover heterogeneous traces; trace containers and mappings are
 not profiler objects, and field derivation is not automatic intent boundary
 discovery. \\
 RQ2/E2: hidden-label localization and ranking &
 Six oracle-backed tasks over AgentRewardBench, SATraj-OS, AgentNet, and
 OSWorld-Human &
-R320 covers 6 tasks, 4 datasets, 34,539 operations, 3,699 positives, and 144
-policies. Operation-stack query-aware uses 0.0937 top-five work versus flat
-1.0, beats fixed-session top-five recall on 5/6 tasks, and uses 157.5 median
-groups versus fixed-session 285. &
+The benchmark scores 144 view/ranker policies over 6 tasks, 4 datasets, 34,539
+operations, and 3,699 positives. Operation-stack query-aware profiling uses
+0.0937 top-five work versus flat 1.0, beats fixed-session top-five recall on
+5/6 tasks, and uses 157.5 median groups versus fixed-session 285. &
 Supported as a hidden-label profiler benchmark with baseline tradeoffs, not
 human utility. \\
 RQ3/E3: mechanism and actionability &
 The same six tasks plus held-out OSWorld-Human boundary-backend operations &
-R354 accepts 5/6 executable profile-spec patches, with median AP delta 0.0376
-and top-five lift delta 0.5750. R358 improves OSWorld-Human boundary AP to
-0.2583 versus 0.2402 and reduces groups to 74 versus 108, while preserving
-top-five-work and first-positive-work counterpoints. R366 consolidates 7
-critical and 3 misleading feature rows plus field-derivation suitability
-counterpoints. &
+Executable profile-spec patches improve 5/6 tasks, with median AP delta 0.0376
+and top-five lift delta 0.5750. Boundary-derived fields improve OSWorld-Human
+boundary AP to 0.2583 versus 0.2402 and reduce groups to 74 versus 108, while
+preserving top-five-work and first-positive-work counterpoints. Rank-feature
+ablations identify 7 critical and 3 misleading feature rows. &
 The profiler exposes stack, field, ranker, and profile-spec knobs; it is not an
 automatic selector or boundary detector. \\
 RQ4/E4: replayability, offline cost, and artifact hygiene &
 76 tracked profile specs over tracked operation JSONL inputs &
-R328 gives 76/76 semantic and 76/76 raw-byte deterministic specs over 152
-invocations, with median runtime 1.601s and p95 2.767s. &
+Deterministic replay gives 76/76 semantic and 76/76 raw-byte deterministic
+specs over 152 invocations, with median runtime 1.601s and p95 2.767s. &
 The offline profiling artifact is replayable and cheap enough for artifact
 evaluation; this is systems/reproducibility evidence, not a hidden-label
 accuracy result, live capture overhead result, human productivity result, or
@@ -269,40 +272,23 @@ trace-ecosystem compatibility result. \\
 \end{tabular}
 \end{table*}
 
-R369 turns the four rows in Table~\ref{tab:core-results} into a reviewer
-evidence path. Table~\ref{tab:reviewer-evidence-path} is not a new empirical
-result: it reads tracked R360/R361/R363/R365/R368 artifacts plus the current
-Chinese and English paper text, then records which paper table or figure, source
-artifact, guardrail, and non-claim support each RQ. Its purpose is to make the
-claim-to-evidence path auditable without reading the chronological R-run log.
-
-R370 then fixes this organization as a main-experiment contract. Each core
-experiment must state its primary test, workload/oracle, baselines and metrics,
-primary evidence, supporting R-run roles, failure interpretation, and non-claim.
-New R-numbered artifacts may strengthen E1--E4 as primary evidence, ablations,
-counterpoints, provenance, or hygiene gates, but they do not become additional
-main experiments by chronology. The evaluation therefore remains three empirical
-profiling experiments plus one systems/reproducibility experiment, not a list of
-small disconnected runs.
-R371 then audits evaluation narrative focus: RQ1 must not absorb E3 ranker
-ablations, RQ2 must lead with the R320 localization benchmark, RQ3 must explain
-mechanisms before patch cases, and RQ4 must lead with replay/cost before paper
-hygiene. This is another paper-organization guardrail, not a new data or
-profiler run.
-R372 then checks main-body concision: E2 support slices such as uncertainty,
-negative control, inspection curves, fragmentation, and oracle-depth scoring
-must appear as supporting audits inside the RQ2/E2 core experiment rather than
-as separate chronological experiment paragraphs.
+The rest of the evaluation follows the role map in
+Table~\ref{tab:r374-roles}. Each RQ has one primary anchor; smaller R-numbered
+artifacts appear only as supporting evidence, presentation artifacts,
+counterpoints, or hygiene gates inside those four RQs. This keeps the paper
+organized as three empirical profiling experiments plus one
+systems/reproducibility experiment rather than a chronological run ledger.
+The role map reads existing tracked artifacts and paper text; it does not fetch, sync, or create data, relabel traces, or rerun the profiler.
 
 \begin{table*}[t]
 \centering
 \tiny
 \setlength{\tabcolsep}{2pt}
-\caption{R369 reviewer evidence path. Each row connects one RQ to its main
-paper evidence, source artifact, guardrail, and non-claim; R369 is a
-paper-integration guardrail, not a data or profiler run.}
-\label{tab:reviewer-evidence-path}
-\input{figures/evidence-path-table.tex}
+\caption{R374 core-experiment role map. Each row separates the primary anchor
+from support/presentation roles and the non-claim boundary; R374 is a paper
+organization gate, not a profiler run.}
+\label{tab:r374-roles}
+\input{figures/experiment-role-table.tex}
 \end{table*}
 
 \section{Results}
@@ -360,17 +346,15 @@ precedence is fixed. A supervised OSWorld-Human boundary backend reaches F1
 0.7735 on held-out adjacent pairs and writes predicted boundary fields that the
 Rust profiler folds as ordinary operation fields. Boundary backends therefore
 extend field derivation, not the profiler object model.
-R366 consolidates this evidence into a field-derivation mechanism audit over
-tracked R282/R285/R297/R299/R325/R342/R358 artifacts. It emits six mechanism
-rows and five boundary-family rows without downloading data or rerunning the
-profiler. The audit keeps both support and counterpoints visible: held-out
-mapping improves compression but coarsens action-to-phase V-measure from 0.9343
-to 0.7416; profile-spec composition stays prompt/session-free on 12/12
-variants; rank-feature ablation finds 7 critical and 3 misleading field rows;
-and learned boundary backends beat the best simple baseline on 4/5 rows, while
-AgentRewardBench looping is fully explained by \texttt{repeat\_signal\_change}.
-This supports first-class field derivation and suitability checks, not
-automatic intent boundary discovery and not a new profiler object.
+The field-derivation audit keeps both support and counterpoints visible:
+held-out mapping improves compression but coarsens action-to-phase V-measure
+from 0.9343 to 0.7416; profile-spec composition stays prompt/session-free on
+12/12 variants; and learned boundary backends beat the best simple baseline on
+4/5 rows, while AgentRewardBench looping is fully explained by
+\texttt{repeat\_signal\_change}. This supports first-class field derivation and
+suitability checks, not automatic intent boundary discovery and not a new
+profiler object. Rank-feature criticality from the same audit belongs to
+RQ3/E3's mechanism/actionability evidence, not to RQ1/E1's abstraction claim.
 
 \paragraph{Human-boundary oracle.}
 
@@ -393,8 +377,8 @@ AUPRC-style AP, nDCG, budget recall/F1, work-to-first-positive, and groups;
 counterpoint, flat and dataset-native views can win broad-recall or nDCG goals,
 so the claim is Pareto tradeoff rather than metric dominance.
 Claim-test: RQ2/E2 asks whether hot stacks and top-ranked groups correspond to hidden positives
-while requiring less inspection work than flat summaries and less fragmentation
-than fixed-session drilldown.
+while requiring less inspection work than flat summaries and improving the
+localization-budget/fragmentation tradeoff relative to fixed-session drilldown.
 
 Table~\ref{tab:r320} gives the main R320 accuracy result. Flat summaries recover
 all positives, but only by inspecting the whole task, so their median work@5 is
@@ -413,8 +397,9 @@ the fixed-session counterpoint: top-five work and first-positive work are better
 for fixed-session on 4/6 tasks. R355 gives the depth-aware version of the same
 claim: operation-stack rankings beat fixed-session on budget-30 positive-unit
 recall for 20/24 task-depth rows and use fewer groups to reach 50\% positive
-units on 22/24 rows. Thus the claim is less fragmentation at comparable
-localization budgets, not dominance over every trace-tree-shaped objective.
+units on 22/24 rows. Thus the claim is a better fragmentation tradeoff at
+comparable localization budgets, not dominance over every trace-tree-shaped
+objective.
 
 \begin{table*}[t]
 \centering
@@ -718,82 +703,14 @@ specs by fixing profile timestamps. The clean deterministic rerun reports median
 runtime 1.601s and p95 2.767s per spec. This supports replayable offline
 profiling artifacts, not live eBPF overhead or analyst productivity.
 
-The remaining paper gates are artifact hygiene, not empirical evidence. R338 and
-R356 check that paper numbers, source provenance, must-not-claim guardrails, and
-the operation/operation-stack boundary match tracked outputs; R356 is the
-claim-integrity hygiene gate for the R354/R355 supplements. R352/R357/R359 are
-rubric, reviewer-style, and organization gates. We keep them in the artifact
-ledger so reviewers can audit consistency, but they do not increase the
-localization, actionability, or overhead claims.
-R360 makes Table~\ref{tab:core-results} reproducible from tracked artifacts. It
-generates 4 core experiment rows and 20 metric rows, passes 8/8 table checks,
-and keeps the same non-claims: no profiler rerun, no dataset sync or relabeling,
-and no human or agent analyst task. The refresh integrates R366 field-derivation
-evidence into E1/E3 and checks that it does not become a fifth core experiment.
-Its role is table provenance rather than new evidence.
-R361 turns the same RQ1/E1--RQ4/E4 structure into a claim-evidence ledger. Each core
-experiment must state the claim, research question, oracle, baselines, primary
-metrics, headline result, actionable insight, counterpoint, scoped wording, and
-source runs. The gate passes 11/11 checks, covering hidden-label scale and
-metric surface, baseline tradeoff rather than metric dominance, oracle-depth and
-fragmentation evidence, R366 field-derivation integration,
-mechanism/actionability counterpoints, reproducibility and artifact-hygiene
-gates, the two-abstraction boundary, and must-not-claim guardrails.
-R361 is still a paper-structure artifact: it reruns no profiler, syncs or
-relabels no dataset, and is not a human or agent analyst task.
-R363 then packages the RQ1/E1--RQ4/E4 evidence into the five paper views shown in
-Table~\ref{tab:visualization-portfolio}, passing 7/7 checks without making a
-fifth experiment, rerunning the profiler, or reducing the paper to a
-flamegraph-only artifact.
-R365 then packages the same E2/E3 evidence into the five headline rows and six
-task case cards summarized in Table~\ref{tab:r365-headlines}. It keeps Work@5,
-R@30\%, group count, oracle-depth, non-default-action, profile-spec-patch, and
-boundary-field counterpoints visible while remaining a paper-integration
-artifact: no data download, profiler rerun, relabeling, human/agent analyst
-task, or new experiment.
-R366 then packages the C3/E3 field-derivation mechanism evidence into six
-mechanism rows and five boundary-family rows. It preserves mapping compression,
-action-label coarsening, profile-spec composition, critical/misleading rank
-features, 4/5 boundary-backend suitability wins, and R358's AP/group improvement
-with inspection-work counterpoints. R366 is still a mechanism guardrail, not a
-new experiment, dataset download, profiler rerun, or automatic intent boundary
-claim.
-R367 finally audits the paper entry path itself. It parses the abstract,
-introduction, and main-result framing in the Chinese and English drafts, reads
-the R360/R361/R364/R366 ledgers, and checks that all entry points present the
-same three-empirical-plus-one-systems experiment structure. The gate passes
-11/11 checks and 6/6 entry-token rows: RQ1/E1--RQ4/E4 are visible, R-runs remain
-provenance, operation and operation stack remain the only profiler
-abstractions, and the E2/E3/E4 headline numbers plus must-not-claim limits are
-present. R367 is a paper-integration guardrail, not a new empirical result or
-fifth experiment.
-R368 then audits the E2 baseline wording. It reads existing R320/R355
-hidden-label scoring artifacts and checks the flat, fixed-session,
-dataset-native, and raw-action comparisons behind the trace-tree-shaped
-baseline claim. The gate passes 10/10 checks, keeps fixed-session drilldown as
-the evaluated trace-tree-shaped baseline, and explicitly records the
-fixed-session top-five-work and first-positive-work counterpoints. It is not a
-real ecosystem trace import, new dataset, profiler rerun, human/agent analyst
-task, or metric-dominance result.
-R370 finally audits the main-experiment contract itself. It reads
-R360/R361/R363/R364/R365/R368/R369 plus the current Chinese and English drafts
-and requires each RQ/E to carry a primary test, workload/oracle, baselines and
-metrics, primary evidence, supporting roles, failure interpretation, and
-non-claim. This gate prevents the paper from drifting back into run chronology:
-future runs must strengthen one of E1--E4 instead of creating a new main
-experiment.
-R371 then audits narrative focus: each RQ section must expose a claim-test,
-counterpoint, and scoped non-claim, and the primary evidence for E1/E2/E3/E4
-must appear before supporting run-history details. R371 is a prose-organization
-audit, not a new experiment.
-R372 adds the corresponding main-body concision gate: RQ2 robustness and depth
-slices are kept as one supporting-audit paragraph under E2, while RQ3 continues
-to center mechanism and profile-configuration actionability. It is a
-writing/evidence-organization check, not a new empirical result; it does not fetch, sync, or create data.
-R373 then adds a task-level claim-verdict matrix that ties each of the six real
-labeled tasks to the main fidelity/work/fragmentation/actionability claim and
-its baseline counterpoint. It is a synthesis of existing scored artifacts, not a
-new dataset or profiler run.
+The remaining paper gates are artifact hygiene, not empirical evidence. They
+check that table generation, claim wording, source provenance, non-claims, and
+the operation/operation-stack boundary remain aligned with tracked outputs. We
+keep those checks in the artifact ledger so reviewers can audit consistency, but
+they do not increase the localization, actionability, or overhead claims. The
+paper-facing summary of their role is Table~\ref{tab:r374-roles}: evidence
+generators, visualization portfolios, headline selectors, and reviewer gates may
+support E1--E4, but they do not create additional main experiments.
 
 \paragraph{Profile-spec determinism and local cost.}
 
@@ -966,7 +883,8 @@ Across 15 public labeled trace sources, the model covers web, mobile, desktop,
 software, API, dialogue, failure, safety, human-boundary, and step-quality
 trajectories. On the four oracle-rich families, operation-stack profiling
 localizes and ranks labeled problems with less inspection work than flat
-summaries and less fragmentation than fixed-session drilldown, while the
+summaries and a better median-fragmentation tradeoff than fixed-session
+drilldown, while the
 mechanism audits show which fields, mappings, rankers, depths, and profile-spec
 patches produce the gains. The paper's central claim is therefore a profiler
 claim: operation/operation-stack profiling exposes dataset-labeled
