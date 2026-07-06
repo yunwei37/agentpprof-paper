@@ -63,10 +63,12 @@ profiler evidence.
 The supported claim is therefore a scoped profiling claim: operation-stack
 profiling can localize, rank, and explain task-relevant failures, quality
 problems, and semantic boundaries in public labeled traces, with less inspection
-work than flat summaries and less fragmentation than fixed-session
-drilldown/span-tree proxy views. The paper does not claim human-productivity
-gains, automatic discovery of all intent boundaries, metric dominance, or
-complete compatibility with existing trace ecosystems.
+work than flat summaries and less fragmentation than fixed-session drilldown.
+Fixed-session drilldown is the current trace-tree-shaped baseline; real
+OpenTelemetry/OpenInference/Phoenix-style span-tree imports remain future
+baselines. The paper does not claim human-productivity gains, automatic
+discovery of all intent boundaries, metric dominance, or complete compatibility
+with existing trace ecosystems.
 \end{abstract}
 
 \maketitle
@@ -103,8 +105,7 @@ claim is:
 \emph{Operation/operation-stack profiling provides label-scored localization
 and ranking for task-relevant failures, quality problems, and semantic
 boundaries in real labeled agent traces, while requiring less inspection work
-than flat summaries and less fragmentation than the fixed-session drilldown
-used here as a span-tree proxy.}
+than flat summaries and less fragmentation than fixed-session drilldown.}
 \end{quote}
 
 We evaluate this claim with public labeled traces rather than a human study. A
@@ -351,14 +352,14 @@ scored against a human boundary oracle.
 Evidence contract: claim, operation-stack profiling localizes and ranks real
 labeled failures, quality problems, safety issues, and semantic boundaries;
 oracle, 3,699 positives over 34,539 operations; baseline, flat,
-fixed-session drilldown/span-tree proxy, dataset-native, raw-action, operation-stack,
+fixed-session drilldown, dataset-native, raw-action, operation-stack,
 label-drilldown, and oracle upper bound; metric, precision@k, recall, F1,
 AUPRC-style AP, nDCG, budget recall/F1, work-to-first-positive, and groups;
 counterpoint, flat and dataset-native views can win broad-recall or nDCG goals,
 so the claim is Pareto tradeoff rather than metric dominance.
 RQ2 asks whether hot stacks and top-ranked groups correspond to hidden positives
 while requiring less inspection work than flat summaries and less fragmentation
-than fixed-session drilldown, used here as a span-tree proxy.
+than fixed-session drilldown.
 
 Table~\ref{tab:r320} gives the main R320 accuracy result. Flat summaries recover
 all positives, but only by inspecting the whole task, so their median work@5 is
@@ -445,9 +446,9 @@ Leave-task source selection does not solve view choice universally:
 selected-equals-best is 0 of 6 for AP and 0 of 6 for top-five F1. R332 therefore
 supports the design implication that view, stack fields, predicates, and rankers
 must remain query-time configuration over the same operations. Fixed-session
-drilldown is the current span-tree proxy; real span-tree imports remain future
-baselines, and dataset-native hierarchies remain baseline or drilldown views,
-not profiler abstractions.
+drilldown is the current trace-tree-shaped baseline; real span-tree imports
+remain future baselines, and dataset-native hierarchies remain baseline or
+drilldown views, not profiler abstractions.
 
 R333 turns the same comparison into an inspection-efficiency curve. It reruns
 the R320 local scorer over the tracked operation JSONL inputs, yielding 810
@@ -475,7 +476,7 @@ delta is 0.0275. The same audit preserves the fixed-session work counterpoint:
 operation stacks have lower work-to-50\%-recall on only 1 of 6 tasks, lower
 top-five work on only 2 of 6 tasks, and lower work-to-first-positive on only 2
 of 6 tasks. Thus the supported claim is fixed-session fragmentation reduction
-and budgeted-recall tradeoff, not work dominance over span-tree drilldown.
+and budgeted-recall tradeoff, not work dominance over fixed-session drilldown.
 
 \subsection{E3: Mechanism and Actionability}
 
@@ -738,8 +739,9 @@ should trace goals, plans, tools, artifacts, and associated data~\cite{agentops}
 These systems are strong prior work, so the safe novelty claim is not generic
 ``agent observability.'' In this paper, traces, spans, sessions, and observations
 are exchange containers or baseline shapes. R320 evaluates fixed-session
-drilldown as the current span-tree proxy; real OpenTelemetry/OpenInference or
-Phoenix span-tree imports remain future interoperability baselines. The profiler
+drilldown as the current trace-tree-shaped baseline; real
+OpenTelemetry/OpenInference or Phoenix span-tree imports remain future
+interoperability baselines. The profiler
 abstractions are only operations and operation stacks, and the central mechanism
 is that stack shape determines semantic aggregation at query time.
 
@@ -755,7 +757,7 @@ outcome leaderboards miss trajectory and control-decision quality~\cite{agentatl
 These works make clear that failure localization and trajectory diagnosis are
 not novel by themselves. The narrower difference here is that \toolname treats
 profile groups as profiler outputs: the same operations are folded into flat,
-fixed-session-proxy, dataset-native, raw-action, and operation-stack views, then
+fixed-session drilldown, dataset-native, raw-action, and operation-stack views, then
 scored with AP, nDCG, recall under inspection budgets, work-to-first-positive,
 fragmentation, and profile-configuration actionability across heterogeneous
 public labeled traces. AgentRx- or TELBench-style traces are therefore future
