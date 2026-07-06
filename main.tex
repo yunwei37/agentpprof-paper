@@ -136,10 +136,16 @@ objective rows require non-default actions, 25/36 require view changes, and
 2/36 require operation-stack ranker tuning. The median gain over the default
 operation-stack policy is 0.1447, while 6/6 tasks expose at least three action
 classes plus case counterpoints.
-A paper claim-integrity audit then checks the paper-facing R320--R348 numbers,
+R349 then maps held-out R340 policy transfer decisions to R348 action classes.
+Across 60 aligned decisions, held-out selection is within tolerance on 35/60
+and beats the default on 30/60, but exact action-class transfer is only 7/60
+and only 2/42 for non-default target actions. This supports
+protocol-sensitivity and actionability tradeoffs, not an automatic action
+selector.
+A paper claim-integrity audit then checks the paper-facing R320--R349 numbers,
 source policy, guardrails, and the two-abstraction boundary across the Chinese
-and English drafts. All 258 result invariants, 68 source-policy checks, and
-16 guardrail checks pass.
+and English drafts. The 293/293 result invariants, 73/73 source-policy checks, and
+16/16 guardrail checks pass.
 The result supports a profiling claim rather than a user-study claim:
 operation/operation-stack profiling can localize and rank task-relevant
 failures, quality problems, and semantic boundaries against dataset-provided
@@ -644,11 +650,20 @@ non-operation-stack counterpoints. All 6/6 tasks have non-default actions, at
 least three action classes, and case counterpoints. The median gain over the
 default operation-stack query-aware policy is 0.1447, and the median
 non-default gain is 0.6188.
+R349 then audits held-out action transfer over tracked R340/R348 artifacts. It
+maps non-target-selected visible policies to action classes and compares them
+against the R348 target-task action oracle. Of 96 transfer decisions, 60 align
+to R348 objectives and 36 sequence-only decisions are excluded. Held-out
+selection stays within tolerance on 35 of 60 aligned decisions and beats the
+default operation-stack policy on 30 of 60, but exact action-class transfer is
+only 7 of 60 and only 2 of 42 when the target best action is non-default. This
+is useful actionability/protocol-sensitivity evidence, but it rules out a
+label-free automatic action selector claim.
 R338 audits the paper claim itself rather than adding a new empirical result.
-It reads tracked-clean R320/R333/R334/R335/R336/R337/R339/R340/R341/R342/R344/R345/R346/R347/R348 artifacts, hashes the
+It reads tracked-clean R320/R333/R334/R335/R336/R337/R339/R340/R341/R342/R344/R345/R346/R347/R348/R349 artifacts, hashes the
 current Chinese and English drafts, and checks paper-facing numbers, source
 policy, must-not-claim guardrails, and the two-abstraction boundary. The audit
-passes all 258 result invariants, 68 source-policy checks, and 16 guardrail
+passes the 293/293 result invariants, 73/73 source-policy checks, and 16/16 guardrail
 checks, so it is a submission-readiness gate, not evidence for human utility,
 automatic boundary discovery, ecosystem compatibility, or a universal selector.
 
@@ -823,10 +838,13 @@ top-5 work, 5/6 wins versus fixed-session top-5 recall, and 4/6 wins versus
 fixed-session group count, with first-positive and full-recall counterpoints
 preserved. R348 adds action counterfactuals: 36/36 visible non-oracle best
 rows, 27/36 non-default action rows, 25/36 view-change rows, 2/36
-operation-stack ranker-tuning rows, and median gain over default 0.1447. R338
-checks that the paper-facing R320--R348
-numbers, 258 result invariants, 68 source-policy checks, 16 guardrail checks,
-and two-abstraction boundary remain aligned.
+operation-stack ranker-tuning rows, and median gain over default 0.1447. R349
+adds held-out action transfer: 60 aligned decisions, 35 of 60 within tolerance,
+30 of 60 beating default, but only 7 of 60 exact action-class transfers and
+only 2 of 42 exact transfers on non-default target actions. R338 checks that
+the paper-facing R320--R349 numbers, 293/293 result invariants, 73/73
+source-policy checks, 16/16 guardrail checks, and two-abstraction boundary remain
+aligned.
 These
 results do not show that humans or agents answer questions
 faster with the tool, nor do they measure live eBPF overhead. They also do not
@@ -905,10 +923,10 @@ checks multi-metric consistency and counterpoints, R345 turns those results into
 a diagnostic-lens portfolio, R346 builds case-level diagnostic evidence, R347
 contrasts those cases against flat, fixed-session, dataset-native, and
 raw-action visible views, R348 audits action counterfactuals over already-scored
-visible policies, and
+visible policies, R349 audits held-out action-transfer guardrails, and
 R338
-mechanically checks that the R320--R348 paper-facing numbers and guardrails
-remain aligned with 258 result invariants, 68 source-policy checks, and 16
+mechanically checks that the R320--R349 paper-facing numbers and guardrails
+remain aligned with 293/293 result invariants, 73/73 source-policy checks, and 16
 guardrail checks passing. The
 paper's central claim is therefore a profiler claim: the operation/operation-stack
 model exposes dataset-labeled task-relevant failures,
