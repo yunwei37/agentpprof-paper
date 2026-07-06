@@ -528,6 +528,29 @@ actions.}
 \input{figures/case-table.tex}
 \end{table*}
 
+R373 converts those task cards into a claim-verdict matrix rather than another
+run list. Table~\ref{tab:r373-verdict} reads the tracked R320/R354/R355/R358/R365
+artifacts and asks, for each labeled task, which part of the main profiling claim
+is supported and which baseline remains the counterpoint. All six tasks improve
+AP and top-five inspected work over flat summaries; five improve top-five recall
+over fixed-session drilldown; four reduce fixed-session group fragmentation; and
+all six have an actionable configuration result, either an accepted R354 profile
+patch or the R358 boundary-field repair. The same table keeps the negative
+evidence visible: fixed-session remains the first-positive or group-count
+counterpoint on several tasks, and OSWorld-Human needs boundary-derived fields
+rather than visible phase/action ranking alone.
+
+\begin{table*}[t]
+\centering
+\tiny
+\setlength{\tabcolsep}{2pt}
+\caption{R373 task-level claim verdict. Each row combines E2 localization/work
+evidence with E3 actionability evidence from tracked artifacts; R373 does not
+rerun the profiler or create data.}
+\label{tab:r373-verdict}
+\input{figures/task-verdict-table.tex}
+\end{table*}
+
 The E2 result is deliberately a Pareto claim, not universal dominance.
 Operation stacks improve top-five recall over fixed-session query-aware
 drilldown on 5 of 6 tasks and reduce median group fragmentation from 285.0 to
@@ -767,6 +790,10 @@ R372 adds the corresponding main-body concision gate: RQ2 robustness and depth
 slices are kept as one supporting-audit paragraph under E2, while RQ3 continues
 to center mechanism and profile-configuration actionability. It is a
 writing/evidence-organization check, not a new empirical result; it does not fetch, sync, or create data.
+R373 then adds a task-level claim-verdict matrix that ties each of the six real
+labeled tasks to the main fidelity/work/fragmentation/actionability claim and
+its baseline counterpoint. It is a synthesis of existing scored artifacts, not a
+new dataset or profiler run.
 
 \paragraph{Profile-spec determinism and local cost.}
 
