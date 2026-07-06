@@ -245,14 +245,13 @@ and top-five lift delta 0.5750. R358 improves OSWorld-Human boundary AP to
 top-five-work and first-positive-work counterpoints. &
 The profiler exposes stack, field, ranker, and profile-spec knobs; it is not an
 automatic selector or boundary detector. \\
-E4: reproducibility, cost, and claim integrity &
-Tracked profile specs, paper/docs hashes, and claim-scope gates &
+E4: reproducibility and offline cost &
+76 tracked profile specs over tracked operation JSONL inputs &
 R328 gives 76/76 semantic and 76/76 raw-byte deterministic specs over 152
-invocations, with median runtime 1.601s and p95 2.767s. R338 has 350/350 number
-checks; R352 reaches \texttt{level\_4\_scoped\_profile\_benchmark}; R357's
-artifact-review gate is 4/4 accept; R359 has 13/13 core-table checks. &
-Supported as reproducible offline profiling-paper evidence, not live overhead
-or complete trace-ecosystem compatibility. \\
+invocations, with median runtime 1.601s and p95 2.767s. &
+The offline profiling artifact is replayable and cheap enough for artifact
+evaluation; this does not measure live capture overhead, human productivity, or
+trace-ecosystem compatibility. \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -528,13 +527,14 @@ of 6, and reaches fewer groups-to-50\% positives than fixed-session on 5 of 6.
 At a 25\% recall target it covers all six tasks with median work 0.2000 versus
 flat 1.0000 and median 16.0 groups versus fixed-session 50.0; at 50\% recall,
 other depths or views become the best-work counterpoints. Sequence and
-oracle-depth audits add the inspection unit below and above individual groups:
+oracle-depth audits add the inspection unit below and above individual groups.
+R355 shows that
 at a 30\% operation budget, operation-stack query-aware reaches median 0.4669
 positive-session recall versus fixed-session 0.3230, and across 24 oracle-depth
 rows it has median 0.4342 budget-30 positive-unit recall, beats fixed-session
 unit recall on 20/24 rows, and reaches 50\% positive units with fewer groups on
 22/24. Positive-run proxy units are derived episode units, not human intent
-boundaries. The fixed-session depth-gap counterpoint remains, so this is
+boundaries. R355's fixed-session depth-gap counterpoint remains, so this is
 depth-aware triage, not complete intent-boundary recovery.
 R344 also keeps the metric surface honest: it records 30 supporting
 baseline-metric comparisons, 16 explicit counterpoints, and nDCG cases where
@@ -575,43 +575,39 @@ operation-field knob, not automatic boundary discovery or automatic patch
 selection. The result belongs to mechanism/actionability, not a fifth core
 experiment.
 
-\subsection{E4: Reproducibility, Cost, and Claim Integrity}
+\subsection{E4: Reproducibility and Artifact Hygiene}
 
-Evidence contract: claim, the offline profiler path and paper claims are
-reproducible, low-cost, and guarded; oracle, tracked specs/inputs,
-paper hashes, claim-integrity audits, and reviewer checks; baseline,
-deterministic versus raw replay, source-status, paper-number, rubric, reviewer,
-and two-abstraction gates; metric, deterministic pass rate, runtime,
-number-check and guardrail pass rates, rubric level, and artifact-review gate count;
+Evidence contract: claim, the offline profiler path is replayable over tracked
+inputs at low local cost; oracle, tracked specs/inputs, repeated profile
+outputs, runtime logs, and source-status rows; baseline, default output versus
+deterministic-output replay, semantic profile hashes versus raw-byte profile
+hashes; metric, deterministic spec pass rate, profiler invocations, median/p95
+runtime, sample equality, stack equality, and raw-byte output equality;
 counterpoint, not live eBPF overhead, not human utility, not complete ecosystem
-compatibility, and not a universal selector.
+compatibility, and not a universal selector. Claim-integrity and reviewer-style
+checks are artifact hygiene, not empirical evidence.
 RQ4 asks whether reviewers can replay the offline profile-spec path and verify
 that source provenance, paper numbers, two-abstraction wording, and non-claims
 remain aligned.
 
-R338 audits the paper claim itself rather than adding a new empirical result.
-It reads tracked-clean R320--R350 profiler-evidence artifacts, hashes the current
-Chinese and English drafts, and checks paper-facing numbers, source policy,
-must-not-claim guardrails, and the two-abstraction boundary. The audit passes
-its result-invariant, source-policy, and guardrail checks, so it is a
-submission-readiness gate for that evidence tranche, not evidence for human
-utility, automatic boundary discovery, ecosystem compatibility, or a universal
-selector. R356 then includes R354 and R355 in the full claim-integrity refresh:
-it checks the R354 5 of 6 patches, 0.0376 AP delta, and 0.5750 top-five lift
-delta, plus the R355 24 oracle-depth rows, 0.4342 budget-30 unit recall, 20/24
-fixed-session recall wins, and 22/24 groups-to-50\% wins. This refresh is a
-paper-consistency gate, not a new empirical result, human-utility claim, or
-automatic patch selector.
-R352 then maps the accepted paper state to an OSDI-style profiling-paper rubric.
-It reads tracked R320--R351 artifacts and current paper text, downloads or syncs
-no datasets, reruns no profiler, and runs no human or agent analyst task. It
-passes 26/26 required checks and 10/10 rubric areas, covering fidelity,
-actionability, baseline tradeoffs, generality, mechanism isolation,
-robustness/statistics, reproducibility/overhead, and claim-scope guardrails. The
-result is artifact and claim hygiene for the paper's scoped profiler-benchmark
-readiness; it is not a new empirical result.
+R327/R328 are the empirical content of this subsection. They rerun the existing
+profile-spec artifacts used by the labeled-trace experiments: 76 tracked specs
+over tracked operation JSONL inputs, executed twice for 152 profiler
+invocations. The semantic profile content is stable for 76/76 specs in both
+modes; deterministic output also makes raw-byte profile files stable for 76/76
+specs by fixing profile timestamps. The clean deterministic rerun reports median
+runtime 1.601s and p95 2.767s per spec. This supports replayable offline
+profiling artifacts, not live eBPF overhead or analyst productivity.
+
+The remaining paper gates are artifact hygiene, not empirical evidence. R338 and
+R356 check that paper numbers, source provenance, must-not-claim guardrails, and
+the operation/operation-stack boundary match tracked outputs; R356 is the
+claim-integrity hygiene gate for the R354/R355 supplements. R352/R357/R359 are
+rubric, reviewer-style, and organization gates. We keep them in the artifact
+ledger so reviewers can audit consistency, but they do not increase the
+localization, actionability, or overhead claims.
 R360 makes Table~\ref{tab:core-results} reproducible from tracked artifacts. It
-generates 4 core experiment rows and 20 metric rows, passes 6/6 table checks, and
+generates 4 core experiment rows and 18 metric rows, passes 7/7 table checks, and
 keeps the same non-claims: no profiler rerun, no dataset sync or relabeling, and
 no human or agent analyst task. Its role is table provenance rather than new
 evidence.
@@ -621,7 +617,8 @@ metrics, headline result, actionable insight, counterpoint, scoped wording, and
 source runs. The gate passes 10/10 checks, covering hidden-label scale and metric
 surface, baseline tradeoff rather than metric dominance, oracle-depth and
 fragmentation evidence, mechanism/actionability counterpoints, reproducibility
-and reviewer gates, the two-abstraction boundary, and must-not-claim guardrails.
+and artifact-hygiene gates, the two-abstraction boundary, and must-not-claim
+guardrails.
 R361 is still a paper-structure artifact: it reruns no profiler, syncs or
 relabels no dataset, and is not a human or agent analyst task.
 R363 then packages the E1--E4 evidence into five paper views---baseline
