@@ -94,6 +94,15 @@ trajectories that actually contain positives. At a 30\% operation budget,
 operation-stack query-aware reaches median 0.4669 positive-session recall
 versus 0.3230 for fixed-session while touching median 0.3467 sessions; raw
 action reaches 0.5147 positive-session recall but touches 0.9103 sessions.
+An oracle-depth adequacy audit then scores the same visible-ranked profiles at
+the depth provided by each dataset: session, operation or step, positive-run
+proxy, and task-specific units such as OSWorld-Human human groups. Across 24
+task-depth rows, operation-stack query-aware uses lower top-five oracle-unit
+work than flat on 24 of 24 rows, improves 30\%-budget positive-unit recall over
+fixed-session on 20 of 24 rows, improves unit F1 on 18 of 24 rows, and reaches
+50\% positive units with fewer groups on 22 of 24 rows. The audit also records a
+depth-gap counterpoint: it does not reduce positive sessions without a hit
+unit relative to fixed-session.
 A cross-task and cross-dataset policy-transfer audit then selects visible
 policies from non-target tasks or non-target datasets before held-out scoring.
 Across 96 decisions, selection stays within tolerance on 62 decisions and beats
@@ -148,6 +157,10 @@ operation-stack packets contain positives on 6 of 6 tasks, top-one packets on
 5 of 6, and 4 of 6 tasks meet the strict 30\% operation-work budget; the same
 packets preserve 27 of 36 non-default objective rows and the 35 of 60
 within-tolerance / 7 of 60 exact-action transfer guardrail.
+R354 turns one such actionability path into executable before/after profile
+specs, improving AP, top-five lift, and first-positive work on 5 of 6 tasks;
+R355 adds the oracle-depth scorer described above and preserves the fixed-session
+depth-gap counterpoint.
 A paper claim-integrity audit then checks the paper-facing R320--R350 numbers,
 source policy, guardrails, and the two-abstraction boundary across the Chinese
 and English drafts. The result-invariant, source-policy, and guardrail checks
@@ -600,6 +613,23 @@ positive-operation recall and 0.4669 positive-session recall while touching
 median 0.3467 sessions. Fixed-session reaches 0.3230 positive-session recall;
 raw action reaches higher positive-session recall, 0.5147, but touches 0.9103
 sessions. The result supports sequence-scope triage, not single-view dominance.
+R355 extends that audit below session scope. It keeps the same existing labeled
+operation JSONL and visible-ranked policy outputs, then scores groups at the
+oracle depth available for each task: session, operation or step,
+positive-run episodes computed from contiguous target-positive labels, and
+task-specific units such as AgentRewardBench turns, AgentNet/SATraj steps, and
+OSWorld-Human human groups. Hidden labels are used only after ranking. Across
+24 accuracy task-depth rows, operation-stack query-aware has median top-five
+oracle-unit work 0.1307, median budget-30 positive-unit recall 0.4342, median
+budget-30 unit F1 0.4484, and median positive-run recall 0.4908. Compared with
+flat, it has lower top-five unit work on 24/24 rows; compared with
+fixed-session, it has higher budget-30 unit recall on 20/24 rows, higher unit
+F1 on 18/24 rows, and fewer groups to 50\% positive units on 22/24 rows; compared
+with raw-action, it has fewer positive units per group on 24/24 rows. The
+negative result is explicit: the positive-session-without-unit gap is not
+better than fixed-session. Thus R355 supports depth-aware localization and
+inspection-cost accounting, not automatic recovery of every latent subtask or
+intent boundary.
 R340 evaluates whether objective-specific policy choice can transfer without
 looking at target labels during selection. It reuses the already-scored R320 and
 R339 artifacts, selects visible policies from non-target tasks or non-target
@@ -683,13 +713,35 @@ within-tolerance and 7 of 60 exact-action guardrail. The two strict-budget
 exceptions are the high-prevalence looping task and the human-boundary
 group-start task, so the supported claim is bounded actionable evidence
 packets, not universal budget dominance or an automatic action selector.
+R354 materializes one actionability loop as executable profile-spec patches.
+The harness reads the tracked R324 visible-operation profiler input and R348
+action cards, writes default semantic-width profile specs and profile-guided
+patched specs, reruns Rust \texttt{agentpprof --profile-spec}, and scores the
+emitted groups with hidden labels only after profiling. Five of six patches are
+accepted and improve AP, top-five lift, and first-positive work; median AP
+delta is 0.0376 and median top-five lift delta is 0.5750. The rejected
+OSWorld-Human patch is useful negative evidence: visible phase/action rank
+features are not enough for a human-boundary objective, so the next action is a
+boundary-derived field rather than a universal rank-feature patch.
+R355 then scores whether the same ranked profiles localize at the finer oracle
+depth provided by each dataset. It covers 24 accuracy task-depth rows across
+session, operation/step, positive-run, and task-specific units, plus a
+ScaleCUA context-only row. Operation-stack query-aware has median top-five
+oracle-unit work 0.1307, median budget-30 positive-unit recall 0.4342, median
+budget-30 unit F1 0.4484, and median positive-run recall 0.4908. It improves
+fixed-session budget-30 unit recall on 20/24 rows and groups-to-50\% positive
+units on 22/24 rows, but it does not reduce the positive-session-without-unit
+gap versus fixed-session. The supported claim is therefore depth-aware triage
+and cost accounting, not complete intent-boundary discovery.
 R338 audits the paper claim itself rather than adding a new empirical result.
 It reads tracked-clean R320--R350 profiler-evidence artifacts, hashes the current
 Chinese and English drafts, and checks paper-facing numbers, source policy,
 must-not-claim guardrails, and the two-abstraction boundary. The audit passes
 its result-invariant, source-policy, and guardrail checks, so it is a
-submission-readiness gate, not evidence for human utility, automatic boundary
-discovery, ecosystem compatibility, or a universal selector.
+submission-readiness gate for that evidence tranche, not evidence for human
+utility, automatic boundary discovery, ecosystem compatibility, or a universal
+selector. R354 and R355 add newer empirical supplements and should be included
+in the next full claim-integrity refresh.
 R352 then maps the accepted paper state to an OSDI-style profiling-paper rubric.
 It reads tracked R320--R351 artifacts and current paper text, downloads or syncs
 no datasets, reruns no profiler, and runs no human or agent analyst task. It
@@ -852,7 +904,12 @@ reaches all six tasks with median work 0.2000 versus flat 1.0000 and median
 counterpoint. R339 adds sequence-scope adequacy: at 30\% work,
 operation-stack query-aware reaches median 0.4669 positive-session recall
 versus fixed-session 0.3230, while raw action reaches 0.5147 but touches 0.9103
-sessions. R340 adds non-target policy transfer: selected visible policies stay
+sessions. R355 adds oracle-depth adequacy over session, operation/step,
+positive-run, and task-specific units: operation-stack query-aware has median
+0.4342 budget-30 positive-unit recall, beats fixed-session recall on 20/24
+task-depth rows, and reaches 50\% positive units with fewer groups on 22/24
+rows, while the fixed-session depth-gap counterpoint remains. R340 adds
+non-target policy transfer: selected visible policies stay
 within tolerance on 62/96 held-out decisions and beat width, fixed-session, and
 flat baselines on 72/96, 69/96, and 41/96 decisions, while operation-stack views
 are selected on 16/96 decisions. R341 attributes the remaining actionability
@@ -954,7 +1011,8 @@ controls, view/depth task-fit audits, and inspection-efficiency curves. R334
 adds the corresponding fragmentation audit, R335 turns those results into
 task-level actionability cards, R336 maps the cards to objective-specific
 visible policy choices, R337 maps ranked outputs to fixed-recall
-inspection-cost targets, R339 scores sequence-scope adequacy, R340 tests
+inspection-cost targets, R339 scores sequence-scope adequacy, R355 scores
+oracle-depth adequacy, R340 tests
 non-target policy transfer, R341 classifies mechanism and transfer-error
 attribution, R342 checks profile-spec composition and stack-depth tradeoffs, R344
 checks multi-metric consistency and counterpoints, R345 turns those results into
@@ -963,7 +1021,9 @@ contrasts those cases against flat, fixed-session, dataset-native, and
 raw-action visible views, R348 audits action counterfactuals over already-scored
 visible policies, R349 audits held-out action-transfer guardrails, R350 assembles
 bounded evidence packets with top-five positives on 6 of 6 tasks and strict
-30\% work budget on 4 of 6, and
+30\% work budget on 4 of 6, R354 materializes profile-guided before/after specs
+on the Rust profiler, R355 scores oracle-depth adequacy over 24 task-depth rows,
+and
 R338
 mechanically checks that the R320--R350 paper-facing numbers and guardrails
 remain aligned. R352 then checks the accepted paper state against an OSDI-style
