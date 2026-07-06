@@ -59,9 +59,10 @@ profile-spec patches improve AP, top-five lift, and first-positive work on 5 of
 6 tasks; a supervised held-out boundary-field ablation improves OSWorld-Human AP
 from 0.2402 to 0.2583 and reduces groups from 108 to 74, while preserving work
 counterpoints. RQ4/E4 checks replayability, offline cost, and artifact hygiene:
-deterministic replay covers 76 tracked profile specs, while source-status,
-number, rubric, guardrail, and two-abstraction checks remain artifact hygiene
-rather than a fourth empirical profiling experiment.
+deterministic replay covers 76 tracked profile specs, and profile-spec input
+regressions cover local-session, agent-trace, and standard-trace replay, while
+source-status, number, rubric, guardrail, and two-abstraction checks remain
+artifact hygiene rather than a fourth empirical profiling experiment.
 
 The supported claim is therefore a scoped profiling claim: operation-stack
 profiling can localize, rank, and explain dataset-labeled failures, quality
@@ -207,9 +208,12 @@ Fragmentation uses group count, positive group count, and work or groups to
 reach 50\% positive recall. Actionability uses per-task comparisons among
 stack fields, mapping choices, ranker choices, and oracle headroom.
 Reproducibility uses repeated Rust \texttt{agentpprof --profile-spec}
-executions over tracked specs and tracked operation JSONL inputs, checking
-semantic output hashes, sample counts, unique-stack counts, runtime, and output
-size. Build time is excluded from the profiler runtime measurement.
+executions over tracked specs and tracked operation JSONL inputs, plus
+profile-spec input replay regressions for local sessions, exported
+agent-session traces, and generic Chrome Trace Event imports. The checks cover
+semantic output hashes, sample counts, unique-stack counts, runtime, output
+size, effective input metadata, and standard-trace argument import. Build time
+is excluded from the profiler runtime measurement.
 
 Table~\ref{tab:core-results} gives the paper-facing evaluation structure.
 R-numbered runs are provenance, ablations, counterpoints, or audit gates rather
@@ -260,9 +264,12 @@ ablations identify 7 critical and 3 misleading feature rows. &
 The profiler exposes stack, field, ranker, and profile-spec knobs; it is not an
 automatic selector or boundary detector. \\
 RQ4/E4: artifact replayability, offline cost, and hygiene &
-76 tracked profile specs over tracked operation JSONL inputs &
+76 tracked operation-JSONL profile specs plus local-session, agent-trace, and
+standard-trace profile-spec input replay regressions &
 Deterministic replay gives 76/76 semantic and 76/76 raw-byte deterministic
-specs over 152 invocations, with median runtime 1.601s and p95 2.767s. &
+specs over 152 invocations, with median runtime 1.601s and p95 2.767s. R392
+confirms that profile specs also replay source selection, regex tags, trace
+inputs, and effective standard-trace args through the same operation-stack path. &
 The offline profiling artifact is replayable and cheap enough for artifact
 evaluation; this is systems/reproducibility evidence, not a hidden-label
 accuracy result, live capture overhead result, human productivity result, or
@@ -669,14 +676,16 @@ Group start & Work@5 0.4074, R@5 0.3874, boundary AP 0.2583 & Use group-depth or
 \subsection{RQ4/E4: Reproducibility and Artifact Hygiene}
 
 Experiment contract: claim, the offline profiler path is replayable over tracked
-inputs at low local cost; oracle, tracked specs/inputs, repeated profile
-outputs, runtime logs, and source-status rows; baseline, default output versus
-deterministic-output replay, semantic profile hashes versus raw-byte profile
-hashes; metric, deterministic spec pass rate, profiler invocations, median/p95
-runtime, sample equality, stack equality, and raw-byte output equality;
-counterpoint, not live eBPF overhead, not human utility, not complete ecosystem
-compatibility, and not a universal selector. Claim-integrity and reviewer-style
-checks are artifact hygiene, not empirical evidence.
+inputs at low local cost; oracle, tracked specs/inputs, profile-spec input
+replay regressions, repeated profile outputs, runtime logs, and source-status
+rows; baseline, default output versus deterministic-output replay, semantic
+profile hashes versus raw-byte profile hashes, and effective input metadata
+versus silently ignored source paths; metric, deterministic spec pass rate,
+profiler invocations, median/p95 runtime, sample equality, stack equality,
+raw-byte output equality, and input-source replay coverage; counterpoint, not
+live eBPF overhead, not human utility, not complete ecosystem compatibility,
+and not a universal selector. Claim-integrity and reviewer-style checks are
+artifact hygiene, not empirical evidence.
 Claim-test: RQ4/E4 asks whether reviewers can replay the offline profile-spec path and verify
 that source provenance, paper numbers, two-abstraction wording, and non-claims
 remain aligned.
@@ -690,6 +699,18 @@ both modes; deterministic output also makes raw-byte profile files stable for
 median runtime 1.601s and p95 2.767s per spec. The run IDs (R327/R328) are
 provenance for this E4 block. This supports replayable offline profiling
 artifacts, not live eBPF overhead or analyst productivity.
+
+R392 complements this cost block with input-source replay regressions. The Rust
+profile-spec path now carries \texttt{session\_files}, \texttt{trace\_files},
+\texttt{standard\_trace\_files}, regex tag rules, predicates, rank rules, stack
+overrides, and \texttt{include\_standard\_trace\_args}. The regressions replay
+the public Codex fixture as a local session and as an exported agent-session
+trace, then replay a generic Chrome Trace Event import whose non-AgentSight
+\texttt{protocol} argument becomes an operation field before folding. These
+checks keep local sessions and trace containers inside the same operation /
+operation-stack path. They do not add a new accuracy experiment, a third
+profiler object, or an ecosystem-compatibility claim.
+
 Tables~\ref{tab:r327} and~\ref{tab:r328} are the E4 main displays: they
 summarize the replayability/cost result and the deterministic-output repair,
 while R327/R328 remain source artifacts rather than additional accuracy
