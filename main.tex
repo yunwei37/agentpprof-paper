@@ -683,6 +683,10 @@ both modes; deterministic output also makes raw-byte profile files stable for
 median runtime 1.601s and p95 2.767s per spec. The run IDs (R327/R328) are
 provenance for this E4 block. This supports replayable offline profiling
 artifacts, not live eBPF overhead or analyst productivity.
+Tables~\ref{tab:r327} and~\ref{tab:r328} are the E4 main displays: they
+summarize the replayability/cost result and the deterministic-output repair,
+while R327/R328 remain source artifacts rather than additional accuracy
+experiments.
 
 The remaining paper gates are artifact hygiene, not empirical evidence. They
 check that table generation, claim wording, source provenance, non-claims, and
@@ -705,10 +709,9 @@ separately reports raw-byte hashes.
 \begin{table}[t]
 \centering
 \small
-\caption{R327 profile-spec reproducibility and offline execution cost. Runtime
-is seconds per spec, measured after the Rust binary exists. Semantic hashes
-exclude the JSON \texttt{generated\_at} field; raw-byte hashes are reported
-separately.}
+\caption{E4 replayability/cost main display from R327. Runtime is seconds per
+spec, measured after the Rust binary exists. Semantic hashes exclude the JSON
+\texttt{generated\_at} field; raw-byte hashes are reported separately.}
 \label{tab:r327}
 \begin{tabular}{lrrrr}
 \toprule
@@ -743,8 +746,8 @@ as a performance comparison with R327.
 \begin{table}[t]
 \centering
 \small
-\caption{R327/R328 determinism checks over the same 76 profile specs. R328 uses
-\texttt{--deterministic-output}.}
+\caption{E4 deterministic-output main display from R327/R328 over the same 76
+profile specs. R328 uses \texttt{--deterministic-output}.}
 \label{tab:r328}
 \begin{tabular}{llrrrr}
 \toprule
