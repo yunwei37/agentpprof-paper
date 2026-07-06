@@ -409,26 +409,34 @@ Claim-test: RQ2/E2 asks whether hot stacks and top-ranked groups correspond to h
 while requiring less inspection work than flat summaries and improving the
 localization-budget/fragmentation tradeoff relative to fixed-session drilldown.
 
-Table~\ref{tab:r320} gives the main R320 accuracy result. Flat summaries recover
-all positives, but only by inspecting the whole task, so their median work@5 is
-1.0 and their work-to-first-positive is 1.0. Fixed-session drilldown finds an
-early positive with median work-to-first-positive 0.0044 and median work@5
-0.0163, but its median recall@5 is only 0.0233 and it fragments the workload
-into 285.0 groups. Query-aware operation stacks inspect median 0.0937 work in
-the top five groups, reach median recall@budget30 of 0.3900, and reduce the
-median group count to 157.5.
-R368 makes this baseline scope explicit. It treats fixed-session drilldown as
-the evaluated trace-tree-shaped baseline, not as evidence of full
-OpenTelemetry/Phoenix/LangSmith/Perfetto compatibility. On the same R320 rows,
-operation-stack query-aware improves fixed-session top-five recall and F1 on
-5/6 tasks, budget-30 recall on 4/6, and group count on 4/6, while preserving
-the fixed-session counterpoint: top-five work and first-positive work are better
-for fixed-session on 4/6 tasks. R355 gives the depth-aware version of the same
-claim: operation-stack rankings beat fixed-session on budget-30 positive-unit
-recall for 20/24 task-depth rows and use fewer groups to reach 50\% positive
-units on 22/24 rows. Thus the claim is a better fragmentation tradeoff at
-comparable localization budgets, not dominance over every trace-tree-shaped
-objective.
+Primary comparison and success criterion. E2 treats every profile group as an
+inspection target and asks whether the ranked targets find hidden positives
+with less work than flat summaries and less fragmentation than a fixed-session
+trace-tree proxy. Success is therefore a Pareto condition, not a single winning
+metric: operation stacks must reduce flat inspection work, improve a meaningful
+fixed-session localization or fragmentation objective, and keep fixed-session
+early-hit counterpoints visible. Table~\ref{tab:r320} gives the main R320
+accuracy result under that reading. Flat summaries recover all positives, but
+only by inspecting the whole task, so their median work@5 and
+work-to-first-positive are both 1.0. Fixed-session drilldown finds an early
+positive with median work-to-first-positive 0.0044 and median work@5 0.0163,
+but its median recall@5 is only 0.0233 and it fragments the workload into 285.0
+groups. Query-aware operation stacks inspect median 0.0937 work in the top five
+groups, reach median recall@budget30 of 0.3900, and reduce the median group
+count to 157.5.
+
+Failure interpretation and baseline scope are part of the result. R368 treats
+fixed-session drilldown as the evaluated trace-tree-shaped baseline, not as
+evidence of full OpenTelemetry/Phoenix/LangSmith/Perfetto compatibility. On the
+same R320 rows, operation-stack query-aware improves fixed-session top-five
+recall and F1 on 5/6 tasks, budget-30 recall on 4/6, and group count on 4/6,
+while fixed-session retains lower top-five work and first-positive work on 4/6.
+R355 gives the depth-aware version of the same claim: operation-stack rankings
+beat fixed-session on budget-30 positive-unit recall for 20/24 task-depth rows
+and use fewer groups to reach 50\% positive units on 22/24 rows. If these
+counterpoints disappeared from the paper, the result would be overstated; with
+them, E2 supports a better localization-budget/fragmentation tradeoff, not
+dominance over every trace-tree-shaped objective.
 
 \begin{table*}[t]
 \centering
@@ -524,18 +532,28 @@ Claim-test: RQ3/E3 asks which mechanisms explain the localization gains, and whe
 profile-guided changes to stack fields, rank features, mappings, or boundary
 fields improve the output without leaking hidden labels into profiler inputs.
 
-R320 turns localization scores into an optimization diagnosis rather than only
-a leaderboard, summarized in Table~\ref{tab:actionability}. SATraj unsafe is
-the cleanest operation-stack win: environment, phase, and action fields plus
-query-aware risk ranking give the best visible top-five F1. Looping exposes the
-value and limit of \texttt{repeat\_signal}: it helps ranking, but positives are
-prevalent, so prevalence-aware ranking remains the optimization. Side-effect
-has large oracle headroom and points to deeper write/input mappings. AgentNet
-step-quality tasks need action-family localization followed by fixed-session
-examples. OSWorld-Human needs boundary-derived fields rather than action depth
-alone. Thus the first actionability result is not that one view wins; it is that
-the profiler identifies which stack field, mapping, ranker, or drilldown should
-change for each task family.
+Primary mechanism question. E3 starts from the E2 ranked outputs and asks
+whether the profiler can explain what to change in the profile configuration.
+Hidden labels are used only after profiling to score a configuration; the
+visible inputs are stack fields, mapping/tagging rules, rank features, profile
+specs, and boundary-derived operation fields. The success criterion is an
+actionable, replayable diagnosis: a task should point to a concrete stack,
+field, ranker, mapping, profile-spec, or drilldown change, and executable
+patches should improve the scored output without turning into an automatic
+selector.
+
+Table~\ref{tab:actionability} summarizes the resulting task-level diagnosis.
+SATraj unsafe is the cleanest operation-stack win: environment, phase, and
+action fields plus query-aware risk ranking give the best visible top-five F1.
+Looping exposes the value and limit of \texttt{repeat\_signal}: it helps
+ranking, but positives are prevalent, so prevalence-aware ranking remains the
+optimization. Side-effect has large oracle headroom and points to deeper
+write/input mappings. AgentNet step-quality tasks need action-family
+localization followed by fixed-session examples. OSWorld-Human needs
+boundary-derived fields rather than action depth alone. Thus the first
+actionability result is not that one view wins; it is that the profiler
+identifies which stack field, mapping, ranker, or drilldown should change for
+each task family.
 
 The Rust mechanism ablations isolate where those diagnoses come from. Stack-text
 rules and rank-mode variants (R322/R323) are replayable from profile specs, but
@@ -599,15 +617,15 @@ configuration. R354 writes default and profile-guided Rust profile specs over
 the same visible operation input and scores hidden labels only after
 \texttt{agentpprof --profile-spec}. Five of six patches improve AP, top-five
 lift, and first-positive work, with median AP delta 0.0376 and median top-five
-lift delta 0.5750. The rejected OSWorld-Human patch is the important negative
-case: visible phase/action rank features are insufficient for a human-boundary
-objective. R358 follows that diagnosis by folding held-out boundary-derived
-operation fields; learned-boundary profiles improve AP to 0.2583 versus 0.2402
-for semantic width and reduce groups to 74 versus 108, while top-five work and
-first-positive work increase. This supports boundary fields as an actionable
-operation-field knob, not automatic boundary discovery or automatic patch
-selection. The result belongs to mechanism/actionability, not a fifth core
-experiment.
+lift delta 0.5750. The failure interpretation matters here too: the rejected
+OSWorld-Human patch shows that visible phase/action rank features are
+insufficient for a human-boundary objective. R358 follows that diagnosis by
+folding held-out boundary-derived operation fields; learned-boundary profiles
+improve AP to 0.2583 versus 0.2402 for semantic width and reduce groups to 74
+versus 108, while top-five work and first-positive work increase. This supports
+boundary fields as an actionable operation-field knob, not automatic boundary
+discovery or automatic patch selection. The result belongs to
+mechanism/actionability, not a fifth core experiment.
 
 \begin{table*}[t]
 \centering
