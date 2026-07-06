@@ -217,10 +217,10 @@ is excluded from the profiler runtime measurement.
 
 Table~\ref{tab:core-results} gives the paper-facing evaluation structure.
 R-numbered runs are provenance, ablations, counterpoints, or audit gates rather
-than the paper's main organization. R360 regenerates this four-row result table
-from tracked artifacts and emits JSON, CSV, Markdown, HTML, and a LaTeX table
-fragment. It is a table-provenance gate, not a new empirical result or profiler
-rerun.
+than the paper's main organization. The table generator regenerates this
+four-row result table from tracked artifacts and emits JSON, CSV, Markdown,
+HTML, and a LaTeX table fragment. It is a table-provenance gate, not a new
+empirical result or profiler rerun.
 
 \begin{table*}[t]
 \centering
@@ -378,10 +378,9 @@ folding (729/729, 714/714, and 4,285/4,285 expected operations), compose
 operation files, predicates, visible ranking rules, rank modes, and explicit
 stack depths without prompt/session frames (12/12 specs), and round-trip a real
 operation-file prefix through a standard trace container while preserving 512
-samples and 11 folded stacks. The corresponding run IDs (R321, R342, and R353)
-are provenance for E1: they test whether the operation layer stays fixed while
-views change; the localization and ranker gains from those specs are evaluated
-under E2/E3.
+samples and 11 folded stacks. These interface checks are provenance for E1: they
+test whether the operation layer stays fixed while views change; the
+localization and ranker gains from those specs are evaluated under E2/E3.
 
 \paragraph{Field derivation and boundary probes.}
 
@@ -432,7 +431,7 @@ with less work than flat summaries and less fragmentation than a fixed-session
 trace-tree proxy. Success is therefore a Pareto condition, not a single winning
 metric: operation stacks must reduce flat inspection work, improve a meaningful
 fixed-session localization or fragmentation objective, and keep fixed-session
-early-hit counterpoints visible. Table~\ref{tab:r320} is the main E2
+early-hit counterpoints visible. Table~\ref{tab:e2-localization} is the main E2
 localization display; source artifacts remain in the evaluation ledger rather
 than becoming separate paper experiments. Flat summaries recover all positives, but only by inspecting the
 whole task, so their median work@5 and work-to-first-positive are both 1.0.
@@ -462,7 +461,7 @@ dominance over every trace-tree-shaped objective.
 \setlength{\tabcolsep}{3pt}
 \caption{E2 hidden-label localization benchmark. Hidden policies read oracle
 labels and are included only as upper bounds. WTFP is work-to-first-positive.}
-\label{tab:r320}
+\label{tab:e2-localization}
 \begin{tabular}{lrrrrrrrrr}
 \toprule
 Policy & Hidden & AP & nDCG & P@5 & R@5 & F1@5 & Work@5 & R@30\% & WTFP \\
@@ -499,7 +498,7 @@ region while preserving fixed-session and oracle counterpoints. Right: the
 RQ3/E3 actionability view turns the same scored outputs into profile-configuration
 knobs, showing that many objectives require changing the view, ranker, profile
 spec, or boundary-derived fields rather than using one fixed default view.}
-\label{fig:r363-portfolio}
+\label{fig:e2e3-portfolio}
 \end{figure*}
 
 The generated case and verdict artifacts still matter, but they are now used as
@@ -541,7 +540,7 @@ trace-tree-shaped objective.
 Experiment contract: claim, the profiler exposes actionable knobs in stack
 fields, mapping/tagging rules, rankers, profile specs, and boundary-derived
 operation fields; oracle, hidden labels used only after profiling, plus held-out
-OSWorld-Human boundary positives for R358; baseline, default/patched specs,
+OSWorld-Human boundary positives for scoring boundary-derived fields; baseline, default/patched specs,
 visible rankers, transfer policies, learned-boundary, fixed-session, and
 semantic-width stacks; metric, accepted patches, AP delta, top-five lift,
 first-positive-work, group reduction, and top-five work counterpoint;
@@ -562,8 +561,8 @@ patches should improve the scored output without turning into an automatic
 selector.
 
 Table~\ref{tab:actionability} is the main E3 display. It compresses the
-R365/R373 task-card evidence into a paper-facing diagnosis table; those source
-artifacts remain provenance rather than additional main experiments.
+task-card evidence into a paper-facing diagnosis table; those source artifacts
+remain provenance rather than additional main experiments.
 SATraj unsafe is the cleanest operation-stack win: environment, phase, and
 action fields plus query-aware risk ranking give the best visible top-five F1.
 Looping exposes the value and limit of \texttt{repeat\_signal}: it helps
@@ -589,8 +588,8 @@ knobs concrete: \texttt{repeat\_signal}, write-action features, and
 safety-like or input-phase features can hurt AP or first-positive work.
 Equal/global feature banks often preserve the gains, and guided repairs improve
 AP on 2 of 3 misleading-feature cases, but these repairs use offline scored
-feedback and are not an automatic learned ranker. The run IDs (R322--R326) are
-the provenance for this single E3 mechanism block.
+feedback and are not an automatic learned ranker. These audits are provenance
+for this single E3 mechanism block.
 
 The view and policy audits show the same mechanism at the analysis-surface
 level. Best AP and best top-five F1 are split across operation-stack,
@@ -611,9 +610,9 @@ unit recall on 20/24 rows, and reaches 50\% positive units with fewer groups on
 22/24. Positive-run proxy units are derived episode units, not human intent
 boundaries. The fixed-session depth-gap counterpoint remains, so this is
 depth-aware triage, not complete intent-boundary recovery.
-R344 also keeps the metric surface honest: it records 30 supporting
-baseline-metric comparisons, 16 explicit counterpoints, and nDCG cases where
-flat or dataset-native views can win.
+The multi-metric audit also keeps the metric surface honest: it records 30
+supporting baseline-metric comparisons, 16 explicit counterpoints, and nDCG
+cases where flat or dataset-native views can win.
 
 The actionability portfolio turns those comparisons into reviewer-auditable
 profile-configuration tuning insight. Across 36 objective rows, every row has a
@@ -629,10 +628,9 @@ Counterfactual and held-out transfer checks separate visible actions from
 target-label leakage: 36/36 best rows are visible non-oracle, 27/36 require a
 non-default action, 25/36 require a view change, held-out action transfer stays
 within tolerance on 35/60 aligned decisions, but exact action-class transfer is
-only 7/60 overall and 2/42 on non-default target actions. These supporting runs
-(R335, R341, and R345--R350) form one E3 actionability block. The actionable
-claim is therefore a tunable diagnosis surface, not a label-free automatic
-selector.
+only 7/60 overall and 2/42 on non-default target actions. These support audits
+form one E3 actionability block. The actionable claim is therefore a tunable
+diagnosis surface, not a label-free automatic selector.
 
 Finally, executable patches close one loop from diagnosis to profiler
 configuration. Default and profile-guided Rust profile specs run over the same
@@ -644,8 +642,8 @@ OSWorld-Human patch shows that visible phase/action rank features are
 insufficient for a human-boundary objective. Folding held-out boundary-derived
 operation fields then improves AP to 0.2583 versus 0.2402 for semantic width
 and reduces groups to 74 versus 108, while top-five work and first-positive
-work increase. These patch and boundary-field runs (R354/R358) support
-boundary fields as an actionable operation-field knob, not automatic boundary
+work increase. These patch and boundary-field results support boundary fields
+as an actionable operation-field knob, not automatic boundary
 discovery or automatic patch selection. The result belongs to
 mechanism/actionability, not a fifth core experiment.
 
@@ -655,8 +653,7 @@ mechanism/actionability, not a fifth core experiment.
 \setlength{\tabcolsep}{3pt}
 \caption{E3 task diagnosis cards. Each row connects a label-scored localization
 signal to a concrete profile-configuration change and an explicit counterpoint.
-R365/R373 are source artifacts; this table is the E3 main display, not a new
-empirical experiment.}
+This table is the E3 main display, not a new empirical experiment.}
 \label{tab:actionability}
 \begin{tabular}{p{0.15\linewidth}p{0.20\linewidth}p{0.38\linewidth}p{0.20\linewidth}}
 \toprule
@@ -695,8 +692,8 @@ tracked specs over tracked operation JSONL inputs, executed twice for 152
 profiler invocations. The semantic profile content is stable for 76/76 specs in
 both modes; deterministic output also makes raw-byte profile files stable for
 76/76 specs by fixing profile timestamps. The clean deterministic rerun reports
-median runtime 1.601s and p95 2.767s per spec. The underlying run IDs are
-source-artifact provenance for this E4 block. This supports replayable offline
+median runtime 1.601s and p95 2.767s per spec. The source artifacts are
+provenance for this E4 block. This supports replayable offline
 profiling artifacts, not live eBPF overhead, analyst productivity, or another
 empirical profiling experiment.
 
@@ -711,10 +708,10 @@ checks keep local sessions and trace containers inside the same operation /
 operation-stack path. They do not add a new accuracy experiment, a third
 profiler object, or an ecosystem-compatibility claim.
 
-Tables~\ref{tab:r327} and~\ref{tab:r328} are the two E4 main displays: they
+Tables~\ref{tab:e4-replay-cost} and~\ref{tab:e4-determinism} are the two E4 main displays: they
 summarize the replayability/cost result and the deterministic-output repair,
-while their run labels remain source artifacts rather than additional accuracy
-experiments.
+while their row labels name source-spec families rather than additional
+accuracy experiments.
 
 The remaining paper gates are artifact hygiene, not empirical evidence. They
 reuse tracked-clean artifacts and the current paper text without reranking,
@@ -748,14 +745,14 @@ separately reports raw-byte hashes.
 \caption{E4 replayability/cost main display. Runtime is seconds per
 spec, measured after the Rust binary exists. Semantic hashes exclude the JSON
 \texttt{generated\_at} field; raw-byte hashes are reported separately.}
-\label{tab:r327}
+\label{tab:e4-replay-cost}
 \begin{tabular}{lrrrr}
 \toprule
 Workload & Specs & Med. s & P95 s & Med. stacks \\
 \midrule
-R300 view specs & 4 & 3.448 & 4.273 & 631.0 \\
-R324 rank-feature specs & 12 & 1.539 & 2.692 & 41.0 \\
-R326 robustness specs & 60 & 1.542 & 2.640 & 41.0 \\
+View specs & 4 & 3.448 & 4.273 & 631.0 \\
+Rank-feature specs & 12 & 1.539 & 2.692 & 41.0 \\
+Robustness specs & 60 & 1.542 & 2.640 & 41.0 \\
 All specs & 76 & 1.581 & 2.719 & 42.0 \\
 \bottomrule
 \end{tabular}
@@ -782,16 +779,16 @@ as a performance comparison against the default-output replay.
 
 \begin{table}[t]
 \centering
-\small
+\scriptsize
 \caption{E4 deterministic-output main display comparing default and
 \texttt{--deterministic-output} replay over the same 76 profile specs.}
-\label{tab:r328}
+\label{tab:e4-determinism}
 \begin{tabular}{llrrrr}
 \toprule
-Run & Mode & Sem. & Raw & Med. s & P95 s \\
+Config & Mode & Sem. & Raw & Med. s & P95 s \\
 \midrule
-R327 & default & 76/76 & 4/76 & 1.581 & 2.719 \\
-R328 & deterministic & 76/76 & 76/76 & 1.601 & 2.767 \\
+Default & default & 76/76 & 4/76 & 1.581 & 2.719 \\
+Deterministic & deterministic & 76/76 & 76/76 & 1.601 & 2.767 \\
 \bottomrule
 \end{tabular}
 \end{table}
