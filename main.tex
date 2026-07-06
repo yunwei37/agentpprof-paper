@@ -826,6 +826,15 @@ generates 4 core experiment rows and 20 metric rows, passes 6/6 table checks, an
 keeps the same non-claims: no profiler rerun, no dataset sync or relabeling, and
 no human or agent analyst task. Its role is table provenance rather than new
 evidence.
+R361 turns the same E1--E4 structure into a claim-evidence ledger. Each core
+experiment must state the claim, research question, oracle, baselines, primary
+metrics, headline result, actionable insight, counterpoint, scoped wording, and
+source runs. The gate passes 10/10 checks, covering hidden-label scale and metric
+surface, baseline tradeoff rather than metric dominance, oracle-depth and
+fragmentation evidence, mechanism/actionability counterpoints, reproducibility
+and reviewer gates, the two-abstraction boundary, and must-not-claim guardrails.
+R361 is still a paper-structure artifact: it reruns no profiler, syncs or
+relabels no dataset, and is not a human or agent analyst task.
 
 \begin{table*}[t]
 \centering
