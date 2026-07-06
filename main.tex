@@ -9,6 +9,7 @@
 \usepackage{array}
 \usepackage{xspace}
 \usepackage{url}
+\usepackage{graphicx}
 
 \newcommand{\toolname}{\textsc{AgentPProf}\xspace}
 \newcommand{\operation}{\texttt{operation}\xspace}
@@ -430,6 +431,20 @@ compact version used by the paper; the artifact also emits SVG, CSV, HTML, JSON,
 and the table fragment from tracked R320/R345/R348/R354/R355/R358 inputs. The
 views are not new profiler objects or a fifth experiment. They are different
 ways to inspect operation-stack outputs and their baseline counterpoints.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.48\linewidth]{figures/baseline-tradeoff.png}
+\hfill
+\includegraphics[width=0.48\linewidth]{figures/actionability-knobs.png}
+\caption{Two R363 non-flamegraph paper views. Left: the RQ2/E2 baseline
+tradeoff places operation-stack query-aware profiling in the low-inspection-work
+region while preserving fixed-session and oracle counterpoints. Right: the
+RQ3/E3 actionability view turns the same scored outputs into profile-configuration
+knobs, showing that many objectives require changing the view, ranker, profile
+spec, or boundary-derived fields rather than using one fixed default view.}
+\label{fig:r363-portfolio}
+\end{figure*}
 
 \begin{table*}[t]
 \centering
