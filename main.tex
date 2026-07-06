@@ -173,7 +173,7 @@ oracle-rich families with failure, safety, quality, and human-boundary labels.
 \begin{table*}[t]
 \centering
 \small
-\caption{Public labeled trace families used by the evaluation. The main R320
+\caption{Public labeled trace families used by the evaluation. The main E2
 hidden-label profiler benchmark uses the four oracle-rich rows in the bottom half.}
 \label{tab:datasets}
 \begin{tabular}{p{0.18\linewidth}p{0.29\linewidth}p{0.21\linewidth}p{0.22\linewidth}}
@@ -192,7 +192,7 @@ AgentNet & Human desktop PyAutoGUI, step correctness, redundancy & HF repo JSONL
 \end{tabular}
 \end{table*}
 
-For R320, we build six tasks: AgentRewardBench looping, AgentRewardBench
+For the E2 hidden-label profiler benchmark, we build six tasks: AgentRewardBench looping, AgentRewardBench
 side-effect, SATraj unsafe operation, AgentNet incorrect step, AgentNet
 redundant step, and OSWorld-Human group start. Each task has an oracle-positive
 field, but non-oracle rankers never read that field. We compare six views:
@@ -433,8 +433,8 @@ trace-tree proxy. Success is therefore a Pareto condition, not a single winning
 metric: operation stacks must reduce flat inspection work, improve a meaningful
 fixed-session localization or fragmentation objective, and keep fixed-session
 early-hit counterpoints visible. Table~\ref{tab:r320} is the main E2
-localization display; R320 is its source artifact, not a separate paper
-experiment. Flat summaries recover all positives, but only by inspecting the
+localization display; source artifacts remain in the evaluation ledger rather
+than becoming separate paper experiments. Flat summaries recover all positives, but only by inspecting the
 whole task, so their median work@5 and work-to-first-positive are both 1.0.
 Fixed-session drilldown finds an early
 positive with median work-to-first-positive 0.0044 and median work@5 0.0163,
@@ -443,13 +443,13 @@ groups. Query-aware operation stacks inspect median 0.0937 work in the top five
 groups, reach median recall@budget30 of 0.3900, and reduce the median group
 count to 157.5.
 
-Failure interpretation and baseline scope are part of the result. R368 treats
-fixed-session drilldown as the evaluated trace-tree-shaped baseline, not as
+Failure interpretation and baseline scope are part of the result.
+Fixed-session drilldown is the evaluated trace-tree-shaped baseline, not
 evidence of full OpenTelemetry/Phoenix/LangSmith/Perfetto compatibility. On the
-same R320 rows, operation-stack query-aware improves fixed-session top-five
+same scored rows, operation-stack query-aware improves fixed-session top-five
 recall and F1 on 5/6 tasks, budget-30 recall on 4/6, and group count on 4/6,
 while fixed-session retains lower top-five work and first-positive work on 4/6.
-R355 gives the depth-aware version of the same claim: operation-stack rankings
+The depth-aware slice gives the finer version of the same claim: operation-stack rankings
 beat fixed-session on budget-30 positive-unit recall for 20/24 task-depth rows
 and use fewer groups to reach 50\% positive units on 22/24 rows. If these
 counterpoints disappeared from the paper, the result would be overstated; with
@@ -460,9 +460,8 @@ dominance over every trace-tree-shaped objective.
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\caption{E2 hidden-label localization benchmark. R320 is the source artifact;
-hidden policies read oracle labels and are included only as upper bounds. WTFP
-is work-to-first-positive.}
+\caption{E2 hidden-label localization benchmark. Hidden policies read oracle
+labels and are included only as upper bounds. WTFP is work-to-first-positive.}
 \label{tab:r320}
 \begin{tabular}{lrrrrrrrrr}
 \toprule
@@ -480,7 +479,7 @@ label-drilldown:oracle-upper & 1 & 1.0000 & 1.0000 & 1.0000 & 0.6703 & 0.7972 & 
 \end{tabular}
 \end{table*}
 
-R363 packages the same scored outputs into non-flamegraph paper views instead
+The same scored outputs are packaged into non-flamegraph paper views instead
 of making flamegraphs the only presentation artifact. The main body keeps one
 representative figure because it directly serves E2 and E3: the left panel
 shows the localization/work/fragmentation tradeoff, and the right panel shows
@@ -494,7 +493,7 @@ experiments.
 \includegraphics[width=0.48\linewidth]{figures/baseline-tradeoff.png}
 \hfill
 \includegraphics[width=0.48\linewidth]{figures/actionability-knobs.png}
-\caption{Two R363 non-flamegraph paper views. Left: the RQ2/E2 baseline
+\caption{Two non-flamegraph paper views. Left: the RQ2/E2 baseline
 tradeoff places operation-stack query-aware profiling in the low-inspection-work
 region while preserving fixed-session and oracle counterpoints. Right: the
 RQ3/E3 actionability view turns the same scored outputs into profile-configuration
@@ -520,15 +519,16 @@ drilldown on 5 of 6 tasks and reduce median group fragmentation from 285.0 to
 157.5 groups, but fixed-session often finds the first positive with less work.
 Operation stacks also save work against flat summaries on all tasks, while flat
 remains the full-recall counterpoint and dataset-native hierarchy can reach high
-recall at high inspection work. The supporting R330--R334 and R355 audits keep
-this tradeoff honest rather than adding separate experiments: 10,000 paired
-bootstrap resamples show stable AP, work, budget-recall, and group-count deltas;
-2,000 label-permutation trials show AP exceeds the 95\% prevalence/group-size
-null on 6/6 tasks; the 30\% work-budget curve reaches median recall 0.3900
-versus 0.3559 for fixed-session and 0.0000 for flat; and the fragmentation audit
-uses fewer groups on 5/6 tasks at the same budget while preserving fixed-session
-first-positive-work counterpoints. R355 then repeats the comparison at
-dataset-provided oracle depths: operation-stack query-aware improves
+recall at high inspection work. The supporting bootstrap, label-permutation,
+work-budget, fragmentation, and depth-aware audits keep this tradeoff honest
+rather than adding separate experiments: 10,000 paired bootstrap resamples show
+stable AP, work, budget-recall, and group-count deltas; 2,000 label-permutation
+trials show AP exceeds the 95\% prevalence/group-size null on 6/6 tasks; the
+30\% work-budget curve reaches median recall 0.3900 versus 0.3559 for
+fixed-session and 0.0000 for flat; and the fragmentation audit uses fewer groups
+on 5/6 tasks at the same budget while preserving fixed-session
+first-positive-work counterpoints. Depth-aware scoring then repeats the
+comparison at dataset-provided oracle depths: operation-stack query-aware improves
 fixed-session budget-30 positive-unit recall on 20/24 task-depth rows and uses
 fewer groups to reach 50\% positive units on 22/24. Together, these slices
 support a faithful localization surface with better inspection-work and
@@ -603,13 +603,13 @@ At a 25\% recall target it covers all six tasks with median work 0.2000 versus
 flat 1.0000 and median 16.0 groups versus fixed-session 50.0; at 50\% recall,
 other depths or views become the best-work counterpoints. Sequence and
 oracle-depth audits add the inspection unit below and above individual groups.
-R355 shows that
+Sequence and oracle-depth scoring show that
 at a 30\% operation budget, operation-stack query-aware reaches median 0.4669
 positive-session recall versus fixed-session 0.3230, and across 24 oracle-depth
 rows it has median 0.4342 budget-30 positive-unit recall, beats fixed-session
 unit recall on 20/24 rows, and reaches 50\% positive units with fewer groups on
 22/24. Positive-run proxy units are derived episode units, not human intent
-boundaries. R355's fixed-session depth-gap counterpoint remains, so this is
+boundaries. The fixed-session depth-gap counterpoint remains, so this is
 depth-aware triage, not complete intent-boundary recovery.
 R344 also keeps the metric surface honest: it records 30 supporting
 baseline-metric comparisons, 16 explicit counterpoints, and nDCG cases where
@@ -821,7 +821,7 @@ the closest academic same-problem framing by arguing that agent observability
 should trace goals, plans, tools, artifacts, and associated data~\cite{agentops}.
 These systems are strong prior work, so the safe novelty claim is not generic
 ``agent observability.'' In this paper, traces, spans, sessions, and observations
-are exchange containers or baseline shapes. R320 evaluates fixed-session
+are exchange containers or baseline shapes. E2 evaluates fixed-session
 drilldown as the current trace-tree-shaped baseline; real
 OpenTelemetry/OpenInference or Phoenix span-tree imports remain future
 interoperability baselines. The profiler
@@ -849,7 +849,7 @@ claim.
 
 \textbf{Public labeled agent trajectories.}
 AgentRewardBench, OSWorld-Human, OpenCUA/AgentNet, SATraj-OS, and OSWorld
-provide the labels and workloads that make R320 possible~\cite{agentrewardpaper,
+provide the labels and workloads that make the hidden-label profiler benchmark possible~\cite{agentrewardpaper,
 osworldhuman,opencua,safactory,osworld}. Prior benchmark papers use these labels
 to evaluate agents, reward models, safety behavior, or efficiency. We use them
 as hidden oracles for a profiler benchmark: different stack-shaped aggregates
@@ -871,7 +871,7 @@ reproducibility gates. They do not add a new empirical claim; they explain when
 the headline comparison should be trusted and when it should be narrowed.
 
 The strongest negative results define the useful boundary. Operation-stack
-query-aware ranking improves AP over width on all six R320 tasks, but top-five
+query-aware ranking improves AP over width on all six E2 tasks, but top-five
 F1, first-positive work, and high-recall targets remain task dependent.
 Mapping helps some tasks and hurts others; feature ablations find both critical
 and misleading fields; held-out action transfer is often within tolerance but
