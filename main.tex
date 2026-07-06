@@ -590,241 +590,88 @@ first-positive-work, group reduction, and top-five work counterpoint;
 counterpoint, OSWorld-Human needs boundary fields, so this is not automatic
 boundary discovery, not automatic patch selection, and not a universal selector.
 
-R320 turns each task into an optimization diagnosis, summarized in
-Table~\ref{tab:actionability}. SATraj unsafe is the clearest operation-stack
-win: environment, phase, and action fields plus query-aware risk ranking give
-the best visible top-five F1. AgentRewardBench looping shows that
-\texttt{repeat\_signal} is useful, but positives are prevalent, so the next
-optimization is prevalence-aware ranking. Side-effect has large oracle
-headroom, pointing to deeper write/input mappings. AgentNet step-quality tasks
-need action-family localization followed by fixed-session examples. OSWorld
-boundary tasks need boundary-derived fields rather than action depth alone.
-R322 moves a bounded version of the ranking policy into the Rust profiler
-surface. It shows that visible stack-text rules can be replayed from profile
-specs and scored after ranking, but it also exposes a limitation: SATraj safety
-and AgentRewardBench side-effect need group-level feature density rather than
-binary stack-text boosts alone.
-R323 turns that limitation into a rank-policy ablation. Switching the same
-visible rules from width-boosted ranking to score-first ranking improves AP on
-4 of 6 tasks and top-five lift on 4 of 6 tasks, but hurts side-effect and
-OSWorld-Human, which points to deeper side-effect mappings and boundary-derived
-fields rather than one universal ranker.
-R324 closes more of that implementation gap by moving group-feature ranking
-into the Rust profiler. The profile spec records \texttt{rank\_op\_rules}; the
-R324 harness first derives a scrubbed visible-operation profiler input from the
-R300 source, so the profiler matches visible operation fields before folding,
-and aggregates feature density per stack group. Hidden labels are not passed to
-Rust and are used only for offline scoring. Semantic-stack operation-feature
-ranking improves AP over width on 5 of 6 tasks, top-five lift on 4 of 6 tasks,
-and first-positive work on 5 of 6 tasks. The coarse-stack variant improves AP
-on 4 of 6 tasks while
-reducing group fragmentation, but OSWorld-Human remains a counterexample that
-needs boundary-derived fields.
-R325 then asks which knobs matter. Leave-one-feature ablation identifies
-\texttt{repeat\_signal} as critical for looping, write-action features as
-critical for side effects, and \texttt{status=success} as the strongest SATraj
-safety feature. It also identifies misleading features: a SATraj loop-like rule
-and OSWorld-Human input-phase rules can hurt AP or first-positive work. This is
-the concrete actionability result: the profiler points to which field mappings,
-rank features, and stack depths should be changed for each task family.
-R326 checks that this actionability is not only a single weight vector. Global
-equal visible features beat width on 4 of 6 semantic and 5 of 6 coarse tasks,
-task-equal policies remain within 0.02 AP of weighted policies on 8 of 12
-variants, and R325-guided repairs improve AP on 2 of 3 misleading-feature cases
-and first-positive work on 2 of 3 cases, with 1 of 3 improving both. The
-repair result is intentionally scoped: it uses offline ablation feedback to show
-how profiler output can guide policy changes, not to claim an automatically
-learned universal ranker.
-R329 checks a stronger leakage boundary for policy selection. The profiler
-evaluates 96 policy/task/stack combinations, then selects a transfer policy
-using leave-target-task or leave-dataset scores before looking at the target
-labels. Held-out scoring improves semantic/coarse AP over width on 4 of 6 tasks
-and semantic first-positive work on all six tasks. The mean AP gap to the
-oracle-best candidate is about 0.032, which leaves headroom for task-family
-selection and calibration. The supported conclusion is mechanism isolation:
-operation-level rank features and source-task policies transfer enough to guide
-tuning, while still requiring task-aware choice rather than a fixed universal
-ranker.
-R332 makes the same point at the view/depth level: best visible AP and best
-top-five F1 are not monopolized by one hierarchy, and leave-task source
-selection cannot reliably pick the best visible view. Actionability is therefore
-not a hard-coded ``best tree''; it is the ability to change stack depth, field
-mapping, predicates, and rank policy while scoring the same operations.
-R333 adds the budget axis to this diagnosis: query-aware operation-stack ranking
-improves AP over width on 6 of 6 tasks and 30\%-budget recall on 5 of 6 tasks,
-showing that ranker choice changes both accuracy and inspection cost.
-R334 adds a second cost axis: reducing visible group fragmentation and reducing
-first-positive operation work are different objectives, so fixed-session
-drilldown should remain available even when operation stacks are the better
-cross-session grouping.
-R335 makes that diagnosis explicit in a mechanism ledger. It reads only tracked
-R320/R325/R326/R329/R332/R334 artifacts and creates six task-level
-actionability cards. All 6 of 6 cards contain a concrete optimization action,
-and query-aware ranking improves AP over width on all 6. The same cards preserve
-the counterpoints: mapping helps only 2 of 6 tasks and hurts 4 of 6, critical
-features appear on 4 of 6 tasks, misleading features on 2 of 6, coarse depth
-reduces groups on all 6 tasks but is AP-preferred on only 2 of 6, and
-fixed-session drilldown has lower work-to-first-positive on 4 of 6. Thus the
-actionability claim is that the profiler identifies which knobs to tune, not
-that one knob is universally correct.
-R336 turns the ledger into an objective-specific selection audit over the 15
-visible R320 policies. Operation-stack query-aware is Pareto-frontier on 6 of 6
-tasks, best visible AP on 3 of 6, best 30\%-budget recall on 3 of 6, lower
-top-five work than flat on 6 of 6, higher top-five recall than fixed-session on
-5 of 6, and lower groups-to-50\% positives than fixed-session on 5 of 6. It
-also keeps the sharp limits: each task has multiple objective-specific best
-policies, flat is the pure group-count minimum, and operation-stack has lower
-work-to-first-positive than fixed-session on only 2 of 6 tasks.
-R337 reframes the same curves as fixed-recall target costs. At a 25\% recall
-target, operation-stack query-aware covers 6 of 6 tasks with median inspected
-work 0.2000 and median 16.0 groups. Flat also covers 6 of 6 but only by
-inspecting median work 1.0000; fixed-session also covers 6 of 6 but uses median
-50.0 groups. At a 10\% early-recall target, operation-stack and fixed-session
-both cover all tasks, but operation-stack uses median 12.5 groups versus 37.5.
-At 50\% recall, operation-stack query-aware reaches only 5 of 6 tasks and
-operation-stack width, dataset-native, and raw-action policies become best-work
-counterpoints. The target-cost result therefore strengthens the
-inspection-cost and fragmentation claim without making the default policy
-universal.
-R339 evaluates sequence-scope adequacy over the same ranked outputs. It treats
-sessions/trajectories as the inspection scope a profiler user may enter after a
-hot group is ranked, then measures positive-session recall and session work.
-At top five groups, operation-stack query-aware inspects median 0.0937 operation
-work and reaches median 0.2629 positive-session recall, while fixed-session
-reaches 0.0160 positive-session recall and flat requires 1.0000 work. At a
-30\% operation budget, operation-stack query-aware reaches median 0.3900
-positive-operation recall and 0.4669 positive-session recall while touching
-median 0.3467 sessions. Fixed-session reaches 0.3230 positive-session recall;
-raw action reaches higher positive-session recall, 0.5147, but touches 0.9103
-sessions. The result supports sequence-scope triage, not single-view dominance.
-R355 extends that audit below session scope. It keeps the same existing labeled
-operation JSONL and visible-ranked policy outputs, then scores groups at the
-oracle depth available for each task: session, operation or step,
-positive-run episodes computed from contiguous target-positive labels, and
-task-specific units such as AgentRewardBench turns, AgentNet/SATraj steps, and
-OSWorld-Human human groups. Hidden labels are used only after ranking. Across
-24 accuracy task-depth rows, operation-stack query-aware has median top-five
-oracle-unit work 0.1307, median budget-30 positive-unit recall 0.4342, median
-budget-30 unit F1 0.4484, and median positive-run recall 0.4908. Compared with
-flat, it has lower top-five unit work on 24/24 rows; compared with
-fixed-session, it has higher budget-30 unit recall on 20/24 rows, higher unit
-F1 on 18/24 rows, and fewer groups to 50\% positive units on 22/24 rows; compared
-with raw-action, it has fewer positive units per group on 24/24 rows. The
-negative result is explicit: the positive-session-without-unit gap is not
-better than fixed-session. Thus R355 supports depth-aware localization and
-inspection-cost accounting, not automatic recovery of every latent subtask or
-intent boundary.
-R340 evaluates whether objective-specific policy choice can transfer without
-looking at target labels during selection. It reuses the already-scored R320 and
-R339 artifacts, selects visible policies from non-target tasks or non-target
-datasets, and uses the held-out labels only for final scoring. Across 96
-decisions, 31 are exact-best and 62 are within tolerance of the held-out best
-visible policy. The selected policies beat width, fixed-session, and flat
-baselines on 72, 69, and 41 decisions, respectively. Because operation-stack
-views are selected on only 16 decisions, the conclusion is audited
-policy/view/stack-depth actionability, not an automatic selector or default
-hierarchy dominance.
-R341 then attributes the objective-level successes and transfer misses to
-mechanisms. Across 36 objective-task rows, all 36 carry a concrete optimization
-action, but 27 best visible policies are not the default operation-stack
-query-aware view. Among the 34 transfer decisions outside tolerance, 32 change
-view relative to the held-out best and 26 change ranker, so the failure analysis
-points to stack-shape and ranking-policy knobs rather than opaque errors.
-R342 then audits the profile-spec composition boundary over the R324/R300 real
-labeled Rust outputs. It verifies that 12/12 task-depth variants compose
-operation sources, predicates, per-operation rank rules, \texttt{rule-score} ranking,
-and explicit stack depth without prompt/session frames. The same composed
-variants improve AP over width on 9/12 variants and first-positive work on
-10/12 variants; coarse depth reduces groups on 6/6 tasks with median reduction
-0.8267, while the best AP depth still splits between semantic and coarse stacks.
-R344 then audits the R320 metric surface directly. Across 50 baseline-metric
-comparisons, 30 support operation-stack query-aware, 16 are counterpoints, and
-4 are mixed or weak. AP, 30\% work-budget recall/F1, inspection work,
-work-to-first-positive, and group fragmentation carry the main profiling
-tradeoff; nDCG and coarse top-k recall remain secondary counterpoints because
-flat or dataset-native groups can score well by inspecting broad groups.
-R345 then summarizes the actionability evidence as a diagnostic-lens portfolio
-over tracked R335/R341/R344 artifacts. Six lenses cover 36 objective rows:
-ranked-stack AP, hot-stack F1, budgeted inspection, first-positive drilldown,
-recall fragmentation, and group-fragmentation overview. Operation-stack-family
-views win 11/36 objectives, non-operation-stack counterpoints win 25/36, and
-6/6 tasks require at least three best views, so the profiler exposes a set of
-task-specific analysis lenses rather than a single default hierarchy.
-R346 then builds a diagnostic casebook over tracked R335/R345 artifacts and the
-existing labeled operation JSONL. The visible query-aware ranker selects top-5
-operation-stack groups before hidden labels are used for scoring. The 30 case
-groups cover 6 tasks and 4 datasets; top-5 groups contain positives on 6/6
-tasks, top-1 groups contain positives on 5/6 tasks, median top-5 recall is
-0.188, precision is 0.1991, lift is 1.6508, work is 0.0937, and median
-first-positive work is 0.0378. All 6/6 case cards connect evidence to an
-optimization action and a counterpoint.
-R347 then compares the same case-level evidence across 5 visible views and 30
-view-task rows: flat, fixed-session, dataset-native, raw-action, and
-operation-stack. Hidden labels score already-ranked top-5 groups only.
-Operation stacks contain positives in top-5 groups on 6/6 tasks and top-1
-groups on 5/6 tasks; they win against flat top-5 work on 6/6 tasks,
-fixed-session top-5 recall on 5/6 tasks, and fixed-session group count on 4/6
-tasks. The audit keeps fixed-session first-positive work and flat full-work
-recall as counterpoints, so it is not a universal selector; it supports a
-case-level baseline tradeoff.
-R348 then audits action counterfactuals over tracked R335/R341/R347 artifacts.
-It reads already-scored visible policy rows and does not turn hidden labels into
-a deployment selector. Across 36 objective rows, all 36 best rows are visible
-and non-oracle; 27/36 require a non-default action, 25/36 require a view
-change, 2/36 require operation-stack ranker tuning, and 25/36 are
-non-operation-stack counterpoints. All 6/6 tasks have non-default actions, at
-least three action classes, and case counterpoints. The median gain over the
-default operation-stack query-aware policy is 0.1447, and the median
-non-default gain is 0.6188.
-R349 then audits held-out action transfer over tracked R340/R348 artifacts. It
-maps non-target-selected visible policies to action classes and compares them
-against the R348 target-task action oracle. Of 96 transfer decisions, 60 align
-to R348 objectives and 36 sequence-only decisions are excluded. Held-out
-selection stays within tolerance on 35 of 60 aligned decisions and beats the
-default operation-stack policy on 30 of 60, but exact action-class transfer is
-only 7 of 60 and only 2 of 42 when the target best action is non-default. This
-is useful actionability/protocol-sensitivity evidence, but it rules out a
-label-free automatic action selector claim.
-R350 combines R346--R349 into an evidence-packet budget audit. Each packet joins
-top-ranked operation-stack evidence, baseline counterpoints, action
-counterfactuals, and the held-out action-transfer guardrail. Top-five packets
-contain positives on 6 of 6 tasks, top-one packets on 5 of 6, and 4 of 6 meet
-the strict 30\% operation-work budget and the first-positive <=10\% work
-budget. Median top-five work/recall/lift is 0.0937/0.188/1.6508. The same
-packets preserve 6 of 6 baseline counterpoints, 27 of 36 non-default objective
-rows, 36 of 36 visible non-oracle best rows, and the R349 35 of 60
-within-tolerance and 7 of 60 exact-action guardrail. The two strict-budget
-exceptions are the high-prevalence looping task and the human-boundary
-group-start task, so the supported claim is bounded actionable evidence
-packets, not universal budget dominance or an automatic action selector.
-R354 materializes one actionability loop as executable profile-spec patches.
-The harness reads the tracked R324 visible-operation profiler input and R348
-action cards, writes default semantic-width profile specs and profile-guided
-patched specs, reruns Rust \texttt{agentpprof --profile-spec}, and scores the
-emitted groups with hidden labels only after profiling. Five of six patches are
-accepted and improve AP, top-five lift, and first-positive work; median AP
-delta is 0.0376 and median top-five lift delta is 0.5750. The rejected
-OSWorld-Human patch is useful negative evidence: visible phase/action rank
-features are not enough for a human-boundary objective, so the next action is a
-boundary-derived field rather than a universal rank-feature patch.
-R358 follows up that rejected OSWorld-Human patch with the held-out R297
-boundary-derived fields as ordinary operation fields. The learned-boundary
-profile improves AP to 0.2583, compared with 0.2402 for semantic-width and
-0.2253 for the visible-rank patch, and reduces groups to 74 rather than 108
-semantic groups or 96 fixed-session groups. It also records the counterpoint:
-top-five operation work and first-positive work increase on this held-out
-subset. The result belongs to mechanism/actionability, not automatic boundary
-discovery or an automatic patch selector.
-R355 then scores whether the same ranked profiles localize at the finer oracle
-depth provided by each dataset. It covers 24 accuracy task-depth rows across
-session, operation/step, positive-run, and task-specific units, plus a
-ScaleCUA context-only row. Operation-stack query-aware has median top-five
-oracle-unit work 0.1307, median budget-30 positive-unit recall 0.4342, median
-budget-30 unit F1 0.4484, and median positive-run recall 0.4908. It improves
-fixed-session budget-30 unit recall on 20/24 rows and groups-to-50\% positive
-units on 22/24 rows, but it does not reduce the positive-session-without-unit
-gap versus fixed-session. The supported claim is therefore depth-aware triage
-and cost accounting, not complete intent-boundary discovery.
+R320 turns localization scores into an optimization diagnosis rather than only
+a leaderboard, summarized in Table~\ref{tab:actionability}. SATraj unsafe is
+the cleanest operation-stack win: environment, phase, and action fields plus
+query-aware risk ranking give the best visible top-five F1. Looping exposes the
+value and limit of \texttt{repeat\_signal}: it helps ranking, but positives are
+prevalent, so prevalence-aware ranking remains the optimization. Side-effect
+has large oracle headroom and points to deeper write/input mappings. AgentNet
+step-quality tasks need action-family localization followed by fixed-session
+examples. OSWorld-Human needs boundary-derived fields rather than action depth
+alone. Thus the first actionability result is not that one view wins; it is that
+the profiler identifies which stack field, mapping, ranker, or drilldown should
+change for each task family.
+
+The Rust mechanism ablations isolate where those diagnoses come from. Stack-text
+rules and rank-mode variants (R322/R323) are replayable from profile specs, but
+they are too coarse for safety and side-effect tasks. Operation-level rank
+features (R324) close that gap by matching visible mapped operation tokens
+before folding: semantic-stack feature ranking improves AP over width on 5 of 6
+tasks, top-five lift on 4 of 6, and first-positive work on 5 of 6; coarse depth
+improves AP on 4 of 6 while reducing groups. Leave-one-feature and robustness
+ablations (R325/R326) make the knobs concrete: \texttt{repeat\_signal},
+write-action features, and \texttt{status=success} are critical in different
+families, while misleading safety-like or input-phase features can hurt AP or
+first-positive work. Equal/global feature banks often preserve the gains, and
+R325-guided repairs improve AP on 2 of 3 misleading-feature cases, but these
+repairs use offline scored feedback and are not an automatic learned ranker.
+
+The view and policy audits show the same mechanism at the analysis-surface
+level. Best AP and best top-five F1 are split across operation-stack,
+fixed-session, dataset-native, raw-action, and flat views; leave-task source
+selection cannot reliably pick the best visible view. Nevertheless, the
+operation-stack query-aware policy remains Pareto-frontier on all six tasks,
+beats flat top-five work on all six, beats fixed-session top-five recall on 5
+of 6, and reaches fewer groups-to-50\% positives than fixed-session on 5 of 6.
+At a 25\% recall target it covers all six tasks with median work 0.2000 versus
+flat 1.0000 and median 16.0 groups versus fixed-session 50.0; at 50\% recall,
+other depths or views become the best-work counterpoints. Sequence and
+oracle-depth audits add the inspection unit below and above individual groups:
+at a 30\% operation budget, operation-stack query-aware reaches median 0.4669
+positive-session recall versus fixed-session 0.3230, and across 24 oracle-depth
+rows it has median 0.4342 budget-30 positive-unit recall, beats fixed-session
+unit recall on 20/24 rows, and reaches 50\% positive units with fewer groups on
+22/24. The fixed-session depth-gap counterpoint remains, so this is
+depth-aware triage, not complete intent-boundary recovery.
+R344 also keeps the metric surface honest: it records 30 supporting
+baseline-metric comparisons, 16 explicit counterpoints, and nDCG cases where
+flat or dataset-native views can win.
+
+The actionability portfolio turns those comparisons into reviewer-auditable
+optimization insight. R335/R341 show that all 36 objective rows have a concrete
+action, but 27/36 best visible policies are not the default operation-stack
+query-aware view; transfer misses are mostly view or ranker changes rather than
+opaque errors. R345/R346/R347 present the same evidence as diagnostic lenses,
+case packets, and baseline contrasts: six lenses cover 36 objectives, top-five
+case groups contain positives on 6/6 tasks, top-one groups on 5/6, median
+top-five lift is 1.6508 at 0.0937 work, and operation stacks beat flat top-five
+work on 6/6 and fixed-session top-five recall on 5/6 while preserving
+fixed-session first-positive and flat full-recall counterpoints. R348/R349 then
+separate visible counterfactual actions from target-label leakage: 36/36 best
+rows are visible non-oracle, 27/36 require a non-default action, 25/36 require a
+view change, and held-out action transfer stays within tolerance on 35/60
+aligned decisions but exactly transfers the action class only 7 of 60 times and
+only 2 of 42 times on non-default target actions.
+R350 packages this into bounded evidence packets: top-five positives on 6/6
+tasks, top-one positives on 5/6, strict 30\% work budget on 4/6, and the same
+transfer guardrail. The actionable claim is therefore a tunable diagnosis
+surface, not a label-free automatic selector.
+
+Finally, executable patches close one loop from diagnosis to profiler
+configuration. R354 writes default and profile-guided Rust profile specs over
+the same visible operation input and scores hidden labels only after
+\texttt{agentpprof --profile-spec}. Five of six patches improve AP, top-five
+lift, and first-positive work, with median AP delta 0.0376 and median top-five
+lift delta 0.5750. The rejected OSWorld-Human patch is the important negative
+case: visible phase/action rank features are insufficient for a human-boundary
+objective. R358 follows that diagnosis by folding held-out boundary-derived
+operation fields; learned-boundary profiles improve AP to 0.2583 versus 0.2402
+for semantic width and reduce groups to 74 versus 108, while top-five work and
+first-positive work increase. This supports boundary fields as an actionable
+operation-field knob, not automatic boundary discovery or automatic patch
+selection. The result belongs to mechanism/actionability, not a fifth core
+experiment.
 
 \subsection{E4: Reproducibility, Cost, and Claim Integrity}
 
@@ -1004,164 +851,64 @@ scoped novelty.
 
 \section{Discussion}
 
-The result scope is deliberately narrow. R320 supports profiler fidelity with respect to dataset-provided labels,
-label-scored localization/ranking, work tradeoffs, fragmentation reduction, and
-actionable optimization insight on six real labeled tasks. R327 supports
-offline profile-spec reproducibility and local execution cost for the tracked
-artifacts; R328 adds opt-in byte-stable output for those artifacts. R329 adds
-held-out rank-policy transfer evidence, but selection still uses labeled
-training tasks. R330 adds task-paired uncertainty evidence over R320 point
-estimates, but it is not a per-operation independence analysis. R331 adds a
-label-permutation negative control for prevalence and group-size explanations,
-but it does not upgrade top-five precision, first-positive work, or label-free
-deployment claims. R332 adds a view/depth task-fit audit and shows that best
-visible policies vary by task and objective, so it supports a configurable
-analysis surface rather than an automatic view selector. R333 adds
-inspection-efficiency curves and strengthens the budgeted-recall evidence while
-keeping fixed-session first-positive work as a counterpoint. R334 strengthens
-the fixed-session fragmentation claim while showing that first-positive and
-work-to-50\% metrics remain fixed-session counterpoints. R336 adds an
-objective-specific selection audit: operation-stack query-aware is
-Pareto-frontier on all six tasks, but each task still has multiple best policies
-across objectives, so the result is not an automatic universal selector. R337
-adds fixed-recall target costs: at 25\% recall, operation-stack query-aware
-reaches all six tasks with median work 0.2000 versus flat 1.0000 and median
-16.0 groups versus fixed-session 50.0, while the 50\% target remains a
-counterpoint. R339 adds sequence-scope adequacy: at 30\% work,
-operation-stack query-aware reaches median 0.4669 positive-session recall
-versus fixed-session 0.3230, while raw action reaches 0.5147 but touches 0.9103
-sessions. R355 adds oracle-depth adequacy over session, operation/step,
-positive-run, and task-specific units: operation-stack query-aware has median
-0.4342 budget-30 positive-unit recall, beats fixed-session recall on 20/24
-task-depth rows, and reaches 50\% positive units with fewer groups on 22/24
-rows, while the fixed-session depth-gap counterpoint remains. R340 adds
-non-target policy transfer: selected visible policies stay
-within tolerance on 62/96 held-out decisions and beat width, fixed-session, and
-flat baselines on 72/96, 69/96, and 41/96 decisions, while operation-stack views
-are selected on 16/96 decisions. R341 attributes the remaining actionability
-and failure modes: 36/36 objective rows have optimization actions, 27/36 best
-visible policies are non-default, and 34/96 transfer misses are classified by
-view/ranker or baseline-counterpoint explanations. R344 records that 30/50
-baseline-metric comparisons support operation-stack query-aware, while 16/50
-are counterpoints and nDCG/top-k recall remain secondary. R345 adds the
-diagnostic-lens portfolio: 6 lenses over 36 objective rows, 11/36
-operation-stack-family objective wins, 25/36 non-operation-stack counterpoints,
-and 6/6 tasks requiring at least three best views. R346 adds case-level
-evidence: 30 top-ranked case groups, 6/6 top-5 positive tasks, 5/6 top-1
-positive tasks, median top-5 lift 1.6508, and median top-5 work 0.0937. R347
-adds case-level baseline contrast: 5 visible views, 6/6 wins versus flat
-top-5 work, 5/6 wins versus fixed-session top-5 recall, and 4/6 wins versus
-fixed-session group count, with first-positive and full-recall counterpoints
-preserved. R348 adds action counterfactuals: 36/36 visible non-oracle best
-rows, 27/36 non-default action rows, 25/36 view-change rows, 2/36
-operation-stack ranker-tuning rows, and median gain over default 0.1447. R349
-adds held-out action transfer: 60 aligned decisions, 35 of 60 within tolerance,
-30 of 60 beating default, but only 7 of 60 exact action-class transfers and
-only 2 of 42 exact transfers on non-default target actions. R350 adds bounded
-evidence packets: top-five positives on 6 of 6 tasks, strict 30\% work budget
-on 4 of 6, 27 of 36 non-default objective rows, and the 35 of 60
-within-tolerance transfer guardrail. R338 checks that
-the paper-facing R320--R350 numbers, result invariants, source-policy checks,
-guardrail checks, and two-abstraction boundary remain
-aligned. R352 maps the same evidence to a profiling-paper rubric and passes
-26/26 required checks, making the evaluation gate explicit without adding a new
-empirical claim.
-These
-results do not show that humans or agents answer questions
-faster with the tool, nor do they measure live eBPF overhead. They also do not
-show automatic discovery of all intent boundaries, nor complete compatibility
-with OpenTelemetry, Phoenix, LangSmith, Langfuse, or Perfetto producers. Those
-systems remain related work and baselines. In this paper, trace formats are
-containers; fixed sessions are the evaluated drilldown baseline, while real
-span-tree imports remain future baselines. The profiler abstractions remain only
-operations and operation stacks.
+The result scope is deliberately narrow. The main claim is a profiler claim:
+on six real labeled tasks, operation-stack profiles can be scored as ranked
+localization outputs against dataset-provided labels, and they expose a
+work/fragmentation/actionability tradeoff against flat summaries,
+fixed-session drilldown, dataset-native hierarchy, and raw-action stacks. The
+supporting audits add uncertainty checks, label-permutation negative controls,
+view/depth task-fit checks, fixed-recall target costs, sequence-scope scoring,
+oracle-depth scoring, action counterfactuals, transfer guardrails, and
+reproducibility gates. They do not add a new empirical claim; they explain when
+the headline comparison should be trusted and when it should be narrowed.
 
-The negative results are also useful. Mapping beats a raw action/status stack
-on top-five F1 for only 2 of 6 tasks, so field derivation is task-sensitive.
-Query-aware ranking improves AP over width-only operation-stack ranking on all
-six tasks, but top-five F1 and work still expose calibration and prevalence
-counterexamples. R322's Rust \texttt{rank\_rules} improve AP over width on 4 of
-6 tasks, R323's \texttt{rule-score} mode improves AP over \texttt{width-boost}
-on 4 of 6 tasks, R324's operation-feature ranking improves semantic-stack AP
-over width on 5 of 6 tasks, R325 finds 7 critical and 3 misleading feature
-instances, and R326 shows equal-weight/global-bank policies often preserve the
-gains while ablation-guided repairs improve AP on 2 of 3 misleading cases and
-first-positive work on 2 of 3 cases. R329 held-out transfer improves AP on
-4 of 6 semantic and 4 of 6 coarse tasks and semantic first-positive work on
-6 of 6 tasks, but still leaves side-effect, SATraj, and boundary-field
-counterexamples. R330 classifies 10 task-paired metric checks as directionally
-stable and 10 as mixed or counterpoints, which keeps the actionability claim
-auditable rather than absolute. R331 shows operation-stack query-aware AP is
-above the label-permutation null on 6 of 6 tasks and budgeted recall on 5 of 6,
-but top-five precision and first-positive work remain null-limited. R332 shows
-that best AP and best top-five F1 are split across multiple view families, and
-that leave-task source selection is exact-best on neither AP nor top-five F1.
-R333 shows that the strongest budgeted-recall point is at 30\% inspected work,
-where operation stacks beat flat, fixed-session, dataset-native, and raw-action
-core policies in median recall, while still preserving fixed-session
-first-positive work as a real tradeoff. R334 then shows why that wording should
-say fragmentation, not work dominance: operation stacks use fewer ranked groups
-than fixed-session to reach 50\% positives on 5 of 6 tasks, but lower
-work-to-first-positive on only 2 of 6 tasks. R335 turns the mixed results into
-six concrete task cards and a mechanism ledger, showing that every task has an
-optimization action while mapping, feature, depth, transfer, and fixed-session
-choices remain task-specific.
-R336 then maps those choices to diagnostic objectives: operation-stack
-query-aware is the best AP policy on 3 of 6 tasks and the best 30\%-budget
-recall policy on 3 of 6 tasks, while fixed-session and raw-action remain real
-counterpoints for first-positive work and top-five F1.
-R337 maps the same ranking outputs to fixed recall targets, showing where the
-default stack saves work against flat summaries and groups against fixed-session
-drilldown, and where higher-recall targets require a different depth or view.
-The right design implication is to expose stack fields, mapping rules, rank
-modes, operation-level rank features, global defaults, and task-specific ranker
-policies to the user, not to hard-code one hierarchy.
+The strongest negative results define the useful boundary. Operation-stack
+query-aware ranking improves AP over width on all six R320 tasks, but top-five
+F1, first-positive work, and high-recall targets remain task dependent.
+Mapping helps some tasks and hurts others; feature ablations find both critical
+and misleading fields; held-out action transfer is often within tolerance but
+rarely transfers the exact action class for non-default targets. Fixed-session
+drilldown remains a real first-positive counterpoint, raw-action stacks can
+cover broader session scope, and OSWorld-Human needs boundary-derived fields.
+These counterpoints are why the design exposes stack fields, mapping rules,
+rank modes, operation-level rank features, profile specs, and task-specific
+policies instead of hard-coding one hierarchy.
+
+These results do not show that humans or agents answer questions faster with
+the tool, nor do they measure live eBPF overhead. They also do not show
+automatic discovery of all intent boundaries, a label-free automatic selector,
+or complete compatibility with OpenTelemetry, Phoenix, LangSmith, Langfuse, or
+Perfetto producers. Those systems remain related work and baselines. In this
+paper, trace formats are containers; fixed sessions are the evaluated drilldown
+baseline, while real span-tree imports remain future baselines. The profiler
+abstractions remain only operations and operation stacks.
 
 \section{Conclusion}
 
 \toolname reduces agent profiling to two abstractions. Operations carry all
-observed and derived fields, while operation stacks fold those fields at the
-depth chosen by the query. Mapping and \texttt{--where} predicates choose fields
-and operation subsets before folding, but they remain query components rather
-than profiler objects. Across 15 public labeled trace sources, this model
-covers web, mobile, desktop, software, API, dialogue, failure, safety, human
-boundary, and step-quality trajectories. On the four oracle-rich families used
-for R320, operation-stack profiling localizes and ranks real labeled problems
-with less work than flat summaries and less fragmentation than fixed-session
-drilldown. R324--R329 show that visible operation-level rank features, feature
-ablations, equal-weight/global-bank policies, ablation-guided repairs, and
-target-held-out transfer can turn those rankings into concrete optimization
-guidance while preserving hidden-label separation. R330--R333 then stress-test
-the same comparisons with task-paired uncertainty, label-permutation negative
-controls, view/depth task-fit audits, and inspection-efficiency curves. R334
-adds the corresponding fragmentation audit, R335 turns those results into
-task-level actionability cards, R336 maps the cards to objective-specific
-visible policy choices, R337 maps ranked outputs to fixed-recall
-inspection-cost targets, R339 scores sequence-scope adequacy, R355 scores
-oracle-depth adequacy, R340 tests
-non-target policy transfer, R341 classifies mechanism and transfer-error
-attribution, R342 checks profile-spec composition and stack-depth tradeoffs, R344
-checks multi-metric consistency and counterpoints, R345 turns those results into
-a diagnostic-lens portfolio, R346 builds case-level diagnostic evidence, R347
-contrasts those cases against flat, fixed-session, dataset-native, and
-raw-action visible views, R348 audits action counterfactuals over already-scored
-visible policies, R349 audits held-out action-transfer guardrails, R350 assembles
-bounded evidence packets with top-five positives on 6 of 6 tasks and strict
-30\% work budget on 4 of 6, R354 materializes profile-guided before/after specs
-on the Rust profiler, R355 scores oracle-depth adequacy over 24 task-depth rows,
-and
-R338
-mechanically checks that the R320--R350 paper-facing numbers and guardrails
-remain aligned. R352 then checks the accepted paper state against an OSDI-style
-profiling-paper rubric and passes 26/26 required checks without adding a new
-empirical result. The
-paper's central claim is therefore a profiler claim: the operation/operation-stack
-model exposes dataset-labeled task-relevant failures,
-quality problems, and semantic boundaries, and it produces actionable
-optimization insight without relying on prompt/session/span boundaries. R327
-adds that these claims are carried by repeatable profile specs whose semantic
-outputs reproduce across runs on tracked inputs; R328 makes the same tracked
-profile outputs byte-stable when deterministic artifact mode is enabled.
+observed and derived fields; operation stacks fold those fields at the depth
+chosen by the query. Mapping, predicates, rank rules, profile specs, trace
+exchange, and boundary backends are mechanisms around those two objects, not
+additional profiler abstractions.
+
+Across 15 public labeled trace sources, the model covers web, mobile, desktop,
+software, API, dialogue, failure, safety, human-boundary, and step-quality
+trajectories. On the four oracle-rich families, operation-stack profiling
+localizes and ranks labeled problems with less inspection work than flat
+summaries and less fragmentation than fixed-session drilldown, while the
+mechanism audits show which fields, mappings, rankers, depths, and profile-spec
+patches produce the gains. The paper's central claim is therefore a profiler
+claim: operation/operation-stack profiling exposes dataset-labeled
+task-relevant failures, quality problems, and semantic boundaries, and produces
+actionable optimization insight without relying on prompt/session/span
+boundaries.
+
+The evidence remains scoped. The profile-spec and deterministic-output audits
+make the offline artifacts reproducible; the claim-integrity and rubric gates
+keep the paper aligned with tracked results. They do not claim human or agent
+analyst productivity, live eBPF overhead, automatic discovery of all intent
+boundaries, a label-free universal selector, or complete compatibility with
+OpenTelemetry, Phoenix, LangSmith, Langfuse, or Perfetto producers.
 
 \begin{thebibliography}{20}
 \bibitem{flamegraphs} Brendan Gregg. Flame Graphs. \url{https://www.brendangregg.com/flamegraphs.html}.
