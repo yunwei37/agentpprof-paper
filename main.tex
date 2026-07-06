@@ -423,6 +423,37 @@ Oracle-depth adequacy & \texttt{oracle-depth-adequacy.svg} & Lower top-5 unit wo
 \end{tabular}
 \end{table*}
 
+R365 further distills the same E2/E3 evidence into headline rows and task case
+cards for the main paper, instead of exposing the chronological run history. It
+only reads tracked artifacts and does not download data, relabel traces, or
+rerun the profiler. R365 is therefore a paper-integration artifact, not a fifth
+experiment and not a new profiler object beyond operations and operation
+stacks. Table~\ref{tab:r365-headlines} gives the compact main-paper version;
+the generated case cards keep the best visible policy, operation-stack top-five
+work/recall/lift, profile-spec patch verdict, optimization action, and
+counterpoint for each of the six tasks.
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\caption{R365 E2/E3 headline and case-study selector. It reads tracked
+artifacts only, does not download data or rerun the profiler, and is not a
+fifth experiment.}
+\label{tab:r365-headlines}
+\begin{tabular}{p{0.10\linewidth}p{0.18\linewidth}p{0.42\linewidth}p{0.20\linewidth}}
+\toprule
+Row & Role & Main numbers & Counterpoint \\
+\midrule
+H1 & localization/work & 6 tasks / 4 datasets / 34,539 operations / 3,699 positives; Work@5 0.0937 vs flat 1.0; R@30\% 0.3900 vs fixed-session 0.3559. & Fixed-session WTFP 0.0044; dataset-native R@5 0.8665 at high work. \\
+H2 & fragmentation & Groups 157.5 vs fixed-session 285; top-five recall wins 5/6; 30\% budget inspects fewer groups on 5/6 tasks. & Fixed-session remains an early-hit counterpoint. \\
+H3 & oracle depth & 24/24 rows have lower top-five unit work than flat; 20/24 beat fixed-session unit recall; 22/24 use fewer groups to 50\% positives. & Session labels and positive-run proxies are not human intent labels. \\
+H4 & actionability & 27/36 objective rows need non-default actions; 25/36 require view changes; R354 accepts 5/6 patches with median AP delta 0.0376 and lift delta 0.5750. & Not an automatic patch selector or human-productivity result. \\
+H5 & boundary mechanism & Learned-boundary AP 0.2583 vs semantic-width 0.2402; groups 74 vs 108; top-five recall delta +0.1111. & Top-five work and first-positive work worsen, so this is a scoped repair. \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
 The strongest comparison is not universal dominance. Operation stacks improve
 top-five recall over fixed-session query-aware drilldown on 5 of 6 tasks and
 reduce group fragmentation from median 285.0 to 157.5 groups, but fixed-session
@@ -679,6 +710,12 @@ R363 then packages the E1--E4 evidence into the five paper views shown in
 Table~\ref{tab:visualization-portfolio}, passing 7/7 checks without making a
 fifth experiment, rerunning the profiler, or reducing the paper to a
 flamegraph-only artifact.
+R365 then packages the same E2/E3 evidence into the five headline rows and six
+task case cards summarized in Table~\ref{tab:r365-headlines}. It keeps Work@5,
+R@30\%, group count, oracle-depth, non-default-action, profile-spec-patch, and
+boundary-field counterpoints visible while remaining a paper-integration
+artifact: no data download, profiler rerun, relabeling, human/agent analyst
+task, or new experiment.
 
 \paragraph{Profile-spec determinism and local cost.}
 
