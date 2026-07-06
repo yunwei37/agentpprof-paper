@@ -606,6 +606,27 @@ operation-field knob, not automatic boundary discovery or automatic patch
 selection. The result belongs to mechanism/actionability, not a fifth core
 experiment.
 
+\begin{table*}[t]
+\centering
+\small
+\caption{E3 actionability summary. Each row names the profiler-selected visible
+policy and the corresponding profile-configuration change suggested by the
+hidden-label localization results.}
+\label{tab:actionability}
+\begin{tabular}{p{0.18\linewidth}p{0.22\linewidth}p{0.50\linewidth}}
+\toprule
+Task & Best visible policy & Optimization insight \\
+\midrule
+Looping & dataset-native:query-aware & Keep repeat-signal fields but add prevalence-aware ranking because positives are common. \\
+Side-effect & fixed-session:width & Increase write/input weights or use a deeper side-effect mapping before ranking. \\
+Unsafe operation & operation-stack:query-aware & Use environment, phase, and action stack fields and prioritize risky write actions. \\
+Incorrect step & raw-action:width & Use desktop action family first, then drill into fixed sessions for examples. \\
+Redundant step & raw-action:width & Raw action/status currently beats mapped stack depth, so tune quality-specific fields. \\
+Group start & flat:width & Add boundary-derived fields because action-depth stacks fragment starts. \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
 \subsection{E4: Reproducibility and Artifact Hygiene}
 
 Evidence contract: claim, the offline profiler path is replayable over tracked
@@ -656,26 +677,6 @@ R363 then packages the E1--E4 evidence into the five paper views shown in
 Table~\ref{tab:visualization-portfolio}, passing 7/7 checks without making a
 fifth experiment, rerunning the profiler, or reducing the paper to a
 flamegraph-only artifact.
-
-\begin{table*}[t]
-\centering
-\small
-\caption{R320 actionability summary. Each row identifies the stack or ranker
-change suggested by the profiler accuracy results.}
-\label{tab:actionability}
-\begin{tabular}{p{0.18\linewidth}p{0.22\linewidth}p{0.50\linewidth}}
-\toprule
-Task & Best visible policy & Optimization insight \\
-\midrule
-Looping & dataset-native:query-aware & Keep repeat-signal fields but add prevalence-aware ranking because positives are common. \\
-Side-effect & fixed-session:width & Increase write/input weights or use a deeper side-effect mapping before ranking. \\
-Unsafe operation & operation-stack:query-aware & Use environment, phase, and action stack fields and prioritize risky write actions. \\
-Incorrect step & raw-action:width & Use desktop action family first, then drill into fixed sessions for examples. \\
-Redundant step & raw-action:width & Raw action/status currently beats mapped stack depth, so tune quality-specific fields. \\
-Group start & flat:width & Add boundary-derived fields because action-depth stacks fragment starts. \\
-\bottomrule
-\end{tabular}
-\end{table*}
 
 \paragraph{Profile-spec determinism and local cost.}
 
