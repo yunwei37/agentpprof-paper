@@ -419,10 +419,11 @@ with less work than flat summaries and less fragmentation than a fixed-session
 trace-tree proxy. Success is therefore a Pareto condition, not a single winning
 metric: operation stacks must reduce flat inspection work, improve a meaningful
 fixed-session localization or fragmentation objective, and keep fixed-session
-early-hit counterpoints visible. Table~\ref{tab:r320} gives the main R320
-accuracy result under that reading. Flat summaries recover all positives, but
-only by inspecting the whole task, so their median work@5 and
-work-to-first-positive are both 1.0. Fixed-session drilldown finds an early
+early-hit counterpoints visible. Table~\ref{tab:r320} is the main E2
+localization display; R320 is its source artifact, not a separate paper
+experiment. Flat summaries recover all positives, but only by inspecting the
+whole task, so their median work@5 and work-to-first-positive are both 1.0.
+Fixed-session drilldown finds an early
 positive with median work-to-first-positive 0.0044 and median work@5 0.0163,
 but its median recall@5 is only 0.0233 and it fragments the workload into 285.0
 groups. Query-aware operation stacks inspect median 0.0937 work in the top five
@@ -446,8 +447,9 @@ dominance over every trace-tree-shaped objective.
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\caption{R320 hidden-label profiler benchmark. Hidden policies read oracle labels
-and are included only as upper bounds. WTFP is work-to-first-positive.}
+\caption{E2 hidden-label localization benchmark. R320 is the source artifact;
+hidden policies read oracle labels and are included only as upper bounds. WTFP
+is work-to-first-positive.}
 \label{tab:r320}
 \begin{tabular}{lrrrrrrrrr}
 \toprule
