@@ -289,6 +289,10 @@ ablations, RQ2 must lead with the R320 localization benchmark, RQ3 must explain
 mechanisms before patch cases, and RQ4 must lead with replay/cost before paper
 hygiene. This is another paper-organization guardrail, not a new data or
 profiler run.
+R372 then checks main-body concision: E2 support slices such as uncertainty,
+negative control, inspection curves, fragmentation, and oracle-depth scoring
+must appear as supporting audits inside the RQ2/E2 core experiment rather than
+as separate chronological experiment paragraphs.
 
 \begin{table*}[t]
 \centering
@@ -524,90 +528,27 @@ actions.}
 \input{figures/case-table.tex}
 \end{table*}
 
-The strongest comparison is not universal dominance. Operation stacks improve
-top-five recall over fixed-session query-aware drilldown on 5 of 6 tasks and
-reduce group fragmentation from median 285.0 to 157.5 groups, but fixed-session
-often finds the first positive with less work. Operation stacks also save work
-against flat summaries on all tasks, but flat remains a complete full-recall
-counterpoint. Dataset-native hierarchy sometimes has higher recall, but at high
-inspection work. These mixed results are the desired profiling-paper evidence:
-operation stacks occupy a useful Pareto region between flat summaries and
-fixed-session drilldown.
-
-R330 audits uncertainty over these R320 comparisons without rerunning the
-profiler or creating data. It bootstraps paired task-family deltas for 10,000
-resamples. Against flat width, operation-stack query-aware has stable positive
-AP delta (mean 0.1219, 95\% CI [0.0406, 0.2175]), stable lower top-five work
-(mean -0.8168, CI [-0.9653, -0.6568]), stable higher 30\% budget recall (mean
-0.4510, CI [0.3450, 0.6143]), and stable lower work-to-first-positive (mean
--0.9303, CI [-0.9855, -0.8650]). Against fixed-session query-aware, operation
-stacks have stable higher top-five recall (mean 0.1801, CI [0.0542, 0.3127]),
-higher top-five F1 (mean 0.1702, CI [0.0549, 0.2870]), and fewer groups (mean
--178.0, CI [-340.0, -39.0]). Against width-only operation stacks, query-aware
-ranking has stable higher AP (mean 0.0932, CI [0.0110, 0.2184]) and lower
-top-five work (mean -0.3101, CI [-0.4209, -0.1997]). The same audit marks flat
-top-five recall, fixed-session first-positive work, and raw-action mapping
-comparisons as mixed or counterpoints; it is a task-level uncertainty audit, not
-a per-operation independence or human-utility claim.
-
-R331 adds a prevalence and group-size negative control. It keeps each visible
-policy's groups and ranking order fixed, then randomly reallocates each task's
-hidden positive operations across same-size group positions for 2,000
-permutations. Operation-stack query-aware AP exceeds the 95\% null on 6 of 6
-tasks, with median observed-minus-null AP 0.0759; 30\% budget recall exceeds the
-null on 5 of 6 tasks, with median delta 0.0904. These results show that the main
-AP and budgeted-recall signals are not explained by prevalence and group sizes
-alone. The same audit is also a boundary: top-five precision exceeds the null on
-only 3 of 6 tasks, work-to-first-positive on 0 of 6, width-only operation-stack
-AP on 5 of 6, and fixed-session/raw-action AP on 6 of 6. R331 therefore supports
-mechanism isolation and baseline realism, not single-view dominance or a
-label-free deployment ranker.
-
-R332 asks whether a single visible view/depth policy can be fixed after R320.
-It reuses the R320 visible policy scores, does not rerun profiling, and excludes
-oracle policies from selection. Best visible AP is split across operation-stack,
-fixed-session, and dataset-native views: 3 of 6, 2 of 6, and 1 of 6 tasks,
-respectively. Best top-five F1 is more dispersed: raw-action stacks win 2 of 6
-tasks, while dataset-native, fixed-session, flat, and operation-stack each win
-1 of 6. Operation-stack query-aware is best for AP on 3 of 6 tasks and best for
-30\% budget recall on 3 of 6 tasks, but only 1 of 6 for top-five F1 and 2 of 6
-for work-to-first-positive. It still reduces group fragmentation relative to
-fixed-session query-aware on 4 of 6 tasks, with median group ratio 0.5543.
-Leave-task source selection does not solve view choice universally:
-selected-equals-best is 0 of 6 for AP and 0 of 6 for top-five F1. R332 therefore
-supports the design implication that view, stack fields, predicates, and rankers
-must remain query-time configuration over the same operations. Fixed-session
-drilldown is the current trace-tree-shaped baseline; real span-tree imports
-remain future baselines, and dataset-native hierarchies remain baseline or
-drilldown views, not profiler abstractions.
-
-R333 turns the same comparison into an inspection-efficiency curve. It reruns
-the R320 local scorer over the tracked operation JSONL inputs, yielding 810
-visible top-k/work-budget inspection points and 252 task-policy curve rows; it
-does not fetch, sync, or create data. Within a 30\% inspected-work budget,
-operation-stack query-aware reaches median recall 0.3900, compared with 0.0000 for
-flat width, 0.3559 for fixed-session query-aware, 0.3377 for dataset-native
-query-aware, and 0.3325 for raw-action query-aware. At 20\% work, the same
-operation-stack policy reaches median recall 0.2763 versus 0.2422 for
-fixed-session query-aware. Against flat width, operation-stack query-aware uses
-lower top-five inspected work on all six tasks and has positive 30\%-budget
-recall where flat has none. Against fixed-session query-aware, it has higher
-top-five recall on 5 of 6 tasks and fewer groups on 4 of 6 tasks, but lower
-work-to-first-positive on only 2 of 6 tasks. R333 therefore supports an
-inspection-cost and fragmentation tradeoff, not dominance on every cost metric.
-
-R334 separates the fragmentation part of that claim from operation-work cost. It
-reads the tracked R320 policy scores and R333 inspection curves; it does not
-fetch, sync, create, or relabel data. Against fixed-session query-aware,
-operation-stack query-aware reduces total groups and positive groups on 4 of 6
-tasks, and reaches 50\% positive recall with fewer ranked groups on 5 of 6 tasks
-(median delta -31.5 groups). At the same 30\% inspected-work budget, it inspects
-fewer groups on 5 of 6 tasks (median delta -54.0 groups) while its median recall
-delta is 0.0275. The same audit preserves the fixed-session work counterpoint:
-operation stacks have lower work-to-50\%-recall on only 1 of 6 tasks, lower
-top-five work on only 2 of 6 tasks, and lower work-to-first-positive on only 2
-of 6 tasks. Thus the supported claim is fixed-session fragmentation reduction
-and budgeted-recall tradeoff, not work dominance over fixed-session drilldown.
+The E2 result is deliberately a Pareto claim, not universal dominance.
+Operation stacks improve top-five recall over fixed-session query-aware
+drilldown on 5 of 6 tasks and reduce median group fragmentation from 285.0 to
+157.5 groups, but fixed-session often finds the first positive with less work.
+Operation stacks also save work against flat summaries on all tasks, while flat
+remains the full-recall counterpoint and dataset-native hierarchy can reach high
+recall at high inspection work. The supporting R330--R334 and R355 audits keep
+this tradeoff honest rather than adding separate experiments: 10,000 paired
+bootstrap resamples show stable AP, work, budget-recall, and group-count deltas;
+2,000 label-permutation trials show AP exceeds the 95\% prevalence/group-size
+null on 6/6 tasks; the 30\% work-budget curve reaches median recall 0.3900
+versus 0.3559 for fixed-session and 0.0000 for flat; and the fragmentation audit
+uses fewer groups on 5/6 tasks at the same budget while preserving fixed-session
+first-positive-work counterpoints. R355 then repeats the comparison at
+dataset-provided oracle depths: operation-stack query-aware improves
+fixed-session budget-30 positive-unit recall on 20/24 task-depth rows and uses
+fewer groups to reach 50\% positive units on 22/24. Together, these slices
+support a faithful localization surface with better inspection-work and
+fragmentation tradeoffs than flat or fixed-session alone; they do not support a
+single best hierarchy, a human-productivity claim, or dominance over every
+trace-tree-shaped objective.
 
 \subsection{RQ3/E3: Mechanism and Actionability}
 
@@ -822,6 +763,10 @@ R371 then audits narrative focus: each RQ section must expose a claim-test,
 counterpoint, and scoped non-claim, and the primary evidence for E1/E2/E3/E4
 must appear before supporting run-history details. R371 is a prose-organization
 audit, not a new experiment.
+R372 adds the corresponding main-body concision gate: RQ2 robustness and depth
+slices are kept as one supporting-audit paragraph under E2, while RQ3 continues
+to center mechanism and profile-configuration actionability. It is a
+writing/evidence-organization check, not a new empirical result; it does not fetch, sync, or create data.
 
 \paragraph{Profile-spec determinism and local cost.}
 
