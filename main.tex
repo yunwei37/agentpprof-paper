@@ -249,8 +249,8 @@ E4: reproducibility, cost, and claim integrity &
 Tracked profile specs, paper/docs hashes, and claim-scope gates &
 R328 gives 76/76 semantic and 76/76 raw-byte deterministic specs over 152
 invocations, with median runtime 1.601s and p95 2.767s. R338 has 350/350 number
-checks; R352 reaches \texttt{level\_4\_scoped\_profile\_benchmark}; R357 has
-R357 artifact-review gate is 4/4 accept; R359 has 13/13 core-table checks. &
+checks; R352 reaches \texttt{level\_4\_scoped\_profile\_benchmark}; R357's
+artifact-review gate is 4/4 accept; R359 has 13/13 core-table checks. &
 Supported as reproducible offline profiling-paper evidence, not live overhead
 or complete trace-ecosystem compatibility. \\
 \bottomrule
@@ -269,6 +269,10 @@ trace round trips; metric, coverage, stack range, compression, boundary
 F1/V-measure, and equality; counterpoint, configurable operation stack folding,
 not complete compatibility or latent-intent recovery. Prompt, session, tool,
 process, and syscall records are operation fields, not new profiler objects.
+RQ1 asks whether one operation layer can be folded recursively into task,
+phase, action, boundary, and fixed-session-shaped stacks by changing mappings
+and stack fields, without changing the input records or adding a third profiler
+object.
 
 The 14 core public sources produce 42,590 operations. Adding the supplemental
 ScaleCUA stream brings the smoke set to 47,590 operations. These operations
@@ -351,6 +355,9 @@ label-drilldown, and oracle upper bound; metric, precision@k, recall, F1,
 AUPRC-style AP, nDCG, budget recall/F1, work-to-first-positive, and groups;
 counterpoint, flat and dataset-native views can win broad-recall or nDCG goals,
 so the claim is Pareto tradeoff rather than metric dominance.
+RQ2 asks whether hot stacks and top-ranked groups correspond to hidden positives
+while requiring less inspection work than flat summaries and less fragmentation
+than fixed-session drilldown, used here as a span-tree proxy.
 
 Table~\ref{tab:r320} gives the main R320 accuracy result. Flat summaries recover
 all positives, but only by inspecting the whole task, so their median work@5 is
@@ -480,6 +487,9 @@ semantic-width stacks; metric, accepted patches, AP delta, top-five lift,
 first-positive-work, group reduction, and top-five work counterpoint;
 counterpoint, OSWorld-Human needs boundary fields, so this is not automatic
 boundary discovery, not automatic patch selection, and not a universal selector.
+RQ3 asks which mechanisms explain the localization gains, and whether
+profile-guided changes to stack fields, rank features, mappings, or boundary
+fields improve the output without leaking hidden labels into profiler inputs.
 
 R320 turns localization scores into an optimization diagnosis rather than only
 a leaderboard, summarized in Table~\ref{tab:actionability}. SATraj unsafe is
@@ -575,6 +585,9 @@ and two-abstraction gates; metric, deterministic pass rate, runtime,
 number-check and guardrail pass rates, rubric level, and artifact-review gate count;
 counterpoint, not live eBPF overhead, not human utility, not complete ecosystem
 compatibility, and not a universal selector.
+RQ4 asks whether reviewers can replay the offline profile-spec path and verify
+that source provenance, paper numbers, two-abstraction wording, and non-claims
+remain aligned.
 
 R338 audits the paper claim itself rather than adding a new empirical result.
 It reads tracked-clean R320--R350 profiler-evidence artifacts, hashes the current
