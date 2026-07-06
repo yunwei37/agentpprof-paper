@@ -130,9 +130,15 @@ flat, fixed-session, dataset-native, raw-action, and operation-stack. Operation
 stacks win against flat top-5 work on 6/6 tasks, fixed-session top-5 recall on
 5/6 tasks, and fixed-session group count on 4/6 tasks, while fixed-session
 first-positive work and flat full-work recall remain counterpoints.
-A paper claim-integrity audit then checks the paper-facing R320--R347 numbers,
+R348 then converts actionability into objective-level counterfactuals over
+already-scored visible policies: 36/36 best rows are visible non-oracle, 27/36
+objective rows require non-default actions, 25/36 require view changes, and
+2/36 require operation-stack ranker tuning. The median gain over the default
+operation-stack policy is 0.1447, while 6/6 tasks expose at least three action
+classes plus case counterpoints.
+A paper claim-integrity audit then checks the paper-facing R320--R348 numbers,
 source policy, guardrails, and the two-abstraction boundary across the Chinese
-and English drafts. All 230 result invariants, 63 source-policy checks, and
+and English drafts. All 258 result invariants, 68 source-policy checks, and
 16 guardrail checks pass.
 The result supports a profiling claim rather than a user-study claim:
 operation/operation-stack profiling can localize and rank task-relevant
@@ -629,11 +635,20 @@ fixed-session top-5 recall on 5/6 tasks, and fixed-session group count on 4/6
 tasks. The audit keeps fixed-session first-positive work and flat full-work
 recall as counterpoints, so it is not a universal selector; it supports a
 case-level baseline tradeoff.
+R348 then audits action counterfactuals over tracked R335/R341/R347 artifacts.
+It reads already-scored visible policy rows and does not turn hidden labels into
+a deployment selector. Across 36 objective rows, all 36 best rows are visible
+and non-oracle; 27/36 require a non-default action, 25/36 require a view
+change, 2/36 require operation-stack ranker tuning, and 25/36 are
+non-operation-stack counterpoints. All 6/6 tasks have non-default actions, at
+least three action classes, and case counterpoints. The median gain over the
+default operation-stack query-aware policy is 0.1447, and the median
+non-default gain is 0.6188.
 R338 audits the paper claim itself rather than adding a new empirical result.
-It reads tracked-clean R320/R333/R334/R335/R336/R337/R339/R340/R341/R342/R344/R345/R346/R347 artifacts, hashes the
+It reads tracked-clean R320/R333/R334/R335/R336/R337/R339/R340/R341/R342/R344/R345/R346/R347/R348 artifacts, hashes the
 current Chinese and English drafts, and checks paper-facing numbers, source
 policy, must-not-claim guardrails, and the two-abstraction boundary. The audit
-passes all 230 result invariants, 63 source-policy checks, and 16 guardrail
+passes all 258 result invariants, 68 source-policy checks, and 16 guardrail
 checks, so it is a submission-readiness gate, not evidence for human utility,
 automatic boundary discovery, ecosystem compatibility, or a universal selector.
 
@@ -806,8 +821,11 @@ positive tasks, median top-5 lift 1.6508, and median top-5 work 0.0937. R347
 adds case-level baseline contrast: 5 visible views, 6/6 wins versus flat
 top-5 work, 5/6 wins versus fixed-session top-5 recall, and 4/6 wins versus
 fixed-session group count, with first-positive and full-recall counterpoints
-preserved. R338 checks that the paper-facing R320--R347
-numbers, 230 result invariants, 63 source-policy checks, 16 guardrail checks,
+preserved. R348 adds action counterfactuals: 36/36 visible non-oracle best
+rows, 27/36 non-default action rows, 25/36 view-change rows, 2/36
+operation-stack ranker-tuning rows, and median gain over default 0.1447. R338
+checks that the paper-facing R320--R348
+numbers, 258 result invariants, 68 source-policy checks, 16 guardrail checks,
 and two-abstraction boundary remain aligned.
 These
 results do not show that humans or agents answer questions
@@ -886,10 +904,11 @@ attribution, R342 checks profile-spec composition and stack-depth tradeoffs, R34
 checks multi-metric consistency and counterpoints, R345 turns those results into
 a diagnostic-lens portfolio, R346 builds case-level diagnostic evidence, R347
 contrasts those cases against flat, fixed-session, dataset-native, and
-raw-action visible views, and
+raw-action visible views, R348 audits action counterfactuals over already-scored
+visible policies, and
 R338
-mechanically checks that the R320--R347 paper-facing numbers and guardrails
-remain aligned with 230 result invariants, 63 source-policy checks, and 16
+mechanically checks that the R320--R348 paper-facing numbers and guardrails
+remain aligned with 258 result invariants, 68 source-policy checks, and 16
 guardrail checks passing. The
 paper's central claim is therefore a profiler claim: the operation/operation-stack
 model exposes dataset-labeled task-relevant failures,
