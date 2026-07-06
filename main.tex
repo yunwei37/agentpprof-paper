@@ -271,54 +271,14 @@ trace-ecosystem compatibility result. \\
 \end{tabular}
 \end{table*}
 
-The rest of the evaluation follows the role map in
-Table~\ref{tab:r374-roles}. Each RQ has one primary anchor; smaller R-numbered
-artifacts appear only as supporting evidence, presentation artifacts,
-counterpoints, or hygiene gates inside those four RQs. This keeps the paper
-organized as three empirical profiling experiments plus one
-artifact/reproducibility block rather than a chronological run ledger.
-The role map reads existing tracked artifacts and paper text; it does not fetch, sync, or create data, relabel traces, or rerun the profiler.
-
-\begin{table*}[t]
-\centering
-\tiny
-\setlength{\tabcolsep}{2pt}
-\caption{R374 three-plus-one role map. Each row separates the primary anchor
-from support/presentation roles and the non-claim boundary; R374 is a paper
-organization gate, not a profiler run.}
-\label{tab:r374-roles}
-\input{figures/experiment-role-table.tex}
-\end{table*}
-
-R375 keeps the full claim-gate table in the artifact ledger rather than adding
-another main-body table. Its gate decisions are: E1 is supported with scoped
-limits; E2 is supported as a hidden-label profiler benchmark; E3 is supported
-as profile-configuration actionability; and E4 is supported only as offline
-artifact replayability. The failure rules require narrowing the claim when flat or
-fixed-session views dominate a metric, transfer fails, or replay stops being
-deterministic. The forbidden wording remains metric dominance, human or agent
-analyst productivity, automatic boundary discovery, automatic patch selection,
-and full trace-ecosystem compatibility. R375 reads tracked
-R361/R364/R370/R373/R374 artifacts and current paper text only; it does not
-fetch, sync, or create data, relabel traces, or rerun the profiler.
-
-R377 then materializes the central profiler claim into five auditable evidence
-facets without splitting the evaluation into five smaller studies. The
-paper-facing structure remains RQ1/E1--RQ4/E4: hidden-label
-localization/ranking, flat-work reduction, and fixed-session fragmentation
-tradeoffs are read through E2; profile-configuration actionability and
-mechanism isolation are read through E3, with the two-abstraction guardrail from
-E1 and replayability kept in E4. R377 reads the tracked R320, R333, R334, R354,
-R355, R358, R366, R375, and R376 artifacts only. The packet is the reviewer
-route from the claim sentence to the exact metrics: R320 supplies the 6-task /
-4-dataset / 34,539-operation / 3,699-positive benchmark; R333/R334 show 0.0937
-top-five work versus flat summaries and fixed-session group counterpoints; R355
-adds 20/24 positive-unit recall wins over fixed-session and 22/24
-groups-to-50\% positive-unit wins over fixed-session; R354/R358/R366 provide
-executable patch, boundary-field, and mechanism evidence. Its counterpoints
-preserve the paper's scope: no metric dominance, no human-utility claim, no
-automatic boundary or patch selector, and no complete trace-ecosystem
-compatibility.
+The rest of the evaluation keeps this structure. E1 establishes that the two
+profiler objects are sufficient to express heterogeneous traces and recursive
+folding choices. E2 is the single hidden-label localization/ranking experiment.
+E3 asks which stack fields, mappings, rankers, and profile specs explain or
+repair the E2 results. E4 is the reproducibility and claim-hygiene block. The
+artifact ledger still records the run-role map, claim gates, reviewer evidence
+packets, negative controls, and table-generation checks, but those records only
+support or constrain E1--E4; they are not additional main experiments.
 
 \section{Results}
 
@@ -678,10 +638,9 @@ The remaining paper gates are artifact hygiene, not empirical evidence. They
 check that table generation, claim wording, source provenance, non-claims, and
 the operation/operation-stack boundary remain aligned with tracked outputs. We
 keep those checks in the artifact ledger so reviewers can audit consistency, but
-they do not increase the localization, actionability, or overhead claims. The
-paper-facing summary of their role is Table~\ref{tab:r374-roles}: evidence
-generators, visualization portfolios, headline selectors, and reviewer gates may
-support E1--E4, but they do not create additional main experiments.
+they do not increase the localization, actionability, or overhead claims.
+Evidence generators, visualization portfolios, headline selectors, and reviewer
+gates may support E1--E4, but they do not create additional main experiments.
 
 \paragraph{Profile-spec determinism and local cost.}
 
