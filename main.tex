@@ -269,6 +269,24 @@ trace-ecosystem compatibility result. \\
 \end{tabular}
 \end{table*}
 
+R369 turns the four rows in Table~\ref{tab:core-results} into a reviewer
+evidence path. Table~\ref{tab:reviewer-evidence-path} is not a new empirical
+result: it reads tracked R360/R361/R363/R365/R368 artifacts plus the current
+Chinese and English paper text, then records which paper table or figure, source
+artifact, guardrail, and non-claim support each RQ. Its purpose is to make the
+claim-to-evidence path auditable without reading the chronological R-run log.
+
+\begin{table*}[t]
+\centering
+\tiny
+\setlength{\tabcolsep}{2pt}
+\caption{R369 reviewer evidence path. Each row connects one RQ to its main
+paper evidence, source artifact, guardrail, and non-claim; R369 is a
+paper-integration guardrail, not a data or profiler run.}
+\label{tab:reviewer-evidence-path}
+\input{figures/evidence-path-table.tex}
+\end{table*}
+
 \section{Results}
 
 \subsection{RQ1/E1: Generality and Recursive Folding}
