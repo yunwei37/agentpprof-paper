@@ -284,6 +284,11 @@ counterpoints, provenance, or hygiene gates, but they do not become additional
 main experiments by chronology. The evaluation therefore remains three empirical
 profiling experiments plus one systems/reproducibility experiment, not a list of
 small disconnected runs.
+R371 then audits evaluation narrative focus: RQ1 must not absorb E3 ranker
+ablations, RQ2 must lead with the R320 localization benchmark, RQ3 must explain
+mechanisms before patch cases, and RQ4 must lead with replay/cost before paper
+hygiene. This is another paper-organization guardrail, not a new data or
+profiler run.
 
 \begin{table*}[t]
 \centering
@@ -329,40 +334,18 @@ by 417.4$\times$ relative to dataset depth. On AgentNet, a tracked profile spec
 folds 16,741 operations into 608 diagnostic stacks, while a CLI stack override
 changes the output to 83 stacks without changing the operation input. The
 result supports query-time recursive stack choice rather than a fixed
-prompt/session hierarchy. R321 adds an implementation probe for query predicates:
-profile specs over the tracked R300 operation file select 729/729,
+prompt/session hierarchy.
+
+The implementation probes keep the same claim boundary. R321 adds query
+predicates: profile specs over the tracked R300 operation file select 729/729,
 714/714, and 4,285/4,285 expected operations with mapping-derived
-\texttt{where\_rules} before folding. R322 adds the corresponding Rust JSON
-ranking surface: profile specs with visible \texttt{rank\_rules} emit ranked
-operation-stack groups over the same six tasks, improving AP over width on
-4 of 6 tasks while preserving counterexamples for richer group-level rankers.
-R323 adds a \texttt{rank\_mode} probe: score-first ranking improves AP over
-width-boost on 4 of 6 tasks and reduces SATraj first-positive work from 0.6376
-to 0.0842, while side-effect and OSWorld-Human remain counterexamples.
-R324 adds operation-level rank features: \texttt{rank\_op\_rules} match visible
-mapped \texttt{field=value} operation tokens and aggregate matched weight inside
-each folded group. On semantic stacks, AP improves over width on 5 of 6 tasks
-and first-positive work improves on 5 of 6 tasks; on coarser stacks, AP
-improves on 4 of 6 tasks while group counts fall.
-R325 replays the same scrubbed profiler input and stack projections with newly
-generated profile specs that remove one visible feature at a time. It finds 7
-critical feature instances, 3 misleading feature instances, and a stack-depth
-tradeoff: coarse stacks are AP-preferred on 2 of 6 tasks but reduce group
-counts on all six tasks.
-R326 tests whether these rank policies are brittle hand-tuned weights. A global
-equal-weight visible feature bank improves AP over width on 4 of 6 semantic
-tasks and 5 of 6 coarse tasks. Equal-weight task policies stay within 0.02 AP
-of their weighted counterparts on 8 of 12 task/depth variants. R325-guided
-repairs improve AP on 2 of 3 misleading-feature cases and first-positive work
-on 2 of 3 cases; 1 of 3 improves both metrics. This is post-hoc actionability
-evidence, not a label-free deployment ranker.
-R329 adds a target-held-out transfer probe. Candidate policies include the
-global equal feature bank and six source-task equal-weight policies. Leave-task
-and leave-dataset selection use only non-target task scores, while target labels
-are reserved for final scoring. Both protocols improve semantic/coarse AP over
-width on 4 of 6 tasks and semantic first-positive work on 6 of 6 tasks, but
-side-effect, SATraj, and boundary counterexamples remain; the result isolates
-policy transfer from target-label tuning without claiming a universal ranker.
+\texttt{where\_rules} before folding. R342 checks that 12/12 profile specs
+compose operation sources, predicates, visible ranking rules, rank mode, and
+explicit stack depth without introducing prompt/session frames. R353 shows the
+same operation-file prefix can round-trip through a standard trace container
+and still fold to the same 512 samples and 11 stacks. These are E1 evidence
+because they test whether the operation layer stays fixed while views change;
+the localization and ranker gains from those specs are evaluated under E2/E3.
 
 \paragraph{Field derivation and boundary probes.}
 
@@ -835,6 +818,10 @@ metrics, primary evidence, supporting roles, failure interpretation, and
 non-claim. This gate prevents the paper from drifting back into run chronology:
 future runs must strengthen one of E1--E4 instead of creating a new main
 experiment.
+R371 then audits narrative focus: each RQ section must expose a claim-test,
+counterpoint, and scoped non-claim, and the primary evidence for E1/E2/E3/E4
+must appear before supporting run-history details. R371 is a prose-organization
+audit, not a new experiment.
 
 \paragraph{Profile-spec determinism and local cost.}
 
