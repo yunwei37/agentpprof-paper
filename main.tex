@@ -55,9 +55,10 @@ operation-stack views are a Pareto point, not a universal default. Executable
 profile-spec patches improve AP, top-five lift, and first-positive work on 5 of
 6 tasks; a supervised held-out boundary-field ablation improves OSWorld-Human AP
 from 0.2402 to 0.2583 and reduces groups from 108 to 74, while preserving work
-counterpoints. E4 checks reproducibility and claim integrity: deterministic
-replay covers 76 tracked profile specs, and paper gates audit source status,
-numbers, guardrails, rubric coverage, and the two-abstraction boundary.
+counterpoints. E4 checks replayability and offline cost: deterministic replay
+covers 76 tracked profile specs, while source-status, number, rubric, guardrail,
+and two-abstraction checks remain artifact hygiene rather than empirical
+profiler evidence.
 
 The supported claim is therefore a scoped profiling claim: operation-stack
 profiling can localize, rank, and explain task-relevant failures, quality
@@ -115,8 +116,9 @@ folding, field derivation, and human-boundary alignment under the same
 two-object model. E2 is the main hidden-label localization and ranking
 benchmark. E3 isolates mechanisms and actionability through ranker, stack,
 mapping, transfer, case, and profile-spec patch ablations. E4 checks
-reproducibility, offline cost, and claim-integrity guardrails. Individual R-runs
-are provenance for these experiments, not the paper-facing structure.
+reproducibility and offline cost, with claim-integrity guardrails kept as
+artifact hygiene. Individual R-runs are provenance for these experiments, not the
+paper-facing structure.
 
 \section{Design}
 
