@@ -215,9 +215,9 @@ rerun.
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2.6pt}
-\caption{Paper-facing core experiments and generated headline evidence. R360
-regenerates the table from tracked artifacts; individual R-runs remain
-provenance and counterpoint records.}
+\caption{Three empirical profiling experiments plus one systems/reproducibility
+experiment. R360 regenerates the table from tracked artifacts; individual
+R-runs remain provenance and counterpoint records.}
 \label{tab:core-results}
 \begin{tabular}{p{0.17\linewidth}p{0.22\linewidth}p{0.36\linewidth}p{0.18\linewidth}}
 \toprule
@@ -707,18 +707,19 @@ rubric, reviewer-style, and organization gates. We keep them in the artifact
 ledger so reviewers can audit consistency, but they do not increase the
 localization, actionability, or overhead claims.
 R360 makes Table~\ref{tab:core-results} reproducible from tracked artifacts. It
-generates 4 core experiment rows and 18 metric rows, passes 7/7 table checks, and
-keeps the same non-claims: no profiler rerun, no dataset sync or relabeling, and
-no human or agent analyst task. Its role is table provenance rather than new
-evidence.
+generates 4 core experiment rows and 20 metric rows, passes 8/8 table checks,
+and keeps the same non-claims: no profiler rerun, no dataset sync or relabeling,
+and no human or agent analyst task. The refresh integrates R366 field-derivation
+evidence into E1/E3 and checks that it does not become a fifth core experiment.
+Its role is table provenance rather than new evidence.
 R361 turns the same E1--E4 structure into a claim-evidence ledger. Each core
 experiment must state the claim, research question, oracle, baselines, primary
 metrics, headline result, actionable insight, counterpoint, scoped wording, and
-source runs. The gate passes 10/10 checks, covering hidden-label scale and metric
-surface, baseline tradeoff rather than metric dominance, oracle-depth and
-fragmentation evidence, mechanism/actionability counterpoints, reproducibility
-and artifact-hygiene gates, the two-abstraction boundary, and must-not-claim
-guardrails.
+source runs. The gate passes 11/11 checks, covering hidden-label scale and
+metric surface, baseline tradeoff rather than metric dominance, oracle-depth and
+fragmentation evidence, R366 field-derivation integration,
+mechanism/actionability counterpoints, reproducibility and artifact-hygiene
+gates, the two-abstraction boundary, and must-not-claim guardrails.
 R361 is still a paper-structure artifact: it reruns no profiler, syncs or
 relabels no dataset, and is not a human or agent analyst task.
 R363 then packages the E1--E4 evidence into the five paper views shown in
