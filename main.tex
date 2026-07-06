@@ -386,6 +386,17 @@ early positive with median work-to-first-positive 0.0044 and median work@5
 into 285.0 groups. Query-aware operation stacks inspect median 0.0937 work in
 the top five groups, reach median recall@budget30 of 0.3900, and reduce the
 median group count to 157.5.
+R368 makes this baseline scope explicit. It treats fixed-session drilldown as
+the evaluated trace-tree-shaped baseline, not as evidence of full
+OpenTelemetry/Phoenix/LangSmith/Perfetto compatibility. On the same R320 rows,
+operation-stack query-aware improves fixed-session top-five recall and F1 on
+5/6 tasks, budget-30 recall on 4/6, and group count on 4/6, while preserving
+the fixed-session counterpoint: top-five work and first-positive work are better
+for fixed-session on 4/6 tasks. R355 gives the depth-aware version of the same
+claim: operation-stack rankings beat fixed-session on budget-30 positive-unit
+recall for 20/24 task-depth rows and use fewer groups to reach 50\% positive
+units on 22/24 rows. Thus the claim is less fragmentation at comparable
+localization budgets, not dominance over every trace-tree-shaped objective.
 
 \begin{table*}[t]
 \centering
@@ -748,6 +759,14 @@ provenance, operation and operation stack remain the only profiler
 abstractions, and the E2/E3/E4 headline numbers plus must-not-claim limits are
 present. R367 is a paper-integration guardrail, not a new empirical result or
 fifth experiment.
+R368 then audits the E2 baseline wording. It reads existing R320/R355
+hidden-label scoring artifacts and checks the flat, fixed-session,
+dataset-native, and raw-action comparisons behind the trace-tree-shaped
+baseline claim. The gate passes 10/10 checks, keeps fixed-session drilldown as
+the evaluated trace-tree-shaped baseline, and explicitly records the
+fixed-session top-five-work and first-positive-work counterpoints. It is not a
+real ecosystem trace import, new dataset, profiler rerun, human/agent analyst
+task, or metric-dominance result.
 
 \paragraph{Profile-spec determinism and local cost.}
 
