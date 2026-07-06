@@ -472,10 +472,14 @@ cards for the main paper, instead of exposing the chronological run history. It
 only reads tracked artifacts and does not download data, relabel traces, or
 rerun the profiler. R365 is therefore a paper-integration artifact, not a fifth
 experiment and not a new profiler object beyond operations and operation
-stacks. Table~\ref{tab:r365-headlines} gives the compact main-paper version;
-the generated case cards keep the best visible policy, operation-stack top-five
-work/recall/lift, profile-spec patch verdict, optimization action, and
-counterpoint for each of the six tasks.
+stacks. Table~\ref{tab:r365-headlines} gives the compact main-paper version.
+Table~\ref{tab:r365-cases} expands the six generated task cards: each row keeps
+the best visible policy, operation-stack top-five work/recall/lift,
+profile-spec patch verdict, optimization action, and counterpoint. The purpose
+is to make the actionability claim concrete at task level: the profiler does
+not only rank hot groups, but also names whether to change stack fields,
+rankers, mappings, profile specs, or to keep a flat/fixed-session/raw-action
+counterpoint view.
 
 \begin{table*}[t]
 \centering
@@ -496,6 +500,18 @@ H4 & actionability & 27/36 objective rows need non-default actions; 25/36 requir
 H5 & boundary mechanism & Learned-boundary AP 0.2583 vs semantic-width 0.2402; groups 74 vs 108; top-five recall delta +0.1111. & Top-five work and first-positive work worsen, so this is a scoped repair. \\
 \bottomrule
 \end{tabular}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\tiny
+\setlength{\tabcolsep}{2pt}
+\caption{R365 task-level case cards over the six real labeled tasks. The table
+is extracted from tracked R320/R345/R348/R354 artifacts; hidden labels score the
+rows after profiling but are not read by visible policies or optimization
+actions.}
+\label{tab:r365-cases}
+\input{figures/case-table.tex}
 \end{table*}
 
 The strongest comparison is not universal dominance. Operation stacks improve
