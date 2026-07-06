@@ -36,8 +36,9 @@ multi-field operation-stack projections, and a hidden-label cross-dataset
 localization benchmark.
 
 We implement this model in the Rust \toolname profiler and evaluate it through
-four paper-facing experiments rather than a chronological run list. E1 tests
-coverage and recursive folding: across 15 lightly sampled public labeled
+three empirical profiling experiments plus one systems/reproducibility
+experiment rather than a chronological run list. E1 tests generality and
+recursive operation-stack formation: across 15 lightly sampled public labeled
 sources, \toolname maps 47,590 samples into the same operation layer, and the
 same 13,265 operations fold from 9 dataset stacks to 57 phase, 226 semantic, 455
 action, or 3,757 fixed-session stacks without changing the input operations. E2
@@ -55,10 +56,10 @@ operation-stack views are a Pareto point, not a universal default. Executable
 profile-spec patches improve AP, top-five lift, and first-positive work on 5 of
 6 tasks; a supervised held-out boundary-field ablation improves OSWorld-Human AP
 from 0.2402 to 0.2583 and reduces groups from 108 to 74, while preserving work
-counterpoints. E4 checks replayability and offline cost: deterministic replay
+counterpoints. E4 checks replayability, offline cost, and artifact hygiene: deterministic replay
 covers 76 tracked profile specs, while source-status, number, rubric, guardrail,
 and two-abstraction checks remain artifact hygiene rather than empirical
-profiler evidence.
+profiler accuracy evidence.
 
 The supported claim is therefore a scoped profiling claim: operation-stack
 profiling can localize, rank, and explain task-relevant failures, quality
@@ -112,14 +113,14 @@ We evaluate this claim with public labeled traces rather than a human study. A
 human or agent analyst study would be useful for productivity claims, but it is
 not required to test label-scored profiler fidelity. Our evaluation therefore
 uses hidden labels as the oracle for ranked profile groups and is organized
-around four core experiments. E1 tests operation coverage, recursive stack
-folding, field derivation, and human-boundary alignment under the same
-two-object model. E2 is the main hidden-label localization and ranking
-benchmark. E3 isolates mechanisms and actionability through ranker, stack,
-mapping, transfer, case, and profile-spec patch ablations. E4 checks
-reproducibility and offline cost, with claim-integrity guardrails kept as
-artifact hygiene. Individual R-runs are provenance for these experiments, not the
-paper-facing structure.
+around three empirical profiling experiments and one systems/reproducibility
+experiment. E1 tests operation generality, recursive stack folding, field
+derivation, and human-boundary alignment under the same two-object model. E2 is
+the main hidden-label localization and ranking benchmark. E3 isolates
+mechanisms and actionability through ranker, stack, mapping, transfer, case, and
+profile-spec patch ablations. E4 checks replayability, offline cost, and claim
+hygiene; it is not treated as a fourth hidden-label accuracy result. Individual
+R-runs are provenance for these experiments, not the paper-facing structure.
 
 \section{Design}
 
@@ -222,7 +223,7 @@ provenance and counterpoint records.}
 \toprule
 Core experiment & Workload & Generated headline evidence & Scoped conclusion \\
 \midrule
-E1: coverage and recursive folding &
+E1: generality and recursive folding &
 15 public labeled trace families / 47,590 operations, plus local-session and
 standard-trace exchange fixtures &
 R286 folds the same 13,265 operations across 8 depths, from 9 to 3,757 stacks;
@@ -248,20 +249,21 @@ and top-five lift delta 0.5750. R358 improves OSWorld-Human boundary AP to
 top-five-work and first-positive-work counterpoints. &
 The profiler exposes stack, field, ranker, and profile-spec knobs; it is not an
 automatic selector or boundary detector. \\
-E4: reproducibility and offline cost &
+E4: replayability, offline cost, and artifact hygiene &
 76 tracked profile specs over tracked operation JSONL inputs &
 R328 gives 76/76 semantic and 76/76 raw-byte deterministic specs over 152
 invocations, with median runtime 1.601s and p95 2.767s. &
 The offline profiling artifact is replayable and cheap enough for artifact
-evaluation; this does not measure live capture overhead, human productivity, or
-trace-ecosystem compatibility. \\
+evaluation; this is systems/reproducibility evidence, not a hidden-label
+accuracy result, live capture overhead result, human productivity result, or
+trace-ecosystem compatibility result. \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
 \section{Results}
 
-\subsection{E1: Coverage and Recursive Folding}
+\subsection{E1: Generality and Recursive Folding}
 
 Evidence contract: claim, the operation/operation stack model covers
 heterogeneous traces without prompt/session/tool-bound units; oracle, public
