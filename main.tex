@@ -284,7 +284,7 @@ support or constrain E1--E4; they are not additional main experiments.
 
 \subsection{RQ1/E1: Generality and Recursive Folding}
 
-Evidence contract: claim, the operation/operation stack model covers
+Experiment contract: claim, the operation/operation stack model covers
 heterogeneous traces without prompt/session/tool-bound units; oracle, public
 labels and native fields, especially OSWorld-Human boundaries and AgentNet
 quality; baseline, dataset-native/no-map/fixed-session stacks plus replay and
@@ -357,7 +357,7 @@ scored against a human boundary oracle.
 
 \subsection{RQ2/E2: Hidden-Label Localization and Ranking}
 
-Evidence contract: claim, operation-stack profiling localizes and ranks real
+Experiment contract: claim, operation-stack profiling localizes and ranks real
 labeled failures, quality problems, safety issues, and semantic boundaries;
 oracle, 3,699 positives over 34,539 operations; baseline, flat,
 fixed-session drilldown, dataset-native, raw-action, operation-stack,
@@ -479,7 +479,7 @@ trace-tree-shaped objective.
 
 \subsection{RQ3/E3: Mechanism and Actionability}
 
-Evidence contract: claim, the profiler exposes actionable knobs in stack
+Experiment contract: claim, the profiler exposes actionable knobs in stack
 fields, mapping/tagging rules, rankers, profile specs, and boundary-derived
 operation fields; oracle, hidden labels used only after profiling, plus held-out
 OSWorld-Human boundary positives for R358; baseline, default/patched specs,
@@ -611,7 +611,7 @@ Group start & Work@5 0.4074, R@5 0.3874, boundary AP 0.2583 & Use group-depth or
 
 \subsection{RQ4/E4: Reproducibility and Artifact Hygiene}
 
-Evidence contract: claim, the offline profiler path is replayable over tracked
+Experiment contract: claim, the offline profiler path is replayable over tracked
 inputs at low local cost; oracle, tracked specs/inputs, repeated profile
 outputs, runtime logs, and source-status rows; baseline, default output versus
 deterministic-output replay, semantic profile hashes versus raw-byte profile
