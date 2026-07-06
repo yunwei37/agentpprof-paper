@@ -630,21 +630,21 @@ mechanism/actionability, not a fifth core experiment.
 
 \begin{table*}[t]
 \centering
-\small
-\caption{E3 actionability summary. Each row names the profiler-selected visible
-policy and the corresponding profile-configuration change suggested by the
-hidden-label localization results.}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\caption{E3 task diagnosis cards. Each row connects a label-scored localization
+signal to a concrete profile-configuration change and an explicit counterpoint.}
 \label{tab:actionability}
-\begin{tabular}{p{0.18\linewidth}p{0.22\linewidth}p{0.50\linewidth}}
+\begin{tabular}{p{0.15\linewidth}p{0.20\linewidth}p{0.38\linewidth}p{0.20\linewidth}}
 \toprule
-Task & Best visible policy & Optimization insight \\
+Task & Localization signal & Profile action & Counterpoint \\
 \midrule
-Looping & dataset-native:query-aware & Keep repeat-signal fields but add prevalence-aware ranking because positives are common. \\
-Side-effect & fixed-session:width & Increase write/input weights or use a deeper side-effect mapping before ranking. \\
-Unsafe operation & operation-stack:query-aware & Use environment, phase, and action stack fields and prioritize risky write actions. \\
-Incorrect step & raw-action:width & Use desktop action family first, then drill into fixed sessions for examples. \\
-Redundant step & raw-action:width & Raw action/status currently beats mapped stack depth, so tune quality-specific fields. \\
-Group start & flat:width & Add boundary-derived fields because action-depth stacks fragment starts. \\
+Looping & Work@5 0.4938, R@5 0.6508, patch AP +0.1155 & Keep \texttt{repeat\_signal} in the stack, but add prevalence-aware ranking because positives are common. & Raw-action finds the first positive with less work. \\
+Side-effect & Work@5 0.1454, R@5 0.1139, patch AP +0.0591 & Increase write/input weights or use a deeper side-effect mapping before ranking. & Fixed-session has fewer groups; raw action wins top-five lift. \\
+Unsafe operation & Work@5 0.0420, R@5 0.2621, patch AP +0.5081 & Use environment, phase, and action stack fields; prioritize risky environments and write actions. & Fixed-session finds the first positive with less work. \\
+Incorrect step & Work@5 0.0014, R@5 0.0034, patch AP +0.0160 & Use desktop environment, phase, repeat, and action fields, then drill into fixed sessions for examples. & Fixed-session remains a drilldown baseline. \\
+Redundant step & Work@5 0.0089, R@5 0.0177, patch AP +0.0011 & Use desktop environment, phase, repeat, and action fields, then drill into fixed sessions for examples. & Fixed-session finds the first positive with less work. \\
+Group start & Work@5 0.4074, R@5 0.3874, boundary AP 0.2583 & Use group-depth or boundary-derived fields; action-depth alone fragments starts. & Boundary fields reduce groups to 74 but increase top-five and first-positive work. \\
 \bottomrule
 \end{tabular}
 \end{table*}
