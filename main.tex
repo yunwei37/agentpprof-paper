@@ -276,6 +276,15 @@ Chinese and English paper text, then records which paper table or figure, source
 artifact, guardrail, and non-claim support each RQ. Its purpose is to make the
 claim-to-evidence path auditable without reading the chronological R-run log.
 
+R370 then fixes this organization as a main-experiment contract. Each core
+experiment must state its primary test, workload/oracle, baselines and metrics,
+primary evidence, supporting R-run roles, failure interpretation, and non-claim.
+New R-numbered artifacts may strengthen E1--E4 as primary evidence, ablations,
+counterpoints, provenance, or hygiene gates, but they do not become additional
+main experiments by chronology. The evaluation therefore remains three empirical
+profiling experiments plus one systems/reproducibility experiment, not a list of
+small disconnected runs.
+
 \begin{table*}[t]
 \centering
 \tiny
@@ -819,6 +828,13 @@ the evaluated trace-tree-shaped baseline, and explicitly records the
 fixed-session top-five-work and first-positive-work counterpoints. It is not a
 real ecosystem trace import, new dataset, profiler rerun, human/agent analyst
 task, or metric-dominance result.
+R370 finally audits the main-experiment contract itself. It reads
+R360/R361/R363/R364/R365/R368/R369 plus the current Chinese and English drafts
+and requires each RQ/E to carry a primary test, workload/oracle, baselines and
+metrics, primary evidence, supporting roles, failure interpretation, and
+non-claim. This gate prevents the paper from drifting back into run chronology:
+future runs must strengthen one of E1--E4 instead of creating a new main
+experiment.
 
 \paragraph{Profile-spec determinism and local cost.}
 
