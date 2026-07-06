@@ -371,6 +371,20 @@ or complete trace-ecosystem compatibility. \\
 
 \subsection{E1: Coverage and Recursive Folding}
 
+R361 fixes this section's evidence contract. The claim is that the
+operation/operation stack model covers heterogeneous agent traces without
+binding profiler units to prompt, session, or tool boundaries. The oracle is
+public dataset labels and native trajectory fields, with OSWorld-Human and
+AgentNet providing the strongest boundary and quality labels. The baseline set
+includes dataset-native stacks, no-map folding, fixed-session stacks,
+profile-spec replay, and operation-file versus standard-trace round trips. The
+primary metrics are operation coverage, unique-stack range, mapping compression,
+boundary F1/V-measure, prompt/session-free replay, and trace equality. The
+counterpoint is that this supports configurable operation stack folding, not
+complete ecosystem compatibility or automatic latent-intent recovery. Prompt,
+session, tool, process, and syscall records are operation forms or operation
+fields, not new profiler objects.
+
 The 14 core public sources produce 42,590 operations. Adding the supplemental
 ScaleCUA stream brings the smoke set to 47,590 operations. These operations
 cover web, mobile, desktop, software, API, tool-agent-user dialogue, expert
@@ -443,6 +457,18 @@ single-action sequence can be folded at action depth or human-group depth and
 scored against a human boundary oracle.
 
 \subsection{E2: Hidden-Label Localization and Ranking}
+
+R361 fixes this section's evidence contract. The claim is that operation-stack
+profiling can faithfully localize and rank task-relevant failures, safety
+issues, quality problems, and semantic boundaries in real labeled traces. The
+oracle is 3,699 hidden positives over 34,539 operations from six oracle-backed
+tasks and four datasets. The baseline set includes flat summary,
+fixed-session/span-tree proxy, dataset-native hierarchy, raw-action stack,
+operation-stack width, operation-stack query-aware, label drilldown, and oracle
+upper bound. The primary metrics are precision@k, recall, F1, AUPRC-style AP,
+nDCG, recall/F1@work budget, work-to-first-positive, and group count. The
+counterpoint is that flat and dataset-native views can win broad-recall or nDCG
+objectives, so the paper claims a Pareto tradeoff rather than metric dominance.
 
 Table~\ref{tab:r320} gives the main R320 accuracy result. Flat summaries recover
 all positives, but only by inspecting the whole task, so their median work@5 is
@@ -561,6 +587,20 @@ of 6 tasks. Thus the supported claim is fixed-session fragmentation reduction
 and budgeted-recall tradeoff, not work dominance over span-tree drilldown.
 
 \subsection{E3: Mechanism and Actionability}
+
+R361 fixes this section's evidence contract. The claim is that the profiler
+exposes actionable optimization knobs through stack fields, mapping/tagging
+rules, ranking policies, profile specs, and boundary-derived operation fields.
+The oracle remains hidden labels used only after profiling; R358 additionally
+uses held-out OSWorld-Human boundary positives after learned boundary fields are
+visible operation fields. The baseline set includes default semantic-width
+specs, patched specs, visible feature rankers, transfer policies,
+learned-boundary stacks, fixed-session stacks, and semantic-width stacks. The
+primary metrics are accepted patches, AP delta, top-five lift delta,
+first-positive-work delta, group reduction, and top-five work counterpoint. The
+counterpoint is that OSWorld-Human needs boundary-derived fields, so this is
+actionable mechanism evidence and not automatic boundary discovery, not
+automatic patch selection, and not a universal selector.
 
 R320 turns each task into an optimization diagnosis, summarized in
 Table~\ref{tab:actionability}. SATraj unsafe is the clearest operation-stack
@@ -799,6 +839,18 @@ gap versus fixed-session. The supported claim is therefore depth-aware triage
 and cost accounting, not complete intent-boundary discovery.
 
 \subsection{E4: Reproducibility, Cost, and Claim Integrity}
+
+R361 fixes this section's evidence contract. The claim is that the offline
+profiler path and paper claims are reproducible, inexpensive enough for artifact
+evaluation, and guarded against overclaiming. The oracle is tracked profile
+specs, tracked operation inputs, paper/doc hashes, claim-integrity audits, and
+reviewer-style acceptance checks. The baseline set includes deterministic
+versus raw replay, source-status checks, paper-number checks, rubric checks,
+reviewer gates, and two-abstraction guardrails. The primary metrics are
+deterministic spec pass rate, runtime, number-check pass rate, guardrail pass
+rate, rubric level, and reviewer ACCEPT count. The counterpoint is not live
+eBPF overhead, not human utility, not complete ecosystem compatibility, and not
+a universal selector.
 
 R338 audits the paper claim itself rather than adding a new empirical result.
 It reads tracked-clean R320--R350 profiler-evidence artifacts, hashes the current
