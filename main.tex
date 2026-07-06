@@ -125,9 +125,14 @@ casebook: 30 case groups, positives in top-5 groups on 6/6 tasks, positives in
 top-1 groups on 5/6 tasks, median top-5 lift 1.6508, and median top-5 work
 0.0937. This gives case-level evidence for the actionability claim without
 claiming human utility.
-A paper claim-integrity audit then checks the paper-facing R320--R346 numbers,
+R347 then contrasts the same case-level evidence against 5 visible views:
+flat, fixed-session, dataset-native, raw-action, and operation-stack. Operation
+stacks win against flat top-5 work on 6/6 tasks, fixed-session top-5 recall on
+5/6 tasks, and fixed-session group count on 4/6 tasks, while fixed-session
+first-positive work and flat full-work recall remain counterpoints.
+A paper claim-integrity audit then checks the paper-facing R320--R347 numbers,
 source policy, guardrails, and the two-abstraction boundary across the Chinese
-and English drafts. All 205 result invariants, 58 source-policy checks, and
+and English drafts. All 230 result invariants, 63 source-policy checks, and
 16 guardrail checks pass.
 The result supports a profiling claim rather than a user-study claim:
 operation/operation-stack profiling can localize and rank task-relevant
@@ -615,11 +620,20 @@ tasks, top-1 groups contain positives on 5/6 tasks, median top-5 recall is
 0.188, precision is 0.1991, lift is 1.6508, work is 0.0937, and median
 first-positive work is 0.0378. All 6/6 case cards connect evidence to an
 optimization action and a counterpoint.
+R347 then compares the same case-level evidence across 5 visible views and 30
+view-task rows: flat, fixed-session, dataset-native, raw-action, and
+operation-stack. Hidden labels score already-ranked top-5 groups only.
+Operation stacks contain positives in top-5 groups on 6/6 tasks and top-1
+groups on 5/6 tasks; they win against flat top-5 work on 6/6 tasks,
+fixed-session top-5 recall on 5/6 tasks, and fixed-session group count on 4/6
+tasks. The audit keeps fixed-session first-positive work and flat full-work
+recall as counterpoints, so it is not a universal selector; it supports a
+case-level baseline tradeoff.
 R338 audits the paper claim itself rather than adding a new empirical result.
-It reads tracked-clean R320/R333/R334/R335/R336/R337/R339/R340/R341/R342/R344/R345/R346 artifacts, hashes the
+It reads tracked-clean R320/R333/R334/R335/R336/R337/R339/R340/R341/R342/R344/R345/R346/R347 artifacts, hashes the
 current Chinese and English drafts, and checks paper-facing numbers, source
 policy, must-not-claim guardrails, and the two-abstraction boundary. The audit
-passes all 205 result invariants, 58 source-policy checks, and 16 guardrail
+passes all 230 result invariants, 63 source-policy checks, and 16 guardrail
 checks, so it is a submission-readiness gate, not evidence for human utility,
 automatic boundary discovery, ecosystem compatibility, or a universal selector.
 
@@ -788,9 +802,12 @@ diagnostic-lens portfolio: 6 lenses over 36 objective rows, 11/36
 operation-stack-family objective wins, 25/36 non-operation-stack counterpoints,
 and 6/6 tasks requiring at least three best views. R346 adds case-level
 evidence: 30 top-ranked case groups, 6/6 top-5 positive tasks, 5/6 top-1
-positive tasks, median top-5 lift 1.6508, and median top-5 work 0.0937. R338
-checks that the paper-facing R320--R346
-numbers, 205 result invariants, 58 source-policy checks, 16 guardrail checks,
+positive tasks, median top-5 lift 1.6508, and median top-5 work 0.0937. R347
+adds case-level baseline contrast: 5 visible views, 6/6 wins versus flat
+top-5 work, 5/6 wins versus fixed-session top-5 recall, and 4/6 wins versus
+fixed-session group count, with first-positive and full-recall counterpoints
+preserved. R338 checks that the paper-facing R320--R347
+numbers, 230 result invariants, 63 source-policy checks, 16 guardrail checks,
 and two-abstraction boundary remain aligned.
 These
 results do not show that humans or agents answer questions
@@ -867,10 +884,12 @@ inspection-cost targets, R339 scores sequence-scope adequacy, R340 tests
 non-target policy transfer, R341 classifies mechanism and transfer-error
 attribution, R342 checks profile-spec composition and stack-depth tradeoffs, R344
 checks multi-metric consistency and counterpoints, R345 turns those results into
-a diagnostic-lens portfolio, R346 builds case-level diagnostic evidence, and
+a diagnostic-lens portfolio, R346 builds case-level diagnostic evidence, R347
+contrasts those cases against flat, fixed-session, dataset-native, and
+raw-action visible views, and
 R338
-mechanically checks that the R320--R346 paper-facing numbers and guardrails
-remain aligned with 205 result invariants, 58 source-policy checks, and 16
+mechanically checks that the R320--R347 paper-facing numbers and guardrails
+remain aligned with 230 result invariants, 63 source-policy checks, and 16
 guardrail checks passing. The
 paper's central claim is therefore a profiler claim: the operation/operation-stack
 model exposes dataset-labeled task-relevant failures,
