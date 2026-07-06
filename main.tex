@@ -267,8 +267,7 @@ RQ4/E4: artifact replayability, offline cost, and hygiene &
 76 tracked operation-JSONL profile specs plus local-session, agent-trace, and
 standard-trace profile-spec input replay regressions &
 Deterministic replay gives 76/76 semantic and 76/76 raw-byte deterministic
-specs over 152 invocations, with median runtime 1.601s and p95 2.767s. R392
-confirms that profile specs also replay source selection, regex tags, trace
+specs over 152 invocations, with median runtime 1.601s and p95 2.767s. Profile specs also replay source selection, regex tags, trace
 inputs, and effective standard-trace args through the same operation-stack path. &
 The offline profiling artifact is replayable and cheap enough for artifact
 evaluation; this is systems/reproducibility evidence, not a hidden-label
@@ -690,18 +689,19 @@ Claim-test: RQ4/E4 asks whether reviewers can replay the offline profile-spec pa
 that source provenance, paper numbers, two-abstraction wording, and non-claims
 remain aligned.
 
-The empirical content of this subsection is one replayability/cost block. It
+The empirical content of this subsection is only one replayability/cost block. It
 reruns the profile-spec artifacts used by the labeled-trace experiments: 76
 tracked specs over tracked operation JSONL inputs, executed twice for 152
 profiler invocations. The semantic profile content is stable for 76/76 specs in
 both modes; deterministic output also makes raw-byte profile files stable for
 76/76 specs by fixing profile timestamps. The clean deterministic rerun reports
-median runtime 1.601s and p95 2.767s per spec. The run IDs (R327/R328) are
-provenance for this E4 block. This supports replayable offline profiling
-artifacts, not live eBPF overhead or analyst productivity.
+median runtime 1.601s and p95 2.767s per spec. The underlying run IDs are
+source-artifact provenance for this E4 block. This supports replayable offline
+profiling artifacts, not live eBPF overhead, analyst productivity, or another
+empirical profiling experiment.
 
-R392 complements this cost block with input-source replay regressions. The Rust
-profile-spec path now carries \texttt{session\_files}, \texttt{trace\_files},
+Input-source replay guardrails belong to the same E4 block. The Rust
+profile-spec path carries \texttt{session\_files}, \texttt{trace\_files},
 \texttt{standard\_trace\_files}, regex tag rules, predicates, rank rules, stack
 overrides, and \texttt{include\_standard\_trace\_args}. The regressions replay
 the public Codex fixture as a local session and as an exported agent-session
@@ -711,22 +711,30 @@ checks keep local sessions and trace containers inside the same operation /
 operation-stack path. They do not add a new accuracy experiment, a third
 profiler object, or an ecosystem-compatibility claim.
 
-Tables~\ref{tab:r327} and~\ref{tab:r328} are the E4 main displays: they
+Tables~\ref{tab:r327} and~\ref{tab:r328} are the two E4 main displays: they
 summarize the replayability/cost result and the deterministic-output repair,
-while R327/R328 remain source artifacts rather than additional accuracy
+while their run labels remain source artifacts rather than additional accuracy
 experiments.
 
 The remaining paper gates are artifact hygiene, not empirical evidence. They
-check that table generation, claim wording, source provenance, non-claims, and
-the operation/operation-stack boundary remain aligned with tracked outputs. We
-keep those checks in the artifact ledger so reviewers can audit consistency, but
-they do not increase the localization, actionability, or overhead claims.
+reuse tracked-clean artifacts and the current paper text without reranking,
+downloading, syncing, creating, relabeling, rerunning the profiler, or running a
+human/agent analyst task. They check that table generation, claim wording,
+source provenance, non-claims, the operation/operation-stack boundary, and the
+profiling-paper evidence rubric remain aligned with tracked outputs. We keep
+those checks in the artifact ledger so reviewers can audit consistency, but they
+do not increase the localization, actionability, or overhead claims.
+These gates pass 26/26 required checks and 10/10 rubric areas, covering
+fidelity/accuracy, actionability, baseline tradeoff, generality, mechanism
+isolation, robustness/statistics, reproducibility/overhead, and claim-scope
+guardrails.
 Evidence generators, visualization portfolios, headline selectors, and reviewer
 gates may support E1--E4, but they do not create additional main experiments.
 
 \paragraph{Profile-spec determinism and local cost.}
 
-R327 reruns the existing profile-spec artifacts used by R300, R324, and R326.
+The replay workload reruns the existing profile-spec artifacts used by the E2
+and E3 views, rankers, and robustness checks.
 The workload contains 76 tracked specs: four view specs, 12 operation-feature
 rank specs, and 60 robustness specs. Each spec is executed twice by the Rust
 profiler against tracked operation JSONL inputs, for 152 profiler invocations.
@@ -737,7 +745,7 @@ separately reports raw-byte hashes.
 \begin{table}[t]
 \centering
 \small
-\caption{E4 replayability/cost main display from R327. Runtime is seconds per
+\caption{E4 replayability/cost main display. Runtime is seconds per
 spec, measured after the Rust binary exists. Semantic hashes exclude the JSON
 \texttt{generated\_at} field; raw-byte hashes are reported separately.}
 \label{tab:r327}
@@ -761,21 +769,22 @@ output size is 37,546 bytes, the largest output is 306,099 bytes, and the
 largest profile has 2,012 unique stacks. This supports an offline artifact and
 profile-spec reproducibility claim, not live eBPF overhead or human utility.
 
-R328 closes the raw-artifact caveat with an explicit deterministic-output mode.
+The deterministic-output replay closes the raw-artifact caveat with an explicit
+deterministic-output mode.
 The Rust CLI accepts \texttt{--deterministic-output}, and profile specs may set
 \texttt{deterministic\_output}; the mode replaces JSON \texttt{generated\_at}
 and pprof profile time with fixed values while leaving profile content
-unchanged. R328 reruns the same 76 specs and 152 invocations with this flag.
+unchanged. It reruns the same 76 specs and 152 invocations with this flag.
 Both semantic and raw-byte determinism are 76 of 76. The clean rerun records
 empty git and code status. The median runtime in this run is 1,601.0827 ms and
 the p95 is 2,767.1653 ms; we report these as artifact costs for this run, not
-as a performance comparison with R327.
+as a performance comparison against the default-output replay.
 
 \begin{table}[t]
 \centering
 \small
-\caption{E4 deterministic-output main display from R327/R328 over the same 76
-profile specs. R328 uses \texttt{--deterministic-output}.}
+\caption{E4 deterministic-output main display comparing default and
+\texttt{--deterministic-output} replay over the same 76 profile specs.}
 \label{tab:r328}
 \begin{tabular}{llrrrr}
 \toprule
