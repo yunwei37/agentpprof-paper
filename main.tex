@@ -694,20 +694,19 @@ Group start & Work@5 0.4074, R@5 0.3874, boundary AP 0.2583 & Use group-depth or
 
 \subsection{RQ4/E4: Reproducibility, Offline Cost, and Scope Control}
 
-RQ setup: the offline profiler path is replayable over tracked
-inputs at low local cost; oracle, tracked specs/inputs, profile-spec input
+RQ4/E4 asks a narrower question than E2/E3: can reviewers replay the
+offline profile-spec path at low local cost while checking that source
+provenance, paper numbers, two-abstraction wording, and non-claims remain
+aligned? The evidence is the tracked specs and inputs, profile-spec input
 replay regressions, repeated profile outputs, runtime logs, and source-status
-rows; baseline, default output versus deterministic-output replay, semantic
-profile hashes versus raw-byte profile hashes, and effective input metadata
-versus silently ignored source paths; metric, deterministic spec pass rate,
-profiler invocations, median/p95 runtime, sample equality, stack equality,
-raw-byte output equality, and input-source replay coverage; counterpoint, not
-live eBPF overhead, not human utility, not complete ecosystem compatibility,
-and not a universal selector. Claim-integrity and reviewer-style checks are
-scope-control checks, not empirical evidence.
-Evaluation question: RQ4/E4 asks whether reviewers can replay the offline profile-spec path and verify
-that source provenance, paper numbers, two-abstraction wording, and non-claims
-remain aligned.
+rows. We compare default output with deterministic-output replay, semantic
+profile hashes with raw-byte hashes, and effective input metadata with silently
+ignored source paths. The measured quantities are deterministic spec pass rate,
+profiler invocations, median and p95 runtime, sample equality, stack equality,
+raw-byte output equality, and input-source replay coverage. These checks bound
+the paper claim. They are not a hidden-label accuracy result, live eBPF
+overhead, human utility, complete ecosystem compatibility, or a universal
+selector.
 
 The empirical content of this subsection is only one replayability/cost block. It
 reruns the profile-spec artifacts used by the labeled-trace experiments: 76
