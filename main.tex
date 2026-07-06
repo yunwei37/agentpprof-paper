@@ -748,9 +748,10 @@ The Rust CLI accepts \texttt{--deterministic-output}, and profile specs may set
 \texttt{deterministic\_output}; the mode replaces JSON \texttt{generated\_at}
 and pprof profile time with fixed values while leaving profile content
 unchanged. R328 reruns the same 76 specs and 152 invocations with this flag.
-Both semantic and raw-byte determinism are 76 of 76. The median runtime in this
-run is 1,577.5383 ms and the p95 is 2,730.9206 ms; we report these as artifact
-costs for this run, not as a performance comparison with R327.
+Both semantic and raw-byte determinism are 76 of 76. The clean rerun records
+empty git and code status. The median runtime in this run is 1,601.0827 ms and
+the p95 is 2,767.1653 ms; we report these as artifact costs for this run, not
+as a performance comparison with R327.
 
 \begin{table}[t]
 \centering
@@ -763,7 +764,7 @@ costs for this run, not as a performance comparison with R327.
 Run & Mode & Sem. & Raw & Med. s & P95 s \\
 \midrule
 R327 & default & 76/76 & 4/76 & 1.581 & 2.719 \\
-R328 & deterministic & 76/76 & 76/76 & 1.578 & 2.731 \\
+R328 & deterministic & 76/76 & 76/76 & 1.601 & 2.767 \\
 \bottomrule
 \end{tabular}
 \end{table}
