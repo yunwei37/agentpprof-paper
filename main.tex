@@ -453,12 +453,14 @@ label-drilldown:oracle-upper & 1 & 1.0000 & 1.0000 & 1.0000 & 0.6703 & 0.7972 & 
 \end{tabular}
 \end{table*}
 
-R363 packages the same scored outputs into five paper-facing views instead of a
-flamegraph-only artifact. Table~\ref{tab:visualization-portfolio} gives the
-compact version used by the paper; the artifact also emits SVG, CSV, HTML, JSON,
-and the table fragment from tracked R320/R345/R348/R354/R355/R358 inputs. The
-views are not new profiler objects or a fifth experiment. They are different
-ways to inspect operation-stack outputs and their baseline counterpoints.
+R363 packages the same scored outputs into non-flamegraph paper views instead
+of making flamegraphs the only presentation artifact. The main body keeps one
+representative figure because it directly serves E2 and E3: the left panel
+shows the localization/work/fragmentation tradeoff, and the right panel shows
+which profile-configuration knobs the evidence activates. The remaining
+portfolio table, headline rows, task case cards, and verdict matrix stay in the
+artifact ledger as paper-integration material rather than additional main-body
+experiments.
 
 \begin{figure*}[t]
 \centering
@@ -474,96 +476,16 @@ spec, or boundary-derived fields rather than using one fixed default view.}
 \label{fig:r363-portfolio}
 \end{figure*}
 
-\begin{table*}[t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\caption{R363 paper-facing visualization portfolio. The views are generated
-from tracked artifacts and summarize E2/E3 tradeoffs; R363 is not a new
-empirical result.}
-\label{tab:visualization-portfolio}
-\begin{tabular}{p{0.16\linewidth}p{0.19\linewidth}p{0.45\linewidth}p{0.09\linewidth}}
-\toprule
-View & Artifact & Paper-facing evidence & Role \\
-\midrule
-Baseline tradeoff & \texttt{baseline-tradeoff.svg} & Op-stack query Work@5 0.0937 vs flat 1.0; R@30\% 0.3900 vs fixed-session 0.3559; groups 157.5 vs 285.0. & E2 \\
-Metric heatmap & \texttt{metric-heatmap.svg} & Shows AP 0.3117, R@30\% 0.3900, Work@5 0.0937, and the fixed-session WTFP counterpoint 0.0044. & E2 \\
-Diagnostic lenses & \texttt{diagnostic-lenses.svg} & Six lenses over 36 objective rows: operation-stack-family views win 11/36, while baseline counterpoints win 25/36. & E3 \\
-Actionability knobs & \texttt{actionability-knobs.svg} & 27/36 objective rows require non-default actions; R354 accepts 5/6 profile-spec patches; R358 boundary fields add AP 0.0181. & E3 \\
-Oracle-depth adequacy & \texttt{oracle-depth-adequacy.svg} & Lower top-5 unit work than flat on 24/24 rows; higher fixed-session unit recall on 20/24; fewer groups to 50\% positives on 22/24. & E2/E3 \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-R365 further distills the same E2/E3 evidence into headline rows and task case
-cards for the main paper, instead of exposing the chronological run history. It
-only reads tracked artifacts and does not download data, relabel traces, or
-rerun the profiler. R365 is therefore a paper-integration artifact, not a fifth
-experiment and not a new profiler object beyond operations and operation
-stacks. Table~\ref{tab:r365-headlines} gives the compact main-paper version.
-Table~\ref{tab:r365-cases} expands the six generated task cards: each row keeps
-the best visible policy, operation-stack top-five work/recall/lift,
-profile-spec patch verdict, optimization action, and counterpoint. The purpose
-is to make the actionability claim concrete at task level: the profiler does
-not only rank hot groups, but also names whether to change stack fields,
-rankers, mappings, profile specs, or to keep a flat/fixed-session/raw-action
-counterpoint view.
-
-\begin{table*}[t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\caption{R365 E2/E3 headline and case-study selector. It reads tracked
-artifacts only, does not download data or rerun the profiler, and is not a
-fifth experiment.}
-\label{tab:r365-headlines}
-\begin{tabular}{p{0.10\linewidth}p{0.18\linewidth}p{0.42\linewidth}p{0.20\linewidth}}
-\toprule
-Row & Role & Main numbers & Counterpoint \\
-\midrule
-H1 & localization/work & 6 tasks / 4 datasets / 34,539 operations / 3,699 positives; Work@5 0.0937 vs flat 1.0; R@30\% 0.3900 vs fixed-session 0.3559. & Fixed-session WTFP 0.0044; dataset-native R@5 0.8665 at high work. \\
-H2 & fragmentation & Groups 157.5 vs fixed-session 285; top-five recall wins 5/6; 30\% budget inspects fewer groups on 5/6 tasks. & Fixed-session remains an early-hit counterpoint. \\
-H3 & oracle depth & 24/24 rows have lower top-five unit work than flat; 20/24 beat fixed-session unit recall; 22/24 use fewer groups to 50\% positives. & Session labels and positive-run proxies are not human intent labels. \\
-H4 & actionability & 27/36 objective rows need non-default actions; 25/36 require view changes; R354 accepts 5/6 patches with median AP delta 0.0376 and lift delta 0.5750. & Not an automatic patch selector or human-productivity result. \\
-H5 & boundary mechanism & Learned-boundary AP 0.2583 vs semantic-width 0.2402; groups 74 vs 108; top-five recall delta +0.1111. & Top-five work and first-positive work worsen, so this is a scoped repair. \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-\begin{table*}[t]
-\centering
-\tiny
-\setlength{\tabcolsep}{2pt}
-\caption{R365 task-level case cards over the six real labeled tasks. The table
-is extracted from tracked R320/R345/R348/R354 artifacts; hidden labels score the
-rows after profiling but are not read by visible policies or optimization
-actions.}
-\label{tab:r365-cases}
-\input{figures/case-table.tex}
-\end{table*}
-
-R373 converts those task cards into a claim-verdict matrix rather than another
-run list. Table~\ref{tab:r373-verdict} reads the tracked R320/R354/R355/R358/R365
-artifacts and asks, for each labeled task, which part of the main profiling claim
-is supported and which baseline remains the counterpoint. All six tasks improve
-AP and top-five inspected work over flat summaries; five improve top-five recall
-over fixed-session drilldown; four reduce fixed-session group fragmentation; and
-all six have an actionable configuration result, either an accepted R354 profile
-patch or the R358 boundary-field repair. The same table keeps the negative
-evidence visible: fixed-session remains the first-positive or group-count
-counterpoint on several tasks, and OSWorld-Human needs boundary-derived fields
-rather than visible phase/action ranking alone.
-
-\begin{table*}[t]
-\centering
-\tiny
-\setlength{\tabcolsep}{2pt}
-\caption{R373 task-level claim verdict. Each row combines E2 localization/work
-evidence with E3 actionability evidence from tracked artifacts; R373 does not
-rerun the profiler or create data.}
-\label{tab:r373-verdict}
-\input{figures/task-verdict-table.tex}
-\end{table*}
+The generated case and verdict artifacts still matter, but they are now used as
+checks on the three core experiments rather than as separate tables in the main
+body. They report that all six labeled tasks improve AP and top-five inspected
+work over flat summaries, five improve top-five recall over fixed-session
+drilldown, four reduce fixed-session group fragmentation, and all six have an
+actionable configuration result through either an accepted profile-spec patch
+or the boundary-field repair. They also keep the negative evidence visible:
+fixed-session remains the first-positive or group-count counterpoint on several
+tasks, and OSWorld-Human requires boundary-derived fields rather than visible
+phase/action ranking alone.
 
 The E2 result is deliberately a Pareto claim, not universal dominance.
 Operation stacks improve top-five recall over fixed-session query-aware
