@@ -271,7 +271,7 @@ trace round trips; metric, coverage, stack range, compression, boundary
 F1/V-measure, and equality; counterpoint, configurable operation stack folding,
 not complete compatibility or latent-intent recovery. Prompt, session, tool,
 process, and syscall records are operation fields, not new profiler objects.
-RQ1 asks whether one operation layer can be folded recursively into task,
+Claim-test: E1 asks whether one operation layer can be folded recursively into task,
 phase, action, boundary, and fixed-session-shaped stacks by changing mappings
 and stack fields, without changing the input records or adding a third profiler
 object.
@@ -357,7 +357,7 @@ label-drilldown, and oracle upper bound; metric, precision@k, recall, F1,
 AUPRC-style AP, nDCG, budget recall/F1, work-to-first-positive, and groups;
 counterpoint, flat and dataset-native views can win broad-recall or nDCG goals,
 so the claim is Pareto tradeoff rather than metric dominance.
-RQ2 asks whether hot stacks and top-ranked groups correspond to hidden positives
+Claim-test: E2 asks whether hot stacks and top-ranked groups correspond to hidden positives
 while requiring less inspection work than flat summaries and less fragmentation
 than fixed-session drilldown.
 
@@ -389,6 +389,34 @@ operation-stack:width & 0 & 0.1610 & 0.9364 & 0.1398 & 0.4746 & 0.2147 & 0.5424 
 operation-stack:query-aware & 0 & 0.3117 & 0.5487 & 0.1991 & 0.1880 & 0.1981 & 0.0937 & 0.3900 & 0.0378 \\
 operation-stack:oracle-upper & 1 & 0.5993 & 0.6372 & 0.8984 & 0.3004 & 0.4029 & 0.0441 & 0.5640 & 0.0122 \\
 label-drilldown:oracle-upper & 1 & 1.0000 & 1.0000 & 1.0000 & 0.6703 & 0.7972 & 0.1150 & 1.0000 & 0.0377 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+R363 packages the same scored outputs into five paper-facing views instead of a
+flamegraph-only artifact. Table~\ref{tab:visualization-portfolio} gives the
+compact version used by the paper; the artifact also emits SVG, CSV, HTML, JSON,
+and the table fragment from tracked R320/R345/R348/R354/R355/R358 inputs. The
+views are not new profiler objects or a fifth experiment. They are different
+ways to inspect operation-stack outputs and their baseline counterpoints.
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\caption{R363 paper-facing visualization portfolio. The views are generated
+from tracked artifacts and summarize E2/E3 tradeoffs; R363 is not a new
+empirical result.}
+\label{tab:visualization-portfolio}
+\begin{tabular}{p{0.16\linewidth}p{0.19\linewidth}p{0.45\linewidth}p{0.09\linewidth}}
+\toprule
+View & Artifact & Paper-facing evidence & Role \\
+\midrule
+Baseline tradeoff & \texttt{baseline-tradeoff.svg} & Op-stack query Work@5 0.0937 vs flat 1.0; R@30\% 0.3900 vs fixed-session 0.3559; groups 157.5 vs 285.0. & E2 \\
+Metric heatmap & \texttt{metric-heatmap.svg} & Shows AP 0.3117, R@30\% 0.3900, Work@5 0.0937, and the fixed-session WTFP counterpoint 0.0044. & E2 \\
+Diagnostic lenses & \texttt{diagnostic-lenses.svg} & Six lenses over 36 objective rows: operation-stack-family views win 11/36, while baseline counterpoints win 25/36. & E3 \\
+Actionability knobs & \texttt{actionability-knobs.svg} & 27/36 objective rows require non-default actions; R354 accepts 5/6 profile-spec patches; R358 boundary fields add AP 0.0181. & E3 \\
+Oracle-depth adequacy & \texttt{oracle-depth-adequacy.svg} & Lower top-5 unit work than flat on 24/24 rows; higher fixed-session unit recall on 20/24; fewer groups to 50\% positives on 22/24. & E2/E3 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -489,7 +517,7 @@ semantic-width stacks; metric, accepted patches, AP delta, top-five lift,
 first-positive-work, group reduction, and top-five work counterpoint;
 counterpoint, OSWorld-Human needs boundary fields, so this is not automatic
 boundary discovery, not automatic patch selection, and not a universal selector.
-RQ3 asks which mechanisms explain the localization gains, and whether
+Claim-test: E3 asks which mechanisms explain the localization gains, and whether
 profile-guided changes to stack fields, rank features, mappings, or boundary
 fields improve the output without leaking hidden labels into profiler inputs.
 
@@ -589,7 +617,7 @@ runtime, sample equality, stack equality, and raw-byte output equality;
 counterpoint, not live eBPF overhead, not human utility, not complete ecosystem
 compatibility, and not a universal selector. Claim-integrity and reviewer-style
 checks are artifact hygiene, not empirical evidence.
-RQ4 asks whether reviewers can replay the offline profile-spec path and verify
+Claim-test: E4 asks whether reviewers can replay the offline profile-spec path and verify
 that source provenance, paper numbers, two-abstraction wording, and non-claims
 remain aligned.
 
@@ -624,10 +652,10 @@ and artifact-hygiene gates, the two-abstraction boundary, and must-not-claim
 guardrails.
 R361 is still a paper-structure artifact: it reruns no profiler, syncs or
 relabels no dataset, and is not a human or agent analyst task.
-R363 then packages the E1--E4 evidence into five paper views---baseline
-tradeoff, metric heatmap, diagnostic lenses, actionability knobs, and
-oracle-depth adequacy---passing 7/7 checks without making a fifth experiment,
-rerunning the profiler, or reducing the paper to a flamegraph-only artifact.
+R363 then packages the E1--E4 evidence into the five paper views shown in
+Table~\ref{tab:visualization-portfolio}, passing 7/7 checks without making a
+fifth experiment, rerunning the profiler, or reducing the paper to a
+flamegraph-only artifact.
 
 \begin{table*}[t]
 \centering
