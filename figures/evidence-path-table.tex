@@ -1,7 +1,7 @@
 % Generated from script/paper_reviewer_evidence_path.py (R369).
 \begin{tabular}{p{0.09\linewidth}p{0.22\linewidth}p{0.23\linewidth}p{0.22\linewidth}p{0.16\linewidth}}
   \toprule
-  RQ & Claim test & Main paper evidence & Source artifact / guardrail & Non-claim \\
+  RQ & Evaluation question & Main paper evidence & Source artifact / scope check & Non-claim \\
   \midrule
   RQ1/E1 & Two abstractions cover heterogeneous traces and recursive field-derived folding. & tab:results; RQ1/E1 subsection; dataset table. & R360/R361/R366: 47,590 operations; 9->3,757 stack sweep; 12/12 prompt/session-free specs; 4/5 boundary rows beat simple baseline. Guardrail: R364 sufficiency; R359 RQ consolidation; R366 field-derivation scope. & Not complete trace-ecosystem compatibility, not automatic intent-boundary discovery. \\
   RQ2/E2 & Hot groups localize hidden positives with less work than flat and less fragmentation than fixed-session drilldown. & tab:r320; fig:r363-portfolio; tab:r365-headlines; tab:r365-cases. & R320/R333/R334/R355/R368: 6 tasks, 34,539 ops, 3,699 positives, 144 policies; Work@5 0.0937 vs 1.0; groups 157.5 vs 285. Guardrail: R368 fixed-session trace-tree-shaped baseline scope; R330/R331 uncertainty and negative controls. & Not metric dominance; not a human-productivity result; real OTel/Phoenix/LangSmith/Perfetto imports remain future baselines. \\

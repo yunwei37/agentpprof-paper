@@ -279,28 +279,29 @@ trace-ecosystem compatibility result. \\
 
 The main-paper displays follow this path. Table~\ref{tab:datasets} establishes
 workload provenance. Table~\ref{tab:core-results} is the four-block claim map.
-Table~\ref{tab:e1-claim-test} checks the two-abstraction and recursive-folding
+Table~\ref{tab:e1-abstraction-evidence} checks the two-abstraction and recursive-folding
 claim. Table~\ref{tab:e2-localization} and the left side of
 Figure~\ref{fig:e2e3-portfolio} provide hidden-label fidelity and baseline
 tradeoff evidence. Table~\ref{tab:actionability} and the right side of
 Figure~\ref{fig:e2e3-portfolio} provide mechanism/actionability evidence.
 Tables~\ref{tab:e4-replay-cost} and~\ref{tab:e4-determinism} provide replay and
-cost evidence. Other generated portfolio, case, verdict, and guardrail tables
-stay in the artifact ledger as provenance, counterpoints, or hygiene checks for
-these main displays.
+cost evidence. Other generated portfolio, case, verdict, and consistency
+tables stay in the supporting artifact index as data sources, counterpoints, or
+scope checks for these main displays.
 
 The rest of the evaluation keeps this structure. E1 establishes that the two
 profiler objects are sufficient to express heterogeneous traces and recursive
 folding choices. E2 is the single hidden-label localization/ranking experiment.
 E3 asks which stack fields, mappings, rankers, and profile specs explain or
 repair the E2 results. E4 is the reproducibility and claim-hygiene block. The
-artifact ledger still records the run-role map, claim gates, reviewer evidence
-packets, negative controls, and table-generation checks, but those records only
-support or constrain E1--E4; they are not additional main experiments.
+supporting artifact index still records the run-role map, claim decisions,
+review checks, negative controls, and table-generation consistency checks, but
+those records only support or constrain E1--E4; they are not additional main
+experiments.
 New runs enter the main evidence path only if they strengthen E1--E4 as a
 primary comparison, ablation, stress/counterpoint, provenance check, or hygiene
-gate. Otherwise they remain ledger material rather than becoming another small
-experiment.
+check. Otherwise they remain supplementary provenance rather than becoming
+another small experiment.
 This is the reviewer-facing evidence path for the profiling claim: E1 checks
 whether the two-object abstraction can represent the workloads and recursive
 folding choices; E2 is the only primary hidden-label accuracy and baseline
@@ -313,7 +314,7 @@ the paper claim would narrow rather than adding another R-numbered result.
 
 \subsection{RQ1/E1: Generality and Recursive Folding}
 
-Experiment contract: claim, the operation/operation stack model covers
+RQ setup: the operation/operation stack model covers
 heterogeneous traces without prompt/session/tool-bound units; oracle, public
 labels and native fields, especially OSWorld-Human boundaries and AgentNet
 quality; baseline, dataset-native/no-map/fixed-session stacks plus replay and
@@ -321,7 +322,7 @@ trace round trips; metric, coverage, stack range, compression, boundary
 F1/V-measure, and equality; counterpoint, configurable operation stack folding,
 not complete compatibility or latent-intent recovery. Prompt, session, tool,
 process, and syscall records are operation fields, not new profiler objects.
-Claim-test: RQ1/E1 asks whether one operation layer can be folded recursively into task,
+Evaluation question: RQ1/E1 asks whether one operation layer can be folded recursively into task,
 phase, action, boundary, and fixed-session-shaped stacks by changing mappings
 and stack fields, without changing the input records or adding a third profiler
 object.
@@ -333,20 +334,20 @@ failure labels, safety labels, human grouped-action labels, and desktop
 step-quality labels. No source required a prompt-specific, GUI-specific, or
 safety-specific profiler object.
 
-Table~\ref{tab:e1-claim-test} is the main E1 display; the following
+Table~\ref{tab:e1-abstraction-evidence} is the main E1 display; the following
 paragraphs unpack the rows rather than introducing additional experiments.
 
 \begin{table*}[t]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\caption{E1 claim-test summary. The rows use tracked artifacts and show that
+\caption{E1 abstraction-evidence summary. The rows use tracked artifacts and show that
 the same operation layer can be recursively folded, mapped, and
 boundary-scored without adding prompt/session/tool-specific profiler objects.}
-\label{tab:e1-claim-test}
+\label{tab:e1-abstraction-evidence}
 \begin{tabular}{p{0.17\linewidth}p{0.22\linewidth}p{0.28\linewidth}p{0.25\linewidth}}
 \toprule
-Claim test & Workload/oracle & Main evidence & Counterpoint / scope \\
+Evaluation question & Workload/oracle & Main evidence & Counterpoint / scope \\
 \midrule
 Heterogeneous operation layer &
 15 public labeled trace families / 47,590 operations &
@@ -429,7 +430,7 @@ scored against a human boundary oracle.
 
 \subsection{RQ2/E2: Hidden-Label Localization and Ranking}
 
-Experiment contract: claim, operation-stack profiling localizes and ranks real
+RQ setup: operation-stack profiling localizes and ranks real
 labeled failures, quality problems, safety issues, and semantic boundaries;
 oracle, 3,699 positives over 34,539 operations; baseline, flat,
 fixed-session drilldown, dataset-native, raw-action, operation-stack,
@@ -437,7 +438,7 @@ label-drilldown, and oracle upper bound; metric, precision@k, recall, F1,
 AUPRC-style AP, nDCG, budget recall/F1, work-to-first-positive, and groups;
 counterpoint, flat and dataset-native views can win broad-recall or nDCG goals,
 so the claim is Pareto tradeoff rather than metric dominance.
-Claim-test: RQ2/E2 asks whether hot stacks and top-ranked groups correspond to hidden positives
+Evaluation question: RQ2/E2 asks whether hot stacks and top-ranked groups correspond to hidden positives
 while requiring less inspection work than flat summaries and improving the
 localization-budget/fragmentation tradeoff relative to fixed-session drilldown.
 
@@ -500,8 +501,8 @@ representative figure because it directly serves E2 and E3: the left panel
 shows the localization/work/fragmentation tradeoff, and the right panel shows
 which profile-configuration knobs the evidence activates. The remaining
 portfolio table, headline rows, task case cards, and verdict matrix stay in the
-artifact ledger as paper-integration material rather than additional main-body
-experiments.
+supporting artifact index as paper-integration material rather than additional
+main-body experiments.
 
 \begin{figure*}[t]
 \centering
@@ -556,7 +557,7 @@ trace-tree-shaped objective.
 
 \subsection{RQ3/E3: Mechanism and Actionability}
 
-Experiment contract: claim, the profiler exposes actionable knobs in stack
+RQ setup: the profiler exposes actionable knobs in stack
 fields, mapping/tagging rules, rankers, profile specs, and boundary-derived
 operation fields; oracle, hidden labels used only after profiling, plus held-out
 OSWorld-Human boundary positives for scoring boundary-derived fields; baseline, default/patched specs,
@@ -565,7 +566,7 @@ semantic-width stacks; metric, accepted patches, AP delta, top-five lift,
 first-positive-work, group reduction, and top-five work counterpoint;
 counterpoint, OSWorld-Human needs boundary fields, so this is not automatic
 boundary discovery, not automatic patch selection, and not a universal selector.
-Claim-test: RQ3/E3 asks which mechanisms explain the localization gains, and whether
+Evaluation question: RQ3/E3 asks which mechanisms explain the localization gains, and whether
 profile-guided changes to stack fields, rank features, mappings, or boundary
 fields improve the output without leaking hidden labels into profiler inputs.
 
@@ -675,28 +676,28 @@ mechanism/actionability, not a fifth core experiment.
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\caption{E3 diagnosis/actionability claim gate. Each row connects a
+\caption{E3 diagnosis/actionability summary. Each row connects a
 label-scored localization signal, a concrete profile-configuration change, and
 the scoped verdict/counterpoint. This table compresses task-card and verdict
 evidence; it is not a new empirical experiment.}
 \label{tab:actionability}
 \begin{tabular}{p{0.13\linewidth}p{0.19\linewidth}p{0.35\linewidth}p{0.23\linewidth}}
 \toprule
-Task & Localization signal & Profile action & Gate / counterpoint \\
+Task & Localization signal & Profile action & Verdict / counterpoint \\
 \midrule
-Looping & Work@5 0.4938, R@5 0.6508, patch AP +0.1155 & Keep \texttt{repeat\_signal} in the stack, but add prevalence-aware ranking because positives are common. & Supports with counterpoint: raw-action finds the first positive with less work. \\
-Side-effect & Work@5 0.1454, R@5 0.1139, patch AP +0.0591 & Increase write/input weights or use a deeper side-effect mapping before ranking. & Supports with counterpoint: fixed-session has fewer groups; raw action wins top-five lift. \\
-Unsafe operation & Work@5 0.0420, R@5 0.2621, patch AP +0.5081 & Use environment, phase, and action stack fields; prioritize risky environments and write actions. & Supports with counterpoint: fixed-session finds the first positive with less work. \\
-Incorrect step & Work@5 0.0014, R@5 0.0034, patch AP +0.0160 & Use desktop environment, phase, repeat, and action fields, then drill into fixed sessions for examples. & Supports with counterpoint: fixed-session remains a drilldown baseline. \\
-Redundant step & Work@5 0.0089, R@5 0.0177, patch AP +0.0011 & Use desktop environment, phase, repeat, and action fields, then drill into fixed sessions for examples. & Supports with counterpoint: fixed-session finds the first positive with less work. \\
-Group start & Work@5 0.4074, R@5 0.3874, boundary AP 0.2583 & Use group-depth or boundary-derived fields; action-depth alone fragments starts. & Supports with counterpoint: boundary fields reduce groups to 74 but increase top-five and first-positive work. \\
+Looping & Work@5 0.4938, R@5 0.6508, patch AP +0.1155 & Keep \texttt{repeat\_signal} in the stack, but add prevalence-aware ranking because positives are common. & Supports, with counterpoint: raw-action finds the first positive with less work. \\
+Side-effect & Work@5 0.1454, R@5 0.1139, patch AP +0.0591 & Increase write/input weights or use a deeper side-effect mapping before ranking. & Supports, with counterpoint: fixed-session has fewer groups; raw action wins top-five lift. \\
+Unsafe operation & Work@5 0.0420, R@5 0.2621, patch AP +0.5081 & Use environment, phase, and action stack fields; prioritize risky environments and write actions. & Supports, with counterpoint: fixed-session finds the first positive with less work. \\
+Incorrect step & Work@5 0.0014, R@5 0.0034, patch AP +0.0160 & Use desktop environment, phase, repeat, and action fields, then drill into fixed sessions for examples. & Supports, with counterpoint: fixed-session remains a drilldown baseline. \\
+Redundant step & Work@5 0.0089, R@5 0.0177, patch AP +0.0011 & Use desktop environment, phase, repeat, and action fields, then drill into fixed sessions for examples. & Supports, with counterpoint: fixed-session finds the first positive with less work. \\
+Group start & Work@5 0.4074, R@5 0.3874, boundary AP 0.2583 & Use group-depth or boundary-derived fields; action-depth alone fragments starts. & Supports, with counterpoint: boundary fields reduce groups to 74 but increase top-five and first-positive work. \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
 \subsection{RQ4/E4: Reproducibility and Artifact Hygiene}
 
-Experiment contract: claim, the offline profiler path is replayable over tracked
+RQ setup: the offline profiler path is replayable over tracked
 inputs at low local cost; oracle, tracked specs/inputs, profile-spec input
 replay regressions, repeated profile outputs, runtime logs, and source-status
 rows; baseline, default output versus deterministic-output replay, semantic
@@ -707,7 +708,7 @@ raw-byte output equality, and input-source replay coverage; counterpoint, not
 live eBPF overhead, not human utility, not complete ecosystem compatibility,
 and not a universal selector. Claim-integrity and reviewer-style checks are
 artifact hygiene, not empirical evidence.
-Claim-test: RQ4/E4 asks whether reviewers can replay the offline profile-spec path and verify
+Evaluation question: RQ4/E4 asks whether reviewers can replay the offline profile-spec path and verify
 that source provenance, paper numbers, two-abstraction wording, and non-claims
 remain aligned.
 
@@ -738,20 +739,22 @@ summarize the replayability/cost result and the deterministic-output repair,
 while their row labels name source-spec families rather than additional
 accuracy experiments.
 
-The remaining paper gates are artifact hygiene, not empirical evidence. They
+The remaining consistency checks are reproducibility and scope-control checks,
+not empirical evidence. They
 reuse tracked-clean artifacts and the current paper text without reranking,
 downloading, syncing, creating, relabeling, rerunning the profiler, or running a
 human/agent analyst task. They check that table generation, claim wording,
 source provenance, non-claims, the operation/operation-stack boundary, and the
 profiling-paper evidence rubric remain aligned with tracked outputs. We keep
-those checks in the artifact ledger so reviewers can audit consistency, but they
-do not increase the localization, actionability, or overhead claims.
-These gates pass 26/26 required checks and 10/10 rubric areas, covering
+those checks in the supporting artifact index so reviewers can audit
+consistency, but they do not increase the localization, actionability, or
+overhead claims.
+These checks pass 26/26 required checks and 10/10 rubric areas, covering
 fidelity/accuracy, actionability, baseline tradeoff, generality, mechanism
 isolation, robustness/statistics, reproducibility/overhead, and claim-scope
 guardrails.
 Evidence generators, visualization portfolios, headline selectors, and reviewer
-gates may support E1--E4, but they do not create additional main experiments.
+checks may support E1--E4, but they do not create additional main experiments.
 
 \paragraph{Profile-spec determinism and local cost.}
 
