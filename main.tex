@@ -61,8 +61,9 @@ from 0.2402 to 0.2583 and reduces groups from 108 to 74, while preserving work
 counterpoints. RQ4/E4 checks replayability, offline cost, and claim scope.
 Deterministic replay covers 76 tracked profile specs, and profile-spec input
 regressions cover local-session, agent-trace, and standard-trace replay. The
-source-status, number, rubric, and two-abstraction checks constrain the paper's
-scope rather than forming a fourth empirical profiling experiment.
+recorded source provenance, paper-number, rubric, and two-abstraction checks
+constrain the paper's scope rather than forming a fourth empirical profiling
+experiment.
 
 The supported claim is therefore a scoped profiling claim: operation-stack
 profiling can localize, rank, and explain dataset-labeled failures, quality
@@ -166,7 +167,7 @@ flags can still override the stack query.
 \section{Evaluation Setup}
 
 Table~\ref{tab:datasets} summarizes the public trace families. We do not create
-new test sets, sync complete image corpora, or depend on gated data. The 15
+new test sets, sync complete image corpora, or depend on restricted data. The 15
 sources establish generality, while the main hidden-label ranking results use the four
 oracle-rich families with failure, safety, quality, and human-boundary labels.
 
@@ -282,47 +283,41 @@ Figure~\ref{fig:e2e3-portfolio} provide hidden-label fidelity and baseline
 tradeoff evidence. Table~\ref{tab:actionability} and the right side of
 Figure~\ref{fig:e2e3-portfolio} provide mechanism/actionability evidence.
 Tables~\ref{tab:e4-replay-cost} and~\ref{tab:e4-determinism} provide replay and
-cost evidence. Other generated portfolio, case, verdict, and consistency
-tables remain supplementary artifacts that provide data sources, counterpoints,
-or scope checks for these main displays.
+cost evidence. Supporting materials contain the larger portfolio, case, verdict,
+and consistency tables; the main text uses them only to substantiate the four
+evidence blocks.
 
 The rest of the evaluation keeps this structure. E1 establishes that the two
 profiler objects are sufficient to express heterogeneous traces and recursive
 folding choices. E2 is the single hidden-label localization/ranking experiment.
 E3 asks which stack fields, mappings, rankers, and profile specs explain or
 repair the E2 results. E4 is the replayability, offline-cost, and scope-control
-block. The supplementary artifacts still record the run-role map, claim
-decisions, review checks, negative controls, and table-generation consistency
-checks, but those records only support or constrain E1--E4; they are not additional main
-experiments.
-New runs enter the main evidence path only if they strengthen E1--E4 as a
-primary comparison, ablation, stress/counterpoint, provenance check, or scope
-check. Otherwise they remain supplementary provenance rather than becoming
-another small experiment.
+block. Additional analyses enter the paper only when they strengthen one of
+these four blocks as a primary comparison, ablation, counterpoint, provenance
+check, or scope check.
 This is the reviewer-facing evidence path for the profiling claim: E1 checks
 whether the two-object abstraction can represent the workloads and recursive
 folding choices; E2 is the only primary hidden-label accuracy and baseline
 tradeoff comparison; E3 explains which mechanisms and profile configurations
 make the E2 results actionable; and E4 establishes replayability and scope.
 If the E2 Pareto condition or the E3 mechanism/actionability condition failed,
-the paper claim would narrow rather than adding another R-numbered result.
+the paper claim would narrow rather than expanding the evidence story.
 
 \section{Results}
 
 \subsection{RQ1/E1: Generality and Recursive Folding}
 
-RQ setup: the operation/operation stack model covers
-heterogeneous traces without prompt/session/tool-bound units; oracle, public
-labels and native fields, especially OSWorld-Human boundaries and AgentNet
-quality; baseline, dataset-native/no-map/fixed-session stacks plus replay and
-trace round trips; metric, coverage, stack range, compression, boundary
-F1/V-measure, and equality; counterpoint, configurable operation stack folding,
-not complete compatibility or latent-intent recovery. Prompt, session, tool,
-process, and syscall records are operation fields, not new profiler objects.
-Evaluation question: RQ1/E1 asks whether one operation layer can be folded recursively into task,
-phase, action, boundary, and fixed-session-shaped stacks by changing mappings
-and stack fields, without changing the input records or adding a third profiler
-object.
+RQ1/E1 tests whether one operation layer can represent heterogeneous agent
+traces without making prompt, session, tool, process, or syscall records into
+separate profiler objects. The evaluation folds the same operation records into
+task, phase, action, human-boundary, and fixed-session-shaped stacks by changing
+only mappings and stack fields. Public dataset labels and native trajectory
+fields provide the oracle signal, with OSWorld-Human boundaries and AgentNet
+quality labels as the strongest structure labels. The comparison uses
+dataset-native, no-map, fixed-session, replay, and trace round-trip views. The
+metrics are coverage, stack range, compression, boundary F1, V-measure, and
+round-trip equality. The scoped conclusion is configurable operation-stack
+folding, not complete ecosystem compatibility or latent-intent recovery.
 
 The 14 core public sources produce 42,590 operations. Adding the supplemental
 ScaleCUA stream brings the smoke set to 47,590 operations. These operations
@@ -350,7 +345,7 @@ Heterogeneous operation layer &
 15 public labeled trace families / 47,590 operations &
 Web, mobile, desktop, software, API, dialogue, failure, safety, human-boundary,
 and step-quality labels enter as operation fields. &
-Coverage is lightweight sampling; image-heavy or gated full benchmarks remain
+Coverage is lightweight sampling; image-heavy or restricted full benchmarks remain
 out of scope. \\
 Recursive stack choice &
 Same 13,265 operations plus AgentNet profile-spec override &
@@ -427,17 +422,16 @@ scored against a human boundary oracle.
 
 \subsection{RQ2/E2: Hidden-Label Localization and Ranking}
 
-RQ setup: operation-stack profiling localizes and ranks real
-labeled failures, quality problems, safety issues, and semantic boundaries;
-oracle, 3,699 positives over 34,539 operations; baseline, flat,
-fixed-session drilldown, dataset-native, raw-action, operation-stack,
-label-drilldown, and oracle upper bound; metric, precision@k, recall, F1,
-AUPRC-style AP, nDCG, budget recall/F1, work-to-first-positive, and groups;
-counterpoint, flat and dataset-native views can win broad-recall or nDCG goals,
-so the claim is Pareto tradeoff rather than metric dominance.
-Evaluation question: RQ2/E2 asks whether hot stacks and top-ranked groups correspond to hidden positives
-while requiring less inspection work than flat summaries and improving the
-localization-budget/fragmentation tradeoff relative to fixed-session drilldown.
+RQ2/E2 treats profiling as a ranked localization problem. The benchmark marks
+3,699 positive operations among 34,539 operations and asks whether hot stacks
+and top-ranked groups correspond to those hidden positives. The comparison
+covers flat summaries, fixed-session drilldown, dataset-native hierarchy,
+raw-action stacks, operation stacks, label drilldown, and oracle upper bounds.
+The metrics are precision@k, recall, F1, AP as an AUPRC-style score, nDCG,
+budget recall and F1, work-to-first-positive, and group count. The scoped claim
+is a Pareto tradeoff: operation stacks should reduce flat inspection work and
+improve a useful fixed-session localization or fragmentation objective, while
+flat and dataset-native views may still win broad-recall or nDCG goals.
 
 Primary comparison and success criterion. E2 treats every profile group as an
 inspection target and asks whether the ranked targets find hidden positives
@@ -518,13 +512,13 @@ which profile-configuration knobs explain task-level improvements.}
 \label{fig:e2e3-portfolio}
 \end{figure*}
 
-The generated case and verdict artifacts still matter, but they are now used as
-checks on the three core experiments rather than as separate tables in the main
-body. They report that all six labeled tasks improve AP and top-five inspected
-work over flat summaries, five improve top-five recall over fixed-session
-drilldown, four reduce fixed-session group fragmentation, and all six have an
-actionable configuration result through either an accepted profile-spec patch
-or the boundary-field repair. They also keep the negative evidence visible:
+The supporting case and verdict views still matter, but the main text uses them
+as checks on the three core experiments rather than as separate tables. They
+report that all six labeled tasks improve AP and top-five inspected work over
+flat summaries, five improve top-five recall over fixed-session drilldown, four
+reduce fixed-session group fragmentation, and all six have an actionable
+configuration result through either an accepted profile-spec patch or the
+boundary-field repair. They also keep the negative evidence visible:
 fixed-session remains the first-positive or group-count counterpoint on several
 tasks, and OSWorld-Human requires boundary-derived fields rather than visible
 phase/action ranking alone.
@@ -554,18 +548,17 @@ trace-tree-shaped objective.
 
 \subsection{RQ3/E3: Mechanism and Actionability}
 
-RQ setup: the profiler exposes actionable knobs in stack
-fields, mapping/tagging rules, rankers, profile specs, and boundary-derived
-operation fields; oracle, hidden labels used only after profiling, plus held-out
-OSWorld-Human boundary positives for scoring boundary-derived fields; baseline, default/patched specs,
-visible rankers, transfer policies, learned-boundary, fixed-session, and
-semantic-width stacks; metric, accepted patches, AP delta, top-five lift,
-first-positive-work, group reduction, and top-five work counterpoint;
-counterpoint, OSWorld-Human needs boundary fields, so this is not automatic
-boundary discovery, not automatic patch selection, and not a universal selector.
-Evaluation question: RQ3/E3 asks which mechanisms explain the localization gains, and whether
-profile-guided changes to stack fields, rank features, mappings, or boundary
-fields improve the output without leaking hidden labels into profiler inputs.
+RQ3/E3 asks why the E2 rankings improve and whether the profiler points to
+concrete configuration changes. The candidate mechanisms are stack fields,
+mapping and tagging rules, rankers, profile specs, and boundary-derived
+operation fields. Hidden labels score the output only after profiling, and
+held-out OSWorld-Human boundary positives score boundary-derived fields. The
+comparison covers default and patched specs, visible rankers, transfer
+policies, learned-boundary fields, fixed-session drilldown, and semantic-width
+stacks. The metrics are accepted patches, AP delta, top-five lift,
+first-positive work, group reduction, and top-five-work counterpoints. The
+scoped conclusion is profile-configuration actionability, not automatic
+boundary discovery, automatic patch selection, or a universal selector.
 
 Primary mechanism question. E3 starts from the E2 ranked outputs and asks
 whether the profiler can explain what to change in the profile configuration.
@@ -591,7 +584,7 @@ boundary-derived fields rather than action depth alone. Thus the first
 actionability result is not that one view wins; it is that the profiler
 identifies which stack field, mapping, ranker, or drilldown should change for
 each task family.
-The task-level verdict synthesis makes the claim gate explicit: all six tasks
+The task-level verdict synthesis clarifies the claim boundary: all six tasks
 support E3 with counterpoints, not as unconditional wins. Five of six tasks have
 accepted executable profile-spec patches; the remaining OSWorld-Human row points
 to boundary-derived fields and keeps top-five and first-positive work
@@ -698,8 +691,8 @@ RQ4/E4 asks a narrower question than E2/E3: can reviewers replay the
 offline profile-spec path at low local cost while checking that source
 provenance, paper numbers, two-abstraction wording, and non-claims remain
 aligned? The evidence is the tracked specs and inputs, profile-spec input
-replay regressions, repeated profile outputs, runtime logs, and source-status
-rows. We compare default output with deterministic-output replay, semantic
+replay regressions, repeated profile outputs, runtime logs, and recorded source
+provenance. We compare default output with deterministic-output replay, semantic
 profile hashes with raw-byte hashes, and effective input metadata with silently
 ignored source paths. The measured quantities are deterministic spec pass rate,
 profiler invocations, median and p95 runtime, sample equality, stack equality,
@@ -735,21 +728,14 @@ summarize the replayability/cost result and the deterministic-output repair,
 while their row labels name source-spec families rather than additional
 accuracy experiments.
 
-The remaining consistency checks are reproducibility and scope-control checks,
-not empirical evidence. They
-reuse tracked-clean artifacts and the current paper text without reranking,
-downloading, syncing, creating, relabeling, rerunning the profiler, or running a
-human/agent analyst task. They check that table generation, claim wording,
-source provenance, non-claims, the operation/operation-stack boundary, and the
-profiling-paper evidence rubric remain aligned with tracked outputs. We keep
-those supplementary checks available so reviewers can audit consistency, but
-they do not increase the localization, actionability, or overhead claims.
-These checks pass 26/26 required checks and 10/10 rubric areas, covering
-fidelity/accuracy, actionability, baseline tradeoff, generality, mechanism
-isolation, robustness/statistics, reproducibility/overhead, and claim-scope
-checks.
-Evidence generators, visualization portfolios, headline selectors, and reviewer
-checks may support E1--E4, but they do not create additional main experiments.
+The remaining consistency checks support reproducibility and scope control, not
+new empirical evidence. They reuse tracked artifacts and the current paper text
+without reranking, downloading, syncing, creating, relabeling, rerunning the
+profiler, or running a human or agent analyst task. The checks verify replay
+paths, source provenance, paper-number alignment, two-abstraction wording, and
+non-claim consistency. They let reviewers audit whether the paper is faithful to
+tracked outputs, but they do not increase the localization, actionability, or
+overhead claims.
 
 \paragraph{Profile-spec determinism and local cost.}
 
@@ -758,7 +744,7 @@ and E3 views, rankers, and robustness checks.
 The workload contains 76 tracked specs: four view specs, 12 operation-feature
 rank specs, and 60 robustness specs. Each spec is executed twice by the Rust
 profiler against tracked operation JSONL inputs, for 152 profiler invocations.
-No dataset is downloaded or synced. The determinism gate hashes the semantic
+No dataset is downloaded or synced. The replay check hashes the semantic
 profile content after removing the JSON \texttt{generated\_at} timestamp, and
 separately reports raw-byte hashes.
 
@@ -887,7 +873,7 @@ fixed-session drilldown, dataset-native hierarchy, and raw-action stacks. The
 supporting audits add uncertainty checks, label-permutation negative controls,
 view/depth task-fit checks, fixed-recall target costs, sequence-scope scoring,
 oracle-depth scoring, action counterfactuals, transfer checks, and
-reproducibility gates. They do not add a new empirical claim; they explain when
+replayability checks. They do not add a new empirical claim; they explain when
 the headline comparison should be trusted and when it should be narrowed.
 
 The strongest negative results define the useful boundary. Operation-stack
@@ -936,8 +922,8 @@ the combination of agent-operation records, recursive multi-field stack
 projections, and hidden-label profile-group scoring.
 
 The evidence remains scoped. The profile-spec and deterministic-output audits
-make the offline artifacts reproducible, and the claim-integrity and rubric
-checks keep the paper aligned with tracked results. They do not claim human or agent
+make the offline outputs reproducible, and the claim-scope checks keep the
+paper aligned with tracked results. They do not claim human or agent
 analyst productivity, live eBPF overhead, automatic discovery of all intent
 boundaries, a label-free universal selector, or complete compatibility with
 OpenTelemetry, Phoenix, LangSmith, Langfuse, or Perfetto producers.
