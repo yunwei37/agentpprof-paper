@@ -218,16 +218,15 @@ used here as a span-tree proxy.}
 
 We evaluate this claim with public labeled traces rather than a human study. A
 human or agent analyst study would be useful for productivity claims, but it is
-not required to test label-scored profiler fidelity. Our evaluation therefore uses hidden
-labels as the oracle for ranked profile groups and asks seven research questions:
-RQ1 tests whether the two abstractions cover heterogeneous trajectories. RQ2
-tests whether recursive stacks avoid fixed-boundary fragmentation. RQ3 tests
-whether mappings derive useful fields without creating extra objects. RQ4 tests
-whether folded boundaries align with human subtask labels. RQ5, the main R320
-experiment, tests localization and ranking accuracy. RQ6 tests whether the
-profiler output produces actionable tuning decisions. RQ7 tests whether the
-profile-spec path is reproducible, byte-stable when requested, and has
-reportable local execution cost on the same tracked inputs.
+not required to test label-scored profiler fidelity. Our evaluation therefore
+uses hidden labels as the oracle for ranked profile groups and is organized
+around four core experiments. E1 tests operation coverage, recursive stack
+folding, field derivation, and human-boundary alignment under the same
+two-object model. E2 is the main hidden-label localization and ranking
+benchmark. E3 isolates mechanisms and actionability through ranker, stack,
+mapping, transfer, case, and profile-spec patch ablations. E4 checks
+reproducibility, offline cost, and claim-integrity guardrails. Individual R-runs
+are provenance for these experiments, not the paper-facing structure.
 
 \section{Design}
 
@@ -313,7 +312,7 @@ size. Build time is excluded from the profiler runtime measurement.
 
 \section{Results}
 
-\subsection{RQ1: Do Two Abstractions Cover Heterogeneous Traces?}
+\subsection{E1: Coverage and Recursive Folding}
 
 The 14 core public sources produce 42,590 operations. Adding the supplemental
 ScaleCUA stream brings the smoke set to 47,590 operations. These operations
@@ -322,7 +321,7 @@ failure labels, safety labels, human grouped-action labels, and desktop
 step-quality labels. No source required a prompt-specific, GUI-specific, or
 safety-specific profiler object.
 
-\subsection{RQ2: Is Stack Depth a Query?}
+\paragraph{Recursive stack-depth sweep.}
 
 On the same 13,265 operations, a depth sweep folds to 9 dataset stacks, 57
 phase stacks, 226 tool/semantic stacks, 455 action stacks, and 3,757
@@ -366,7 +365,7 @@ width on 4 of 6 tasks and semantic first-positive work on 6 of 6 tasks, but
 side-effect, SATraj, and boundary counterexamples remain; the result isolates
 policy transfer from target-label tuning without claiming a universal ranker.
 
-\subsection{RQ3: Do Mappings Help Without Adding Objects?}
+\paragraph{Field derivation and boundary probes.}
 
 Held-out mapping rules improve compression from 14.049 to 19.091 on 3,990
 operations. Leave-dataset-out mapping reduces unique stacks on 6 of 9 held-out
@@ -376,7 +375,7 @@ precedence is fixed. A supervised OSWorld-Human boundary backend reaches F1
 Rust profiler folds as ordinary operation fields. Boundary backends therefore
 extend field derivation, not the profiler object model.
 
-\subsection{RQ4: Do Stacks Match Human Boundaries?}
+\paragraph{Human-boundary oracle.}
 
 OSWorld-Human gives the strongest direct boundary oracle. On 320 exact-aligned
 tasks with 4,011 operations and 2,075 human groups, grouped-depth stacks reduce
@@ -386,7 +385,7 @@ projection has human-group boundary F1 0.627 with precision 1.0 and recall
 single-action sequence can be folded at action depth or human-group depth and
 scored against a human boundary oracle.
 
-\subsection{RQ5: Does the Profiler Localize and Rank Labeled Problems?}
+\subsection{E2: Hidden-Label Localization and Ranking}
 
 Table~\ref{tab:r320} gives the main R320 accuracy result. Flat summaries recover
 all positives, but only by inspecting the whole task, so their median work@5 is
@@ -504,7 +503,7 @@ top-five work on only 2 of 6 tasks, and lower work-to-first-positive on only 2
 of 6 tasks. Thus the supported claim is fixed-session fragmentation reduction
 and budgeted-recall tradeoff, not work dominance over span-tree drilldown.
 
-\subsection{RQ6: Are the Results Actionable?}
+\subsection{E3: Mechanism and Actionability}
 
 R320 turns each task into an optimization diagnosis, summarized in
 Table~\ref{tab:actionability}. SATraj unsafe is the clearest operation-stack
@@ -723,6 +722,14 @@ delta is 0.0376 and median top-five lift delta is 0.5750. The rejected
 OSWorld-Human patch is useful negative evidence: visible phase/action rank
 features are not enough for a human-boundary objective, so the next action is a
 boundary-derived field rather than a universal rank-feature patch.
+R358 follows up that rejected OSWorld-Human patch with the held-out R297
+boundary-derived fields as ordinary operation fields. The learned-boundary
+profile improves AP to 0.2583, compared with 0.2402 for semantic-width and
+0.2253 for the visible-rank patch, and reduces groups to 74 rather than 108
+semantic groups or 96 fixed-session groups. It also records the counterpoint:
+top-five operation work and first-positive work increase on this held-out
+subset. The result belongs to mechanism/actionability, not automatic boundary
+discovery or an automatic patch selector.
 R355 then scores whether the same ranked profiles localize at the finer oracle
 depth provided by each dataset. It covers 24 accuracy task-depth rows across
 session, operation/step, positive-run, and task-specific units, plus a
@@ -733,6 +740,9 @@ fixed-session budget-30 unit recall on 20/24 rows and groups-to-50\% positive
 units on 22/24 rows, but it does not reduce the positive-session-without-unit
 gap versus fixed-session. The supported claim is therefore depth-aware triage
 and cost accounting, not complete intent-boundary discovery.
+
+\subsection{E4: Reproducibility, Cost, and Claim Integrity}
+
 R338 audits the paper claim itself rather than adding a new empirical result.
 It reads tracked-clean R320--R350 profiler-evidence artifacts, hashes the current
 Chinese and English drafts, and checks paper-facing numbers, source policy,
@@ -775,7 +785,7 @@ Group start & flat:width & Add boundary-derived fields because action-depth stac
 \end{tabular}
 \end{table*}
 
-\subsection{RQ7: Are Profile Specs Reproducible with Reportable Cost?}
+\paragraph{Profile-spec determinism and local cost.}
 
 R327 reruns the existing profile-spec artifacts used by R300, R324, and R326.
 The workload contains 76 tracked specs: four view specs, 12 operation-feature
