@@ -24,11 +24,12 @@
 \title{AgentPProf: Semantic Profiling for AI Agents}
 
 \begin{abstract}
-AI agents produce complex execution traces spanning prompts, LLM calls,
-tool invocations, GUI actions, and system effects. As deployments grow to hundreds of sessions, developers need aggregate
+AI agents orchestrate heterogeneous activities---prompts, LLM calls,
+tool invocations, GUI actions, and system effects. As deployments grow
+to hundreds of sessions, developers need aggregate
 views to identify which task categories consume the most budget, where
 failures concentrate, and which workflows waste effort.
-Existing observability tools organize events into fixed session/span
+Yet, existing observability tools organize events into fixed session/span
 hierarchies suited for single-run debugging but unable to fold events
 across sessions by semantic work category. The consequence is that
 failures, safety violations, and wasted effort remain unattributable to
@@ -56,8 +57,8 @@ group fragmentation by 45\% versus fixed-session drilldown.
 \label{sec:intro}
 
 %% ¶1: Background + Context
-AI agent systems produce heterogeneous execution traces spanning
-prompts, LLM calls, tool invocations, GUI actions, and system effects.
+AI agents orchestrate heterogeneous activities: prompts, LLM calls,
+tool invocations, GUI actions, and system effects.
 As deployments scale to hundreds of sessions, developers need
 cross-session aggregate views to
 identify which task categories consume the most budget, where failures
@@ -67,7 +68,7 @@ concentrate, and which workflows waste effort.
 However, no existing tool provides cross-session resource attribution
 by semantic category. In a real development project,
 \texttt{cargo test} appears 2{,}903 times across 325 sessions, yet no
-trace tool can attribute these executions to the review, debugging, or
+observability tool can attribute these executions to the review, debugging, or
 refactoring prompts that triggered them.
 
 %% ¶3: Root cause
@@ -136,82 +137,73 @@ This paper makes three contributions:
 \section{Background and Motivation}
 \label{sec:background}
 
-\subsection{Existing Agent Trace Models}
+\subsection{AI Agent Observability}
 
-Current agent observability tools organize traces around fixed
-hierarchies. OpenTelemetry represents an execution as a \emph{trace}
-containing a tree of \emph{spans}, each with a name, duration, and
-key-value attributes. LangSmith and Langfuse group spans into
-\emph{sessions} and display them as timelines or waterfall charts.
-Phoenix and OpenInference add GenAI-specific span types for LLM calls,
-tool invocations, retrieval steps, and agent reasoning.
+AI agents orchestrate heterogeneous activities: prompts, LLM calls,
+tool invocations, GUI actions, file and network effects, plans, and
+subagent delegations. Observability tools help developers understand
+these activities. LangSmith~\cite{langsmith},
+Langfuse~\cite{langfuse}, Phoenix~\cite{phoenix}, and OpenTelemetry
+GenAI~\cite{otel} organize events into per-execution \emph{span trees},
+where each event belongs to exactly one span and spans nest in a fixed
+parent-child hierarchy. This design is effective for debugging: a
+developer can locate a failing span, inspect its attributes, and trace
+its parent chain to understand the execution context.
 
-These models share a structural property: the session or
-span tree is the skeleton of the data. Every event belongs to exactly one span, and
-spans nest in a fixed parent-child hierarchy determined at execution
-time. This design is effective for debugging because a developer can
-locate a failing span, inspect its attributes, and trace its parent
-chain to understand the execution context.
+\subsection{Profiling vs.\ Debugging}
 
-\subsection{Fixed Hierarchies and Profiling}
+Debugging inspects a single execution. Profiling aggregates across
+executions to answer questions like ``where does the budget go?'' CPU
+profilers solved this aggregation problem decades ago.
+A flame graph~\cite{flamegraphs} represents a profile as weighted
+\emph{samples}, each attached to a \emph{call stack}. Identical stacks
+merge, and width represents aggregate cost. The key enabler is
+\emph{deterministic} function names: the same code path always produces
+the same frames.
 
-Profiling requires a fundamentally different operation, \emph{folding}
-events across executions by semantic category so that width represents
-aggregate cost. Fixed session/span hierarchies obstruct this in three
-ways.
+Agent activities break this precondition in two ways. First, prompts
+are natural language and lack deterministic identifiers. Second, there
+is no inherent call stack: agent events have no runtime-determined
+parent-child nesting analogous to function calls.
+Pprof's \texttt{tagroot}/\texttt{tagleaf} options add label-derived
+pseudo-frames to an existing execution stack, but agent activities have
+no execution stack to augment.
+
+\subsection{The Aggregation Gap}
+
+Existing agent observability tools are designed for debugging, not
+profiling, and this creates three concrete gaps.
 
 First, sessions are boundaries, not categories. A single session may
 contain review, debugging, and refactoring phases, and splitting by
-session assigns all of them to the same bucket. Conversely, two sessions
-performing the same task produce separate buckets that cannot be merged
-without external logic.
+session assigns all of them to the same bucket. Two sessions performing
+the same task produce separate buckets that cannot be merged without
+external logic.
 
-Second, span names describe mechanisms
-(\texttt{LLMCall}, \texttt{ToolInvoke}, \texttt{ChatCompletion}), not
-user intent (\texttt{review}, \texttt{debug}, \texttt{test}). Grouping
-by span name tells you how many LLM calls occurred, not which categories
-of work consumed the budget.
+Second, span names describe mechanisms (\texttt{LLMCall},
+\texttt{ToolInvoke}, \texttt{ChatCompletion}), not user intent
+(\texttt{review}, \texttt{debug}, \texttt{test}). Grouping by span name
+tells you how many LLM calls occurred, not which categories of work
+consumed the budget.
 
 Third, these limitations compound in practice. A common system effect
 like running a test suite may appear thousands of times across sessions,
-but a flat process summary shows only a single counter with no way to
-attribute executions to the semantic intent that triggered them. We
-quantify this disaggregation in RQ1~(\S\ref{sec:eval}).
-
-\subsection{CPU Profiling and Agent Traces}
-
-CPU profilers solve the equivalent aggregation problem for programs.
-A flame graph~\cite{flamegraphs} represents a profile as a set of
-weighted \emph{samples}, each attached to a \emph{call stack} (an
-ordered list of function frames). Identical stacks merge, and width
-represents aggregate cost. The key enabler is that function names are
-\emph{deterministic}. The same code path always produces the same
-frames.
-
-Agent traces break this precondition in two ways. First, prompts are
-natural language and lack deterministic identifiers. Second, there is no
-inherent call stack at all: agent events (prompts, tool calls, GUI
-actions, process effects) have no runtime-determined parent-child
-nesting analogous to function calls. Pprof's \texttt{tagroot}/\texttt{tagleaf}
-options add label-derived pseudo-frames to an existing execution stack,
-but agent traces have no execution stack to augment. The profiling
-structure must be constructed entirely from semantic fields at query
-time.
+but a flat summary shows only a single counter with no way to attribute
+executions to the semantic intent that triggered them. We quantify this
+in RQ1~(\S\ref{sec:eval}).
 
 These observations yield three design requirements:
 
 \begin{description}
 \item[R1: Uniform record type.]
-  Agent traces mix prompts, LLM calls, tool invocations, GUI actions,
-  process events, and benchmark labels. The profiler needs a single
-  record type that can represent all of them without type-specific
-  objects.
+  Agent activities mix prompts, LLM calls, tool invocations, GUI
+  actions, process events, and benchmark labels. The profiler needs a
+  single record type that can represent all of them without
+  type-specific objects.
 \item[R2: Query-time aggregation.]
   The same data must support multiple aggregation shapes (by task,
-  phase, action, session, or dataset) without rebuilding the trace.
-  Sessions and spans must be fields, not fixed hierarchy nodes. This
-  subsumes diagnostic views: failure, safety, and quality labels are
-  fields that participate in the same aggregation.
+  phase, action, session, or dataset) without rebuilding the input.
+  Sessions and spans must be fields, not fixed hierarchy nodes.
 \item[R3: Deterministic labels for folding.]
   Free-form prompts must be mapped to short, stable, repeatable labels
   before folding. This \emph{intent recognition} step has no analogue in
