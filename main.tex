@@ -153,7 +153,7 @@ time. This design is effective for debugging because a developer can
 locate a failing span, inspect its attributes, and trace its parent
 chain to understand the execution context.
 
-\subsection{Why Fixed Hierarchies Cannot Profile}
+\subsection{Fixed Hierarchies and Profiling}
 
 Profiling requires a fundamentally different operation, \emph{folding}
 events across executions by semantic category so that width represents
@@ -164,17 +164,21 @@ First, sessions are boundaries, not categories. A single session may
 contain review, debugging, and refactoring phases, and splitting by
 session assigns all of them to the same bucket. Conversely, two sessions
 performing the same task produce separate buckets that cannot be merged
-without external logic. Second, span names describe mechanisms
+without external logic.
+
+Second, span names describe mechanisms
 (\texttt{LLMCall}, \texttt{ToolInvoke}, \texttt{ChatCompletion}), not
 user intent (\texttt{review}, \texttt{debug}, \texttt{test}). Grouping
 by span name tells you how many LLM calls occurred, not which categories
-of work consumed the budget. Third, these limitations compound in practice. A common system effect
+of work consumed the budget.
+
+Third, these limitations compound in practice. A common system effect
 like running a test suite may appear thousands of times across sessions,
 but a flat process summary shows only a single counter with no way to
 attribute executions to the semantic intent that triggered them. We
 quantify this disaggregation in RQ1~(\S\ref{sec:eval}).
 
-\subsection{Why CPU Profiling Does Not Directly Apply}
+\subsection{CPU Profiling and Agent Traces}
 
 CPU profilers solve the equivalent aggregation problem for programs.
 A flame graph~\cite{flamegraphs} represents a profile as a set of
@@ -495,11 +499,9 @@ The \texttt{tokens} view (Figure~\ref{fig:flamegraphs}) reveals that
 \texttt{git}, \texttt{code}, \texttt{edit}, and \texttt{debug}. A timeline of 80{,}000 individual LLM calls cannot
 produce this distribution without external aggregation. The \texttt{files} view shows
 \texttt{debug}-tagged prompts across different sessions repeatedly
-accessing the same source files, aggregated into a single wide bar that
-a timeline shows as isolated events. The \texttt{network} view
-attributes domain contacts to prompt categories, and the \texttt{files}
-view identifies accesses outside the project root, supporting security
-auditing.
+accessing the same source files and identifies accesses outside the
+project root, supporting security auditing. The \texttt{network} view
+attributes domain contacts to prompt categories.
 
 \begin{figure}[t]
 \centering
@@ -735,17 +737,17 @@ is structural: natural-language prompts lack the deterministic
 identifiers that make flame-graph folding work. \toolname shows that two
 abstractions, operations and operation stacks, close this gap once
 intent recognition restores deterministic labels. Scoring profiler output against hidden trajectory labels confirms
-that semantic profiling separates information that flat views merge,
-localizes labeled problems with less work than both flat summaries and
-fixed-session drilldown, and produces labels that agree with
-ground-truth annotations across heterogeneous public datasets.
+that semantic profiling separates information that flat views merge
+and localizes labeled problems with less work than both flat summaries
+and fixed-session drilldown. Mapping-derived labels agree with
+ground-truth annotations on 7/9 held-out public datasets.
 
 Profilers and debuggers are complementary. Fixed-session drilldown finds
 a first positive faster on 4/6 tasks (RQ2), while the profiler
 identifies which categories deserve attention. \toolname supports both
 by including or excluding session fields in the stack query. The
 profiler's structured output (JSON, pprof, folded stacks) is designed
-for automated consumption by analysis agents, evaluation of
+for automated consumption by analysis agents. Evaluation of
 agent-driven diagnosis is future work.
 
 The main limitation is single-project real-session data. Multi-project
