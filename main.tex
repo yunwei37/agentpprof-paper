@@ -358,8 +358,8 @@ Recursive stack choice &
 Same 13,265 operations plus AgentNet profile-spec override &
 9 dataset, 57 phase, 226 tool/semantic, 455 action, and 3,757 fixed-session
 stacks; AgentNet changes 608 to 83 stacks without changing 16,741 input
-operations; induced AgentRewardBench task stacks have 15 stacks with depths
-2/3/4, recurring boundary fields, and no user field order. &
+operations; automatic task-stack induction produces variable-depth stacks on
+all six hidden-label tasks without a user field order. &
 Fixed sessions are useful drilldown fields but fragment aggregation when
 hard-coded. \\
 Field derivation before folding &
@@ -402,12 +402,15 @@ The Rust task-stack induction replay tests the same abstraction boundary when
 the user does not supply a stack field order. On the tracked AgentRewardBench
 looping slice, \toolname scores adjacent operation boundaries from visible
 fields and query terms, emits task-only stacks, and permits the same evidence
-field to recur at different recursive cuts. The overview view covers 729
-operations with 15 stacks and depth histogram 1/3/11 at depths 2/3/4; the
-session-candidate view covers the same operations with 15 stacks and depth
-histogram 7/6/2. Session appears only when explicitly allowed as evidence. This
-replay is mechanism evidence, not the hidden-label localization result and not a
-claim of complete intent-boundary discovery.
+field to recur at different recursive cuts. Across the six hidden-label tasks,
+the same implementation produces variable-depth stacks. AgentRewardBench,
+AgentNet, and OSWorld-Human cover depths 2/3/4, while SATraj preserves depths
+1/2/3/4. The automatic view has median 15.5 groups, compared with 285.0 for
+fixed-session drilldown, and median top-five work 0.3143, compared with 1.0 for
+flat summaries. Its median AP is 0.2972, below the hand-configured
+operation-stack query-aware policy at 0.3116. The result supports configurable
+recursive folding, not replacement of task-specific profile specs and not
+complete intent-boundary discovery.
 
 \paragraph{Field derivation and boundary probes.}
 
@@ -487,6 +490,13 @@ and use fewer groups to reach 50\% positive units on 22/24 rows. If these
 counterpoints disappeared from the paper, the result would be overstated; with
 them, E2 supports a better localization-budget/fragmentation tradeoff, not
 dominance over every trace-tree-shaped objective.
+Automatic induced task stacks provide mechanism-side evidence for the same
+tradeoff. Without a user-provided field order, the profiler uses visible
+boundary evidence to produce variable-depth groups, and the same hidden-label
+scoring pipeline reports median top-five work 0.3143 and median 15.5 groups.
+The view is cheaper than flat summaries and less fragmented than fixed-session
+drilldown, but its AP remains below the hand-configured operation-stack policy,
+so E2's primary result remains the query-aware operation-stack comparison.
 
 \begin{table*}[t]
 \centering
@@ -609,6 +619,10 @@ boundary-derived fields rather than action depth alone. Thus the first
 actionability result is not that one view wins; it is that the profiler
 identifies which stack field, mapping, ranker, or drilldown should change for
 each task family.
+Automatic task-stack induction stays inside the same actionability boundary. It
+shows that the profiler can recursively induce task-only stacks from visible
+fields and score the resulting variable-depth view, while its AP counterpoint
+shows that profile-specific stacks and rankers still need task-specific tuning.
 The task-level verdict synthesis clarifies the claim boundary: all six tasks
 support E3 with counterpoints, not as unconditional wins. Five of six tasks have
 accepted executable profile-spec patches; the remaining OSWorld-Human row points
