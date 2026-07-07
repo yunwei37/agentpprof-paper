@@ -64,7 +64,9 @@ operation-stack views are a Pareto point, not a universal default. Executable
 profile-spec patches improve AP, top-five lift, and first-positive work on 5 of
 6 tasks; a supervised held-out boundary-field ablation improves OSWorld-Human AP
 from 0.2402 to 0.2583 and reduces groups from 108 to 74, while preserving work
-counterpoints. RQ4/E4 checks replayability, offline cost, and claim scope.
+counterpoints. An induced-depth sweep finds the best median AP at depth 4 and
+the lowest median top-five work at depth 5. RQ4/E4 checks replayability,
+offline cost, and claim scope.
 Deterministic replay covers 76 tracked profile specs, and profile-spec input
 regressions cover local-session, agent-trace, and standard-trace replay. The
 recorded source provenance, paper-number, rubric, and two-abstraction checks
@@ -266,7 +268,9 @@ Executable profile-spec patches improve 5/6 tasks, with median AP delta 0.0376
 and top-five lift delta 0.5750. Boundary-derived fields improve OSWorld-Human
 boundary AP to 0.2583 versus 0.2402 and reduce groups to 74 versus 108, while
 preserving top-five-work and first-positive-work counterpoints. Rank-feature
-ablations identify 7 critical and 3 misleading feature rows. &
+ablations identify 7 critical and 3 misleading feature rows. Induced depth
+sensitivity places best median AP at depth 4 and lowest median top-five work at
+depth 5. &
 The profiler exposes stack, field, ranker, and profile-spec knobs; it is not an
 automatic selector or boundary detector. \\
 RQ4/E4: replayability, offline cost, and scope control &
@@ -410,9 +414,12 @@ AgentNet, and OSWorld-Human cover depths 2/3/4, while SATraj preserves depths
 1/2/3/4. The automatic view has median 15.0 groups, compared with 285.0 for
 fixed-session drilldown, and median top-five work 0.2819, compared with 1.0 for
 flat summaries. Its median AP is 0.3034, below the hand-configured
-operation-stack query-aware policy at 0.3116. The result supports configurable
-recursive folding, not replacement of task-specific profile specs and not
-complete intent-boundary discovery.
+operation-stack query-aware policy at 0.3116. A depth sweep over the same
+induced view shows that depth is a profile-configuration knob because median AP
+is best at depth 4 with 0.3034, median top-five work is lowest at depth 5 with
+0.1067, and task-level AP-best depths span 3, 4, and 5. The result supports
+configurable recursive folding and depth tuning, not replacement of
+task-specific profile specs and not complete intent-boundary discovery.
 
 \paragraph{Field derivation and boundary probes.}
 
@@ -496,6 +503,9 @@ Automatic induced task stacks provide mechanism-side evidence for the same
 tradeoff. Without a user-provided stack-field chain, the profiler uses visible
 boundary evidence to produce variable-depth groups, and the same hidden-label
 scoring pipeline reports median top-five work 0.2819 and median 15.0 groups.
+Changing only the induced depth cap changes the profile surface. Depth 4 gives
+the best median AP, depth 5 gives the lowest median top-five work, and three
+tasks choose different depths for AP and top-five work.
 The view is cheaper than flat summaries and less fragmented than fixed-session
 drilldown, but its AP remains below the hand-configured operation-stack policy,
 so E2's primary result remains the query-aware operation-stack comparison.
@@ -625,6 +635,12 @@ Automatic task-stack induction stays inside the same actionability boundary. It
 shows that the profiler can recursively induce task-only stacks from visible
 fields and score the resulting variable-depth view, while its AP counterpoint
 shows that profile-specific stacks and rankers still need task-specific tuning.
+The depth-sensitivity sweep turns that counterpoint into a configuration
+diagnosis. The same induced profiler view reaches its best median AP at depth 4
+and its lowest median top-five work at depth 5, while task-level AP-best depths
+span 3, 4, and 5. E3 therefore recommends tuning operation-stack depth and
+ranking objective rather than treating \texttt{analysis\_task,phase,action,status}
+as a fixed ontology.
 The task-level verdict synthesis clarifies the claim boundary: all six tasks
 support E3 with counterpoints, not as unconditional wins. Five of six tasks have
 accepted executable profile-spec patches; the remaining OSWorld-Human row points
