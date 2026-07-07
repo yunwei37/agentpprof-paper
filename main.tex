@@ -17,1012 +17,761 @@
 
 \begin{document}
 
-\title{AgentPProf: Operation-Stack Profiling for AI Agent Traces}
+\title{AgentPProf: Semantic Profiling for AI Agent Traces}
 
 \begin{abstract}
-AI-agent executions are no longer well described by one prompt, one session, or
-one trace tree. A single run can contain prompts, tool calls, GUI actions,
-browser actions, process events, plans, subagents, safety labels, failure
-labels, and human subtask boundaries. Existing observability systems usually
-make one boundary primary, such as a session, span, or prompt tree. Classic
-profilers make another boundary primary, such as a function call stack. This
-paper argues that agent profiling needs a smaller abstraction: an
-\operation is a weighted record with fields, and an \opstack is a recursive
-projection over those fields chosen at query time. Aggregation is not a separate
-object or a fixed trace tree; it is the result of choosing a stack shape over the
-same operations. When users do not provide a stack-field chain, the profiler can
-also score adjacent operation boundaries from visible evidence, semantic shift,
-and query hints, derive a multi-value \texttt{task} field, and fold task-only
-stacks. This is not
-merely a claim about query-time aggregation, which
-classic profilers and trace processors also support in different forms. The
-scoped novelty is the combination of an agent-operation record model, recursive
-multi-field operation-stack projections, and a hidden-label cross-dataset
-localization benchmark.
+% Beat 1: Context
+AI agents produce complex execution traces spanning prompts, LLM calls,
+tool invocations, GUI actions, and system effects. As deployments grow
+to hundreds of sessions, both human operators and automated analysis
+pipelines need aggregate views---not just per-execution debugging.
 
-We implement this model in the Rust \toolname profiler and evaluate it through
-three core empirical profiling experiments, RQ1/E1 through RQ3/E3, plus one
-replayability/scope-control block, RQ4/E4, rather than a chronological run list.
-The paper structure is three empirical profiling experiments plus one
-replayability/scope-control block.
-RQ1/E1 tests generality and
-recursive operation-stack formation: across 15 lightly sampled public labeled
-sources, \toolname maps 47,590 samples into the same operation layer, and the
-same 13,265 operations fold from 9 dataset stacks to 57 phase, 226 semantic, 455
-action, or 3,757 fixed-session stacks without changing the input operations. RQ2/E2
-is the main hidden-label localization benchmark. On AgentRewardBench,
-SATraj-OS, AgentNet, and OSWorld-Human, we build six tasks over 34,539
-operations and 3,699 positives, score 144 view/ranker policies, and find that
-task-query operation-stack profiling inspects median 0.0937 top-five work versus
-1.0 for flat summaries, improves top-five recall over fixed-session drilldown on
-5 of 6 tasks, and reduces median group fragmentation from 285.0 to 157.5
-groups.
-RQ3/E3 isolates mechanisms and profile-configuration actionability. Rank-feature,
-stack-depth, mapping, transfer, diagnostic-lens, case-packet, and counterfactual
-analyses show that the useful configuration varies by task and objective:
-operation-stack views are a Pareto point, not a universal default. Executable
-profile-spec patches improve AP, top-five lift, and first-positive work on 5 of
-6 tasks; a supervised held-out boundary-field ablation improves OSWorld-Human AP
-from 0.2402 to 0.2583 and reduces groups from 108 to 74, while preserving work
-counterpoints. An induced-depth sweep finds the best median AP at depth 4 and
-the lowest median top-five work at depth 5. RQ4/E4 checks replayability,
-offline cost, and claim scope.
-Deterministic replay covers 76 tracked profile specs, and profile-spec input
-regressions cover local-session, agent-trace, and standard-trace replay. The
-recorded source provenance, paper-number, rubric, and two-abstraction checks
-constrain the paper's scope rather than forming a fourth empirical profiling
-experiment.
+% Beat 2: Problem
+Existing observability tools organize events into fixed session/span
+hierarchies suited for single-run debugging but unable to fold events
+across sessions by semantic work category. CPU flame graphs solve the
+equivalent aggregation problem for programs, but they rely on
+deterministic function names. Agent prompts are natural language and
+cannot be folded directly.
 
-The supported claim is therefore a scoped profiling claim: operation-stack
-profiling can localize, rank, and explain dataset-labeled failures, quality
-problems, and semantic boundaries in public traces, with less inspection work
-than flat summaries and a better median-fragmentation tradeoff than the
-fixed-session drilldown proxy. Fixed-session drilldown is the current
-trace-tree-shaped baseline; real
-OpenTelemetry/OpenInference/Phoenix-style span-tree imports remain future
-baselines. The paper does not claim human-productivity gains, automatic
-discovery of all intent boundaries, metric dominance, or complete compatibility
-with existing trace ecosystems.
+% Beat 3: This paper
+We show that agent profiling reduces to two abstractions once intent
+recognition restores the deterministic-label precondition. An
+\emph{operation} is a uniform weighted record for any agent activity; an
+\emph{operation stack} is a field projection chosen at query time.
+Sessions and spans become optional fields, not fixed hierarchy nodes.
+\toolname implements this model with pluggable intent-recognition
+backends (regex rules, local LLM tagging, unsupervised clustering) and
+produces flame graphs, pprof profiles, and structured JSON consumable by
+both developers and analysis agents.
+
+% Beat 4: Results
+On 325 real agent sessions, semantic labels separate 90\% of
+system-effect weight that flat views merge. On four public datasets
+(34{,}539 operations), operation-stack profiling reduces inspection work
+by 90\% versus flat summaries and fragmentation by 45\% versus
+fixed-session drilldown. Leave-dataset-out mapping achieves V-measure
+above 0.7 on 7/9 held-out datasets.
 \end{abstract}
 
 \maketitle
 
+%% ===================================================================
 \section{Introduction}
+\label{sec:intro}
 
-AI-agent traces mix many objects that traditional profiling and tracing systems
-keep separate. A coding agent may ask a model for a plan, call a shell tool,
-launch a subagent, inspect a file, and retry a failing command. A web or desktop
-agent may click, type, observe a page, repeat an action, and receive a benchmark
-label saying that the action was unsafe, redundant, incorrect, or the start of
-a human subtask. If the profiler fixes the hierarchy at prompt, session, or
-span boundaries, these questions become hard to ask: which phases concentrate
-unsafe operations, which action families cause redundant steps, and which
-groups of operations cross sessions but share the same failure mode?
+AI agent systems produce heterogeneous execution traces spanning
+prompts, LLM calls, tool invocations, GUI actions, and system effects.
+As deployments scale to hundreds of sessions and tens of thousands of
+calls, both developers and automated analysis agents need to answer
+aggregate questions: which categories of work consume the most tokens,
+where do repeated failures concentrate, and how does cost distribute
+across semantic task families?
 
-\toolname takes the opposite position. The profiler stores a sequence as
-operations, where prompts, tool calls, processes, syscalls, GUI actions, and
-plan steps are operation records or derived fields. Session, span, task, and
-trace identifiers are fields, exchange containers, or baseline shapes rather
-than separate profiler objects. Users then choose an operation stack to fold the
-same operations at different depths. One query may group by
-\texttt{task,phase,action}; another may group by
-\texttt{environment,safety}. Another query may ask the profiler to induce
-recursive \texttt{task} frames from adjacent boundary evidence rather than
-supplying a fixed stack-field chain. Mapping and tagging are first-class field-derivation
-steps, but they do not add a third profiler object. They only write fields
-before the stack query runs. Thus the novelty is the abstraction that connects
-stack shape to aggregation: changing the stack changes what is comparable,
-localizable, and actionable without changing the underlying trace object model.
+Existing observability tools---LangSmith~\cite{langsmith},
+Langfuse~\cite{langfuse}, Phoenix~\cite{phoenix}, OpenTelemetry
+GenAI~\cite{otel}---organize events into per-execution timelines and
+span trees, enabling single-run debugging. But no existing tool provides
+an aggregate view that folds heterogeneous events across sessions into a
+cost or frequency distribution grouped by semantic work category.
 
-This paper makes a profiling claim, not a human-productivity claim. A top-tier
-profiling paper must show that the profiler attributes, localizes, and ranks
-problems against explicit workload labels, and that the output leads to
-optimization insight with better label-scored ranking or inspection cost than baselines. For agents, the
-claim is:
-\begin{quote}
-\emph{Operation/operation-stack profiling provides label-scored localization
-and ranking for task-relevant failures, quality problems, and dataset-provided
-semantic boundaries in real labeled agent traces, while requiring less
-inspection work than flat summaries and improving the median fragmentation
-tradeoff relative to fixed-session drilldown.}
-\end{quote}
+CPU profilers solved the equivalent problem for programs: flame
+graphs~\cite{flamegraphs} fold millions of function-call samples into
+a single chart where width represents cost. The key enabler is
+\emph{deterministic} function names that merge identical call stacks.
+Agent traces break this assumption---prompts are natural language, and
+two prompts expressing the same intent share no characters. We develop
+this gap and the design requirements it implies in
+\S\ref{sec:background}.
 
-We evaluate this claim with public labeled traces rather than a human study. A
-human or agent analyst study would be useful for productivity claims, but it is
-not required to test label-scored profiler fidelity. Our evaluation therefore
-uses hidden labels as the oracle for ranked profile groups and is organized
-as three empirical profiling experiments plus one replayability/scope-control
-block. RQ1/E1 tests operation generality, recursive stack folding, field
-derivation, and human-boundary alignment under the same two-object model. RQ2/E2
-is the main hidden-label localization and ranking benchmark. RQ3/E3 isolates
-mechanisms and actionability through ranker, stack, mapping, transfer, case, and
-profile-spec patch ablations. RQ4/E4 checks replayability, offline cost, and
-claim scope. It is not treated as a fourth hidden-label accuracy result or a
-fourth empirical profiling experiment. Supplementary results support these
-blocks rather than defining the paper-facing structure.
+Some existing tools take steps toward semantic grouping: Datadog LLM
+Observability clusters user messages by
+topic,\footnote{\url{https://docs.datadoghq.com/llm_observability/}}
+and Laminar extracts structured signals from
+traces.\footnote{\url{https://docs.lmnr.ai/signals/introduction}} These
+tools characterize \emph{input distributions} (``30\% of users ask code
+questions'') but not \emph{resource attribution} (``code-review tasks
+consume 40\% of the token budget'').
 
+The central insight is that agent observability requires
+\emph{profiling}: aggregate, cross-session cost attribution grouped by
+user intent---which we call \emph{semantic} to distinguish from
+execution-structural groupings like sessions or spans. The obstacle to
+applying classical profiler techniques is the nondeterminism of
+natural-language identifiers.
+
+This paper presents \toolname, a profiler that restores aggregate
+flame-graph analysis for agent traces. The profiler is built on two
+abstractions: an \emph{operation} (a uniform weighted record for any
+agent activity) and an \emph{operation stack} (a field projection chosen
+at query time). Sessions, spans, and trace identifiers are operation
+fields, not fixed hierarchy nodes. \emph{Intent recognition}---mapping
+free-form prompts to stable labels through pluggable backends (regex
+rules, local LLM tagging, or unsupervised clustering)---restores the
+deterministic-label precondition that flame-graph folding requires.
+
+This paper makes three contributions:
+
+\begin{enumerate}
+\item \textbf{Insight: agent profiling reduces to two abstractions.}
+  We show that the aggregation gap in agent observability---fixed
+  session/span hierarchies cannot fold by semantic category---is closed
+  by combining uniform operation records with query-time stack
+  projections, once intent recognition restores deterministic labels
+  (\S\ref{sec:background}--\S\ref{sec:design}).
+\item \textbf{System: \toolname.}
+  We implement this model as a Rust CLI with pluggable intent
+  recognition, four built-in views, and output formats (pprof, SVG,
+  JSON) consumable by both developers and automated analysis agents
+  (\S\ref{sec:impl}).
+\item \textbf{Evaluation.}
+  We show that semantic labels separate 90\% of system-effect weight
+  that unsemantic views merge (RQ1), that operation-stack profiling
+  localizes hidden labeled problems with 90\% less work than flat
+  summaries (RQ2), and that mapping-derived labels agree with
+  ground-truth annotations on 7/9 public datasets (RQ3)
+  (\S\ref{sec:eval}).
+\end{enumerate}
+
+%% ===================================================================
+\section{Background and Motivation}
+\label{sec:background}
+
+\subsection{How Existing Agent Trace Models Work}
+
+Current agent observability tools organize traces around fixed
+hierarchies. OpenTelemetry represents an execution as a \emph{trace}
+containing a tree of \emph{spans}, each with a name, duration, and
+key-value attributes. LangSmith and Langfuse group spans into
+\emph{sessions} and display them as timelines or waterfall charts.
+Phoenix and OpenInference add GenAI-specific span types for LLM calls,
+tool invocations, retrieval steps, and agent reasoning.
+
+These models share a structural property: the session or span tree is the
+skeleton of the data. Every event belongs to exactly one span, and spans
+nest in a fixed parent-child hierarchy determined at execution time.
+This design is effective for debugging: a developer can locate a failing
+span, inspect its attributes, and trace its parent chain to understand
+the execution context.
+
+\subsection{Why Fixed Hierarchies Cannot Profile}
+
+Profiling requires a fundamentally different operation: \emph{folding}
+events across executions by semantic category so that width represents
+aggregate cost. Fixed session/span hierarchies obstruct this in three
+ways.
+
+First, sessions are boundaries, not categories: a single session may
+contain review, debugging, and refactoring phases, and splitting by
+session assigns all of them to the same bucket. Conversely, two sessions
+performing the same task produce separate buckets that cannot be merged
+without external logic. Second, span names describe mechanisms
+(\texttt{LLMCall}, \texttt{ToolInvoke}, \texttt{ChatCompletion}), not
+user intent (\texttt{review}, \texttt{debug}, \texttt{test}). Grouping
+by span name tells you how many LLM calls occurred, not which categories
+of work consumed the budget. Third, these limitations compound in
+practice: in a real development project, the system effect
+\texttt{process:cargo; effect:test; status:ok} appears 2{,}903 times
+across 325 sessions. A flat process summary shows a single counter. No
+existing trace tool can disaggregate these executions by the semantic
+intent that triggered them. We quantify this disaggregation in
+RQ1~(\S\ref{sec:eval}).
+
+\subsection{Why CPU Profiling Does Not Directly Apply}
+
+CPU profilers solve the equivalent aggregation problem for programs.
+A flame graph~\cite{flamegraphs} represents a profile as a set of
+weighted \emph{samples}, each attached to a \emph{call stack} (an
+ordered list of function frames). Identical stacks merge, and width
+represents aggregate cost. The key enabler is that function names are
+\emph{deterministic}: the same code path always produces the same
+frames.
+
+Agent traces break this precondition. As noted in \S\ref{sec:intro}, prompts are
+natural language and lack deterministic identifiers. Tool calls, GUI
+actions, and process events are named heterogeneously across agent
+families. Raw event names cannot serve as flame-graph frames.
+
+These observations yield three design requirements:
+
+\begin{description}
+\item[R1: Uniform record type.]
+  Agent traces mix prompts, LLM calls, tool invocations, GUI actions,
+  process events, and benchmark labels. The profiler needs a single
+  record type that can represent all of them without type-specific
+  objects.
+\item[R2: Query-time aggregation.]
+  The same data must support multiple aggregation shapes---by task,
+  phase, action, session, or dataset---without rebuilding the trace.
+  Sessions and spans must be fields, not fixed hierarchy nodes.
+\item[R3: Deterministic labels for folding.]
+  Free-form prompts must be mapped to short, stable, repeatable labels
+  before folding. This \emph{intent recognition} step has no analogue in
+  CPU profiling, where function names are already deterministic.
+\end{description}
+
+%% ===================================================================
 \section{Design}
+\label{sec:design}
 
-\subsection{Operations}
+The three requirements---a uniform record type (R1), query-time
+aggregation (R2), and deterministic labels for folding (R3)---drive the
+design. We introduce two abstractions---operations (\S\ref{sec:ops})
+and operation stacks (\S\ref{sec:stacks})---that satisfy R1 and R2, and
+a pluggable intent-recognition mechanism (\S\ref{sec:intent}) that
+satisfies R3.
 
-An \operation is the only sample-level object in \toolname. It is a weighted
-record with string fields. The same representation can encode a prompt, a tool
-call, an API call, a browser action, a PyAutoGUI action, a process event, or a
-derived label such as \texttt{looping=yes} or \texttt{step\_correct=incorrect}.
-External datasets enter the system as operation JSONL. Local Codex or Claude
-sessions can also be exported as an agent-session trace, imported back, or
-converted to operation JSONL before profiling.
+\subsection{Operations (R1: Uniform Record Type)}
+\label{sec:ops}
 
-\subsection{Operation Stacks}
+A profiler should not distinguish between prompts, tool calls, and
+process events at the object-model level. \toolname uses a single
+abstraction: an \operation is a weighted record with string fields and
+additive measures.
 
-An \opstack is an ordered list of fields. Folding operations by that list yields
-the usual folded-stack representation, but the stack is chosen at query time.
-The same operation file can be folded as a flat task summary, a fixed-session
-tree, a dataset-native hierarchy, a raw action stack, a semantic operation
-stack, or an oracle label-drilldown. Fixed sessions and spans are therefore
-baselines and exchange containers, not core profiler abstractions.
+Each operation carries string fields (\texttt{project}, \texttt{agent},
+\texttt{session}, \texttt{prompt\_tag}, \texttt{kind}, \texttt{model},
+\texttt{path}, \texttt{domain}, \texttt{status}, \ldots) and additive
+measures (token count, duration, occurrence count). A prompt, an LLM
+call, a tool invocation, a file read, a GUI click, and a process event
+are all operation records that differ only in which fields are populated.
+\subsection{Operation Stacks (R2: Query-Time Aggregation)}
+\label{sec:stacks}
 
-\subsection{Mapping and Tagging}
+An \opstack is an ordered list of fields chosen at query time. Folding
+operations by that list produces the standard folded-stack
+representation:
 
-Mapping and tagging derive new operation fields before folding. For example,
-desktop actions such as \texttt{type} and \texttt{key} can map to
-\texttt{phase=input}, while tool/API rows can map to a tool phase before generic
-action rules run. The Rust CLI exposes inline rules, rule files, profile specs,
-operation predicates, and stack overrides. \texttt{--where} predicates run after
-mapping and before stack construction, implementing the query predicate without
-adding a profiler object. Profile specs record operation files, mappings,
-predicates, views, stacks, and outputs for reproducibility, while command-line
-flags can still override the stack query.
+\begin{small}
+\begin{verbatim}
+CPU:   main;parse;tokenize          42
+Agent: prompt:debug;call:llm;tool:bash  4200
+\end{verbatim}
+\end{small}
 
-\section{Evaluation Setup}
+\noindent Unlike CPU profiling, where the call stack is determined by
+execution, the operation stack is determined by the query. The same
+operations can be folded as a flat task summary, a fixed-session tree, a
+semantic phase/action hierarchy, or a dataset-native trajectory.
+Changing the fields changes the aggregation without changing the data.
 
-Table~\ref{tab:datasets} summarizes the public trace families. We do not create
-new test sets, sync complete image corpora, or depend on restricted data. The 15
-sources establish generality, while the main hidden-label ranking results use the four
-oracle-rich families with failure, safety, quality, and human-boundary labels.
+This directly addresses the fixed-hierarchy problem from
+\S\ref{sec:background}: sessions and spans are optional operation fields,
+not structural skeleton nodes. Including \texttt{session} in the stack
+produces a per-session drilldown (equivalent to a trace tree); excluding
+it produces a cross-session aggregate (which no existing trace tool
+provides). The same data supports both debugging and profiling views.
+
+A \emph{view} is a triple $(\varphi, \sigma, w)$: a predicate $\varphi$
+selects which operations participate, a stack function $\sigma$ maps each
+operation to a frame sequence, and a weight function $w$ assigns a
+nonnegative measure. The view formalism supports arbitrary user-defined
+views; four built-in defaults (Table~\ref{tab:views}) answer common
+questions:
+
+\begin{table}[t]
+\centering\small
+\caption{Built-in views. Each shares the same operation set
+but selects different activities, stack structures, and weights.}
+\label{tab:views}
+\begin{tabular}{llll}
+\toprule
+View & $\varphi$ (select) & $w$ (width) & Question \\
+\midrule
+\texttt{tokens} & LLM calls & token count & Budget distribution? \\
+\texttt{time} & All timed ops & duration (s) & Time distribution? \\
+\texttt{files} & File-effect ops & event count & Repo coverage? \\
+\texttt{network} & Net-effect ops & event count & External contacts? \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+% \includegraphics[width=\linewidth]{figures/fig-architecture.pdf}
+\fbox{\parbox{0.93\linewidth}{\centering\small
+[Architecture: Agent trace files (Codex/Claude JSONL, benchmark JSONL)
+$\to$ Parser / Importer $\to$ Intent Recognition (regex / LLM / clustering)
+or Mapping Rules $\to$ Operations with fields $\to$ Stack query
+$(\varphi, \sigma, w)$ $\to$ Folded stacks $\to$ Flame graph / pprof /
+JSON]}}
+\caption{System architecture. Local agent histories enter through
+\texttt{agent-session} parsing; public datasets enter as operation JSONL.
+Both paths produce operations; the stack query and output are identical.}
+\Description{Data flow from agent traces through parsing and intent
+recognition to folded-stack flame graphs.}
+\label{fig:architecture}
+\end{figure}
+
+\subsection{Intent Recognition (R3: Deterministic Labels)}
+\label{sec:intent}
+
+Operations and stacks handle heterogeneity and flexible aggregation, but
+folding still requires deterministic frame labels---the precondition
+that agent prompts violate (\S\ref{sec:background}). \toolname solves
+this through \emph{intent recognition}: mapping free-form prompts to
+short, stable labels before stack construction.
+
+The design uses a pluggable tagger framework with three backends:
+
+\paragraph{Regex rules with agent-assisted iteration.}
+The production default. Rules have the form
+\texttt{KIND:TAG=REGEX}, where \texttt{KIND} is \texttt{prompt},
+\texttt{llm}, or \texttt{all}, \texttt{TAG} is a short lowercase label,
+and \texttt{REGEX} is a pattern. Rules are evaluated in order; the first
+match wins. The workflow is human--agent collaborative: run \toolname,
+observe the unmatched rate and sample prompts, add rules, re-run, and
+iterate until unmatched drops below 5\%. This typically takes 5--10
+rounds. The resulting rule set is deterministic, reproducible, and
+version-controllable.
+
+\paragraph{Local LLM tagger.}
+For exploration or complex multilingual prompts, a local model
+(e.g., a 3B-parameter GGUF via llama.cpp) generates a single-word label
+per prompt. Grammar-constrained decoding ensures output validity.
+Labels are cached, so re-runs with unchanged prompts incur zero LLM calls.
+
+\paragraph{Unsupervised clustering.}
+TF-IDF vectorization followed by K-Means discovers natural prompt groups
+without predefined rules, feeding rule authoring.
+
+The one-word label design is deliberate. Flame-graph frames must be
+short because long summaries make charts unreadable. Labels serve navigation
+and aggregation, not correctness verdicts.
+
+For structured traces---public benchmark datasets and trace formats
+where action types, tool names, and quality annotations are explicit
+fields---intent recognition is unnecessary. \toolname supports
+deterministic \emph{mapping rules} that derive new operation fields from
+existing ones before stack construction. A \emph{profile spec} records
+the complete analysis configuration---data sources, mappings, predicates,
+stack fields, and outputs---for deterministic replay. This dual path
+explains why \toolname handles both real agent sessions (which need
+intent recognition) and public benchmark traces (which need mapping
+rules): both paths produce operations with fields, and the stack query
+works identically on both.
+
+%% ===================================================================
+\section{Implementation}
+\label{sec:impl}
+
+\toolname is an offline, post-hoc profiler implemented as a Rust CLI
+(Figure~\ref{fig:architecture}). It reads recorded traces, not live
+events. The \texttt{agent-session} crate reads Codex and Claude Code local JSONL
+history files and reconstructs prompts, LLM calls, tool invocations, and
+their triggered file and network effects. Each prompt opens a span. LLM
+calls, tool calls, and system effects within that span inherit its
+semantic label, connecting intent to system behavior without runtime
+instrumentation. Public benchmark datasets enter as operation JSONL with
+mapping rules deriving fields before stack construction. Standard Chrome
+Trace Event format can also be imported, with non-\toolname protocol
+fields preserved as operation fields.
+
+Output formats include pprof protobuf (compatible with
+\texttt{go tool pprof -http}), folded-stack text (compatible with
+\texttt{flamegraph.pl}), standalone SVG flame graphs, and JSON summaries.
+All outputs are deterministic given the same input and profile spec.
+
+\toolname is the offline profiling component of the AgentSight
+observability framework. AgentSight provides real-time eBPF-based
+capture of SSL traffic, process events, and file/network effects.
+\toolname aggregates the recorded traces into semantic profiles. The two
+are complementary: AgentSight answers ``what happened during this run''
+(debugging), \toolname answers ``where did the budget go across runs''
+(profiling).
+
+%% ===================================================================
+\section{Evaluation}
+\label{sec:eval}
+
+We organize the evaluation around three research questions.
+
+\paragraph{Evaluation setup.}
+We use two classes of data. \emph{Real agent sessions}: 325 readable
+local sessions (198~Codex, 50~Claude, 77~Claude subagent) from a
+multi-month development project, containing 183{,}714 system
+observations. \emph{Public labeled traces}: 15 families covering web,
+mobile, desktop, software, API, and dialogue agents
+(Table~\ref{tab:datasets}), totaling 47{,}590 operations through
+mapping rules. All public traces are real agent or human executions
+collected and labeled by their respective benchmark projects. Four
+oracle-rich families (AgentRewardBench, SATraj-OS, AgentNet,
+OSWorld-Human) provide hidden ground-truth labels for RQ2.
 
 \begin{table*}[t]
-\centering
-\small
-\caption{Public labeled trace families used by the evaluation. The main E2
-hidden-label profiler benchmark uses the four oracle-rich rows in the bottom half.}
+\centering\small
+\caption{Public labeled trace families. All traces are real agent or
+human executions. The bottom four rows provide oracle labels for RQ2.}
 \label{tab:datasets}
-\begin{tabular}{p{0.18\linewidth}p{0.29\linewidth}p{0.21\linewidth}p{0.22\linewidth}}
+\begin{tabular}{p{0.17\linewidth}p{0.22\linewidth}p{0.15\linewidth}p{0.17\linewidth}p{0.17\linewidth}}
 \toprule
-Family & Native labels & Access path & Evaluation role \\
+Family & Native labels & Access & Trace origin & Eval.\ role \\
 \midrule
-WebLINX, Mind2Web, AgentTrek, WebShop & Web actions, demos, tasks, rewards, action history & Hugging Face viewer or public shards & Web navigation coverage \\
-API-Bank, ToolBench, tau-bench & API calls, tool messages, solution paths, outcomes & Hugging Face rows or repo JSONL & Tool/API and dialogue coverage \\
-SWE-agent & Issue trajectory, command actions, target outcome & Hugging Face viewer & Software-agent coverage \\
-AndroidControl, GUI-Odyssey, ScaleCUA & Mobile or GUI actions, instructions, history context & Public/HF samples & Mobile and GUI coverage \\
-AgentRewardBench & Expert success, side-effect, looping, optimality & HF annotations plus cleaned BrowserGym steps & Failure and looping tasks \\
-SATraj-OS & Desktop actions, safety, reward, attack type & HF safety config & Safety task \\
-OSWorld-Human & Human single-action and grouped-action traces & Public GitHub JSON & Human-boundary task \\
-AgentNet & Human desktop PyAutoGUI, step correctness, redundancy & HF repo JSONL streaming & Step-quality tasks \\
+WebLINX, Mind2Web, AgentTrek, WebShop & Web actions, tasks, rewards & HF / public & Real web agents & Coverage \\
+API-Bank, ToolBench, tau-bench & API calls, outcomes & HF / JSONL & Real API agents & Coverage \\
+SWE-agent & Issue trajectories & HF viewer & Real coding agent & Coverage \\
+AndroidCtrl, GUI-Odyssey, ScaleCUA & Mobile/GUI actions & Public/HF & Real mobile agents & Coverage \\
+\midrule
+AgentRewardBench & Success, side-effect, looping & HF annotations & Real BrowserGym agents & RQ2 tasks \\
+SATraj-OS & Safety, reward, attack type & HF config & Real desktop agents & RQ2 task \\
+OSWorld-Human & Human grouped-action traces & GitHub JSON & Real human OS use & RQ2 task \\
+AgentNet & Step correctness, redundancy & HF JSONL & Real desktop agents & RQ2 tasks \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-For the E2 hidden-label profiler benchmark, we build six tasks: AgentRewardBench looping, AgentRewardBench
-side-effect, SATraj unsafe operation, AgentNet incorrect step, AgentNet
-redundant step, and OSWorld-Human group start. Each task has an oracle-positive
-field, but non-oracle rankers never read that field. We compare six views:
-flat, fixed-session, dataset-native hierarchy, raw action stack, semantic
-operation stack, and label-drilldown. We compare four rankers: width,
-visible-risk, query-aware, and oracle upper bound. Label-drilldown and oracle
-upper bound are marked as hidden upper bounds.
+%% -------------------------------------------------------------------
+\subsection{RQ1: Does Semantic Profiling Separate What Flat Views Mix?}
 
-The metrics match a profiler paper's main claim. Fidelity uses precision@k,
-recall@operation-budget, F1@k, average precision as a block-level AUPRC-style
-score, nDCG over positive operation counts, and work-to-first-positive.
-Fragmentation uses group count, positive group count, and work or groups to
-reach 50\% positive recall. Actionability uses per-task comparisons among
-operation fields, stack-depth choices, mapping choices, ranker choices, and
-oracle headroom.
-Reproducibility uses repeated Rust \texttt{agentpprof --profile-spec}
-executions over tracked specs and tracked operation JSONL inputs, plus
-profile-spec input replay regressions for local sessions, exported
-agent-session traces, and generic Chrome Trace Event imports. The checks cover
-semantic output hashes, sample counts, unique-stack counts, runtime, output
-size, effective input metadata, and standard-trace argument import. Build time
-is excluded from the profiler runtime measurement.
-
-Table~\ref{tab:core-results} gives the paper-facing evaluation structure.
-The table presents evidence as four reviewer-facing blocks rather than by
-execution order. Each row names the workload, the headline evidence, and the
-scoped conclusion supported by that evidence.
-
-\begin{table*}[t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{2.6pt}
-\caption{Three empirical profiling experiments plus one replayability/scope-control
-block. Each row gives the workload, headline evidence, and scoped conclusion.}
-\label{tab:core-results}
-\begin{tabular}{p{0.17\linewidth}p{0.22\linewidth}p{0.36\linewidth}p{0.18\linewidth}}
-\toprule
-RQ / paper block & Workload & Headline evidence & Scoped conclusion \\
-\midrule
-RQ1/E1: generality and recursive folding &
-15 public labeled trace families / 47,590 operations, plus local-session and
-standard-trace exchange fixtures &
-The same 13,265 operations fold across eight depths, from 9 to 3,757 stacks;
-leave-dataset-out mapping reduces stacks on 6/9 held-out datasets; 12/12
-profile specs remain prompt/session-free; standard-trace exchange round-trips
-512 real operations with 512 samples and 11 stacks preserved; boundary backends
-beat the best simple baseline on 4/5 field-derivation rows. &
-Two abstractions cover heterogeneous traces; trace containers and mappings are
-not profiler objects, and field derivation is not automatic intent boundary
-discovery. \\
-RQ2/E2: hidden-label localization and ranking &
-Six oracle-backed tasks over AgentRewardBench, SATraj-OS, AgentNet, and
-OSWorld-Human &
-The benchmark scores 144 view/ranker policies over 6 tasks, 4 datasets, 34,539
-operations, and 3,699 positives. Operation-stack query-aware profiling uses
-0.0937 top-five work versus flat 1.0, beats fixed-session top-five recall on
-5/6 tasks, and uses 157.5 median groups versus fixed-session 285. &
-Supported as a hidden-label profiler benchmark with baseline tradeoffs, not
-human utility. \\
-RQ3/E3: mechanism and actionability &
-The same six tasks plus held-out OSWorld-Human boundary-backend operations &
-Executable profile-spec patches improve 5/6 tasks, with median AP delta 0.0376
-and top-five lift delta 0.5750. Boundary-derived fields improve OSWorld-Human
-boundary AP to 0.2583 versus 0.2402 and reduce groups to 74 versus 108, while
-preserving top-five-work and first-positive-work counterpoints. Rank-feature
-ablations identify 7 critical and 3 misleading feature rows. Induced depth
-sensitivity places best median AP at depth 4 and lowest median top-five work at
-depth 5. &
-The profiler exposes operation-field, stack-depth, ranker, and profile-spec knobs; it is not an
-automatic selector or boundary detector. \\
-RQ4/E4: replayability, offline cost, and scope control &
-76 tracked operation-JSONL profile specs plus local-session, agent-trace, and
-standard-trace profile-spec input replay regressions &
-Deterministic replay gives 76/76 semantic and 76/76 raw-byte deterministic
-specs over 152 invocations, with median runtime 1.601s and p95 2.767s. Profile specs also replay source selection, regex tags, trace
-inputs, and effective standard-trace args through the same operation-stack path. &
-The offline profiling artifact is replayable and cheap enough for artifact
-evaluation; this is systems/reproducibility evidence, not a hidden-label
-accuracy result, live capture overhead result, human productivity result, or
-trace-ecosystem compatibility result. \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-The main-paper displays follow this path. Table~\ref{tab:datasets} establishes
-workload provenance. Table~\ref{tab:core-results} is the four-block claim map.
-Table~\ref{tab:e1-abstraction-evidence} checks the two-abstraction and recursive-folding
-claim. Table~\ref{tab:e2-localization} and the left side of
-Figure~\ref{fig:e2e3-portfolio} provide hidden-label fidelity and baseline
-tradeoff evidence. Table~\ref{tab:actionability} and the right side of
-Figure~\ref{fig:e2e3-portfolio} provide mechanism/actionability evidence.
-Tables~\ref{tab:e4-replay-cost} and~\ref{tab:e4-determinism} provide replay and
-cost evidence. Supporting materials contain the larger portfolio, case, verdict,
-and consistency tables; the main text uses them only to substantiate the four
-evidence blocks.
-
-The rest of the evaluation keeps this structure. E1 establishes that the two
-profiler objects are sufficient to express heterogeneous traces and recursive
-folding choices. E2 is the single hidden-label localization/ranking experiment.
-E3 asks which operation fields, stack depths, mappings, rankers, and profile
-specs explain or repair the E2 results. E4 is the replayability, offline-cost,
-and scope-control block. Additional analyses enter the paper only when they strengthen one of
-these four blocks as a primary comparison, ablation, counterpoint, provenance
-check, or scope check.
-This is the reviewer-facing evidence path for the profiling claim: E1 checks
-whether the two-object abstraction can represent the workloads and recursive
-folding choices; E2 is the only primary hidden-label accuracy and baseline
-tradeoff comparison; E3 explains which mechanisms and profile configurations
-make the E2 results actionable; and E4 establishes replayability and scope.
-If the E2 Pareto condition or the E3 mechanism/actionability condition failed,
-the paper claim would narrow rather than expanding the evidence story.
-
-\section{Results}
-
-\subsection{RQ1/E1: Generality and Recursive Folding}
-
-RQ1/E1 tests whether one operation layer can represent heterogeneous agent
-traces without making prompt, session, tool, process, or syscall records into
-separate profiler objects. The evaluation folds the same operation records into
-task, phase, action, human-boundary, and fixed-session-shaped stacks by changing
-only mappings and operation-stack views. Public dataset labels and native trajectory
-fields provide the oracle signal, with OSWorld-Human boundaries and AgentNet
-quality labels as the strongest structure labels. The comparison uses
-dataset-native, no-map, fixed-session, replay, and trace round-trip views. The
-metrics are coverage, stack range, compression, boundary F1, V-measure, and
-round-trip equality. The scoped conclusion is configurable operation-stack
-folding, not complete ecosystem compatibility or latent-intent recovery.
-
-The 14 core public sources produce 42,590 operations. Adding the supplemental
-ScaleCUA stream brings the smoke set to 47,590 operations. These operations
-cover web, mobile, desktop, software, API, tool-agent-user dialogue, expert
-failure labels, safety labels, human grouped-action labels, and desktop
-step-quality labels. No source required a prompt-specific, GUI-specific, or
-safety-specific profiler object.
-
-Table~\ref{tab:e1-abstraction-evidence} is the main E1 display; the following
-paragraphs unpack the rows rather than introducing additional experiments.
-
-\begin{table*}[t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\caption{E1 abstraction-evidence summary. The rows use tracked artifacts and show that
-the same operation layer can be recursively folded, mapped, and
-boundary-scored without adding prompt/session/tool-specific profiler objects.}
-\label{tab:e1-abstraction-evidence}
-\begin{tabular}{p{0.17\linewidth}p{0.22\linewidth}p{0.28\linewidth}p{0.25\linewidth}}
-\toprule
-Evaluation question & Workload/oracle & Main evidence & Counterpoint / scope \\
-\midrule
-Heterogeneous operation layer &
-15 public labeled trace families / 47,590 operations &
-Web, mobile, desktop, software, API, dialogue, failure, safety, human-boundary,
-and step-quality labels enter as operation fields. &
-Coverage is lightweight sampling; image-heavy or restricted full benchmarks remain
-out of scope. \\
-Recursive stack choice &
-Same 13,265 operations plus AgentNet profile-spec override &
-9 dataset, 57 phase, 226 tool/semantic, 455 action, and 3,757 fixed-session
-stacks; AgentNet changes 608 to 83 stacks without changing 16,741 input
-operations; automatic task-stack induction produces variable-depth stacks on
-all six hidden-label tasks without a user stack-field chain. &
-Fixed sessions are useful drilldown fields but fragment aggregation when
-hard-coded. \\
-Field derivation before folding &
-Held-out mapping and boundary-backend rows &
-Mapping improves compression 14.049 to 19.091; leave-dataset-out reduces stacks
-on 6/9 datasets; boundary backends beat the best simple baseline on 4/5 rows. &
-Mapping coarsens action-to-phase V-measure 0.9343 to 0.7416; looping is
-explained by \texttt{repeat\_signal\_change}. \\
-Human-boundary folding &
-OSWorld-Human exact-aligned tasks &
-4,011 operations / 2,075 human groups; grouped-depth stacks reduce 482 action
-stacks to 106; group-pattern boundary F1 is 0.627 with precision 1.0. &
-This is scoped human-group alignment, not automatic recovery of all latent
-intent boundaries. \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-\paragraph{Recursive stack-depth sweep.}
-
-On the same 13,265 operations, a depth sweep folds to 9 dataset stacks, 57
-phase stacks, 226 tool/semantic stacks, 455 action stacks, and 3,757
-fixed-session stacks. A fixed session boundary therefore increases stack count
-by 417.4$\times$ relative to dataset depth. On AgentNet, a tracked profile spec
-folds 16,741 operations into 608 diagnostic stacks, while a CLI stack override
-changes the output to 83 stacks without changing the operation input. The
-result supports query-time recursive stack choice rather than a fixed
-prompt/session hierarchy.
-
-The implementation probes are grouped as interface evidence, not additional
-main experiments. They show that profile specs can select mapped subsets before
-folding (729/729, 714/714, and 4,285/4,285 expected operations), compose
-operation files, predicates, visible ranking rules, rank modes, and explicit
-stack depths without prompt/session frames (12/12 specs), and round-trip a real
-operation-file prefix through a standard trace container while preserving 512
-samples and 11 folded stacks. These interface checks are provenance for E1: they
-test whether the operation layer stays fixed while views change; the
-localization and ranker gains from those specs are evaluated under E2/E3.
-The Rust task-stack induction replay tests the same abstraction boundary when
-the user does not supply a stack-field chain. On the tracked AgentRewardBench
-looping slice, \toolname scores adjacent operation boundaries from visible
-fields, semantic shift, changed-field density, and query terms, emits task-only
-stacks, and permits the same evidence field to recur at different recursive
-cuts. Across the six hidden-label tasks, the same implementation produces
-variable-depth stacks. AgentRewardBench,
-AgentNet, and OSWorld-Human cover depths 2/3/4, while SATraj preserves depths
-1/2/3/4. The automatic view has median 15.0 groups, compared with 285.0 for
-fixed-session drilldown, and median top-five work 0.2819, compared with 1.0 for
-flat summaries. Its median AP is 0.3034, below the hand-configured
-operation-stack query-aware policy at 0.3116. A depth sweep over the same
-induced view shows that depth is a profile-configuration knob because median AP
-is best at depth 4 with 0.3034, median top-five work is lowest at depth 5 with
-0.1067, and task-level AP-best depths span 3, 4, and 5. The result supports
-configurable recursive folding and depth tuning, not replacement of
-task-specific profile specs and not complete intent-boundary discovery.
-
-\paragraph{Field derivation and boundary probes.}
-
-Held-out mapping rules improve compression from 14.049 to 19.091 on 3,990
-operations. Leave-dataset-out mapping reduces unique stacks on 6 of 9 held-out
-datasets with no negative stack-reduction regressions after API/tool phase
-precedence is fixed. A supervised OSWorld-Human boundary backend reaches F1
-0.7735 on held-out adjacent pairs and writes predicted boundary fields that the
-Rust profiler folds as ordinary operation fields. Boundary backends therefore
-extend field derivation, not the profiler object model.
-The field-derivation audit keeps both support and counterpoints visible:
-held-out mapping improves compression but coarsens action-to-phase V-measure
-from 0.9343 to 0.7416; profile-spec composition stays prompt/session-free on
-12/12 variants; and learned boundary backends beat the best simple baseline on
-4/5 rows, while AgentRewardBench looping is fully explained by
-\texttt{repeat\_signal\_change}. This supports first-class field derivation and
-suitability checks, not automatic intent boundary discovery and not a new
-profiler object. Rank-feature criticality from the same audit belongs to
-RQ3/E3's mechanism/actionability evidence, not to RQ1/E1's abstraction claim.
-The suitability check makes the extension policy explicit. Deterministic
-mappings are useful for compression but can coarsen action boundaries. Rank
-features require ablation guards because both critical and misleading feature
-rows appear. Boundary-derived fields require family-specific evidence. The
-tested boundary families produce accept, caution, and reject outcomes, so field
-derivation remains a guarded profile-configuration loop rather than a universal
-selector.
-
-\paragraph{Human-boundary oracle.}
-
-OSWorld-Human gives the strongest direct boundary oracle. On 320 exact-aligned
-tasks with 4,011 operations and 2,075 human groups, grouped-depth stacks reduce
-482 action stacks to 106 grouped stacks. A conservative \texttt{group\_pattern}
-projection has human-group boundary F1 0.627 with precision 1.0 and recall
-0.456. This is not complete intent discovery, but it shows that the same
-single-action sequence can be folded at action depth or human-group depth and
-scored against a human boundary oracle.
-
-\subsection{RQ2/E2: Hidden-Label Localization and Ranking}
-
-RQ2/E2 treats profiling as a ranked localization problem. The benchmark marks
-3,699 positive operations among 34,539 operations and asks whether hot stacks
-and top-ranked groups correspond to those hidden positives. The comparison
-covers flat summaries, fixed-session drilldown, dataset-native hierarchy,
-raw-action stacks, operation stacks, label drilldown, and oracle upper bounds.
-The metrics are precision@k, recall, F1, AP as an AUPRC-style score, nDCG,
-budget recall and F1, work-to-first-positive, and group count. The scoped claim
-is a Pareto tradeoff: operation stacks should reduce flat inspection work and
-improve a useful fixed-session localization or fragmentation objective, while
-flat and dataset-native views may still win broad-recall or nDCG goals.
-
-Primary comparison and success criterion. E2 treats every profile group as an
-inspection target and asks whether the ranked targets find hidden positives
-with less work than flat summaries and less fragmentation than a fixed-session
-trace-tree proxy. Success is therefore a Pareto condition, not a single winning
-metric: operation stacks must reduce flat inspection work, improve a meaningful
-fixed-session localization or fragmentation objective, and keep fixed-session
-early-hit counterpoints visible. Table~\ref{tab:e2-localization} is the main E2
-localization display; supporting case views explain the result without becoming
-separate paper experiments. Flat summaries recover all positives, but only by inspecting the
-whole task, so their median work@5 and work-to-first-positive are both 1.0.
-Fixed-session drilldown finds an early
-positive with median work-to-first-positive 0.0044 and median work@5 0.0163,
-but its median recall@5 is only 0.0233 and it fragments the workload into 285.0
-groups. Query-aware operation stacks inspect median 0.0937 work in the top five
-groups, reach median recall@budget30 of 0.3900, and reduce the median group
-count to 157.5.
-
-Failure interpretation and baseline scope are part of the result.
-Fixed-session drilldown is the evaluated trace-tree-shaped baseline, not
-evidence of full OpenTelemetry/Phoenix/LangSmith/Perfetto compatibility. On the
-same scored rows, operation-stack query-aware improves fixed-session top-five
-recall and F1 on 5/6 tasks, budget-30 recall on 4/6, and group count on 4/6,
-while fixed-session retains lower top-five work and first-positive work on 4/6.
-The depth-aware slice gives the finer version of the same claim: operation-stack rankings
-beat fixed-session on budget-30 positive-unit recall for 20/24 task-depth rows
-and use fewer groups to reach 50\% positive units on 22/24 rows. If these
-counterpoints disappeared from the paper, the result would be overstated; with
-them, E2 supports a better localization-budget/fragmentation tradeoff, not
-dominance over every trace-tree-shaped objective.
-Automatic induced task stacks provide mechanism-side evidence for the same
-tradeoff. Without a user-provided stack-field chain, the profiler uses visible
-boundary evidence to produce variable-depth groups, and the same hidden-label
-scoring pipeline reports median top-five work 0.2819 and median 15.0 groups.
-Changing only the induced depth cap changes the profile surface. Depth 4 gives
-the best median AP, depth 5 gives the lowest median top-five work, and three
-tasks choose different depths for AP and top-five work.
-The view is cheaper than flat summaries and less fragmented than fixed-session
-drilldown, but its AP remains below the hand-configured operation-stack policy,
-so E2's primary result remains the query-aware operation-stack comparison.
-
-\begin{table*}[t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\caption{E2 hidden-label localization benchmark. Hidden policies read oracle
-labels and are included only as upper bounds. WTFP is work-to-first-positive.}
-\label{tab:e2-localization}
-\begin{tabular}{lrrrrrrrrr}
-\toprule
-Policy & Hidden & AP & nDCG & P@5 & R@5 & F1@5 & Work@5 & R@30\% & WTFP \\
-\midrule
-flat:width & 0 & 0.1678 & 1.0000 & 0.1678 & 1.0000 & 0.2868 & 1.0000 & 0.0000 & 1.0000 \\
-fixed-session:query-aware & 0 & 0.3476 & 0.7642 & 0.2555 & 0.0233 & 0.0427 & 0.0163 & 0.3559 & 0.0044 \\
-dataset-native:query-aware & 0 & 0.3572 & 0.7445 & 0.1712 & 0.8665 & 0.2822 & 0.8539 & 0.3377 & 0.0582 \\
-raw-action:query-aware & 0 & 0.2744 & 0.5012 & 0.2513 & 0.2442 & 0.2195 & 0.1507 & 0.3325 & 0.0374 \\
-operation-stack:width & 0 & 0.1610 & 0.9364 & 0.1398 & 0.4746 & 0.2147 & 0.5424 & 0.3372 & 0.1694 \\
-operation-stack:query-aware & 0 & 0.3117 & 0.5487 & 0.1991 & 0.1880 & 0.1981 & 0.0937 & 0.3900 & 0.0378 \\
-operation-stack:oracle-upper & 1 & 0.5993 & 0.6372 & 0.8984 & 0.3004 & 0.4029 & 0.0441 & 0.5640 & 0.0122 \\
-label-drilldown:oracle-upper & 1 & 1.0000 & 1.0000 & 1.0000 & 0.6703 & 0.7972 & 0.1150 & 1.0000 & 0.0377 \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-The same scored outputs are also shown through non-flamegraph paper views
-instead of making flamegraphs the only presentation. The main body keeps one
-representative figure because it directly serves E2 and E3: the left panel
-shows the localization/work/fragmentation tradeoff, and the right panel shows
-which profile-configuration knobs the evidence activates. The remaining
-portfolio table, headline rows, task case cards, and verdict matrix stay in the
-supporting views as explanatory material rather than additional
-main-body experiments.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.48\linewidth]{figures/baseline-tradeoff.png}
-\hfill
-\includegraphics[width=0.48\linewidth]{figures/actionability-knobs.png}
-\caption{Two non-flamegraph paper views. Left: the RQ2/E2 baseline
-tradeoff places operation-stack query-aware profiling in the low-inspection-work
-region while preserving fixed-session and oracle counterpoints. Right: the
-RQ3/E3 actionability view turns the same scored outputs into profile-configuration
-knobs, showing that many objectives require changing the view, ranker, profile
-spec, or boundary-derived fields rather than using one fixed default view.}
-\Description{Two side-by-side charts: a baseline tradeoff scatter comparing
-inspection work, recall, and group count, and an actionability chart showing
-which profile-configuration knobs explain task-level improvements.}
-\label{fig:e2e3-portfolio}
-\end{figure*}
-
-The supporting case and verdict views still matter, but the main text uses them
-as checks on the three core experiments rather than as separate tables. They
-report that all six labeled tasks improve AP and top-five inspected work over
-flat summaries, five improve top-five recall over fixed-session drilldown, four
-reduce fixed-session group fragmentation, and all six have an actionable
-configuration result through either an accepted profile-spec patch or the
-boundary-field repair. They also keep the negative evidence visible:
-fixed-session remains the first-positive or group-count counterpoint on several
-tasks, and OSWorld-Human requires boundary-derived fields rather than visible
-phase/action ranking alone.
-
-The E2 result is deliberately a Pareto claim, not universal dominance.
-Operation stacks improve top-five recall over fixed-session query-aware
-drilldown on 5 of 6 tasks and reduce median group fragmentation from 285.0 to
-157.5 groups, but fixed-session often finds the first positive with less work.
-Operation stacks also save work against flat summaries on all tasks, while flat
-remains the full-recall counterpoint and dataset-native hierarchy can reach high
-recall at high inspection work. The supporting bootstrap, label-permutation,
-work-budget, fragmentation, and depth-aware audits keep this tradeoff honest
-rather than adding separate experiments: 10,000 paired bootstrap resamples show
-stable AP, work, budget-recall, and group-count deltas; 2,000 label-permutation
-trials show AP exceeds the 95\% prevalence/group-size null on 6/6 tasks; the
-30\% work-budget curve reaches median recall 0.3900 versus 0.3559 for
-fixed-session and 0.0000 for flat; and the fragmentation audit uses fewer groups
-on 5/6 tasks at the same budget while preserving fixed-session
-first-positive-work counterpoints. Depth-aware scoring then repeats the
-comparison at dataset-provided oracle depths: operation-stack query-aware improves
-fixed-session budget-30 positive-unit recall on 20/24 task-depth rows and uses
-fewer groups to reach 50\% positive units on 22/24. Together, these slices
-support a faithful localization surface with better inspection-work and
-fragmentation tradeoffs than flat or fixed-session alone; they do not support a
-single best hierarchy, a human-productivity claim, or dominance over every
-trace-tree-shaped objective.
-
-\subsection{RQ3/E3: Mechanism and Actionability}
-
-RQ3/E3 asks why the E2 rankings improve and whether the profiler points to
-concrete configuration changes. The candidate mechanisms are operation fields,
-operation-stack depth, mapping and tagging rules, rankers, profile specs, and
-boundary-derived operation fields. Hidden labels score the output only after profiling, and
-held-out OSWorld-Human boundary positives score boundary-derived fields. The
-comparison covers default and patched specs, visible rankers, transfer
-policies, learned-boundary fields, fixed-session drilldown, and semantic-width
-stacks. The metrics are accepted patches, AP delta, top-five lift,
-first-positive work, group reduction, and top-five-work counterpoints. The
-scoped conclusion is profile-configuration actionability, not automatic
-boundary discovery, automatic patch selection, or a universal selector.
-
-Primary mechanism question. E3 starts from the E2 ranked outputs and asks
-whether the profiler can explain what to change in the profile configuration.
-Hidden labels are used only after profiling to score a configuration; the
-visible inputs are operation fields, stack-depth choices, mapping/tagging rules,
-rank features, profile specs, and boundary-derived operation fields. The success criterion is an
-actionable, replayable diagnosis: a task should point to a concrete operation
-field, stack depth, ranker, mapping, profile-spec, or drilldown change, and executable
-patches should improve the scored output without turning into an automatic
-selector.
-
-Table~\ref{tab:actionability} is the main E3 display. It compresses the
-task-card evidence into a paper-facing diagnosis table; the supporting case
-views remain provenance rather than additional main experiments.
-SATraj unsafe is the cleanest operation-stack win: environment, phase, and
-action fields plus query-aware risk ranking give the best visible top-five F1.
-Looping exposes the value and limit of \texttt{repeat\_signal}: it helps
-ranking, but positives are prevalent, so prevalence-aware ranking remains the
-optimization. Side-effect has large oracle headroom and points to deeper
-write/input mappings. AgentNet step-quality tasks need action-family
-localization followed by fixed-session examples. OSWorld-Human needs
-boundary-derived fields rather than action depth alone. Thus the first
-actionability result is not that one view wins; it is that the profiler
-identifies which operation field, stack depth, mapping, ranker, or drilldown
-should change for each task family.
-Automatic task-stack induction stays inside the same actionability boundary. It
-shows that the profiler can recursively induce task-only stacks from visible
-fields and score the resulting variable-depth view, while its AP counterpoint
-shows that profile-specific stacks and rankers still need task-specific tuning.
-The depth-sensitivity sweep turns that counterpoint into a configuration
-diagnosis. The same induced profiler view reaches its best median AP at depth 4
-and its lowest median top-five work at depth 5, while task-level AP-best depths
-span 3, 4, and 5. E3 therefore recommends tuning operation-stack depth and
-ranking objective rather than treating \texttt{analysis\_task,phase,action,status}
-as a fixed ontology.
-The task-level verdict synthesis clarifies the claim boundary: all six tasks
-support E3 with counterpoints, not as unconditional wins. Five of six tasks have
-accepted executable profile-spec patches; the remaining OSWorld-Human row points
-to boundary-derived fields and keeps top-five and first-positive work
-counterpoints.
-The six rows resolve into three reusable optimization patterns. Safety and
-side-effect tasks point to field and ranker changes because environment,
-phase/action, and write/input fields move relevant positives into smaller
-inspected regions. Step-quality tasks point to a drilldown workflow because
-desktop phase, repeat, and action fields locate suspicious regions before
-fixed-session examples explain individual traces. Human-boundary tasks point to
-representation repair because action-depth stacks are insufficient, while
-boundary-derived operation fields improve AP and reduce groups with explicit
-inspection-work counterpoints. These patterns are configuration guidance over
-profile inputs, operation fields, stack depth, and rankers, not labels predicted
-by the profiler.
-
-The Rust mechanism ablations isolate where those diagnoses come from without
-turning the paper into a run list. First, stack-text rules and rank-mode
-variants are replayable from profile specs but too coarse for safety and
-side-effect tasks. Second, operation-level rank features close that gap by
-matching visible mapped operation tokens before folding: semantic-stack feature
-ranking improves AP over width on 5 of 6 tasks, top-five lift on 4 of 6, and
-first-positive work on 5 of 6; coarse depth improves AP on 4 of 6 while
-reducing groups. Third, leave-one-feature and robustness ablations make the
-knobs concrete: \texttt{repeat\_signal}, write-action features, and
-\texttt{status=success} are critical in different families, while misleading
-safety-like or input-phase features can hurt AP or first-positive work.
-Equal/global feature banks often preserve the gains, and guided repairs improve
-AP on 2 of 3 misleading-feature cases, but these repairs use offline scored
-feedback and are not an automatic learned ranker. These audits are provenance
-for this single E3 mechanism block.
-
-The view and policy audits show the same mechanism at the analysis-surface
-level. Best AP and best top-five F1 are split across operation-stack,
-fixed-session, dataset-native, raw-action, and flat views; leave-task source
-selection cannot reliably pick the best visible view. Nevertheless, the
-operation-stack query-aware policy remains Pareto-frontier on all six tasks,
-beats flat top-five work on all six, beats fixed-session top-five recall on 5
-of 6, and reaches fewer groups-to-50\% positives than fixed-session on 5 of 6.
-At a 25\% recall target it covers all six tasks with median work 0.2000 versus
-flat 1.0000 and median 16.0 groups versus fixed-session 50.0; at 50\% recall,
-other depths or views become the best-work counterpoints. Sequence and
-oracle-depth audits add the inspection unit below and above individual groups.
-Sequence and oracle-depth scoring show that
-at a 30\% operation budget, operation-stack query-aware reaches median 0.4669
-positive-session recall versus fixed-session 0.3230, and across 24 oracle-depth
-rows it has median 0.4342 budget-30 positive-unit recall, beats fixed-session
-unit recall on 20/24 rows, and reaches 50\% positive units with fewer groups on
-22/24. Positive-run proxy units are derived episode units, not human intent
-boundaries. The fixed-session depth-gap counterpoint remains, so this is
-depth-aware triage, not complete intent-boundary recovery.
-The multi-metric audit also keeps the metric surface honest: it records 30
-supporting baseline-metric comparisons, 16 explicit counterpoints, and nDCG
-cases where flat or dataset-native views can win.
-
-The actionability portfolio turns those comparisons into reviewer-auditable
-profile-configuration tuning insight. Across 36 objective rows, every row has a
-concrete configuration action, but 27/36 best visible policies are not the
-default operation-stack query-aware view; transfer misses are mostly view or
-ranker changes rather than opaque errors. The same evidence is presented as
-diagnostic lenses, case packets, and baseline contrasts: six lenses cover 36
-objectives, top-five case groups contain positives on 6/6 tasks, top-one groups
-on 5/6, median top-five lift is 1.6508 at 0.0937 work, and operation stacks beat
-flat top-five work on 6/6 and fixed-session top-five recall on 5/6 while
-preserving fixed-session first-positive and flat full-recall counterpoints.
-Counterfactual and held-out transfer checks separate visible actions from
-target-label leakage: 36/36 best rows are visible non-oracle, 27/36 require a
-non-default action, 25/36 require a view change, held-out action transfer stays
-within tolerance on 35/60 aligned decisions, but exact action-class transfer is
-only 7/60 overall and 2/42 on non-default target actions. These support audits
-form one E3 actionability block. The actionable claim is therefore a tunable
-diagnosis surface, not a label-free automatic selector.
-
-Finally, executable patches close one loop from diagnosis to profiler
-configuration. Default and profile-guided Rust profile specs run over the same
-visible operation input, and hidden labels are scored only after
-\texttt{agentpprof --profile-spec}. Five of six patches improve AP, top-five
-lift, and first-positive work, with median AP delta 0.0376 and median top-five
-lift delta 0.5750. The failure interpretation matters here too: the rejected
-OSWorld-Human patch shows that visible phase/action rank features are
-insufficient for a human-boundary objective. Folding held-out boundary-derived
-operation fields then improves AP to 0.2583 versus 0.2402 for semantic width
-and reduces groups to 74 versus 108, while top-five work and first-positive
-work increase. These patch and boundary-field results support boundary fields
-as an actionable operation-field knob, not automatic boundary
-discovery or automatic patch selection. The result belongs to
-mechanism/actionability, not a fifth core experiment.
-
-\begin{table*}[t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\caption{E3 diagnosis/actionability summary. Each row connects a
-label-scored localization signal, a concrete profile-configuration change, and
-the scoped verdict/counterpoint. This table compresses task-card and verdict
-evidence; it is not a new empirical experiment.}
-\label{tab:actionability}
-\begin{tabular}{p{0.13\linewidth}p{0.19\linewidth}p{0.35\linewidth}p{0.23\linewidth}}
-\toprule
-Task & Localization signal & Profile action & Verdict / counterpoint \\
-\midrule
-Looping & Work@5 0.4938, R@5 0.6508, patch AP +0.1155 & Keep \texttt{repeat\_signal} in the stack, but add prevalence-aware ranking because positives are common. & Supports, with counterpoint: raw-action finds the first positive with less work. \\
-Side-effect & Work@5 0.1454, R@5 0.1139, patch AP +0.0591 & Increase write/input weights or use a deeper side-effect mapping before ranking. & Supports, with counterpoint: fixed-session has fewer groups; raw action wins top-five lift. \\
-Unsafe operation & Work@5 0.0420, R@5 0.2621, patch AP +0.5081 & Use environment, phase, and action operation fields with a deeper operation-stack view; prioritize risky environments and write actions. & Supports, with counterpoint: fixed-session finds the first positive with less work. \\
-Incorrect step & Work@5 0.0014, R@5 0.0034, patch AP +0.0160 & Use desktop environment, phase, repeat, and action fields, then drill into fixed sessions for examples. & Supports, with counterpoint: fixed-session remains a drilldown baseline. \\
-Redundant step & Work@5 0.0089, R@5 0.0177, patch AP +0.0011 & Use desktop environment, phase, repeat, and action fields, then drill into fixed sessions for examples. & Supports, with counterpoint: fixed-session finds the first positive with less work. \\
-Group start & Work@5 0.4074, R@5 0.3874, boundary AP 0.2583 & Use group-depth or boundary-derived fields; action-depth alone fragments starts. & Supports, with counterpoint: boundary fields reduce groups to 74 but increase top-five and first-positive work. \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-\subsection{RQ4/E4: Reproducibility, Offline Cost, and Scope Control}
-
-RQ4/E4 asks a narrower question than E2/E3: can reviewers replay the
-offline profile-spec path at low local cost while checking that source
-provenance, paper numbers, two-abstraction wording, and non-claims remain
-aligned? The evidence is the tracked specs and inputs, profile-spec input
-replay regressions, repeated profile outputs, runtime logs, and recorded source
-provenance. We compare default output with deterministic-output replay, semantic
-profile hashes with raw-byte hashes, and effective input metadata with silently
-ignored source paths. The measured quantities are deterministic spec pass rate,
-profiler invocations, median and p95 runtime, sample equality, stack equality,
-raw-byte output equality, and input-source replay coverage. These checks bound
-the paper claim. They are not a hidden-label accuracy result, live eBPF
-overhead, human utility, complete ecosystem compatibility, or a universal
-selector.
-
-The empirical content of this subsection is only one replayability/cost block. It
-reruns the profile specs used by the labeled-trace experiments: 76
-tracked specs over tracked operation JSONL inputs, executed twice for 152
-profiler invocations. The semantic profile content is stable for 76/76 specs in
-both modes; deterministic output also makes raw-byte profile files stable for
-76/76 specs by fixing profile timestamps. The clean deterministic rerun reports
-median runtime 1.601s and p95 2.767s per spec. The replayed files provide
-provenance for this E4 block. This supports replayable offline
-profiler outputs, not live eBPF overhead or analyst productivity, or another
-empirical profiling experiment.
-
-Input-source replay checks belong to the same E4 block. The Rust
-profile-spec path carries \texttt{session\_files}, \texttt{trace\_files},
-\texttt{standard\_trace\_files}, regex tag rules, predicates, rank rules, stack
-overrides, and \texttt{include\_standard\_trace\_args}. The regressions replay
-the public Codex fixture as a local session and as an exported agent-session
-trace, then replay a generic Chrome Trace Event import whose non-AgentSight
-\texttt{protocol} argument becomes an operation field before folding. These
-checks keep local sessions and trace containers inside the same operation /
-operation-stack path. They do not add a new accuracy experiment, a third
-profiler object, or an ecosystem-compatibility claim.
-
-Tables~\ref{tab:e4-replay-cost} and~\ref{tab:e4-determinism} are the two E4 main displays: they
-summarize the replayability/cost result and the deterministic-output repair,
-while their row labels name source-spec families rather than additional
-accuracy experiments.
-
-The remaining consistency checks support reproducibility and scope control, not
-new empirical evidence. They reuse tracked inputs, tracked outputs, and the current paper text
-without reranking, downloading, syncing, creating, relabeling, rerunning the
-profiler, or running a human or agent analyst task. The checks verify replay
-paths, source provenance, paper-number alignment, two-abstraction wording, and
-non-claim consistency. They let reviewers audit whether the paper is faithful to
-tracked outputs, but they do not increase the localization, actionability, or
-overhead claims.
-
-\paragraph{Profile-spec determinism and local cost.}
-
-The replay workload reruns the existing profile specs used by the E2
-and E3 views, rankers, and robustness checks.
-The workload contains 76 tracked specs: four view specs, 12 operation-feature
-rank specs, and 60 robustness specs. Each spec is executed twice by the Rust
-profiler against tracked operation JSONL inputs, for 152 profiler invocations.
-No dataset is downloaded or synced. The replay check hashes the semantic
-profile content after removing the JSON \texttt{generated\_at} timestamp, and
-separately reports raw-byte hashes.
+The strongest argument against semantic profiling is that traditional
+tools ``can already see the same information.'' RQ1 tests this claim
+directly by measuring how much system-effect weight falls into
+\emph{mixed-intent} buckets---buckets containing observations from
+multiple semantic regions---under different projection choices.
 
 \begin{table}[t]
-\centering
-\small
-\caption{E4 replayability/cost main display. Runtime is seconds per
-spec, measured after the Rust binary exists. Semantic hashes exclude the JSON
-\texttt{generated\_at} field; raw-byte hashes are reported separately.}
-\label{tab:e4-replay-cost}
-\begin{tabular}{lrrrr}
+\centering\small
+\caption{Semantic-axis ablation on 183{,}714 system observations
+from 325 real sessions. All rows preserve the same total weight.}
+\label{tab:mixing}
+\begin{tabular}{lrrr}
 \toprule
-Workload & Specs & Med. s & P95 s & Med. stacks \\
+Projection & Unique stacks & Mixed wt.\% & Residual\% \\
 \midrule
-View specs & 4 & 3.448 & 4.273 & 631.0 \\
-Rank-feature specs & 12 & 1.539 & 2.692 & 41.0 \\
-Robustness specs & 60 & 1.542 & 2.640 & 41.0 \\
-All specs & 76 & 1.581 & 2.719 & 42.0 \\
+No semantic labels & 11{,}967 & 90.4 & 44.7 \\
+Session label only & 15{,}027 & 84.4 & 33.4 \\
+Prompt label only & 24{,}703 & 36.7 & 7.5 \\
+Session + prompt & 26{,}829 & 0.0 & 0.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-All 76 specs reproduce the same semantic profile hash, sample count, and
-unique-stack count across repetitions. Raw-byte determinism is only 4 of 76,
-because JSON outputs intentionally include a generation timestamp; the stable
-semantic hash keeps the reproducibility claim on the profile content. Median
-output size is 37,546 bytes, the largest output is 306,099 bytes, and the
-largest profile has 2,012 unique stacks. This supports the offline profiler path and
-profile-spec reproducibility claim, not live eBPF overhead or human utility.
+Table~\ref{tab:mixing} shows the result on 325 real Codex/Claude
+sessions. Without semantic labels, 90.4\% of system-effect weight falls
+into mixed buckets: a flat \texttt{cargo~test} counter shows 2{,}903
+executions but cannot distinguish whether they came from
+\texttt{review}, \texttt{debug}, \texttt{refactor}, or \texttt{test}
+prompts. Adding only the prompt label reduces mixed weight to 36.7\% and
+residual to 7.5\%. The session label alone barely helps (84.4\%), because
+sessions typically contain multiple intent phases.
 
-The deterministic-output replay closes the raw-byte caveat with an explicit
-deterministic-output mode.
-The Rust CLI accepts \texttt{--deterministic-output}, and profile specs may set
-\texttt{deterministic\_output}; the mode replaces JSON \texttt{generated\_at}
-and pprof profile time with fixed values while leaving profile content
-unchanged. It reruns the same 76 specs and 152 invocations with this flag.
-Both semantic and raw-byte determinism are 76 of 76. The clean rerun records
-empty git and code status. The median runtime in this run is 1,601.0827 ms and
-the p95 is 2,767.1653 ms; we report these as offline replay costs for this run, not
-as a performance comparison against the default-output replay.
+A concrete example: \texttt{process:cargo; effect:test; status:ok}
+appears under 48 distinct prompt tags. The top tag (\texttt{refactor})
+accounts for only 32.0\%; the remaining 68.0\% comes from
+\texttt{review}, \texttt{research}, \texttt{test}, \texttt{explain}, and
+others. A flat summary or process audit merges all of these.
+
+As a robustness check, a label-permutation test (1{,}000 shuffles within
+each session) confirms the separation is not random ($p = 0.001$). The
+primary evidence is the mixing reduction itself. The permutation test
+verifies statistical significance. RQ3 evaluates label quality from a
+complementary angle: agreement with ground-truth annotations on public
+datasets.
+
+RQ1 also tests whether query-time stack selection (R2) adds value
+beyond flat label grouping. The same two-abstraction model covers all 15
+public trace families (Table~\ref{tab:datasets}) without type-specific
+objects. On the four oracle-rich families, the same 13{,}265 operations
+fold from 9~dataset stacks to 57~phase stacks, 226~semantic stacks,
+455~action stacks, or 3{,}757~fixed-session stacks by changing only the
+stack fields. This is not achievable with a flat GROUP BY on a single
+label: different stack depths answer different questions (task-level
+budget vs.\ action-level duplication vs.\ session-level drilldown), and
+the profiler produces all of them from the same operations.
+
+The multi-view design is further validated by metric divergence. The
+\texttt{time} and \texttt{tokens} views of the same sessions share
+only 7/10 top prompt categories (Spearman $\rho = 0.623$).
+\texttt{network}-tagged prompts rank 8th by time (I/O wait) but 93rd by
+tokens.
+
+These quantitative results translate to concrete aggregate insights.
+The \texttt{tokens} view (Figure~\ref{fig:flamegraphs}) reveals that
+\texttt{review}-tagged prompts dominate the model budget, followed by
+\texttt{git}, \texttt{code}, \texttt{edit}, and \texttt{debug}---a
+distribution that a timeline of 80{,}000 individual LLM calls cannot
+produce without external aggregation. The \texttt{files} view shows
+\texttt{debug}-tagged prompts across different sessions repeatedly
+accessing the same source files, aggregated into a single wide bar that
+a timeline shows as isolated events. The \texttt{network} view
+attributes domain contacts to prompt categories, and the \texttt{files}
+view identifies accesses outside the project root, supporting security
+auditing.
+
+\begin{figure}[t]
+\centering
+% \includegraphics[width=\linewidth]{figures/flamegraph-tokens.png}
+\fbox{\parbox{0.93\linewidth}{\centering\small
+[Flame-graph screenshots: tokens view (top) and files view (bottom)
+showing budget distribution and file-access patterns across sessions]}}
+\caption{Real flame graphs from a development project.
+Top: \texttt{tokens} view (width = token count).
+Bottom: \texttt{files} view (width = file-operation count).}
+\Description{Two flame graphs showing token budget and file access
+distribution across semantic prompt categories.}
+\label{fig:flamegraphs}
+\end{figure}
+
+%% -------------------------------------------------------------------
+\subsection{RQ2: Can Profiler Groups Localize Hidden Labeled Problems?}
+
+RQ2 asks whether the profiler's top groups correspond to real labeled
+problems---whether categories that concentrate failures, safety
+violations, or wasted effort surface at the top of ranked output. The
+methodology is analogous to injecting known
+bottlenecks in a CPU profiler evaluation: public benchmark datasets
+provide ground-truth labels (failure, safety violation, redundant step,
+human-task boundary); we hide these labels, run the profiler, rank the
+resulting groups, and check whether the top groups contain the hidden
+positives.
+
+\paragraph{Benchmark setup.}
+Six tasks across four datasets: AgentRewardBench looping and
+side-effect, SATraj-OS unsafe operation, AgentNet incorrect and redundant
+step, and OSWorld-Human group start. Together: 34{,}539 operations,
+3{,}699 positives. Six views (flat, fixed-session, dataset-native,
+raw-action, operation-stack, label-drilldown) and four rankers (width,
+visible-risk, query-aware, oracle).
+
+\paragraph{Localization results.}
+
+\begin{table*}[t]
+\centering\small
+\caption{RQ2 hidden-label localization (medians across six tasks).
+Hidden policies serve only as upper bounds. WTFP = work-to-first-positive.
+``---'' = group count varies by task; no single median is reported.}
+\label{tab:localization}
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Policy & Hidden & AP & R@5 & F1@5 & Work@5 & R@30\% & WTFP & Groups \\
+\midrule
+flat:width & 0 & 0.168 & 1.000 & 0.287 & 1.000 & 0.000 & 1.000 & 1.0 \\
+fixed-session:query-aware & 0 & 0.348 & 0.023 & 0.043 & 0.016 & 0.356 & 0.004 & 285.0 \\
+dataset-native:query-aware & 0 & 0.357 & 0.867 & 0.282 & 0.854 & 0.338 & 0.058 & --- \\
+raw-action:query-aware & 0 & 0.274 & 0.244 & 0.220 & 0.151 & 0.333 & 0.037 & --- \\
+op-stack:query-aware & 0 & 0.312 & 0.188 & 0.198 & 0.094 & 0.390 & 0.038 & 157.5 \\
+op-stack:oracle-upper & 1 & 0.599 & 0.300 & 0.403 & 0.044 & 0.564 & 0.012 & --- \\
+label-drilldown:oracle & 1 & 1.000 & 0.670 & 0.797 & 0.115 & 1.000 & 0.038 & --- \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Table~\ref{tab:localization} summarizes the results. Flat summaries
+recover all positives but require inspecting everything
+(Work@5\,=\,1.0). Fixed-session drilldown finds a first positive quickly
+(WTFP\,=\,0.004) but fragments the workload into 285 groups with only
+2.3\% top-five recall. Operation-stack query-aware profiling inspects
+9.4\% of the work in the top five groups, achieves 39.0\% budget-30
+recall, and reduces groups to 157.5.
+
+The result is a Pareto tradeoff, not dominance. The comparison also
+serves as evidence for the two-abstraction model (C1): fixed-session
+drilldown and dataset-native hierarchy are alternative abstractions that
+fix the hierarchy at session or dataset boundaries. Operation stacks
+subsume both as special cases (include \texttt{session} in the stack
+to recover fixed-session; include \texttt{dataset} to recover
+dataset-native). On localization, operation stacks improve top-five
+recall over fixed-session on 5/6 tasks, reduce median group count by
+45\%, and save 90\% of inspection work versus flat summaries.
+Fixed-session drilldown retains lower work-to-first-positive on 4/6
+tasks: profilers and debuggers are complementary.
+
+Statistical validation supports these comparisons: bootstrap
+(10{,}000 resamples) and label-permutation (2{,}000 trials) confirm
+stable AP deltas exceeding the 95\% prevalence/group-size null on all
+six tasks.
+
+\paragraph{Actionability: which configuration knobs explain the results?}
+
+Executable profile-spec patches modify stack fields, mapping rules, or
+rankers, then re-run over the same visible operations. Five of six
+patches improve AP, top-five lift, and first-positive work (median AP
+delta 0.038, median top-five lift delta 0.575). Three reusable patterns
+emerge: (1)~safety/side-effect tasks benefit from field and ranker
+changes; (2)~step-quality tasks benefit from operation-stack
+localization followed by fixed-session drilldown for examples;
+(3)~human-boundary tasks require boundary-derived fields. The rejected
+OSWorld-Human patch shows that visible rank features alone are
+insufficient for boundary objectives; folding held-out boundary-derived
+fields improves AP from 0.240 to 0.258 and reduces groups from 108 to
+74, with an explicit work tradeoff.
+
+Rank-feature ablations identify 7 critical feature rows
+(\texttt{repeat\_signal}, write-action, \texttt{status=success}) and 3
+misleading rows. Guided repairs improve AP on 2/3 misleading cases but
+use offline scored feedback, not an automatic learned ranker.
+
+%% -------------------------------------------------------------------
+\subsection{RQ3: How Reliable Is Intent Recognition?}
+
+RQ1 and RQ2 assume that semantic labels are useful. RQ3 tests the
+label-derivation pipeline itself. For structured traces (public
+datasets), we evaluate the \emph{mapping} path against ground-truth
+annotations. For free-form traces (real sessions), we evaluate the
+\emph{intent-recognition} path at the scale and syntax level; quality
+assessment of the LLM/regex tagger against free-form ground truth
+remains future work.
+
+\paragraph{Scale and syntax validity.}
+On 325 real sessions, the LLM tagger processes 118{,}021 tag requests
+(2{,}859 prompt rows, 114{,}837 LLM-call events). Of these, 82{,}886
+hit the label cache; 35{,}136 are real llama.cpp calls to a local
+3B-parameter model. Final tag failures: 0. On a fixed set of 300
+redacted fragments, three model sizes (0.6B, 1.1B, 3B) all produce
+900/900 syntactically valid outputs; p95 latencies are 23, 18, and
+31\,ms respectively.
+
+\paragraph{Ground-truth agreement on public datasets.}
+Public benchmark datasets provide native action labels that serve as
+ground truth for mapping quality. We run a leave-dataset-out evaluation:
+for each of 9 datasets, we train mapping rules on the other 8 and
+measure V-measure between the mapping-derived \texttt{phase} field and
+the dataset's native \texttt{action} labels, plus boundary F1 between
+mapped phase boundaries and native action boundaries.
 
 \begin{table}[t]
-\centering
-\scriptsize
-\caption{E4 deterministic-output main display comparing default and
-\texttt{--deterministic-output} replay over the same 76 profile specs.}
-\label{tab:e4-determinism}
-\begin{tabular}{llrrrr}
+\centering\small
+\caption{Leave-dataset-out mapping quality. V-measure between
+mapping-derived \texttt{phase} and native \texttt{action} labels.
+13{,}265 total operations across 9 held-out evaluations.}
+\label{tab:vmeasure}
+\begin{tabular}{lrrr}
 \toprule
-Config & Mode & Sem. & Raw & Med. s & P95 s \\
+Held-out dataset & Ops & V-measure & Boundary F1 \\
 \midrule
-Default & default & 76/76 & 4/76 & 1.581 & 2.719 \\
-Deterministic & deterministic & 76/76 & 76/76 & 1.601 & 2.767 \\
+mind2web & 774 & 1.000 & 1.000 \\
+webshop-expert & 2{,}504 & 1.000 & 1.000 \\
+swe-agent & 496 & 0.926 & 0.962 \\
+weblinx-chat & 500 & 0.872 & 0.860 \\
+agenttrek & 200 & 0.862 & --- \\
+gui-odyssey & 7{,}868 & 0.811 & 0.842 \\
+android-control & 9 & 0.716 & 0.727 \\
+toolbench & 866 & 0.134 & 0.353 \\
+api-bank & 48 & 0.000 & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\section{Related Work and Novelty}
+Table~\ref{tab:vmeasure} shows the results. On 7/9 datasets, V-measure
+exceeds 0.7, indicating strong agreement between mapping-derived and
+native labels. The two low-scoring datasets (toolbench, api-bank) have
+atypical action vocabularies that the held-out mapping rules do not
+cover. Mapping reduces unique stacks on 6/9 datasets with zero negative
+regressions.
 
-\textbf{Classic profiling and trace analysis.}
-Flame graphs and pprof establish the folded-stack lineage for profiling:
-profiles consist of weighted samples attached to a location hierarchy, can carry
-sample labels, and pprof can visualize labels as pseudo stack frames through
-tag-root or tag-leaf options~\cite{flamegraphs,pprof}. Perfetto generalizes
-trace ingestion and SQL analysis over many trace formats and can derive new
-events from trace contents~\cite{perfetto}. These systems are closer than a
-simple ``fixed hierarchy'' baseline. \toolname therefore does not claim novelty
-for query-time aggregation alone. The difference is the domain object and
-evaluation target: the sample is an agent operation, the frames are recursive
-multi-field operation projections, and the groups are scored against hidden
-agent-trajectory labels across datasets.
+A supervised boundary-derivation backend further validates the field
+pipeline. On OSWorld-Human held-out adjacent pairs, a learned boundary
+predictor achieves F1~0.77, beating the best simple baseline
+(\texttt{always\_boundary}, F1~0.71). Learned backends beat simple
+baselines on 4/5 tested boundary families, while AgentRewardBench
+looping is fully explained by \texttt{repeat\_signal\_change} (baseline
+F1~1.0). This supports field derivation as a guarded configuration
+step, not automatic intent discovery.
+
+Two mapping-rule variants (differing in API/tool phase precedence) run
+on the same 13{,}265 operations and produce identical V-measure on 7/9
+datasets, with the two divergent datasets differing by $\leq$0.17.
+Mapping quality is robust to minor rule variations on well-covered
+action vocabularies. Direct cross-backend comparison between the regex
+and LLM taggers on the same free-form prompts remains future work.
+
+Syntactic validity does not imply semantic quality. TinyLlama 1.1B
+achieves high exact-stability (279/300 identical across repeats) but
+concentrates on a narrow label set. The 3B model produces a broader
+vocabulary (328 unique prompt tags) but includes noisy entries. A
+display-governance pipeline reduces unique tags from 1{,}546 to 1{,}364
+through deterministic aliases, raising top-20 support coverage from
+93.7\% to 95.2\% without overwriting raw tags. This pipeline manages
+noise but does not establish semantic adequacy---that is what the
+ground-truth and cross-backend checks above provide.
+
+All results are backed by profile specs for deterministic replay: 76
+tracked specs re-executed twice (152 invocations) produce identical
+output, with median runtime 1.6\,s per spec.
+
+%% ===================================================================
+\section{Related Work}
+
+\textbf{Profiling and flame graphs.}
+Flame graphs~\cite{flamegraphs} and pprof~\cite{pprof} establish the
+folded-stack lineage: profiles are weighted samples with location
+hierarchies. Pprof supports sample labels and can visualize them as
+pseudo stack frames through tag-root/tag-leaf options. Perfetto
+generalizes trace ingestion with SQL-based analysis and derived
+events~\cite{perfetto}. These systems support query-time aggregation, so
+\toolname does not claim novelty for flexible aggregation alone. The
+difference is the domain: samples are agent operations, frames are
+semantic labels derived from natural-language prompts through intent
+recognition, and the evaluation scores profiler output against hidden
+agent-trajectory labels.
 
 \textbf{Agent tracing and LLM observability.}
-OpenTelemetry GenAI and OpenInference standardize GenAI spans, LLM calls, agent
-reasoning steps, tool invocations, retrieval operations, MCP, and
-provider-specific telemetry~\cite{otel,openinference}. LangSmith, Langfuse, and
-Phoenix expose traces, sessions, observations, evaluations, dashboards, datasets,
-and prompt iteration workflows~\cite{langsmith,langfuse,phoenix}. AgentOps gives
-the closest academic same-problem framing by arguing that agent observability
-should trace goals, plans, tools, artifacts, and associated data~\cite{agentops}.
-These systems are strong prior work, so the safe novelty claim is not generic
-``agent observability.'' In this paper, traces, spans, sessions, and observations
-are exchange containers or baseline shapes. E2 evaluates fixed-session
-drilldown as the current trace-tree-shaped baseline; real
-OpenTelemetry/OpenInference or Phoenix span-tree imports remain future
-interoperability baselines. The profiler
-abstractions are only operations and operation stacks, and the central mechanism
-is that stack shape determines semantic aggregation at query time.
+OpenTelemetry GenAI and OpenInference standardize GenAI
+spans~\cite{otel, openinference}. LangSmith~\cite{langsmith},
+Langfuse~\cite{langfuse}, and Phoenix~\cite{phoenix} provide trace
+visualization, session management, evaluations, and dashboards.
+AgentOps~\cite{agentops} argues for structured agent observability
+covering goals, plans, tools, and artifacts. These systems excel at
+single-execution debugging. \toolname complements them with cross-session
+aggregate profiling. Datadog LLM Observability and Laminar Signals take
+steps toward semantic aggregation by clustering user messages or
+extracting structured events, but they characterize \emph{input
+distributions}, not \emph{resource attribution}.
 
-\textbf{Agent failure and span localization.}
-Recent agent-diagnosis work is the closest same-problem threat. AgentRx releases
-failed trajectories with critical-failure-step and failure-category annotations
-and uses constraint checking plus an LLM judge to localize root causes
-~\cite{agentrx}. TELBench/DRIFT builds a deep-research span-localization
-benchmark from semantic spans annotated for harmful errors~\cite{telbench}.
-Holistic Evaluation and Failure Diagnosis pairs agent-level diagnosis with
-per-span evaluation over long traces~\cite{holistic}. AgentAtlas argues that
-outcome leaderboards miss trajectory and control-decision quality~\cite{agentatlas}.
-These works make clear that failure localization and trajectory diagnosis are
-not novel by themselves. The narrower difference here is that \toolname treats
-profile groups as profiler outputs: the same operations are folded into flat,
-fixed-session drilldown, dataset-native, raw-action, and operation-stack views, then
-scored with AP, nDCG, recall under inspection budgets, work-to-first-positive,
-fragmentation, and profile-configuration actionability across heterogeneous
-public labeled traces. AgentRx- or TELBench-style traces are therefore future
-oracle/baseline candidates, not current evidence for a broader span-localization
-claim.
+\textbf{Agent failure diagnosis.}
+AgentRx~\cite{agentrx} releases annotated failure trajectories and uses
+constraint checking plus an LLM judge for root-cause localization.
+TELBench~\cite{telbench} builds span-localization benchmarks from
+semantic error annotations. AgentAtlas argues that outcome leaderboards
+miss trajectory-level quality. These systems perform \emph{span-level}
+fault localization within a single execution: which step failed and why.
+\toolname performs \emph{category-level} aggregate profiling: which
+categories of work produce the most failures, consume the most budget,
+or generate repeated system effects across sessions.
 
-\textbf{Public labeled agent trajectories.}
-AgentRewardBench, OSWorld-Human, OpenCUA/AgentNet, SATraj-OS, and OSWorld
-provide the labels and workloads that make the hidden-label profiler benchmark possible~\cite{agentrewardpaper,
-osworldhuman,opencua,safactory,osworld}. Prior benchmark papers use these labels
-to evaluate agents, reward models, safety behavior, or efficiency. We use them
-as hidden oracles for a profiler benchmark: different stack-shaped aggregates
-become ranked outputs, and the evaluation measures precision, recall, AP, nDCG,
-inspection work, fragmentation, and profile-configuration tuning insight. This is the paper's
-scoped novelty.
-
-\section{Discussion}
-
-The result scope is deliberately narrow. The main claim is a profiler claim:
-on six real labeled tasks, operation-stack profiles can be scored as ranked
-localization outputs against dataset-provided labels, and they expose a
-work/fragmentation/actionability tradeoff against flat summaries,
-fixed-session drilldown, dataset-native hierarchy, and raw-action stacks. The
-supporting audits add uncertainty checks, label-permutation negative controls,
-view/depth task-fit checks, fixed-recall target costs, sequence-scope scoring,
-oracle-depth scoring, action counterfactuals, transfer checks, and
-replayability checks. They do not add a new empirical claim; they explain when
-the headline comparison should be trusted and when it should be narrowed.
-
-The strongest negative results define the useful boundary. Operation-stack
-query-aware ranking improves AP over width on all six E2 tasks, but top-five
-F1, first-positive work, and high-recall targets remain task dependent.
-Mapping helps some tasks and hurts others; feature ablations find both critical
-and misleading fields; held-out action transfer is often within tolerance but
-rarely transfers the exact action class for non-default targets. Fixed-session
-drilldown remains a real first-positive counterpoint, raw-action stacks can
-cover broader session scope, and OSWorld-Human needs boundary-derived fields.
-These counterpoints are why the design exposes operation fields, stack-depth
-choices, mapping rules, rank modes, operation-level rank features, profile
-specs, and task-specific policies instead of hard-coding one hierarchy.
-
-These results do not show that humans or agents answer questions faster with
-the tool, nor do they measure live eBPF overhead. They also do not show
-automatic discovery of all intent boundaries, a label-free automatic selector,
-or complete compatibility with OpenTelemetry, Phoenix, LangSmith, Langfuse, or
-Perfetto producers. Those systems remain related work and baselines. In this
-paper, trace formats are containers; fixed sessions are the evaluated drilldown
-baseline, while real span-tree imports remain future baselines. The profiler
-abstractions remain only operations and operation stacks.
-
+%% ===================================================================
 \section{Conclusion}
 
-\toolname reduces agent profiling to two abstractions. Operations carry all
-observed and derived fields; operation stacks fold those fields at the depth
-chosen by the query. Mapping, predicates, rank rules, profile specs, trace
-exchange, and boundary backends are mechanisms around those two objects, not
-additional profiler abstractions.
+Agent observability needs profiling, not only debugging. The obstacle is
+that natural-language prompts lack the deterministic identifiers that
+make flame-graph folding work. \toolname shows that two
+abstractions---operations and operation stacks---close this gap once
+intent recognition restores deterministic labels. The evaluation
+confirms that semantic profiling separates information flat views merge,
+localizes labeled problems with less work than both flat summaries and
+fixed-session drilldown, and produces labels that agree with
+ground-truth annotations across heterogeneous public datasets.
 
-Across 15 public labeled trace sources, the model covers web, mobile, desktop,
-software, API, dialogue, failure, safety, human-boundary, and step-quality
-trajectories. On the four oracle-rich families, operation-stack profiling
-localizes and ranks labeled problems with less inspection work than flat
-summaries and a better median-fragmentation tradeoff than fixed-session
-drilldown, while the
-mechanism audits show which fields, mappings, rankers, depths, and profile-spec
-patches produce the gains. The paper's central claim is therefore a profiler
-claim: operation/operation-stack profiling exposes dataset-labeled
-task-relevant failures, quality problems, and semantic boundaries, and produces
-profile-configuration actionability without relying on prompt/session/span
-boundaries.
-The novelty is not a new renderer, trace schema, or generic query engine; it is
-the combination of agent-operation records, recursive multi-field stack
-projections, and hidden-label profile-group scoring.
+Profilers and debuggers are complementary: fixed-session drilldown finds
+a first positive faster on 4/6 tasks (RQ2), while the profiler
+identifies which categories deserve attention. \toolname supports both
+by including or excluding session fields in the stack query. The
+profiler's structured output also enables automated consumption by
+analysis agents, positioning semantic profiling as infrastructure for
+agent self-diagnosis.
 
-The evidence remains scoped. The profile-spec and deterministic-output audits
-make the offline outputs reproducible, and the claim-scope checks keep the
-paper aligned with tracked results. They do not claim human or agent
-analyst productivity, live eBPF overhead, automatic discovery of all intent
-boundaries, a label-free universal selector, or complete compatibility with
-OpenTelemetry, Phoenix, LangSmith, Langfuse, or Perfetto producers.
+The main limitation is single-project real-session data; multi-project
+evaluation and trace-ecosystem integration (importing OpenTelemetry and
+LangSmith traces as operations) are the most impactful next steps.
 
-\begin{thebibliography}{24}
+\begin{thebibliography}{20}
 \bibitem{flamegraphs} Brendan Gregg. Flame Graphs. \url{https://www.brendangregg.com/flamegraphs.html}.
-\bibitem{pprof} Google pprof documentation. \url{https://github.com/google/pprof/blob/main/doc/README.md}.
-\bibitem{perfetto} Perfetto Trace Processor documentation. \url{https://perfetto.dev/docs/analysis/trace-processor}.
-\bibitem{otel} OpenTelemetry GenAI semantic conventions. \url{https://github.com/open-telemetry/semantic-conventions-genai}.
-\bibitem{openinference} OpenInference specification. \url{https://arize-ai.github.io/openinference/spec/}.
+\bibitem{pprof} Google pprof. \url{https://github.com/google/pprof}.
+\bibitem{perfetto} Perfetto Trace Processor. \url{https://perfetto.dev/docs/analysis/trace-processor}.
+\bibitem{otel} OpenTelemetry GenAI Semantic Conventions. \url{https://github.com/open-telemetry/semantic-conventions-genai}.
+\bibitem{openinference} OpenInference Specification. \url{https://arize-ai.github.io/openinference/spec/}.
 \bibitem{langsmith} LangSmith Observability. \url{https://docs.langchain.com/langsmith/observability}.
 \bibitem{langfuse} Langfuse Observability. \url{https://langfuse.com/docs/observability/overview}.
-\bibitem{phoenix} Arize Phoenix documentation. \url{https://arize.com/docs/phoenix}.
-\bibitem{agentops} Liming Dong, Qinghua Lu, and Liming Zhu. AgentOps: Enabling Observability of LLM Agents. \url{https://arxiv.org/abs/2411.05285}.
-\bibitem{weblinx} McGill-NLP WebLINX. \url{https://huggingface.co/datasets/McGill-NLP/WebLINX}.
-\bibitem{guiodyssey} OpenGVLab GUI-Odyssey. \url{https://huggingface.co/datasets/OpenGVLab/GUI-Odyssey}.
+\bibitem{phoenix} Arize Phoenix. \url{https://arize.com/docs/phoenix}.
+\bibitem{agentops} Liming Dong et al. AgentOps: Enabling Observability of LLM Agents. arXiv:2411.05285, 2024.
+\bibitem{agentrx} Shraddha Barke et al. AgentRx: Diagnosing AI Agent Failures. arXiv:2602.02475, 2025.
+\bibitem{telbench} NJU-LINK. Where Do Deep-Research Agents Go Wrong? arXiv:2606.02060, 2026.
+\bibitem{agentrewardbench} Xing Han L\`u et al. AgentRewardBench. arXiv:2504.08942, 2025.
+\bibitem{osworld} Tianbao Xie et al. OSWorld. arXiv:2404.07972, 2024.
+\bibitem{opencua} Xinyuan Wang et al. OpenCUA. arXiv:2508.09123, 2025.
+\bibitem{safactory} Shanghai AI Lab. Safactory. arXiv:2605.06230, 2026.
 \bibitem{osworldhuman} WukLab OSWorld-Human. \url{https://github.com/WukLab/osworld-human}.
 \bibitem{agentnet} xlangai AgentNet. \url{https://huggingface.co/datasets/xlangai/AgentNet}.
-\bibitem{agentrewardbench} McGill-NLP AgentRewardBench. \url{https://huggingface.co/datasets/McGill-NLP/agent-reward-bench}.
-\bibitem{satrajos} AI45Research SATraj-OS. \url{https://huggingface.co/datasets/AI45Research/SATraj-OS}.
-\bibitem{taubench} AgentSuite tau-bench trajectories. \url{https://huggingface.co/datasets/AgentSuite/tau-bench-trajectories}.
-\bibitem{scalecua} OpenGVLab ScaleCUA-Data. \url{https://huggingface.co/datasets/OpenGVLab/ScaleCUA-Data}.
-\bibitem{agentrewardpaper} Xing Han Lù et al. AgentRewardBench: Evaluating Automatic Evaluations of Web Agent Trajectories. \url{https://arxiv.org/abs/2504.08942}.
-\bibitem{osworld} Tianbao Xie et al. OSWorld: Benchmarking Multimodal Agents for Open-Ended Tasks in Real Computer Environments. \url{https://arxiv.org/abs/2404.07972}.
-\bibitem{opencua} Xinyuan Wang et al. OpenCUA: Open Foundations for Computer-Use Agents. \url{https://arxiv.org/abs/2508.09123}.
-\bibitem{safactory} Shanghai AI Lab. Safactory: A Scalable Agentic Infrastructure for Training Trustworthy Autonomous Intelligence. \url{https://arxiv.org/abs/2605.06230}.
-\bibitem{agentrx} Shraddha Barke et al. AgentRx: Diagnosing AI Agent Failures from Execution Trajectories. \url{https://arxiv.org/abs/2602.02475}.
-\bibitem{telbench} NJU-LINK. Where Do Deep-Research Agents Go Wrong? Span-Level Error Localization in Agent Trajectories. \url{https://arxiv.org/abs/2606.02060}.
-\bibitem{holistic} Holistic Evaluation and Failure Diagnosis of AI Agents. \url{https://arxiv.org/abs/2605.14865}.
-\bibitem{agentatlas} Parsa Mazaheri and Kasra Mazaheri. AgentAtlas: Beyond Outcome Leaderboards for LLM Agents. \url{https://arxiv.org/abs/2605.20530}.
 \end{thebibliography}
 
 \end{document}
