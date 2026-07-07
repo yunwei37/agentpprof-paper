@@ -98,6 +98,77 @@
 
 % VERIFIED: 2026-07-07
 % REAL: yes
+% PDF: https://arxiv.org/pdf/2508.02736
+% ABSTRACT: eBPF-based observability for AI agents. Intercepts TLS traffic
+%   and kernel events without code changes. <3% overhead.
+% USED_FOR: Parent framework of AgentPProf (implementation section)
+@inproceedings{agentsight,
+  author    = {Zheng, Yusheng and Hu, Yanpeng and Yu, Tong and Quinn, Andi},
+  title     = {{AgentSight}: System-Level Observability for {AI} Agents Using {eBPF}},
+  booktitle = {Proceedings of the 4th Workshop on Practical Adoption Challenges of ML for Systems (MLforSys)},
+  year      = {2025},
+  url       = {https://arxiv.org/abs/2508.02736},
+}
+
+% VERIFIED: unverified
+% REAL: yes
+% PDF: not yet downloaded
+% ABSTRACT: Defines 14 fault types over 9 agent-specific span kinds.
+%   First dedicated benchmark for detecting faults from agent telemetry.
+% USED_FOR: Agent observability benchmark (related work)
+% TODO: verify full author list, exact venue name, pages from ACM DL
+@inproceedings{agenttelemetry,
+  author    = {Balusu, Sai Sree Harsha},
+  title     = {{AgentTelemetry}: A Fault Detection Benchmark and Toolkit for {LLM} Agent Observability},
+  booktitle = {Proceedings of the 3rd ACM International Conference on AI-Powered Software (AIware '26)},
+  year      = {2026},
+  url       = {https://dl.acm.org/doi/10.1145/3805760.3814931},
+}
+
+% VERIFIED: unverified
+% REAL: yes
+% PDF: not yet downloaded
+% ABSTRACT: Survey of evidence tracing and execution provenance in LLM agents.
+%   Unifies retrieval grounding, tool-use safety, memory lineage, and observability.
+% USED_FOR: Broader agent trace survey (related work)
+% TODO: download PDF, verify author list matches arxiv page
+@article{agenttraces-trust,
+  author    = {Wang, Yiqi and Zhang, Jiaqi and Cai, Taotao and others},
+  title     = {From Agent Traces to Trust: A Survey of Evidence Tracing and Execution Provenance in {LLM} Agents},
+  journal   = {arXiv preprint arXiv:2606.04990},
+  year      = {2026},
+}
+
+% VERIFIED: unverified
+% REAL: yes
+% PDF: not yet downloaded
+% ABSTRACT: Trajectory anomaly detection for trustworthy LLM agents.
+% USED_FOR: Agent failure diagnosis (related work)
+% TODO: download PDF, verify abstract matches
+@article{trajad,
+  author    = {Liu, Yibing and Zhang, Chong and Han, Zhongyi and Liu, Hansong and Wang, Yong and Yu, Yang and Wang, Xiaoyan and Yin, Yilong},
+  title     = {{TrajAD}: Trajectory Anomaly Detection for Trustworthy {LLM} Agents},
+  journal   = {arXiv preprint arXiv:2602.06443},
+  year      = {2026},
+  doi       = {10.48550/arXiv.2602.06443},
+}
+
+% VERIFIED: unverified
+% REAL: yes
+% PDF: not yet downloaded
+% ABSTRACT: From failure detection to fix recommendations in LLM agentic systems.
+% USED_FOR: Agent failure diagnosis (related work)
+% TODO: download PDF, verify abstract matches
+@article{agentfixer,
+  author    = {Mulian, Hadar and Zeltyn, Sergey and Levy, Ido and Galanti, Liane and Yaeli, Avi and Shlomov, Segev},
+  title     = {{AgentFixer}: From Failure Detection to Fix Recommendations in {LLM} Agentic Systems},
+  journal   = {arXiv preprint arXiv:2603.29848},
+  year      = {2026},
+  doi       = {10.48550/arXiv.2603.29848},
+}
+
+% VERIFIED: 2026-07-07
+% REAL: yes
 % PDF: not available (product docs)
 % ABSTRACT: LLM Observability product; clusters user messages by topic
 %   for monitoring LLM-powered applications.

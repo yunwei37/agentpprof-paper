@@ -364,8 +364,8 @@ Output formats include pprof protobuf (compatible with
 \texttt{flamegraph.pl}), standalone SVG flame graphs, and JSON summaries.
 All outputs are deterministic given the same input and profile spec.
 
-\toolname is the offline profiling component of the broader AgentSight
-observability framework. AgentSight provides real-time eBPF-based
+\toolname is the offline profiling component of the broader
+AgentSight~\cite{agentsight} observability framework. AgentSight provides real-time eBPF-based
 capture of SSL traffic, process events, and file/network effects.
 \toolname aggregates the recorded traces into semantic profiles. The two
 are complementary. AgentSight answers ``what happened during this run''
@@ -712,19 +712,27 @@ spans~\cite{otel, openinference}. LangSmith~\cite{langsmith},
 Langfuse~\cite{langfuse}, and Phoenix~\cite{phoenix} provide trace
 visualization, session management, evaluations, and dashboards.
 AgentOps~\cite{agentops} argues for structured agent observability
-covering goals, plans, tools, and artifacts. These systems excel at
-single-execution debugging. \toolname complements them with cross-session
-aggregate profiling. Datadog LLM Observability~\cite{datadog-llmobs} and Laminar Signals~\cite{laminar-signals} take
-steps toward semantic aggregation by clustering user messages or
-extracting structured events, but they characterize \emph{input
-distributions}, not \emph{resource attribution}.
+covering goals, plans, tools, and artifacts.
+AgentTelemetry~\cite{agenttelemetry} defines 14 fault types over 9
+agent-specific span kinds that extend OpenTelemetry for agent
+orchestration phases. Wang et al.~\cite{agenttraces-trust} survey
+evidence tracing and execution provenance as foundations for agent
+accountability. These systems excel at single-execution debugging or
+fault detection. \toolname complements them with cross-session aggregate
+profiling. Datadog LLM Observability~\cite{datadog-llmobs} and Laminar
+Signals~\cite{laminar-signals} take steps toward semantic aggregation by
+clustering user messages or extracting structured events, but they
+characterize \emph{input distributions}, not \emph{resource
+attribution}.
 
 AgentRx~\cite{agentrx} releases annotated failure trajectories and uses
 constraint checking plus an LLM judge for root-cause localization.
 TELBench~\cite{telbench} builds span-localization benchmarks from
-semantic error annotations. AgentAtlas~\cite{agentatlas} argues that outcome leaderboards
-miss trajectory-level quality. These systems perform \emph{span-level}
-fault localization within a single execution: which step failed and why.
+semantic error annotations. AgentAtlas~\cite{agentatlas} argues that
+outcome leaderboards miss trajectory-level quality.
+TrajAD~\cite{trajad} and AgentFixer~\cite{agentfixer} detect trajectory
+anomalies and recommend fixes. These systems perform \emph{span-level}
+or \emph{step-level} fault localization within a single execution.
 \toolname performs \emph{category-level} aggregate profiling, identifying
 which categories of work produce the most failures, consume the most
 budget, or generate repeated system effects across sessions.
