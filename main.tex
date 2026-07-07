@@ -30,7 +30,10 @@ paper argues that agent profiling needs a smaller abstraction: an
 \operation is a weighted record with fields, and an \opstack is a recursive
 projection over those fields chosen at query time. Aggregation is not a separate
 object or a fixed trace tree; it is the result of choosing a stack shape over the
-same operations. This is not merely a claim about query-time aggregation, which
+same operations. When users do not provide a field order, the profiler can also
+score adjacent operation boundaries from visible evidence and query hints,
+derive a multi-value \texttt{task} field, and fold task-only stacks. This is not
+merely a claim about query-time aggregation, which
 classic profilers and trace processors also support in different forms. The
 scoped novelty is the combination of an agent-operation record model, recursive
 multi-field operation-stack projections, and a hidden-label cross-dataset
@@ -38,7 +41,9 @@ localization benchmark.
 
 We implement this model in the Rust \toolname profiler and evaluate it through
 three core empirical profiling experiments, RQ1/E1 through RQ3/E3, plus one
-replayability/scope-control block, RQ4/E4, rather than a chronological run list.
+artifact/reproducibility block for replayability and scope control, RQ4/E4,
+rather than a chronological run list. The paper structure is three empirical
+profiling experiments plus one replayability/scope-control block.
 RQ1/E1 tests generality and
 recursive operation-stack formation: across 15 lightly sampled public labeled
 sources, \toolname maps 47,590 samples into the same operation layer, and the
@@ -98,7 +103,9 @@ trace identifiers are fields, exchange containers, or baseline shapes rather
 than separate profiler objects. Users then choose an operation stack to fold the
 same operations at different depths. One query may group by
 \texttt{task,phase,action}; another may group by
-\texttt{environment,safety}. Mapping and tagging are first-class field-derivation
+\texttt{environment,safety}. Another query may ask the profiler to induce
+recursive \texttt{task} frames from adjacent boundary evidence rather than
+supplying a fixed field order. Mapping and tagging are first-class field-derivation
 steps, but they do not add a third profiler object. They only write fields
 before the stack query runs. Thus the novelty is the abstraction that connects
 stack shape to aggregation: changing the stack changes what is comparable,
@@ -351,7 +358,8 @@ Recursive stack choice &
 Same 13,265 operations plus AgentNet profile-spec override &
 9 dataset, 57 phase, 226 tool/semantic, 455 action, and 3,757 fixed-session
 stacks; AgentNet changes 608 to 83 stacks without changing 16,741 input
-operations. &
+operations; induced AgentRewardBench task stacks have 11 stacks with depths
+2/3/4 and no user field order. &
 Fixed sessions are useful drilldown fields but fragment aggregation when
 hard-coded. \\
 Field derivation before folding &
@@ -390,6 +398,14 @@ operation-file prefix through a standard trace container while preserving 512
 samples and 11 folded stacks. These interface checks are provenance for E1: they
 test whether the operation layer stays fixed while views change; the
 localization and ranker gains from those specs are evaluated under E2/E3.
+The Rust task-stack induction replay tests the same abstraction boundary when
+the user does not supply a stack field order. On the tracked AgentRewardBench
+looping slice, \toolname scores adjacent operation boundaries from visible
+fields and query terms, emits task-only stacks, and produces variable depths
+2/3/4 in both the overview and session-candidate views. Session appears only
+when explicitly allowed as evidence. This replay is mechanism evidence, not the
+hidden-label localization result and not a claim of complete intent-boundary
+discovery.
 
 \paragraph{Field derivation and boundary probes.}
 
@@ -409,6 +425,13 @@ from 0.9343 to 0.7416; profile-spec composition stays prompt/session-free on
 suitability checks, not automatic intent boundary discovery and not a new
 profiler object. Rank-feature criticality from the same audit belongs to
 RQ3/E3's mechanism/actionability evidence, not to RQ1/E1's abstraction claim.
+The suitability check makes the extension policy explicit. Deterministic
+mappings are useful for compression but can coarsen action boundaries. Rank
+features require ablation guards because both critical and misleading feature
+rows appear. Boundary-derived fields require family-specific evidence. The
+tested boundary families produce accept, caution, and reject outcomes, so field
+derivation remains a guarded profile-configuration loop rather than a universal
+selector.
 
 \paragraph{Human-boundary oracle.}
 
