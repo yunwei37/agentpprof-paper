@@ -30,9 +30,10 @@ paper argues that agent profiling needs a smaller abstraction: an
 \operation is a weighted record with fields, and an \opstack is a recursive
 projection over those fields chosen at query time. Aggregation is not a separate
 object or a fixed trace tree; it is the result of choosing a stack shape over the
-same operations. When users do not provide a field order, the profiler can also
-score adjacent operation boundaries from visible evidence and query hints,
-derive a multi-value \texttt{task} field, and fold task-only stacks. This is not
+same operations. When users do not provide a stack-field chain, the profiler can
+also score adjacent operation boundaries from visible evidence, semantic shift,
+and query hints, derive a multi-value \texttt{task} field, and fold task-only
+stacks. This is not
 merely a claim about query-time aggregation, which
 classic profilers and trace processors also support in different forms. The
 scoped novelty is the combination of an agent-operation record model, recursive
@@ -105,7 +106,7 @@ same operations at different depths. One query may group by
 \texttt{task,phase,action}; another may group by
 \texttt{environment,safety}. Another query may ask the profiler to induce
 recursive \texttt{task} frames from adjacent boundary evidence rather than
-supplying a fixed field order. Mapping and tagging are first-class field-derivation
+supplying a fixed stack-field chain. Mapping and tagging are first-class field-derivation
 steps, but they do not add a third profiler object. They only write fields
 before the stack query runs. Thus the novelty is the abstraction that connects
 stack shape to aggregation: changing the stack changes what is comparable,
@@ -359,7 +360,7 @@ Same 13,265 operations plus AgentNet profile-spec override &
 9 dataset, 57 phase, 226 tool/semantic, 455 action, and 3,757 fixed-session
 stacks; AgentNet changes 608 to 83 stacks without changing 16,741 input
 operations; automatic task-stack induction produces variable-depth stacks on
-all six hidden-label tasks without a user field order. &
+all six hidden-label tasks without a user stack-field chain. &
 Fixed sessions are useful drilldown fields but fragment aggregation when
 hard-coded. \\
 Field derivation before folding &
@@ -399,15 +400,16 @@ samples and 11 folded stacks. These interface checks are provenance for E1: they
 test whether the operation layer stays fixed while views change; the
 localization and ranker gains from those specs are evaluated under E2/E3.
 The Rust task-stack induction replay tests the same abstraction boundary when
-the user does not supply a stack field order. On the tracked AgentRewardBench
+the user does not supply a stack-field chain. On the tracked AgentRewardBench
 looping slice, \toolname scores adjacent operation boundaries from visible
-fields and query terms, emits task-only stacks, and permits the same evidence
-field to recur at different recursive cuts. Across the six hidden-label tasks,
-the same implementation produces variable-depth stacks. AgentRewardBench,
+fields, semantic shift, changed-field density, and query terms, emits task-only
+stacks, and permits the same evidence field to recur at different recursive
+cuts. Across the six hidden-label tasks, the same implementation produces
+variable-depth stacks. AgentRewardBench,
 AgentNet, and OSWorld-Human cover depths 2/3/4, while SATraj preserves depths
-1/2/3/4. The automatic view has median 15.5 groups, compared with 285.0 for
-fixed-session drilldown, and median top-five work 0.3143, compared with 1.0 for
-flat summaries. Its median AP is 0.2972, below the hand-configured
+1/2/3/4. The automatic view has median 15.0 groups, compared with 285.0 for
+fixed-session drilldown, and median top-five work 0.2819, compared with 1.0 for
+flat summaries. Its median AP is 0.3034, below the hand-configured
 operation-stack query-aware policy at 0.3116. The result supports configurable
 recursive folding, not replacement of task-specific profile specs and not
 complete intent-boundary discovery.
@@ -491,9 +493,9 @@ counterpoints disappeared from the paper, the result would be overstated; with
 them, E2 supports a better localization-budget/fragmentation tradeoff, not
 dominance over every trace-tree-shaped objective.
 Automatic induced task stacks provide mechanism-side evidence for the same
-tradeoff. Without a user-provided field order, the profiler uses visible
+tradeoff. Without a user-provided stack-field chain, the profiler uses visible
 boundary evidence to produce variable-depth groups, and the same hidden-label
-scoring pipeline reports median top-five work 0.3143 and median 15.5 groups.
+scoring pipeline reports median top-five work 0.2819 and median 15.0 groups.
 The view is cheaper than flat summaries and less fragmented than fixed-session
 drilldown, but its AP remains below the hand-configured operation-stack policy,
 so E2's primary result remains the query-aware operation-stack comparison.
