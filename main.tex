@@ -21,31 +21,25 @@
 
 \begin{abstract}
 AI agents produce complex execution traces spanning prompts, LLM calls,
-tool invocations, GUI actions, and system effects. As deployments grow
-to hundreds of sessions, both human operators and automated analysis
-pipelines need aggregate views, not just per-execution debugging.
+tool invocations, GUI actions, and system effects. As deployments grow to hundreds of sessions, developers need aggregate
+views to identify which task categories consume the most budget, where
+failures concentrate, and which workflows waste effort.
 Existing observability tools organize events into fixed session/span
 hierarchies suited for single-run debugging but unable to fold events
 across sessions by semantic work category. The consequence is that
 failures, safety violations, and wasted effort remain unattributable to
 the task categories that cause them.
-We show that agent profiling reduces to two abstractions once intent
+We show that agent profiling reduces to two abstractions---uniform
+\emph{operations} and query-time \emph{operation stacks}---once intent
 recognition restores the deterministic-label precondition that
 flame-graph folding requires.
-An \emph{operation} is a uniform weighted record for any agent activity.
-An \emph{operation stack} is a field projection chosen at query time.
-\toolname implements this model with pluggable intent-recognition
-backends (regex rules, local LLM tagging, unsupervised clustering) and
-produces flame graphs, pprof profiles, and structured JSON consumable by
-both developers and analysis agents.
+\toolname implements this model as a Rust profiler with pluggable
+intent-recognition backends.
 On 325 real agent sessions, semantic labels separate 90\% of
-system-effect weight that flat views merge. On six localization tasks
-across four public datasets (34{,}539 operations), operation-stack
-profiling reduces group fragmentation by 45\% versus fixed-session
-drilldown (157.5 vs.\ 285 median groups) and inspection work to 9.4\% of
-operations in the top five groups versus 100\% for flat summaries.
-On 7/9 held-out datasets, mapping-derived labels achieve V-measure
-above 0.7.
+system-effect weight that flat views merge. On four public datasets
+with hidden ground-truth labels (34{,}539 operations), operation-stack
+profiling reduces inspection work to 9.4\% versus flat summaries and
+group fragmentation by 45\% versus fixed-session drilldown.
 \end{abstract}
 
 \maketitle
@@ -57,23 +51,17 @@ above 0.7.
 %% ¶1: Background + Context
 AI agent systems produce heterogeneous execution traces spanning
 prompts, LLM calls, tool invocations, GUI actions, and system effects.
-As deployments scale to hundreds of sessions and tens of thousands of
-calls, both developers and automated analysis agents need aggregate
-views: which categories of work consume the most tokens, where
-failures concentrate, which task families trigger safety violations or
-redundant effort, and how cost distributes across semantic categories.
+As deployments scale to hundreds of sessions, both developers and
+automated analysis agents need cross-session aggregate views to
+identify which task categories consume the most budget, where failures
+concentrate, and which workflows waste effort.
 
 %% ¶2: Problem + example
-However, no existing observability tool provides full cross-session
-resource attribution by semantic category. LangSmith~\cite{langsmith},
-Langfuse~\cite{langfuse}, Phoenix~\cite{phoenix}, and OpenTelemetry
-GenAI~\cite{otel} organize events into per-execution timelines and
-span trees, enabling single-run debugging but not cross-session
-aggregation. In a real development project, the system effect
-\texttt{process:cargo; effect:test; status:ok} appears 2{,}903 times
-across 325 sessions, yet no existing trace tool can disaggregate these
-executions by the semantic intent that triggered them, nor identify
-which intent categories concentrate the failures.
+However, no existing tool provides cross-session resource attribution
+by semantic category. In a real development project,
+\texttt{cargo test} appears 2{,}903 times across 325 sessions, yet no
+trace tool can attribute these executions to the review, debugging, or
+refactoring prompts that triggered them.
 
 %% ¶3: Root cause
 CPU profilers solved the equivalent aggregation problem for programs.
@@ -81,43 +69,40 @@ Flame graphs~\cite{flamegraphs} fold millions of function-call samples
 into a single chart where width represents cost. The key enabler is
 \emph{deterministic} function names that merge identical call stacks.
 Agent traces break this precondition because prompts are natural
-language, and
-two prompts expressing the same intent share no characters
-(\S\ref{sec:background}).
+language, and two prompts expressing the same intent share no
+characters (\S\ref{sec:background}).
 
 %% ¶4: Existing solutions fail
-Some existing tools take steps toward semantic grouping. Datadog LLM
-Observability clusters user messages by
+Existing agent observability tools do not close this gap.
+LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse},
+Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize
+events into per-execution span trees, enabling single-run debugging but
+not cross-session aggregation. Datadog LLM Observability clusters user
+messages by
 topic,\footnote{\url{https://docs.datadoghq.com/llm_observability/}}
 and Laminar extracts structured signals from
-traces.\footnote{\url{https://docs.lmnr.ai/signals/introduction}} Both characterize \emph{input distributions} (``30\% of users ask code
+traces.\footnote{\url{https://docs.lmnr.ai/signals/introduction}} Both
+characterize \emph{input distributions} (``30\% of users ask code
 questions'') but not \emph{resource attribution} (``code-review tasks
-consume 40\% of the token budget''). The gap is architectural:
-clustering operates at the request level and does not propagate labels
-to downstream system effects, so failures and costs triggered by a
-category remain unattributed.
+consume 40\% of the token budget'').
 
 %% ¶5: Key insight
-We observe that agent profiling differs from CPU profiling in a
-structural way: there is no inherent call stack to fold. CPU profilers
-aggregate because the runtime produces deterministic function frames.
-Agent traces have only free-form prompts and heterogeneous events.
-The key insight is that two abstractions close this gap. A uniform
-\emph{operation} record replaces the missing call-stack sample, and a
-query-time \emph{operation stack} (a field projection, not an execution
-artifact) replaces the call stack. Intent recognition restores the
-deterministic-label precondition that makes folding work. These three
-elements are interdependent: without intent recognition, the same
-operation stack produces stacks where 90\% of weight is mixed across
-intents. Without query-time stacks, the hierarchy is locked at
-ingestion time and cannot shift between task-level budget and
-action-level diagnosis (fixed-session stacks inflate unique stacks by
-$417\times$ in RQ1).
+We observe that three interdependent elements close this gap:
+a uniform \emph{operation} record replaces the missing call-stack
+sample, a query-time \emph{operation stack} (a field projection, not an
+execution artifact) replaces the call stack, and \emph{intent
+recognition} restores the deterministic labels that folding requires.
+Remove any one and the model degrades: without labels, aggregation
+mixes intents. Without query-time stacks, the hierarchy is locked at
+ingestion.
 
 %% ¶6: This paper + numbers
-This paper presents \toolname, a profiler built on these abstractions.
-We evaluate on 325 real Codex/Claude sessions and four public
-benchmark datasets with hidden ground-truth labels.
+This paper presents \toolname, a Rust profiler built on this model.
+On 325 real Codex/Claude sessions, semantic labels separate 90\% of
+system-effect weight that flat views merge. On four public datasets
+with hidden ground-truth labels, operation-stack profiling reduces
+inspection work to 9.4\% versus flat summaries and group fragmentation
+by 45\% versus fixed-session drilldown.
 
 %% ¶7: Contributions
 This paper makes three contributions:
@@ -139,12 +124,8 @@ This paper makes three contributions:
 \item \textbf{Evaluation via hidden-label localization.}
   We score profiler output against hidden ground-truth trajectory
   labels (failure, safety, redundancy, and human-task boundaries),
-  analogous to injecting known bottlenecks in CPU profiler evaluation.
-  Semantic labels separate 90\% of mixed system-effect weight (RQ1),
-  operation-stack profiling reduces inspection work by 90\% versus flat
-  summaries (RQ2), and mapping-derived labels agree with ground truth
-  on 7/9 held-out datasets (RQ3). Profile-spec patches identify
-  actionable configuration knobs on 5/6 tasks (\S\ref{sec:eval}).
+  analogous to injecting known bottlenecks in CPU profiler evaluation
+  (\S\ref{sec:eval}).
 \end{enumerate}
 
 %% ===================================================================
