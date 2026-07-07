@@ -732,27 +732,21 @@ budget, or generate repeated system effects across sessions.
 %% ===================================================================
 \section{Conclusion}
 
-Agent observability needs profiling, not only debugging. The root cause
-is structural: natural-language prompts lack the deterministic
-identifiers that make flame-graph folding work. \toolname shows that two
-abstractions, operations and operation stacks, close this gap once
-intent recognition restores deterministic labels. Scoring profiler output against hidden trajectory labels confirms
-that semantic profiling separates information that flat views merge
-and localizes labeled problems with less work than both flat summaries
-and fixed-session drilldown. Mapping-derived labels agree with
-ground-truth annotations on 7/9 held-out public datasets.
 
-Profilers and debuggers are complementary. Fixed-session drilldown finds
-a first positive faster on 4/6 tasks (RQ2), while the profiler
-identifies which categories deserve attention. \toolname supports both
-by including or excluding session fields in the stack query. The
-profiler's structured output (JSON, pprof, folded stacks) is designed
-for automated consumption by analysis agents. Evaluation of
-agent-driven diagnosis is future work.
-
-The main limitation is single-project real-session data. Multi-project
-evaluation and trace-ecosystem integration (importing OpenTelemetry and
-LangSmith traces as operations) are the most impactful next steps.
+Agent observability needs profiling, not only debugging. \toolname
+shows that two abstractions, operations and operation stacks, close the
+aggregation gap once intent recognition restores deterministic labels.
+Scoring profiler output against hidden trajectory labels confirms that
+semantic profiling separates over 90\% of mixed system-effect weight,
+localizes labeled problems at 9.4\% inspection cost versus flat
+summaries, and produces labels that agree with ground truth on 7/9
+held-out datasets. Fixed-session drilldown remains faster to a first
+positive on 4/6 tasks, confirming that profilers and debuggers are
+complementary---\toolname supports both by including or excluding
+session fields in the stack query. The main limitations are
+single-project real-session data and placeholder intent-recognition
+quality on free-form prompts. Multi-project evaluation and
+trace-ecosystem integration are the most impactful next steps.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
