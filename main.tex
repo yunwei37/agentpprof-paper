@@ -217,7 +217,8 @@ recall@operation-budget, F1@k, average precision as a block-level AUPRC-style
 score, nDCG over positive operation counts, and work-to-first-positive.
 Fragmentation uses group count, positive group count, and work or groups to
 reach 50\% positive recall. Actionability uses per-task comparisons among
-stack fields, mapping choices, ranker choices, and oracle headroom.
+operation fields, stack-depth choices, mapping choices, ranker choices, and
+oracle headroom.
 Reproducibility uses repeated Rust \texttt{agentpprof --profile-spec}
 executions over tracked specs and tracked operation JSONL inputs, plus
 profile-spec input replay regressions for local sessions, exported
@@ -271,7 +272,7 @@ preserving top-five-work and first-positive-work counterpoints. Rank-feature
 ablations identify 7 critical and 3 misleading feature rows. Induced depth
 sensitivity places best median AP at depth 4 and lowest median top-five work at
 depth 5. &
-The profiler exposes stack, field, ranker, and profile-spec knobs; it is not an
+The profiler exposes operation-field, stack-depth, ranker, and profile-spec knobs; it is not an
 automatic selector or boundary detector. \\
 RQ4/E4: replayability, offline cost, and scope control &
 76 tracked operation-JSONL profile specs plus local-session, agent-trace, and
@@ -302,9 +303,9 @@ evidence blocks.
 The rest of the evaluation keeps this structure. E1 establishes that the two
 profiler objects are sufficient to express heterogeneous traces and recursive
 folding choices. E2 is the single hidden-label localization/ranking experiment.
-E3 asks which stack fields, mappings, rankers, and profile specs explain or
-repair the E2 results. E4 is the replayability, offline-cost, and scope-control
-block. Additional analyses enter the paper only when they strengthen one of
+E3 asks which operation fields, stack depths, mappings, rankers, and profile
+specs explain or repair the E2 results. E4 is the replayability, offline-cost,
+and scope-control block. Additional analyses enter the paper only when they strengthen one of
 these four blocks as a primary comparison, ablation, counterpoint, provenance
 check, or scope check.
 This is the reviewer-facing evidence path for the profiling claim: E1 checks
@@ -323,7 +324,7 @@ RQ1/E1 tests whether one operation layer can represent heterogeneous agent
 traces without making prompt, session, tool, process, or syscall records into
 separate profiler objects. The evaluation folds the same operation records into
 task, phase, action, human-boundary, and fixed-session-shaped stacks by changing
-only mappings and stack fields. Public dataset labels and native trajectory
+only mappings and operation-stack views. Public dataset labels and native trajectory
 fields provide the oracle signal, with OSWorld-Human boundaries and AgentNet
 quality labels as the strongest structure labels. The comparison uses
 dataset-native, no-map, fixed-session, replay, and trace round-trip views. The
@@ -596,9 +597,9 @@ trace-tree-shaped objective.
 \subsection{RQ3/E3: Mechanism and Actionability}
 
 RQ3/E3 asks why the E2 rankings improve and whether the profiler points to
-concrete configuration changes. The candidate mechanisms are stack fields,
-mapping and tagging rules, rankers, profile specs, and boundary-derived
-operation fields. Hidden labels score the output only after profiling, and
+concrete configuration changes. The candidate mechanisms are operation fields,
+operation-stack depth, mapping and tagging rules, rankers, profile specs, and
+boundary-derived operation fields. Hidden labels score the output only after profiling, and
 held-out OSWorld-Human boundary positives score boundary-derived fields. The
 comparison covers default and patched specs, visible rankers, transfer
 policies, learned-boundary fields, fixed-session drilldown, and semantic-width
@@ -610,10 +611,10 @@ boundary discovery, automatic patch selection, or a universal selector.
 Primary mechanism question. E3 starts from the E2 ranked outputs and asks
 whether the profiler can explain what to change in the profile configuration.
 Hidden labels are used only after profiling to score a configuration; the
-visible inputs are stack fields, mapping/tagging rules, rank features, profile
-specs, and boundary-derived operation fields. The success criterion is an
-actionable, replayable diagnosis: a task should point to a concrete stack,
-field, ranker, mapping, profile-spec, or drilldown change, and executable
+visible inputs are operation fields, stack-depth choices, mapping/tagging rules,
+rank features, profile specs, and boundary-derived operation fields. The success criterion is an
+actionable, replayable diagnosis: a task should point to a concrete operation
+field, stack depth, ranker, mapping, profile-spec, or drilldown change, and executable
 patches should improve the scored output without turning into an automatic
 selector.
 
@@ -629,8 +630,8 @@ write/input mappings. AgentNet step-quality tasks need action-family
 localization followed by fixed-session examples. OSWorld-Human needs
 boundary-derived fields rather than action depth alone. Thus the first
 actionability result is not that one view wins; it is that the profiler
-identifies which stack field, mapping, ranker, or drilldown should change for
-each task family.
+identifies which operation field, stack depth, mapping, ranker, or drilldown
+should change for each task family.
 Automatic task-stack induction stays inside the same actionability boundary. It
 shows that the profiler can recursively induce task-only stacks from visible
 fields and score the resulting variable-depth view, while its AP counterpoint
@@ -655,7 +656,8 @@ fixed-session examples explain individual traces. Human-boundary tasks point to
 representation repair because action-depth stacks are insufficient, while
 boundary-derived operation fields improve AP and reduce groups with explicit
 inspection-work counterpoints. These patterns are configuration guidance over
-profile inputs, stack fields, and rankers, not labels predicted by the profiler.
+profile inputs, operation fields, stack depth, and rankers, not labels predicted
+by the profiler.
 
 The Rust mechanism ablations isolate where those diagnoses come from without
 turning the paper into a run list. First, stack-text rules and rank-mode
@@ -744,7 +746,7 @@ Task & Localization signal & Profile action & Verdict / counterpoint \\
 \midrule
 Looping & Work@5 0.4938, R@5 0.6508, patch AP +0.1155 & Keep \texttt{repeat\_signal} in the stack, but add prevalence-aware ranking because positives are common. & Supports, with counterpoint: raw-action finds the first positive with less work. \\
 Side-effect & Work@5 0.1454, R@5 0.1139, patch AP +0.0591 & Increase write/input weights or use a deeper side-effect mapping before ranking. & Supports, with counterpoint: fixed-session has fewer groups; raw action wins top-five lift. \\
-Unsafe operation & Work@5 0.0420, R@5 0.2621, patch AP +0.5081 & Use environment, phase, and action stack fields; prioritize risky environments and write actions. & Supports, with counterpoint: fixed-session finds the first positive with less work. \\
+Unsafe operation & Work@5 0.0420, R@5 0.2621, patch AP +0.5081 & Use environment, phase, and action operation fields with a deeper operation-stack view; prioritize risky environments and write actions. & Supports, with counterpoint: fixed-session finds the first positive with less work. \\
 Incorrect step & Work@5 0.0014, R@5 0.0034, patch AP +0.0160 & Use desktop environment, phase, repeat, and action fields, then drill into fixed sessions for examples. & Supports, with counterpoint: fixed-session remains a drilldown baseline. \\
 Redundant step & Work@5 0.0089, R@5 0.0177, patch AP +0.0011 & Use desktop environment, phase, repeat, and action fields, then drill into fixed sessions for examples. & Supports, with counterpoint: fixed-session finds the first positive with less work. \\
 Group start & Work@5 0.4074, R@5 0.3874, boundary AP 0.2583 & Use group-depth or boundary-derived fields; action-depth alone fragments starts. & Supports, with counterpoint: boundary fields reduce groups to 74 but increase top-five and first-positive work. \\
@@ -951,9 +953,9 @@ and misleading fields; held-out action transfer is often within tolerance but
 rarely transfers the exact action class for non-default targets. Fixed-session
 drilldown remains a real first-positive counterpoint, raw-action stacks can
 cover broader session scope, and OSWorld-Human needs boundary-derived fields.
-These counterpoints are why the design exposes stack fields, mapping rules,
-rank modes, operation-level rank features, profile specs, and task-specific
-policies instead of hard-coding one hierarchy.
+These counterpoints are why the design exposes operation fields, stack-depth
+choices, mapping rules, rank modes, operation-level rank features, profile
+specs, and task-specific policies instead of hard-coding one hierarchy.
 
 These results do not show that humans or agents answer questions faster with
 the tool, nor do they measure live eBPF overhead. They also do not show
