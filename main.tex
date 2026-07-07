@@ -29,13 +29,16 @@ hierarchies suited for single-run debugging but unable to fold events
 across sessions by semantic work category. The consequence is that
 failures, safety violations, and wasted effort remain unattributable to
 the task categories that cause them.
+The root cause is structural: agent prompts are natural language, so
+two prompts with the same intent share no identifiers that a profiler
+could merge.
 We show that agent profiling reduces to two abstractions---uniform
 \emph{operations} and query-time \emph{operation stacks}---once intent
-recognition restores the deterministic-label precondition that
-flame-graph folding requires.
+recognition restores the deterministic labels that flame-graph folding
+requires.
 \toolname implements this model as a Rust profiler with pluggable
 intent-recognition backends.
-On 325 real agent sessions, semantic labels separate 90\% of
+On 325 real agent sessions, semantic labels separate over 90\% of
 system-effect weight that flat views merge. On four public datasets
 with hidden ground-truth labels (34{,}539 operations), operation-stack
 profiling reduces inspection work to 9.4\% versus flat summaries and
@@ -51,8 +54,8 @@ group fragmentation by 45\% versus fixed-session drilldown.
 %% ¶1: Background + Context
 AI agent systems produce heterogeneous execution traces spanning
 prompts, LLM calls, tool invocations, GUI actions, and system effects.
-As deployments scale to hundreds of sessions, both developers and
-automated analysis agents need cross-session aggregate views to
+As deployments scale to hundreds of sessions, developers need
+cross-session aggregate views to
 identify which task categories consume the most budget, where failures
 concentrate, and which workflows waste effort.
 
@@ -64,7 +67,8 @@ trace tool can attribute these executions to the review, debugging, or
 refactoring prompts that triggered them.
 
 %% ¶3: Root cause
-CPU profilers solved the equivalent aggregation problem for programs.
+The aggregation problem itself is not new---CPU profilers solved it for
+programs decades ago.
 Flame graphs~\cite{flamegraphs} fold millions of function-call samples
 into a single chart where width represents cost. The key enabler is
 \emph{deterministic} function names that merge identical call stacks.
@@ -77,17 +81,17 @@ Existing agent observability tools do not close this gap.
 LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse},
 Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize
 events into per-execution span trees, enabling single-run debugging but
-not cross-session aggregation. Datadog LLM Observability clusters user
-messages by
-topic,\footnote{\url{https://docs.datadoghq.com/llm_observability/}}
-and Laminar extracts structured signals from
-traces.\footnote{\url{https://docs.lmnr.ai/signals/introduction}} Both
+not cross-session aggregation. Datadog LLM Observability~\cite{datadog-llmobs} clusters user messages
+by topic, and Laminar~\cite{laminar-signals} extracts structured signals
+from traces. Both
 characterize \emph{input distributions} (``30\% of users ask code
 questions'') but not \emph{resource attribution} (``code-review tasks
-consume 40\% of the token budget'').
+consume 40\% of the token budget''), because clustering at the request
+level does not propagate labels to downstream system effects.
 
 %% ¶5: Key insight
-We observe that three interdependent elements close this gap:
+We observe that three interdependent elements restore cross-session
+aggregation for agent traces:
 a uniform \emph{operation} record replaces the missing call-stack
 sample, a query-time \emph{operation stack} (a field projection, not an
 execution artifact) replaces the call stack, and \emph{intent
@@ -264,7 +268,7 @@ it produces a cross-session aggregate that existing trace tools do not
 natively support. The same data supports both debugging and profiling
 views.
 
-A \emph{view} is a triple $(\varphi, \sigma, w)$. The predicate
+More precisely, a \emph{view} is a triple $(\varphi, \sigma, w)$. The predicate
 $\varphi$ selects which operations participate, the stack function
 $\sigma$ maps each operation to a frame sequence, and the weight
 function $w$ assigns a nonnegative measure. The view formalism supports arbitrary user-defined
@@ -456,7 +460,7 @@ sessions typically contain multiple intent phases.
 
 A concrete example illustrates the scale. \texttt{process:cargo; effect:test; status:ok}
 appears under 48 distinct prompt labels. The top label (\texttt{refactor})
-accounts for only 32.0\%; the remaining 68.0\% comes from
+accounts for only 32.0\%. The remaining 68.0\% comes from
 \texttt{review}, \texttt{research}, \texttt{test}, \texttt{explain}, and
 others. A flat summary or process audit merges all of these.
 
@@ -674,7 +678,7 @@ Syntactic validity does not imply semantic quality. TinyLlama 1.1B
 achieves high exact-stability (279/300 identical across repeats) but
 concentrates on a narrow label set. The 3B model produces a broader
 vocabulary (328 unique prompt labels) but includes noisy entries. A
-deterministic alias pipeline reduces unique labels from 1{,}546 to
+deterministic aliasing step reduces unique labels from 1{,}546 to
 1{,}364, raising top-20 support coverage
 from 93.7\% to 95.2\% without overwriting raw labels. This pipeline manages
 noise but does not establish semantic adequacy. The ground-truth and
@@ -708,7 +712,7 @@ visualization, session management, evaluations, and dashboards.
 AgentOps~\cite{agentops} argues for structured agent observability
 covering goals, plans, tools, and artifacts. These systems excel at
 single-execution debugging. \toolname complements them with cross-session
-aggregate profiling. Datadog LLM Observability and Laminar Signals take
+aggregate profiling. Datadog LLM Observability~\cite{datadog-llmobs} and Laminar Signals~\cite{laminar-signals} take
 steps toward semantic aggregation by clustering user messages or
 extracting structured events, but they characterize \emph{input
 distributions}, not \emph{resource attribution}.
@@ -726,9 +730,9 @@ budget, or generate repeated system effects across sessions.
 %% ===================================================================
 \section{Conclusion}
 
-Agent observability needs profiling, not only debugging. The obstacle is
-that natural-language prompts lack the deterministic identifiers that
-make flame-graph folding work. \toolname shows that two
+Agent observability needs profiling, not only debugging. The root cause
+is structural: natural-language prompts lack the deterministic
+identifiers that make flame-graph folding work. \toolname shows that two
 abstractions, operations and operation stacks, close this gap once
 intent recognition restores deterministic labels. Scoring profiler output against hidden trajectory labels confirms
 that semantic profiling separates information that flat views merge,
@@ -741,7 +745,7 @@ a first positive faster on 4/6 tasks (RQ2), while the profiler
 identifies which categories deserve attention. \toolname supports both
 by including or excluding session fields in the stack query. The
 profiler's structured output (JSON, pprof, folded stacks) is designed
-for automated consumption by analysis agents, though evaluation of
+for automated consumption by analysis agents, evaluation of
 agent-driven diagnosis is future work.
 
 The main limitation is single-project real-session data. Multi-project
