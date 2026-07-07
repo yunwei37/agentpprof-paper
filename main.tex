@@ -10,6 +10,10 @@
 \usepackage{xspace}
 \usepackage{url}
 \usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{arrows.meta,positioning}
 
 \newcommand{\toolname}{\textsc{AgentPProf}\xspace}
 \newcommand{\operation}{\texttt{operation}\xspace}
@@ -17,7 +21,7 @@
 
 \begin{document}
 
-\title{AgentPProf: Semantic Profiling for AI Agent Traces}
+\title{AgentPProf: Semantic Profiling for AI Agents}
 
 \begin{abstract}
 AI agents produce complex execution traces spanning prompts, LLM calls,
@@ -112,13 +116,9 @@ by 45\% versus fixed-session drilldown.
 This paper makes three contributions:
 
 \begin{enumerate}
-\item \textbf{Insight: agent profiling reduces to two abstractions
-  plus intent recognition.}
-  We show that agent traces lack the inherent call stack that makes CPU
-  flame graphs work. Uniform operation records, query-time stack
-  projections, and intent-derived deterministic labels are jointly
-  necessary to close this gap---any two without the third fall back to
-  either flat GROUP BY or fixed-hierarchy debugging
+\item \textbf{A two-abstraction profiling model for agent traces}
+  that defines a uniform operation record, a query-time operation stack,
+  and an intent-recognition step for restoring deterministic labels
   (\S\ref{sec:background}--\S\ref{sec:design}).
 \item \textbf{System: \toolname.}
   A profiler that realizes this model with pluggable intent recognition
@@ -298,13 +298,7 @@ View & $\varphi$ (select) & $w$ (width) & Question \\
 
 \begin{figure}[t]
 \centering
-% \includegraphics[width=\linewidth]{figures/fig-architecture.pdf}
-\fbox{\parbox{0.93\linewidth}{\centering\small
-[Architecture: Agent trace files (Codex/Claude JSONL, benchmark JSONL)
-$\to$ Parser / Importer $\to$ Intent Recognition (regex / LLM / clustering)
-or Mapping Rules $\to$ Operations with fields $\to$ Stack query
-$(\varphi, \sigma, w)$ $\to$ Folded stacks $\to$ Flame graph / pprof /
-JSON]}}
+\resizebox{\linewidth}{!}{\input{figures/fig-architecture.tex}}
 \caption{System architecture. Local agent histories enter through
 \texttt{agent-session} parsing. Public datasets enter as operation JSONL.
 Both paths produce operations. The stack query and output are identical.}
@@ -493,28 +487,19 @@ only 7/10 top prompt categories (Spearman $\rho = 0.623$).
 \texttt{network}-tagged prompts rank 8th by time (I/O wait) but 93rd by
 tokens.
 
-These quantitative results translate to concrete aggregate insights.
-The \texttt{tokens} view (Figure~\ref{fig:flamegraphs}) reveals that
-\texttt{review}-tagged prompts dominate the model budget, followed by
-\texttt{git}, \texttt{code}, \texttt{edit}, and \texttt{debug}. A timeline of 80{,}000 individual LLM calls cannot
-produce this distribution without external aggregation. The \texttt{files} view shows
-\texttt{debug}-tagged prompts across different sessions repeatedly
-accessing the same source files and identifies accesses outside the
-project root, supporting security auditing. The \texttt{network} view
-attributes domain contacts to prompt categories.
+Figure~\ref{fig:rq1-separation} visualizes the ablation. Adding
+prompt labels shifts most weight from mixed (red) to separated (blue),
+while session labels alone barely help.
 
 \begin{figure}[t]
 \centering
-% \includegraphics[width=\linewidth]{figures/flamegraph-tokens.png}
-\fbox{\parbox{0.93\linewidth}{\centering\small
-[Flame-graph screenshots: tokens view (top) and files view (bottom)
-showing budget distribution and file-access patterns across sessions]}}
-\caption{Real flame graphs from a development project.
-Top: \texttt{tokens} view (width = token count).
-Bottom: \texttt{files} view (width = file-operation count).}
-\Description{Two flame graphs showing token budget and file access
-distribution across semantic prompt categories.}
-\label{fig:flamegraphs}
+\includegraphics[width=\linewidth]{figures/fig-rq1-separation.pdf}
+\caption{RQ1: Semantic-axis ablation on 183{,}714 system observations.
+Adding prompt labels reduces mixed weight from 90.4\% to 36.7\%.
+Session labels alone barely help (84.4\%).}
+\Description{Stacked bar chart showing mixed vs separated weight
+under four projection choices.}
+\label{fig:rq1-separation}
 \end{figure}
 
 %% -------------------------------------------------------------------
@@ -566,7 +551,8 @@ recover all positives but require inspecting everything
 9.4\% of the work in the top five groups, achieves 39.0\% budget-30
 recall, and reduces groups to 157.5.
 
-The result is a Pareto tradeoff, not dominance. The comparison also
+Figure~\ref{fig:rq2-tradeoff} visualizes this tradeoff: op-stack
+query-aware sits in the low-work, moderate-recall region. The comparison also
 serves as evidence for the two-abstraction model (\S\ref{sec:design}). Fixed-session
 drilldown and dataset-native hierarchy are alternative abstractions that
 fix the hierarchy at session or dataset boundaries. Operation stacks
@@ -577,6 +563,18 @@ recall over fixed-session on 5/6 tasks, reduce median group count by
 45\%, and save 90\% of inspection work versus flat summaries.
 Fixed-session drilldown retains lower work-to-first-positive on 4/6
 tasks, confirming that profilers and debuggers are complementary.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/baseline-tradeoff.png}
+\caption{RQ2: Inspection work vs.\ budget-30 recall across policies.
+Op-stack query-aware (labeled) achieves low work (0.094) with moderate
+recall (0.39), while flat requires full inspection and fixed-session
+fragments into 285 groups. Oracle policies (large dots) are upper bounds.}
+\Description{Scatter plot showing inspection work versus budget recall
+for eight profiling policies.}
+\label{fig:rq2-tradeoff}
+\end{figure}
 
 Statistical validation supports these comparisons. Bootstrap
 (10{,}000 resamples) and label-permutation (2{,}000 trials) confirm
@@ -653,12 +651,22 @@ api-bank & 48 & 0.000 & --- \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:vmeasure} shows the results. On 7/9 datasets, V-measure
-exceeds 0.7, indicating strong agreement between mapping-derived and
-native labels. The two low-scoring datasets (toolbench, api-bank) have
-atypical action vocabularies that the held-out mapping rules do not
-cover. Mapping reduces unique stacks on 6/9 datasets with zero negative
-regressions.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig-rq3-vmeasure.pdf}
+\caption{RQ3: Leave-dataset-out V-measure between mapping-derived
+\texttt{phase} and native \texttt{action} labels. The dashed line
+marks 0.7. Seven of nine datasets exceed this threshold.}
+\Description{Bar chart showing V-measure for nine held-out datasets,
+with a dashed line at 0.7.}
+\label{fig:rq3-vmeasure}
+\end{figure}
+
+Table~\ref{tab:vmeasure} and Figure~\ref{fig:rq3-vmeasure} show the
+results. On 7/9 datasets, V-measure exceeds 0.7, indicating strong
+agreement between mapping-derived and native labels. The two
+low-scoring datasets (toolbench, api-bank) have atypical action
+vocabularies that the held-out mapping rules do not cover.
 
 A supervised boundary-derivation backend further validates the field
 pipeline. On OSWorld-Human held-out adjacent pairs, a learned boundary
