@@ -39,10 +39,12 @@ backends (regex rules, local LLM tagging, unsupervised clustering) and
 produces flame graphs, pprof profiles, and structured JSON consumable by
 both developers and analysis agents.
 On 325 real agent sessions, semantic labels separate 90\% of
-system-effect weight that flat views merge. On six localization tasks across four public datasets
-(34{,}539 operations), operation-stack profiling reduces inspection work
-by 90\% versus flat summaries and group fragmentation by 45\% versus
-fixed-session drilldown. On 7/9 held-out datasets, leave-dataset-out mapping achieves V-measure
+system-effect weight that flat views merge. On six localization tasks
+across four public datasets (34{,}539 operations), operation-stack
+profiling reduces group fragmentation by 45\% versus fixed-session
+drilldown (157.5 vs.\ 285 median groups) and inspection work to 9.4\% of
+operations in the top five groups versus 100\% for flat summaries.
+On 7/9 held-out datasets, mapping-derived labels achieve V-measure
 above 0.7.
 \end{abstract}
 
@@ -98,8 +100,8 @@ category remain unattributed.
 %% ¶5: Key insight
 We observe that agent profiling differs from CPU profiling in a
 structural way: there is no inherent call stack to fold. CPU profilers
-aggregate because the runtime produces deterministic function frames;
-agent traces have only free-form prompts and heterogeneous events.
+aggregate because the runtime produces deterministic function frames.
+Agent traces have only free-form prompts and heterogeneous events.
 The key insight is that two abstractions close this gap. A uniform
 \emph{operation} record replaces the missing call-stack sample, and a
 query-time \emph{operation stack} (a field projection, not an execution
@@ -107,24 +109,15 @@ artifact) replaces the call stack. Intent recognition restores the
 deterministic-label precondition that makes folding work. These three
 elements are interdependent: without intent recognition, the same
 operation stack produces stacks where 90\% of weight is mixed across
-intents; without query-time stacks, the hierarchy is locked at
+intents. Without query-time stacks, the hierarchy is locked at
 ingestion time and cannot shift between task-level budget and
-action-level diagnosis.
+action-level diagnosis (fixed-session stacks inflate unique stacks by
+$417\times$ in RQ1).
 
 %% ¶6: This paper + numbers
-This paper presents \toolname, a profiler that restores aggregate
-flame-graph analysis for agent traces. The profiler is built on two
-abstractions: an \emph{operation} (a uniform weighted record for any
-agent activity) and an \emph{operation stack} (a field projection chosen
-at query time). \toolname recovers the deterministic-label precondition through
-\emph{intent recognition}, which maps free-form prompts to stable labels
-using pluggable backends (regex rules, local LLM tagging, or
-unsupervised clustering). On 325 real sessions, semantic labels separate
-90\% of system-effect weight that flat views merge. On four public
-datasets,
-operation-stack profiling reduces inspection work by 90\% versus flat
-summaries and group fragmentation by 45\% versus fixed-session
-drilldown.
+This paper presents \toolname, a profiler built on these abstractions.
+We evaluate on 325 real Codex/Claude sessions and four public
+benchmark datasets with hidden ground-truth labels.
 
 %% ¶7: Contributions
 This paper makes three contributions:
@@ -135,7 +128,7 @@ This paper makes three contributions:
   We show that agent traces lack the inherent call stack that makes CPU
   flame graphs work. Uniform operation records, query-time stack
   projections, and intent-derived deterministic labels are jointly
-  necessary to close this gap; any two without the third fall back to
+  necessary to close this gap---any two without the third fall back to
   either flat GROUP BY or fixed-hierarchy debugging
   (\S\ref{sec:background}--\S\ref{sec:design}).
 \item \textbf{System: \toolname.}
@@ -168,7 +161,7 @@ key-value attributes. LangSmith and Langfuse group spans into
 Phoenix and OpenInference add GenAI-specific span types for LLM calls,
 tool invocations, retrieval steps, and agent reasoning.
 
-These models share a structural property, namely that the session or
+These models share a structural property: the session or
 span tree is the skeleton of the data. Every event belongs to exactly one span, and
 spans nest in a fixed parent-child hierarchy determined at execution
 time. This design is effective for debugging because a developer can
@@ -276,7 +269,7 @@ Agent: prompt:debug;call:llm;tool:bash  4200
 \end{small}
 
 \noindent Unlike CPU profiling, where the call stack is determined by
-execution, the operation stack is determined by the query. The same
+execution, the stack is determined by the query. The same
 operations can be folded as a flat task summary, a fixed-session tree, a
 semantic phase/action hierarchy, or a dataset-native trajectory.
 Changing the fields changes the aggregation without changing the data.
@@ -286,8 +279,9 @@ from \S\ref{sec:background}. Sessions and spans are optional operation
 fields,
 not structural skeleton nodes. Including \texttt{session} in the stack
 produces a per-session drilldown (equivalent to a trace tree). Excluding
-it produces a cross-session aggregate (which no existing trace tool
-provides). The same data supports both debugging and profiling views.
+it produces a cross-session aggregate that existing trace tools do not
+natively support. The same data supports both debugging and profiling
+views.
 
 A \emph{view} is a triple $(\varphi, \sigma, w)$. The predicate
 $\varphi$ selects which operations participate, the stack function
@@ -334,33 +328,29 @@ recognition to folded-stack flame graphs.}
 \label{sec:intent}
 
 Operations and stacks handle heterogeneity and flexible aggregation, but
-folding still requires deterministic frame labels, the precondition
+folding still requires deterministic frame labels---the precondition
 that agent prompts violate (\S\ref{sec:background}). \toolname solves
-this through \emph{intent recognition}, mapping free-form prompts to
+this by mapping free-form prompts to
 short, stable labels before stack construction.
 
-The design uses a pluggable tagger framework with three backends:
-
-\paragraph{Regex rules with agent-assisted iteration.}
-The production default. Rules have the form
-\texttt{KIND:TAG=REGEX}, where \texttt{KIND} is \texttt{prompt},
+The design uses a pluggable tagger framework with three backends.
+First, \emph{regex rules} are the production default. Rules have the
+form \texttt{KIND:TAG=REGEX}, where \texttt{KIND} is \texttt{prompt},
 \texttt{llm}, or \texttt{all}, \texttt{TAG} is a short lowercase label,
 and \texttt{REGEX} is a pattern. Rules are evaluated in order; the first
-match wins. The workflow is human--agent collaborative. The developer runs \toolname,
-observes the unmatched rate and sample prompts, adds rules, re-runs, and
-iterates until unmatched drops below 5\%. This typically takes 5--10
-rounds. The resulting rule set is deterministic, reproducible, and
-version-controllable.
-
-\paragraph{Local LLM tagger.}
-For exploration or complex multilingual prompts, a local model
-(e.g., a 3B-parameter GGUF via llama.cpp) generates a single-word label
-per prompt. Grammar-constrained decoding ensures output validity.
-Labels are cached, so re-runs with unchanged prompts incur zero LLM calls.
-
-\paragraph{Unsupervised clustering.}
-TF-IDF vectorization followed by K-Means discovers natural prompt groups
-without predefined rules, feeding rule authoring.
+match wins. The workflow is human--agent collaborative: the developer
+runs \toolname, observes the unmatched rate and sample prompts, adds
+rules, re-runs, and iterates until unmatched drops below 5\%. This
+typically takes 5--10 rounds. The resulting rule set is deterministic,
+reproducible, and version-controllable.
+Second, a \emph{local LLM tagger} handles exploration or complex
+multilingual prompts. A local model (e.g., a 3B-parameter GGUF via
+llama.cpp) generates a single-word label per prompt.
+Grammar-constrained decoding ensures output validity. Labels are
+cached, so re-runs with unchanged prompts incur zero LLM calls.
+Third, \emph{unsupervised clustering} via TF-IDF vectorization and
+K-Means discovers natural prompt groups without predefined rules,
+feeding rule authoring.
 
 The one-word label design is deliberate. Flame-graph frames must be
 short because long summaries make charts unreadable. Labels serve navigation
@@ -374,7 +364,7 @@ existing ones before stack construction. A \emph{profile spec} records
 the complete analysis configuration (data sources, mappings, predicates,
 stack fields, and outputs) for deterministic replay. This dual path
 explains why \toolname handles both real agent sessions (which need
-intent recognition) and public benchmark traces (which need mapping
+labeling) and public benchmark traces (which need mapping
 rules). Both paths produce operations with fields, and the stack query
 works identically on both.
 
@@ -399,7 +389,7 @@ Output formats include pprof protobuf (compatible with
 \texttt{flamegraph.pl}), standalone SVG flame graphs, and JSON summaries.
 All outputs are deterministic given the same input and profile spec.
 
-\toolname is the offline profiling component of the AgentSight
+\toolname is the offline profiling component of the broader AgentSight
 observability framework. AgentSight provides real-time eBPF-based
 capture of SSL traffic, process events, and file/network effects.
 \toolname aggregates the recorded traces into semantic profiles. The two
@@ -411,9 +401,6 @@ are complementary. AgentSight answers ``what happened during this run''
 \section{Evaluation}
 \label{sec:eval}
 
-We organize the evaluation around three research questions.
-
-\paragraph{Evaluation setup.}
 We use two classes of data. \emph{Real agent sessions}: 325 readable
 local sessions (198~Codex, 50~Claude, 77~Claude subagent) from a
 multi-month development project, containing 183{,}714 system
@@ -424,6 +411,9 @@ mapping rules. All public traces are real agent or human executions
 collected and labeled by their respective benchmark projects. Four
 oracle-rich families (AgentRewardBench, SATraj-OS, AgentNet,
 OSWorld-Human) provide hidden ground-truth labels for RQ2.
+We measure semantic separation (mixed-weight percentage), localization
+quality (AP, recall, work-to-first-positive), and label agreement
+(V-measure, boundary F1).
 
 \begin{table*}[t]
 \centering\small
@@ -450,7 +440,8 @@ AgentNet~\cite{agentnet} & Step correctness, redundancy & HF JSONL & Real deskto
 %% -------------------------------------------------------------------
 \subsection{RQ1: Does Semantic Profiling Separate What Flat Views Mix?}
 
-The strongest argument against semantic profiling is that traditional
+The strongest argument against semantic profiling (cross-session
+aggregation by intent-derived labels) is that traditional
 tools ``can already see the same information.'' RQ1 tests this claim
 directly by measuring how much system-effect weight falls into
 \emph{mixed-intent} buckets (those containing observations from
@@ -552,15 +543,12 @@ human-task boundary); we hide these labels, run the profiler, rank the
 resulting groups, and check whether the top groups contain the hidden
 positives.
 
-\paragraph{Benchmark setup.}
 The benchmark uses six tasks across four datasets (AgentRewardBench
 looping and side-effect, SATraj-OS unsafe operation, AgentNet incorrect
 and redundant step, and OSWorld-Human group start), totaling 34{,}539 operations and
 3{,}699 positives. Six views (flat, fixed-session, dataset-native,
 raw-action, operation-stack, label-drilldown) and four rankers (width,
 visible-risk, query-aware, oracle).
-
-\paragraph{Localization results.}
 
 \begin{table*}[t]
 \centering\small
@@ -608,18 +596,18 @@ Statistical validation supports these comparisons. Bootstrap
 stable AP deltas exceeding the 95\% prevalence/group-size null on all
 six tasks.
 
-\paragraph{Actionability: which configuration knobs explain the results?}
-
-Executable profile-spec patches modify stack fields, mapping rules, or
-rankers, then re-run over the same visible operations. Five of six
+Beyond localization, we test whether profiler output suggests concrete
+configuration improvements. Executable profile-spec patches modify
+stack fields, mapping rules, or rankers, then re-run over the same
+visible operations. Five of six
 patches improve AP, top-five lift, and first-positive work (median AP
 delta 0.038, median top-five lift delta 0.575). Three reusable patterns
 emerge: (1)~safety/side-effect tasks benefit from field and ranker
-changes; (2)~step-quality tasks benefit from operation-stack
+changes; (2)~step-quality tasks benefit from stack-based
 localization followed by fixed-session drilldown for examples;
 (3)~human-boundary tasks require boundary-derived fields. The rejected
 OSWorld-Human patch shows that visible rank features alone are
-insufficient for boundary objectives; folding held-out boundary-derived
+insufficient for boundary objectives. Folding held-out boundary-derived
 fields improves AP from 0.240 to 0.258 and reduces groups from 108 to
 74, with an explicit work tradeoff.
 
@@ -639,7 +627,6 @@ annotations. For free-form traces (real sessions), we evaluate the
 assessment of the LLM/regex tagger against free-form ground truth
 remains future work.
 
-\paragraph{Scale and syntax validity.}
 On 325 real sessions, the LLM tagger processes 118{,}021 tag requests
 (2{,}859 prompt rows, 114{,}837 LLM-call events), of which 82{,}886 hit
 the label cache and 35{,}136 require real llama.cpp calls to a local
@@ -648,7 +635,6 @@ fixed set of 300 redacted fragments, three model sizes (0.6B, 1.1B, 3B)
 all produce 900/900 syntactically valid outputs with p95 latencies of
 23, 18, and 31\,ms respectively.
 
-\paragraph{Ground-truth agreement on public datasets.}
 Public benchmark datasets provide native action labels that serve as
 ground truth for mapping quality. We run a leave-dataset-out evaluation.
 For each of 9 datasets, we train mapping rules on the other 8 and
@@ -707,8 +693,8 @@ Syntactic validity does not imply semantic quality. TinyLlama 1.1B
 achieves high exact-stability (279/300 identical across repeats) but
 concentrates on a narrow label set. The 3B model produces a broader
 vocabulary (328 unique prompt labels) but includes noisy entries. A
-display-governance pipeline reduces unique labels from 1{,}546 to
-1{,}364 through deterministic aliases, raising top-20 support coverage
+deterministic alias pipeline reduces unique labels from 1{,}546 to
+1{,}364, raising top-20 support coverage
 from 93.7\% to 95.2\% without overwriting raw labels. This pipeline manages
 noise but does not establish semantic adequacy. The ground-truth and
 cross-backend checks above provide that.
@@ -720,7 +706,6 @@ identical output with median runtime 1.6\,s per spec.
 %% ===================================================================
 \section{Related Work}
 
-\textbf{Profiling and flame graphs.}
 Flame graphs~\cite{flamegraphs} and pprof~\cite{pprof} establish the
 folded-stack lineage. Profiles are weighted samples with location
 hierarchies. Pprof supports sample labels and can visualize them as
@@ -729,13 +714,12 @@ generalizes trace ingestion with SQL-based analysis and derived
 events~\cite{perfetto}. These systems support query-time aggregation, so
 \toolname does not claim novelty for flexible aggregation alone. The
 difference is structural. Pprof's tagroot adds label-derived frames to
-an existing execution call stack; agent traces have no execution stack,
+an existing execution call stack. Agent traces have no execution stack,
 so the entire profiling structure must be constructed from semantic
 fields. The evaluation also differs: \toolname scores profiler output
 against hidden agent-trajectory labels, a methodology with no analogue
 in CPU profiling.
 
-\textbf{Agent tracing and LLM observability.}
 OpenTelemetry GenAI and OpenInference standardize GenAI
 spans~\cite{otel, openinference}. LangSmith~\cite{langsmith},
 Langfuse~\cite{langfuse}, and Phoenix~\cite{phoenix} provide trace
@@ -748,7 +732,6 @@ steps toward semantic aggregation by clustering user messages or
 extracting structured events, but they characterize \emph{input
 distributions}, not \emph{resource attribution}.
 
-\textbf{Agent failure diagnosis.}
 AgentRx~\cite{agentrx} releases annotated failure trajectories and uses
 constraint checking plus an LLM judge for root-cause localization.
 TELBench~\cite{telbench} builds span-localization benchmarks from
@@ -766,8 +749,8 @@ Agent observability needs profiling, not only debugging. The obstacle is
 that natural-language prompts lack the deterministic identifiers that
 make flame-graph folding work. \toolname shows that two
 abstractions, operations and operation stacks, close this gap once
-intent recognition restores deterministic labels. The evaluation
-confirms that semantic profiling separates information that flat views merge,
+intent recognition restores deterministic labels. Scoring profiler output against hidden trajectory labels confirms
+that semantic profiling separates information that flat views merge,
 localizes labeled problems with less work than both flat summaries and
 fixed-session drilldown, and produces labels that agree with
 ground-truth annotations across heterogeneous public datasets.
