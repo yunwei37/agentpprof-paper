@@ -38,7 +38,8 @@ The root cause is structural: agent prompts are natural language, so
 two prompts with the same intent share no identifiers that a profiler
 could merge.
 We show that agent profiling reduces to two abstractions---uniform
-\emph{operations} and query-time \emph{operation stacks}---once intent
+\emph{operations} spanning agent intent and system effects, and
+query-time \emph{operation stacks}---once intent
 recognition restores the deterministic labels that flame-graph folding
 requires.
 \toolname implements this model as a Rust profiler with pluggable
@@ -97,7 +98,9 @@ level does not propagate labels to downstream system effects.
 %% ¶5: Key insight
 We observe that three interdependent elements restore cross-session
 aggregation for agent traces:
-a uniform \emph{operation} record replaces the missing call-stack
+a uniform \emph{operation} record---covering agent-level events
+(prompts, LLM calls, tool invocations) and the system effects they
+trigger (processes, files, network)---replaces the missing call-stack
 sample, a query-time \emph{operation stack} (a field projection, not an
 execution artifact) replaces the call stack, and \emph{intent
 recognition} restores the deterministic labels that folding requires.
@@ -117,8 +120,9 @@ by 45\% versus fixed-session drilldown.
 This paper makes three contributions:
 
 \begin{enumerate}
-\item \textbf{A two-abstraction profiling model for agent traces}
-  that defines a uniform operation record, a query-time operation stack,
+\item \textbf{A two-abstraction profiling model} that defines a
+  uniform operation record spanning agent intent and system effects,
+  a query-time operation stack,
   and an intent-recognition step for restoring deterministic labels
   (\S\ref{sec:background}--\S\ref{sec:design}).
 \item \textbf{System: \toolname.}
@@ -139,16 +143,19 @@ This paper makes three contributions:
 
 \subsection{AI Agent Observability}
 
-AI agents orchestrate heterogeneous activities: prompts, LLM calls,
-tool invocations, GUI actions, file and network effects, plans, and
-subagent delegations. Observability tools help developers understand
-these activities. LangSmith~\cite{langsmith},
-Langfuse~\cite{langfuse}, Phoenix~\cite{phoenix}, and OpenTelemetry
-GenAI~\cite{otel} organize events into per-execution \emph{span trees},
-where each event belongs to exactly one span and spans nest in a fixed
-parent-child hierarchy. This design is effective for debugging: a
-developer can locate a failing span, inspect its attributes, and trace
-its parent chain to understand the execution context.
+AI agents orchestrate heterogeneous activities that span two layers:
+high-level intent (prompts, LLM calls, tool invocations) and low-level
+system effects (process spawns, file and network I/O). Existing
+observability tools cover these layers separately.
+LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse},
+Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize
+agent-level events into per-execution \emph{span trees}. System
+monitors show process and file activity without semantic attribution.
+The span-tree design is effective for debugging: a developer can locate
+a failing span, inspect its attributes, and trace its parent chain.
+AgentSight~\cite{agentsight} bridges the two layers by correlating
+eBPF-captured system events with intercepted LLM traffic, but the
+resulting traces still lack cross-session aggregation.
 
 \subsection{Profiling vs.\ Debugging}
 
@@ -223,10 +230,12 @@ intent-recognition mechanism (\S\ref{sec:intent}) that satisfies R3.
 \subsection{Operations (R1: Uniform Record Type)}
 \label{sec:ops}
 
-A profiler should not distinguish between prompts, tool calls, and
-process events at the object-model level. \toolname uses a single
-abstraction. An \operation is a weighted record with string fields and
-additive measures.
+Agent activities span two layers: high-level intent (prompts, LLM
+calls, tool invocations) and the system effects they trigger (process
+spawns, file reads, network requests). A profiler should not
+distinguish between these layers at the object-model level. \toolname
+uses a single abstraction: an \operation is a weighted record with
+string fields and additive measures.
 
 Each operation carries string fields (\texttt{project}, \texttt{agent},
 \texttt{session}, \texttt{prompt\_tag}, \texttt{kind}, \texttt{model},
