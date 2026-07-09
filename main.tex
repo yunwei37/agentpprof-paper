@@ -49,16 +49,16 @@ Agent behavior differs fundamentally from code execution.
 The responsible entities are semantic categories such as task intent
 and workflow phase, not code paths, and agent trajectories lack the
 stable identifiers and structural hierarchies that make
-aggregation possible.
-% 智能体行为与代码执行有根本不同。负责实体是语义类别（如任务意图和工作流阶段），而非代码路径，且智能体轨迹缺乏使聚合成为可能的稳定标识符和结构层次。
+attribution possible.
+% 智能体行为与代码执行有根本不同。负责实体是语义类别（如任务意图和工作流阶段），而非代码路径，且智能体轨迹缺乏使归因成为可能的稳定标识符和结构层次。
 %% S6: Model (→¶5)
 We propose a \emph{semantic operation stack model} that
 adapts profiling to agent trajectories.
 Uniform \emph{operations} represent all agent activities, and
-\emph{operation stacks} replace the runtime call stack with
-query-time field projections, enabling hierarchical attribution
-at multiple levels of granularity from the same data.
-% 我们提出将 profiling 适配到智能体轨迹的语义 operation stack 模型。统一的 operation 表示所有智能体活动，operation stack 用查询时字段投影替代运行时调用栈，使同一数据支持多粒度的分层归因。
+\emph{operation stacks} replace the runtime call stack,
+enabling hierarchical attribution at different levels of
+granularity from the same data.
+% 我们提出将 profiling 适配到智能体轨迹的语义 operation stack 模型。统一的 operation 表示所有智能体活动，operation stack 替代运行时调用栈，使同一数据支持不同粒度的分层归因。
 %% S7: System (→¶6)
 \sys implements this model as a profiler with pluggable algorithms
 for \emph{intent attribution} and \emph{stack construction},
@@ -122,23 +122,21 @@ Adapting profiling to agent trajectories is challenging
 % 将 profiling 适配到智能体轨迹具有挑战性（\S\ref{sec:background}）。
 In traditional software, the responsible entities are code paths.
 Profiling is straightforward because function names are
-stable and runtime call nesting provides the aggregation
+stable and runtime call nesting provides the attribution
 hierarchy (\S\ref{sec:background}).
-% 在传统软件中，负责实体是代码路径。Profiling 是直接的，因为函数名是稳定的，运行时调用嵌套提供聚合层次。
+% 在传统软件中，负责实体是代码路径。Profiling 是直接的，因为函数名是稳定的，运行时调用嵌套提供归因层次。
 Agent behavior differs fundamentally.
 To answer the questions above, the responsible entities need to be
 semantic categories such as task intent and tool operation, not code
 paths.
 % 智能体行为有根本不同。要回答上述问题，负责实体需要是语义类别（如任务意图和工具操作），而非代码路径。
-Agent trajectories also lack the two properties that make aggregation possible.
-% 智能体轨迹还缺乏使聚合成为可能的两个特性。
-Prompts are natural language, and two prompts expressing the same intent share no common string.
+Agent trajectories lack the two properties that make traditional profiling possible.
+% 智能体轨迹缺乏使传统 profiling 成为可能的两个特性。
+Prompts are natural language, so two prompts expressing the same intent share no common string.
 % 提示词是自然语言，表达相同意图的两个提示词没有共同字符串。
-Framework-level span names (\texttt{LLMCall}, \texttt{ToolInvoke}) describe mechanisms, not semantic intent.
-% 框架级 span 名称（\texttt{LLMCall}、\texttt{ToolInvoke}）描述机制，而非语义意图。
 Agent events have no runtime call-stack hierarchy because prompts,
 tool calls, and system effects are not nested by execution the way
-function calls produce stack frames.
+function calls produce stack frames: a sequence of prompts can be a task or multiple tasks, a task can be part of a bigger task.
 % 智能体事件没有运行时调用栈层次，因为提示词、工具调用和系统副作用不像函数调用那样通过执行嵌套产生栈帧。
 
 \begin{figure*}[t]
@@ -158,11 +156,10 @@ file-access distributions across trajectories and prompt categories.}
 \end{figure*}
 
 %% ¶5: Model
-Despite these differences, the fundamental profiling
-methodology (define units, assign stable tags, construct
-aggregation hierarchies, fold identical stacks) transfers to agent
-trajectories.
-% 尽管有这些差异，基本的 profiling 方法论（定义单元、赋予稳定标签、构造聚合层次、折叠相同栈）可以迁移到智能体轨迹。
+Despite these differences, the fundamental profiling methodology
+transfers to agent trajectories: project resources onto responsible
+entities, assign stable tags, and attribute hierarchically.
+% 尽管有这些差异，基本的 profiling 方法论可以迁移到智能体轨迹：将资源投影到负责实体、赋予稳定标签、分层归因。
 We propose a \emph{semantic operation stack model} with two
 components.
 % 我们提出一个包含两个组件的语义 operation stack 模型。
@@ -171,18 +168,10 @@ additive measures that represent all agent activities (prompts, LLM
 calls, tool invocations, and system effects) without type-specific
 objects.
 % Operation 是带有字符串字段和可加度量的统一记录，表示所有智能体活动（提示词、LLM 调用、工具调用和系统副作用），无需特定类型对象。
-\emph{Operation stacks} are ordered lists of fields chosen at query
-time.
-% Operation stack 是在查询时选择的字段有序列表。
-Each operation is projected to a frame sequence, and operations
-with identical sequences merge, producing the folded-stack
-representation that flame graphs visualize
-(Figure~\ref{fig:flamegraph}).
-% 每个 operation 被投影到帧序列，具有相同序列的 operation 合并，产生火焰图可视化的折叠栈表示。
-Different field selections answer different questions (by task
-category, by execution phase, by session, or by action type) from
-the same data.
-% 不同的字段选择从同一数据回答不同问题（按任务类别、按执行阶段、按会话或按操作类型）。
+\emph{Operation stacks} provide hierarchical attribution, replacing the runtime call stack.
+% Operation stack 提供分层归因，替代运行时调用栈。
+Choosing different fields changes the attribution granularity: the same operations can be attributed by task category, by execution phase, by session, or by action type (Figure~\ref{fig:flamegraph}).
+% 选择不同字段改变归因粒度：同一组 operation 可按任务类别、执行阶段、会话或操作类型归因（Figure~\ref{fig:flamegraph}）。
 
 %% ¶6: This paper + system + results
 We implement this model in \sys, an offline profiler that compiles
@@ -196,10 +185,8 @@ Two pluggable algorithm frameworks enrich the model.
 This gives agents the stable tags that traditional profiling gets
 for free from function names.
 % 这为智能体提供了传统 profiling 从函数名免费获得的稳定标签。
-\emph{Stack construction} builds aggregation hierarchies from
-available fields, either from a user-specified field list or by
-automatically detecting boundaries between distinct work phases.
-% 栈构造从可用字段构建聚合层次，可通过用户指定的字段列表或自动检测不同工作阶段之间的边界。
+\emph{Stack construction} builds the attribution hierarchy, either from a user-specified field list or by automatically detecting boundaries between distinct work phases.
+% 栈构造构建归因层次，可通过用户指定的字段列表或自动检测不同工作阶段之间的边界。
 On 325 real Codex and Claude trajectories (183{,}714 system
 observations), semantic profiling separates over 90\% of
 system-effect cost that per-session views cannot attribute to task
@@ -304,23 +291,14 @@ In traditional software, profiling attributes cost to code paths, but
 in agent trajectories the relevant entities are semantic categories
 such as task intent and workflow phase.
 % 在传统软件中，profiling 将开销归因到代码路径，但在智能体轨迹中，相关实体是语义类别（如任务意图和工作流阶段）。
-Existing tools do not capture these categories: sessions are
-boundaries, not categories (a single session may mix review,
-debugging, and refactoring phases), and span
-names~\cite{otel,openinference} describe mechanisms
-(\texttt{LLMCall}, \texttt{ToolInvoke}), not user intent
-(\texttt{review}, \texttt{debug}).
-% 现有工具不捕获这些类别：会话是边界而非类别（单个会话可能混合 review、debugging 和 refactoring 阶段），span 名称~\cite{otel,openinference}描述机制（\texttt{LLMCall}、\texttt{ToolInvoke}），而非用户意图（\texttt{review}、\texttt{debug}）。
-The second challenge is that agent trajectories lack the two
-properties that make traditional aggregation possible:
-prompts are natural language without stable identifiers, and
-agent events have no runtime call-stack hierarchy.
-% 第二个挑战是智能体轨迹缺乏使传统聚合成为可能的两个特性：提示词是没有稳定标识符的自然语言，智能体事件没有运行时调用栈层次。
-As a result, a common system effect like running a test suite may
-appear thousands of times across trajectories, but without semantic
-tags no tool can attribute these executions to the task categories
-that triggered them.
-% 因此，像运行测试套件这样的常见系统副作用可能在轨迹中出现数千次，但没有语义标签，任何工具都无法将这些执行归因到触发它们的任务类别。
+Existing tools~\cite{otel,openinference} do not capture these categories because prompts are natural language: two prompts and tool invocations expressing the same intent may be different, so the profiler cannot aggregate them the way it aggregates identical function names.
+% 现有工具无法捕获这些类别，因为提示词是自然语言：表达相同意图的两个提示词可能措辞不同，因此分析器无法像聚合相同函数名那样聚合它们。
+The second challenge is that agent trajectories have no runtime hierarchy for attribution.
+% 第二个挑战是智能体轨迹没有运行时归因层次。
+In CPU profiling, the call stack determines attribution at every level: \texttt{malloc}'s cost belongs to \texttt{parse}, to \texttt{process}, and to \texttt{main} simultaneously.
+% 在 CPU 分析中，调用栈决定了每个层级的归因：\texttt{malloc} 的开销同时属于 \texttt{parse}、\texttt{process} 和 \texttt{main}。
+A sequence of prompts may constitute one task or several, and a task may be part of a larger workflow, but no runtime mechanism marks these boundaries or determines at which granularity to attribute cost.
+% 一串提示词可能构成一个任务也可能是多个任务，一个任务可能是更大工作流的一部分，但没有运行时机制标记这些边界或决定在哪个粒度归因开销。
 We quantify this in RQ1~(\S\ref{sec:eval}).
 % 我们在 RQ1~(\S\ref{sec:eval}) 中量化了这一点。
 
@@ -346,10 +324,10 @@ In traditional profiling, function names are stable identifiers that enable fold
 Agent prompts are natural language, so the profiler must derive short, stable, repeatable tags before folding.
 % 智能体提示词是自然语言，因此分析器必须在折叠前派生短小、稳定、可重复的标签。
 \item[R3: Hierarchical attribution.]
-In traditional profiling, the runtime call stack provides the aggregation hierarchy: function calls nest, and folding identical stacks produces the tree that profiles visualize.
-% 在传统 profiling 中，运行时调用栈提供聚合层次：函数调用嵌套，折叠相同的栈产生 profile 可视化的树。
-Agent events are not nested by execution, so the profiler must construct aggregation hierarchies from the data.
-% 智能体事件没有执行嵌套，因此分析器必须从数据中构造聚合层次。
+In traditional profiling, the runtime call stack provides the attribution hierarchy: function calls nest, and folding identical stacks produces the tree that profiles visualize.
+% 在传统 profiling 中，运行时调用栈提供归因层次：函数调用嵌套，折叠相同的栈产生 profile 可视化的树。
+Agent events are not nested by execution, so the profiler must construct attribution hierarchies from the data.
+% 智能体事件没有执行嵌套，因此分析器必须从数据中构造归因层次。
 \end{description}
 
 %% ===================================================================
@@ -393,23 +371,25 @@ and a process event are all operations with the same schema, distinguished only 
 
 %% ¶2: Operation Stacks
 \label{sec:stacks}
-An \opstack is an ordered list of fields chosen at query time.
-% 一个 operation stack 是在查询时选择的字段有序列表。
-Given a stack specification $[f_1, f_2, \ldots, f_k]$, each
-operation $o$ is projected to a frame sequence
-$\langle o.f_1, o.f_2, \ldots, o.f_k \rangle$.
-% 给定栈规范 $[f_1, f_2, \ldots, f_k]$，每个 operation $o$ 被投影到帧序列 $\langle o.f_1, o.f_2, \ldots, o.f_k \rangle$。
-Operations with identical frame sequences are merged and their
-weights are summed.
-% 具有相同帧序列的 operation 被合并，权重求和。
-Unlike CPU profiling, where the call stack is determined by
-execution, the stack is determined by the query.
-% 与 CPU 分析中调用栈由执行决定不同，这里的栈由查询决定。
-The same operations can be folded as a flat task summary, a
+An \opstack provides hierarchical attribution for agent trajectories, replacing the runtime call stack.
+% 一个 operation stack 为智能体轨迹提供分层归因，替代运行时调用栈。
+In CPU profiling, the call stack determines which code paths
+share responsibility for a resource cost.
+% 在 CPU 分析中，调用栈决定哪些代码路径共同承担资源开销。
+An operation stack serves the same role: an ordered list of fields
+$[f_1, f_2, \ldots, f_k]$ projects each operation $o$ to a frame
+sequence $\langle o.f_1, o.f_2, \ldots, o.f_k \rangle$, and
+operations with identical sequences are merged, summing their
+weights.
+% Operation stack 承担相同角色：有序字段列表 $[f_1, f_2, \ldots, f_k]$ 将每个 operation $o$ 投影到帧序列 $\langle o.f_1, o.f_2, \ldots, o.f_k \rangle$，具有相同序列的 operation 被合并，权重求和。
+Unlike a call stack, the fields are chosen at query time, not
+determined by execution.
+% 与调用栈不同，字段在查询时选择，而非由执行决定。
+The same operations can therefore be attributed as a flat task summary, a
 per-session tree, a semantic phase/action hierarchy, or a
 trajectory using the dataset's own annotations, and changing the fields changes the
-aggregation without changing the data.
-% 同一组 operation 可以折叠为扁平任务摘要、固定会话树、语义阶段/操作层次或使用数据集自身标签的轨迹，改变字段即改变聚合方式而无需改变数据。
+attribution without changing the data.
+% 因此同一组 operation 可归因为扁平任务摘要、固定会话树、语义阶段/操作层次或使用数据集自身标签的轨迹，改变字段即改变归因方式而无需改变数据。
 Sessions and spans are optional operation fields, not fixed hierarchy levels, so the same data supports both debugging views
 (include \texttt{session}) and aggregate profiling views (exclude
 it).
@@ -487,9 +467,9 @@ complete analysis setup for deterministic replay.
 
 \paragraph{Stack construction.}
 % 栈构造。
-Stack construction builds aggregation hierarchies from
+Stack construction builds attribution hierarchies from
 available fields.
-% 栈构造从可用字段构建聚合层次。
+% 栈构造从可用字段构建归因层次。
 When users supply an ordered list of fields, the projection is direct.
 % 当用户提供有序字段列表时，投影是直接的。
 When no field list is supplied, \sys can induce operation stacks
@@ -844,8 +824,8 @@ across trajectories.
 
 Agent observability needs profiling, not only debugging.
 % 智能体可观测性需要性能分析，不仅仅是调试。
-\sys shows that the semantic operation stack model, combined with pluggable intent attribution and stack construction algorithms, closes the aggregation gap for agent trajectories.
-% \sys 表明，语义 operation stack 模型结合可插拔的意图归因和栈构造算法，填补了智能体轨迹的聚合缺口。
+\sys shows that the semantic operation stack model, with pluggable intent attribution and stack construction, brings hierarchical attribution to agent trajectories.
+% \sys 表明，语义 operation stack 模型结合可插拔的意图归因和栈构造，为智能体轨迹带来了分层归因能力。
 Scoring profiler output against hidden trajectory annotations confirms that semantic profiling separates over 90\% of system-effect cost that per-session views leave mixed, localizes annotated problems at 9.4\% inspection work versus flat summaries, and produces tags that agree with ground truth on 7/9 held-out datasets.
 % 将分析器输出与隐藏轨迹标签评分确认，语义分析分离了超过 90\% 的混合系统副作用权重，以扁平摘要 9.4\% 的检查工作量定位标注问题，并在 7/9 保留数据集上产生与真实标签一致的标签。
 Per-session grouping remains faster to a first positive on 4/6 tasks, confirming that profilers and debuggers are complementary, and \sys supports both by including or excluding session fields in the stack query.
