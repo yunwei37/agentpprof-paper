@@ -480,11 +480,9 @@ available fields.
 % 栈构造从可用字段构建归因层次。
 When users supply an ordered list of fields, the projection is direct.
 % 当用户提供有序字段列表时，投影是直接的。
-When no field list is supplied, \sys can induce operation stacks
-automatically by scoring adjacent operations for topic changes,
-field changes, and group consistency, then cutting at boundaries
-where the evidence is strongest.
-% 当不提供有序字段列表时，\sys 可以通过对相邻 operation 评分主题变化、字段变化和分组一致性来自动诱导 operation stack，然后在证据最强的边界处切分。
+When no field list is supplied, \sys induces operation stacks automatically.
+It scores each pair of adjacent operations for shifts in prompt content (via TF-IDF cosine similarity), changes in structured field values, and consistency of the resulting groups, then places boundaries where the combined score is highest.
+% 当不提供有序字段列表时，\sys 自动诱导 operation stack。它对每对相邻 operation 评分提示词内容变化（通过 TF-IDF 余弦相似度）、结构化字段值变化和结果分组的一致性，然后在综合得分最高处放置边界。
 The induced stacks have variable depth, and a configurable depth cap
 controls the granularity.
 % 诱导的栈具有可变深度，可配置的深度上限控制粒度。
@@ -502,8 +500,6 @@ exploration (\S\ref{sec:eval}).
 % \sys 是一个离线、事后分析器，实现为 Rust CLI（约 9.8K 行代码，Figure~\ref{fig:architecture}）。
 It reads Codex and Claude Code local JSONL history files and AgentSight~\cite{agentsight} recordings for system effects, and reconstructs prompts, LLM calls, tool invocations, and their triggered file and network effects.
 % 它读取 Codex 和 Claude Code 本地 JSONL 历史文件以及 AgentSight~\cite{agentsight} 的系统副作用记录，重建提示词、LLM 调用、工具调用及其触发的文件和网络副作用。
-The algorithms are language-independent and can run as a server (e.g., a Python backend or LLM inference service).
-% 算法与语言无关，可作为服务运行（如 Python 后端或 LLM 推理服务）。
 Output formats include pprof protobuf (compatible with \texttt{go tool pprof -http}), folded-stack text (compatible with \texttt{flamegraph.pl}), standalone SVG flame graphs, and JSON summaries.
 % 输出格式包括 pprof protobuf（兼容 \texttt{go tool pprof -http}）、折叠栈文本（兼容 \texttt{flamegraph.pl}）、独立 SVG 火焰图和 JSON 摘要。
 
@@ -620,8 +616,14 @@ We use public benchmark datasets that provide ground-truth quality annotations (
 
 The benchmark uses six tasks across four datasets (AgentRewardBench looping and side-effect, SATraj-OS unsafe operation, AgentNet incorrect and redundant step, and OSWorld-Human group start), totaling 34{,}539 operations and 3{,}699 positives.
 % 基准使用四个数据集的六个任务（AgentRewardBench 循环和副作用、SATraj-OS 不安全操作、AgentNet 不正确和冗余步骤、OSWorld-Human 组起始），共计 34,539 个 operation 和 3,699 个正例。
-We compare seven grouping strategies (flat summary, per-session grouping, native hierarchy, raw-action grouping, operation-stack profiling, operation-stack with oracle fields, and a full oracle that uses the hidden annotations) and rank groups by the fraction of hidden positives they contain.
-% 我们比较七种分组策略（扁平摘要、固定会话分组、原生层次、原始操作分组、operation stack 分析、operation stack 加 oracle 字段，以及使用隐藏标注的完整 oracle），按组包含的隐藏正例比例对组排序。
+We compare seven grouping strategies and rank groups by the fraction of hidden positives they contain.
+Flat summary places all operations in one group.
+Per-session grouping groups by session boundary.
+Native hierarchy uses the dataset's own structure (e.g., episode and step levels).
+Raw-action grouping groups by the unprocessed action-type field.
+Operation-stack profiling applies the model from \S\ref{sec:design}.
+Two oracle baselines add the hidden annotation fields as upper bounds.
+% 我们比较七种分组策略，按组包含的隐藏正例比例排序。扁平摘要将所有 operation 放入一个组。固定会话分组按会话边界分组。原生层次使用数据集自身结构（如 episode 和 step 层级）。原始操作分组按未处理的操作类型字段分组。Operation stack 分析应用 \S\ref{sec:design} 的模型。两个 oracle 基线将隐藏标注字段作为上界加入。
 
 \begin{table*}[t]
 \centering\small
@@ -678,10 +680,11 @@ Statistical validation supports these comparisons.
 Bootstrap (10{,}000 resamples) and tag-permutation (2{,}000 trials) confirm that the AP differences are stable and exceed the 95\% confidence threshold on all six tasks.
 % Bootstrap（10,000 次重采样）和标签置换（2,000 次试验）确认 AP 差异在所有六个任务上是稳定的，且超过 95\% 置信阈值。
 
-Both stack depth and profiling configuration are effective tuning levers.
-% 栈深度和 profiling 配置都是有效的调节手段。
-Sweeping the depth cap from 1 to 5 shows that AP peaks at depth 3 (median 0.287) while different tasks achieve their best at different depths (2--5), and modifying stack fields, mapping rules, or ranking criteria improves AP on 5/6 tasks (median improvement 0.038).
-% 将深度上限从 1 扫到 5 显示 AP 在深度 3 达到峰值（中位 0.287），不同任务在不同深度（2--5）达到最佳，修改栈字段、映射规则或排名标准在 5/6 任务上改进 AP（中位改进 0.038）。
+Stack depth affects localization quality.
+Sweeping the induced-stack depth cap from 1 to 5 shows that AP peaks at depth 3 (median 0.287), while different tasks achieve their best at different depths (2--5), so depth should be tuned per objective.
+% 栈深度影响定位质量。将诱导栈深度上限从 1 扫到 5 显示 AP 在深度 3 达到峰值（中位 0.287），不同任务在不同深度（2--5）达到最佳，因此深度应按目标调整。
+Modifying stack fields, mapping rules, or ranking criteria and re-running on the same operations improves AP on 5/6 tasks (median improvement 0.038), confirming that the profiler exposes useful tuning axes.
+% 修改栈字段、映射规则或排名标准并在相同 operation 上重新运行，在 5/6 任务上改进 AP（中位改进 0.038），确认分析器暴露了有用的调节轴。
 
 %% -------------------------------------------------------------------
 \subsection{RQ3: How Accurate Are the Tags?}
