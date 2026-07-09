@@ -15,40 +15,33 @@
 \pgfplotsset{compat=1.18}
 \usetikzlibrary{arrows.meta,positioning}
 
-\newcommand{\toolname}{\textsc{AgentPProf}\xspace}
+\newcommand{\sys}{\textsc{AgentProf}\xspace}
 \newcommand{\operation}{\texttt{operation}\xspace}
 \newcommand{\opstack}{\texttt{operation stack}\xspace}
 
 \begin{document}
 
-\title{AgentPProf: Semantic Profiling for AI Agents}
+\title{AgentProf: Semantic Profiling for AI Agents}
 
 \begin{abstract}
-AI agents orchestrate heterogeneous activities (prompts, LLM calls,
-tool invocations, GUI actions, and system effects). As deployments grow
-to hundreds of sessions, developers need aggregate
-views to identify which task categories consume the most budget, where
-failures concentrate, and which workflows waste effort.
-Yet, existing observability tools organize events into fixed session/span
-hierarchies suited for single-run debugging but unable to fold events
-across sessions by semantic work category. The consequence is that
-failures, safety violations, and wasted effort remain unattributable to
-the task categories that cause them.
-The root cause is structural because agent prompts are natural language, so
-two prompts with the same intent share no identifiers that a profiler
-could merge.
-We show that agent profiling reduces to two abstractions (uniform
-\emph{operations} spanning agent intent and system effects, and
-query-time \emph{operation stacks}) once intent
-recognition restores the deterministic labels that flame-graph folding
-requires.
-\toolname implements this model as a Rust profiler with pluggable
-intent-recognition backends.
-On 325 real agent sessions, semantic labels separate over 90\% of
-system-effect weight that flat views merge. On four public datasets
-with hidden ground-truth labels (34{,}539 operations), operation-stack
-profiling reduces inspection work to 9.4\% versus flat summaries and
-group fragmentation by 45\% versus fixed-session drilldown.
+AI agents orchestrate heterogeneous activities (prompts, LLM calls, tool invocations, GUI actions, and system effects).
+% AI 智能体编排异构活动（提示词、LLM 调用、工具调用、GUI 操作和系统副作用）。
+As deployments grow to hundreds of sessions, developers need aggregate views to identify which task categories consume the most budget, where failures concentrate, and which workflows waste effort.
+% 当部署规模增长到数百个会话时，开发者需要聚合视图来识别哪些任务类别消耗最多预算、故障集中在哪里、以及哪些工作流浪费了算力。
+Yet, existing observability tools organize events into fixed session/span hierarchies suited for single-run debugging but unable to fold events across sessions by semantic work category.
+% 然而，现有可观测性工具将事件组织为固定的会话/span 层次结构，适用于单次运行调试，但无法按语义工作类别跨会话折叠事件。
+The consequence is that failures, safety violations, and wasted effort remain unattributable to the task categories that cause them.
+% 其结果是，故障、安全违规和浪费的算力仍然无法归因到导致它们的任务类别。
+The root cause is structural because agent prompts are natural language, so two prompts with the same intent share no identifiers that a profiler could merge.
+% 根本原因是结构性的，因为智能体提示词是自然语言，两个表达相同意图的提示词没有可供分析器合并的共同标识符。
+We show that agent profiling reduces to two abstractions (uniform \emph{operations} spanning agent intent and system effects, and query-time \emph{operation stacks}) once intent recognition restores the deterministic labels that flame-graph folding requires.
+% 我们表明，一旦意图识别恢复了火焰图折叠所需的确定性标签，智能体性能分析可归结为两个抽象（跨越智能体意图和系统副作用的统一 operation，以及查询时 operation stack）。
+\sys implements this model as a profiler with pluggable intent-recognition backends.
+% \sys 将此模型实现为一个具有可插拔意图识别后端的分析器。
+On 325 real agent sessions, semantic labels separate over 90\% of system-effect weight that flat views merge.
+% 在 325 个真实智能体会话上，语义标签分离了扁平视图所混合的超过 90\% 的系统副作用权重。
+On four public datasets with hidden ground-truth labels (34{,}539 operations), operation-stack profiling reduces inspection work to 9.4\% versus flat summaries and group fragmentation by 45\% versus fixed-session drilldown.
+% 在四个具有隐藏真实标签的公开数据集（34,539 个操作）上，operation stack 分析将检查工作量降至扁平摘要的 9.4\%，组碎片化比固定会话下钻减少 45\%。
 \end{abstract}
 
 \maketitle
@@ -58,82 +51,70 @@ group fragmentation by 45\% versus fixed-session drilldown.
 \label{sec:intro}
 
 %% ¶1: Background + Context
-AI agents orchestrate heterogeneous activities, including prompts, LLM
-calls, tool invocations, GUI actions, and system effects.
-As deployments scale to hundreds of sessions, developers need
-cross-session aggregate views to
-identify which task categories consume the most budget, where failures
-concentrate, and which workflows waste effort.
+AI agents orchestrate heterogeneous activities, including prompts, LLM calls, tool invocations, GUI actions, and system effects.
+% AI 智能体编排异构活动，包括提示词、LLM 调用、工具调用、GUI 操作和系统副作用。
+As deployments scale to hundreds of sessions, developers need cross-session aggregate views to identify which task categories consume the most budget, where failures concentrate, and which workflows waste effort.
+% 当部署规模扩展到数百个会话时，开发者需要跨会话聚合视图来识别哪些任务类别消耗最多预算、故障集中在哪里、以及哪些工作流浪费了算力。
 
 %% ¶2: Problem + example
-However, no existing tool provides cross-session resource attribution
-by semantic category. In a real development project,
-\texttt{cargo test} appears 2{,}903 times across 325 sessions, yet no
-observability tool can attribute these executions to the review,
-debugging, or refactoring prompts that triggered them. The same gap
-affects failure and safety analysis because unsafe operations may cluster in
-specific task phases, but no tool surfaces this without manual
-inspection of individual sessions.
+However, no existing tool provides cross-session resource attribution by semantic category.
+% 然而，没有现有工具能按语义类别提供跨会话资源归因。
+In a real development project, \texttt{cargo test} appears 2{,}903 times across 325 sessions, yet no observability tool can attribute these executions to the review, debugging, or refactoring prompts that triggered them.
+% 在一个真实开发项目中，\texttt{cargo test} 在 325 个会话中出现了 2,903 次，但没有可观测性工具能将这些执行归因到触发它们的 review、debugging 或 refactoring 提示词。
+The same gap affects failure and safety analysis because unsafe operations may cluster in specific task phases, but no tool surfaces this without manual inspection of individual sessions.
+% 同样的缺口也影响故障和安全分析，因为不安全操作可能集中在特定任务阶段，但没有工具能在不逐个检查会话的情况下揭示这一点。
 
 %% ¶3: Root cause
-The aggregation problem itself is not new. CPU profilers solved it for
-programs decades ago.
-Flame graphs~\cite{flamegraphs} fold millions of function-call samples
-into a single chart where width represents cost. The key enabler is
-\emph{deterministic} function names that merge identical call stacks.
-Agent traces break this precondition because prompts are natural
-language, and two prompts expressing the same intent share no
-characters (\S\ref{sec:background}).
+The aggregation problem itself is not new.
+% 聚合问题本身并不新。
+CPU profilers solved it for programs decades ago.
+% CPU 分析器几十年前就为程序解决了这个问题。
+Flame graphs~\cite{flamegraphs} fold millions of function-call samples into a single chart where width represents cost.
+% 火焰图~\cite{flamegraphs}将数百万函数调用样本折叠成一张图，宽度代表开销。
+The key enabler is \emph{deterministic} function names that merge identical call stacks.
+% 关键条件是确定性的函数名，使相同调用栈能够合并。
+Agent traces break this precondition because prompts are natural language, and two prompts expressing the same intent share no characters (\S\ref{sec:background}).
+% 智能体 trace 打破了这一前提，因为提示词是自然语言，表达相同意图的两个提示词没有共同字符（\S\ref{sec:background}）。
 
 %% ¶4: Existing solutions fail
 Existing agent observability tools do not solve the aggregation problem.
-LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse},
-Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize
-events into per-execution span trees, enabling single-run debugging but
-not cross-session aggregation. Datadog LLM Observability~\cite{datadog-llmobs} clusters user messages
-by topic, and Laminar~\cite{laminar-signals} extracts structured signals
-from traces. Both
-characterize \emph{input distributions} (``30\% of users ask code
-questions'') but not \emph{resource attribution} (``code-review tasks
-consume 40\% of the token budget''), because clustering at the request
-level does not propagate labels to downstream system effects.
+% 现有智能体可观测性工具没有解决聚合问题。
+LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse}, Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize events into per-execution span trees, enabling single-run debugging but not cross-session aggregation.
+% LangSmith~\cite{langsmith}、Langfuse~\cite{langfuse}、Phoenix~\cite{phoenix} 和 OpenTelemetry GenAI~\cite{otel} 将事件组织为按执行划分的 span 树，支持单次运行调试但不支持跨会话聚合。
+Datadog LLM Observability~\cite{datadog-llmobs} clusters user messages by topic, and Laminar~\cite{laminar-signals} extracts structured signals from traces.
+% Datadog LLM Observability~\cite{datadog-llmobs} 按主题聚类用户消息，Laminar~\cite{laminar-signals} 从 trace 中提取结构化信号。
+Both characterize \emph{input distributions} (``30\% of users ask code questions'') but not \emph{resource attribution} (``code-review tasks consume 40\% of the token budget''), because clustering at the request level does not propagate labels to downstream system effects.
+% 两者都刻画输入分布（"30\% 的用户提问代码问题"）而非资源归因（"code-review 任务消耗了 40\% 的 token 预算"），因为请求级别的聚类不会将标签传播到下游系统副作用。
 
 %% ¶5: Key insight
-We observe that three interdependent elements restore cross-session
-aggregation for agent traces. A uniform \emph{operation} record that
-spans both agent intent and system effects replaces the missing
-call-stack sample. A query-time \emph{operation stack}
-replaces the call stack with a field projection chosen at query time.
-And \emph{intent recognition} restores the deterministic labels that
-flame-graph folding requires.
+We observe that three interdependent elements restore cross-session aggregation for agent traces.
+% 我们观察到三个相互依赖的要素可以恢复智能体 trace 的跨会话聚合。
+A uniform \emph{operation} record that spans both agent intent and system effects replaces the missing call-stack sample.
+% 一个跨越智能体意图和系统副作用的统一 operation 记录替代了缺失的调用栈样本。
+A query-time \emph{operation stack} replaces the call stack with a field projection chosen at query time.
+% 查询时 operation stack 用查询时选择的字段投影替代调用栈。
+And \emph{intent recognition} restores the deterministic labels that flame-graph folding requires.
+% 而意图识别恢复了火焰图折叠所需的确定性标签。
 
 %% ¶6: This paper + numbers
-This paper presents \toolname, a Rust profiler built on this model.
-On 325 real Codex/Claude sessions, semantic labels separate over 90\% of
-system-effect weight that flat views merge. On four public datasets
-with hidden ground-truth labels, operation-stack profiling reduces
-inspection work to 9.4\% versus flat summaries and group fragmentation
-by 45\% versus fixed-session drilldown.
+This paper presents \sys, a Rust profiler built on this model.
+% 本文提出 \sys，一个基于此模型构建的 Rust 分析器。
+On 325 real Codex/Claude sessions, semantic labels separate over 90\% of system-effect weight that flat views merge.
+% 在 325 个真实 Codex/Claude 会话上，语义标签分离了扁平视图所混合的超过 90\% 的系统副作用权重。
+On four public datasets with hidden ground-truth labels, operation-stack profiling reduces inspection work to 9.4\% versus flat summaries and group fragmentation by 45\% versus fixed-session drilldown.
+% 在四个具有隐藏真实标签的公开数据集上，operation stack 分析将检查工作量降至扁平摘要的 9.4\%，组碎片化比固定会话下钻减少 45\%。
 
 %% ¶7: Contributions
 This paper makes three contributions:
+% 本文做出三项贡献：
 
 \begin{enumerate}
-\item \textbf{A two-abstraction profiling model} that defines a
-  uniform operation record spanning agent intent and system effects,
-  a query-time operation stack,
-  and an intent-recognition step for restoring deterministic labels
-  (\S\ref{sec:background}--\S\ref{sec:design}).
-\item \textbf{System: \toolname.}
-  A profiler that realizes this model with pluggable intent recognition
-  (regex rules, local LLM tagging, unsupervised clustering) and
-  produces output (pprof, SVG, JSON) consumable by both developers and
-  automated analysis agents (\S\ref{sec:impl}).
-\item \textbf{Evaluation via hidden-label localization.}
-  We score profiler output against hidden ground-truth trajectory
-  labels (failure, safety, redundancy, and human-task boundaries),
-  analogous to injecting known bottlenecks in CPU profiler evaluation
-  (\S\ref{sec:eval}).
+\item \textbf{A profiling model} that defines a uniform operation record spanning agent intent and system effects, a query-time operation stack, and an intent-recognition step for restoring deterministic labels (\S\ref{sec:background}--\S\ref{sec:design}).
+% 一个分析模型，定义了跨越智能体意图和系统副作用的统一 operation 记录、查询时 operation stack，以及用于恢复确定性标签的意图识别步骤。
+\item \textbf{System: \sys.} A profiler that realizes this model with pluggable intent recognition (regex rules, local LLM tagging, unsupervised clustering) and produces output (pprof, SVG, JSON) consumable by both developers and automated analysis agents (\S\ref{sec:impl}).
+% 系统：\sys。一个通过可插拔意图识别（正则规则、本地 LLM 标注、无监督聚类）实现此模型的分析器，输出格式（pprof、SVG、JSON）可供开发者和自动分析智能体使用。
+\item \textbf{Evaluation via hidden-label localization.} We score profiler output against hidden ground-truth trajectory labels (failure, safety, redundancy, and human-task boundaries), analogous to injecting known bottlenecks in CPU profiler evaluation (\S\ref{sec:eval}).
+% 通过隐藏标签定位进行评估。我们将分析器输出与隐藏的真实轨迹标签（故障、安全、冗余和人工任务边界）进行评分，类似于在 CPU 分析器评估中注入已知瓶颈。
 \end{enumerate}
 
 %% ===================================================================
@@ -141,123 +122,138 @@ This paper makes three contributions:
 \label{sec:background}
 
 \subsection{AI Agent Observability}
+% AI 智能体可观测性
 
-AI agents orchestrate heterogeneous activities that span two layers:
-high-level intent (prompts, LLM calls, tool invocations) and low-level
-system effects (process spawns, file and network I/O). Existing
-observability tools cover these layers separately.
-LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse},
-Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize
-agent-level events into per-execution \emph{span trees}. System
-monitors show process and file activity without semantic attribution.
-The span-tree design is effective for debugging: a developer can locate
-a failing span, inspect its attributes, and trace its parent chain.
-AgentSight~\cite{agentsight} bridges the two layers by correlating
-eBPF-captured system events with intercepted LLM traffic, but the
-resulting traces still lack aggregate profiling.
+AI agents orchestrate heterogeneous activities that span two layers, high-level intent (prompts, LLM calls, tool invocations) and low-level system effects (process spawns, file and network I/O).
+% AI 智能体编排跨越两层的异构活动：高层意图（提示词、LLM 调用、工具调用）和低层系统副作用（进程创建、文件和网络 I/O）。
+Existing observability tools cover these layers separately.
+% 现有可观测性工具分别覆盖这两层。
+LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse}, Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize agent-level events into per-execution \emph{span trees}.
+% LangSmith~\cite{langsmith}、Langfuse~\cite{langfuse}、Phoenix~\cite{phoenix} 和 OpenTelemetry GenAI~\cite{otel} 将智能体级事件组织为按执行划分的 span 树。
+System monitors show process and file activity without semantic attribution.
+% 系统监控器显示进程和文件活动，但没有语义归因。
+The span-tree design is effective for debugging.
+% span 树设计对调试是有效的。
+A developer can locate a failing span, inspect its attributes, and trace its parent chain.
+% 开发者可以定位失败的 span、检查其属性并追踪其父链。
+AgentSight~\cite{agentsight} bridges the two layers by correlating eBPF-captured system events with intercepted LLM traffic, but the resulting traces still lack aggregate profiling.
+% AgentSight~\cite{agentsight} 通过关联 eBPF 捕获的系统事件与拦截的 LLM 流量来桥接两层，但生成的 trace 仍缺乏聚合分析能力。
 
 \subsection{Profiling vs.\ Debugging}
+% 性能分析 vs. 调试
 
-Debugging inspects a single execution. Profiling aggregates across
-executions to answer questions like ``where does the budget go?'' CPU
-profilers solved this aggregation problem decades ago.
-A flame graph~\cite{flamegraphs} represents a profile as weighted
-\emph{samples}, each attached to a \emph{call stack}. Identical stacks
-merge, and width represents aggregate cost. The key enabler is
-\emph{deterministic} function names: the same code path always produces
-the same frames.
+Debugging inspects a single execution.
+% 调试检查单次执行。
+Profiling aggregates across executions to answer questions like ``where does the budget go?''
+% 性能分析跨执行聚合以回答"预算花在哪里？"等问题。
+CPU profilers solved this aggregation problem decades ago.
+% CPU 分析器几十年前就解决了这个聚合问题。
+A flame graph~\cite{flamegraphs} represents a profile as weighted \emph{samples}, each attached to a \emph{call stack}.
+% 火焰图~\cite{flamegraphs}将性能概要表示为加权样本，每个样本附带一个调用栈。
+Identical stacks merge, and width represents aggregate cost.
+% 相同的栈合并，宽度代表聚合开销。
+The key enabler is \emph{deterministic} function names, so the same code path always produces the same frames.
+% 关键条件是确定性的函数名，使相同代码路径始终产生相同的栈帧。
 
-Agent activities break this precondition in two ways. First, prompts
-are natural language and lack deterministic identifiers. Second, there
-is no inherent call stack: agent events have no runtime-determined
-parent-child nesting analogous to function calls.
-Pprof's \texttt{tagroot}/\texttt{tagleaf} options add label-derived
-pseudo-frames to an existing execution stack, but agent activities have
-no execution stack to augment.
+Agent activities break this precondition in two ways.
+% 智能体活动从两方面打破了这一前提。
+First, prompts are natural language and lack deterministic identifiers.
+% 第一，提示词是自然语言，缺乏确定性标识符。
+Second, there is no inherent call stack.
+% 第二，不存在固有的调用栈。
+Agent events have no runtime-determined parent-child nesting analogous to function calls.
+% 智能体事件没有类似函数调用的运行时确定的父子嵌套关系。
+Pprof's \texttt{tagroot}/\texttt{tagleaf} options add label-derived pseudo-frames to an existing execution stack, but agent activities have no execution stack to augment.
+% Pprof 的 \texttt{tagroot}/\texttt{tagleaf} 选项在已有执行栈上添加标签衍生的伪帧，但智能体活动没有执行栈可供扩展。
 
 \subsection{The Aggregation Gap}
+% 聚合缺口
 
-Existing agent observability tools are designed for debugging, not
-profiling, and this creates three concrete gaps.
+Existing agent observability tools are designed for debugging, not profiling, and this creates three concrete gaps.
+% 现有智能体可观测性工具为调试而设计，而非性能分析，这造成了三个具体缺口。
 
-First, sessions are boundaries, not categories. A single session may
-contain review, debugging, and refactoring phases, and splitting by
-session assigns all of them to the same bucket. Two sessions performing
-the same task produce separate buckets that cannot be merged without
-external logic.
+First, sessions are boundaries, not categories.
+% 第一，会话是边界，不是类别。
+A single session may contain review, debugging, and refactoring phases, and splitting by session assigns all of them to the same bucket.
+% 单个会话可能包含 review、debugging 和 refactoring 阶段，按会话拆分会将它们全部分配到同一桶中。
+Two sessions performing the same task produce separate buckets that cannot be merged without external logic.
+% 执行相同任务的两个会话会产生无法在没有外部逻辑的情况下合并的分离桶。
 
-Second, span names describe mechanisms (\texttt{LLMCall},
-\texttt{ToolInvoke}, \texttt{ChatCompletion}), not user intent
-(\texttt{review}, \texttt{debug}, \texttt{test}). Grouping by span name
-tells you how many LLM calls occurred, not which categories of work
-consumed the budget.
+Second, span names describe mechanisms (\texttt{LLMCall}, \texttt{ToolInvoke}, \texttt{ChatCompletion}), not user intent (\texttt{review}, \texttt{debug}, \texttt{test}).
+% 第二，span 名称描述机制（\texttt{LLMCall}、\texttt{ToolInvoke}、\texttt{ChatCompletion}），而非用户意图（\texttt{review}、\texttt{debug}、\texttt{test}）。
+Grouping by span name tells you how many LLM calls occurred, not which categories of work consumed the budget.
+% 按 span 名称分组只能告诉你发生了多少次 LLM 调用，而非哪些工作类别消耗了预算。
 
-Third, these limitations compound in practice. A common system effect
-like running a test suite may appear thousands of times across sessions,
-but a flat summary shows only a single counter with no way to attribute
-executions to the semantic intent that triggered them. We quantify this
-in RQ1~(\S\ref{sec:eval}).
+Third, these limitations compound in practice.
+% 第三，这些限制在实践中叠加放大。
+A common system effect like running a test suite may appear thousands of times across sessions, but a flat summary shows only a single counter with no way to attribute executions to the semantic intent that triggered them.
+% 像运行测试套件这样的常见系统副作用可能在会话中出现数千次，但扁平摘要只显示一个计数器，无法将执行归因到触发它们的语义意图。
+We quantify this in RQ1~(\S\ref{sec:eval}).
+% 我们在 RQ1~(\S\ref{sec:eval}) 中量化了这一点。
 
 These observations yield three design requirements:
+% 这些观察得出三个设计需求：
 
 \begin{description}
 \item[R1: Uniform record type.]
-  Agent activities mix prompts, LLM calls, tool invocations, GUI
-  actions, process events, and benchmark labels. The profiler needs a
-  single record type that can represent all of them without
-  type-specific objects.
+Agent activities mix prompts, LLM calls, tool invocations, GUI actions, process events, and benchmark labels.
+% 智能体活动混合了提示词、LLM 调用、工具调用、GUI 操作、进程事件和基准标签。
+The profiler needs a single record type that can represent all of them without type-specific objects.
+% 分析器需要一种能表示所有这些活动的单一记录类型，无需特定类型的对象。
 \item[R2: Query-time aggregation.]
-  The same data must support multiple aggregation shapes (by task,
-  phase, action, session, or dataset) without rebuilding the input.
-  Sessions and spans must be fields, not fixed hierarchy nodes.
+The same data must support multiple aggregation shapes (by task, phase, action, session, or dataset) without rebuilding the input.
+% 同一数据必须支持多种聚合形状（按任务、阶段、操作、会话或数据集），无需重建输入。
+Sessions and spans must be fields, not fixed hierarchy nodes.
+% 会话和 span 必须是字段，而非固定层次节点。
 \item[R3: Deterministic labels for folding.]
-  Free-form prompts must be mapped to short, stable, repeatable labels
-  before folding. This \emph{intent recognition} step has no analogue in
-  CPU profiling, where function names are already deterministic.
+Free-form prompts must be mapped to short, stable, repeatable labels before folding.
+% 自由形式的提示词必须在折叠前映射为短小、稳定、可重复的标签。
+This \emph{intent recognition} step has no analogue in CPU profiling, where function names are already deterministic.
+% 这一意图识别步骤在 CPU 性能分析中没有对应物，因为函数名已经是确定性的。
 \end{description}
 
 %% ===================================================================
 \section{Design}
+% 设计
 \label{sec:design}
 
-The three requirements (a uniform record type, query-time aggregation,
-and deterministic labels for folding) drive the design. The profiling
-pipeline has five stages: (1)~parse raw traces into operations,
-(2)~label operations via intent recognition or mapping rules,
-(3)~filter by a user-specified predicate, (4)~project each operation
-onto a stack frame sequence chosen at query time, and (5)~fold
-operations with identical stacks, summing their weights. We introduce
-two abstractions that satisfy R1 and R2, operations
-(\S\ref{sec:ops}) and operation stacks (\S\ref{sec:stacks}), and a
-pluggable intent-recognition mechanism (\S\ref{sec:intent}) that
-satisfies R3.
+The three requirements (a uniform record type, query-time aggregation, and deterministic labels for folding) drive the design.
+% 三个需求（统一记录类型、查询时聚合和用于折叠的确定性标签）驱动了设计。
+The profiling pipeline has five stages: (1)~parse raw traces into operations, (2)~label operations via intent recognition or mapping rules, (3)~filter by a user-specified predicate, (4)~project each operation onto a stack frame sequence chosen at query time, and (5)~fold operations with identical stacks, summing their weights.
+% 分析管线有五个阶段：(1) 将原始 trace 解析为 operation，(2) 通过意图识别或映射规则标注 operation，(3) 按用户指定的谓词过滤，(4) 将每个 operation 投影到查询时选择的栈帧序列上，(5) 折叠具有相同栈的 operation 并求和权重。
+We introduce two abstractions that satisfy R1 and R2, operations (\S\ref{sec:ops}) and operation stacks (\S\ref{sec:stacks}), and a pluggable intent-recognition mechanism (\S\ref{sec:intent}) that satisfies R3.
+% 我们引入满足 R1 和 R2 的两个抽象——operation（\S\ref{sec:ops}）和 operation stack（\S\ref{sec:stacks}），以及满足 R3 的可插拔意图识别机制（\S\ref{sec:intent}）。
 
 \subsection{Operations (R1: Uniform Record Type)}
+% Operation（R1：统一记录类型）
 \label{sec:ops}
 
-Agent activities span two layers: high-level intent (prompts, LLM
-calls, tool invocations) and the system effects they trigger (process
-spawns, file reads, network requests). A profiler should not
-distinguish between these layers at the object-model level. \toolname
-uses a single abstraction: an \operation is a weighted record with
-string fields and additive measures.
+Agent activities span two layers, high-level intent (prompts, LLM calls, tool invocations) and the system effects they trigger (process spawns, file reads, network requests).
+% 智能体活动跨越两层：高层意图（提示词、LLM 调用、工具调用）和它们触发的系统副作用（进程创建、文件读取、网络请求）。
+A profiler should not distinguish between these layers at the object-model level.
+% 分析器不应在对象模型层面区分这两层。
+\sys uses a single abstraction.
+% \sys 使用单一抽象。
+An \operation is a weighted record with string fields and additive measures.
+% 一个 operation 是带有字符串字段和可加度量的加权记录。
 
-Each operation carries string fields (\texttt{project}, \texttt{agent},
-\texttt{session}, \texttt{prompt\_tag}, \texttt{kind}, \texttt{model},
-\texttt{path}, \texttt{domain}, \texttt{status}, \ldots) and additive
-measures (token count, duration, occurrence count). A prompt, an LLM
-call, a tool invocation, a file read, a GUI click, and a process event
-are all operation records that differ only in which fields are populated.
+Each operation carries string fields (\texttt{project}, \texttt{agent}, \texttt{session}, \texttt{prompt\_tag}, \texttt{kind}, \texttt{model}, \texttt{path}, \texttt{domain}, \texttt{status}, \ldots) and additive measures (token count, duration, occurrence count).
+% 每个 operation 携带字符串字段（\texttt{project}、\texttt{agent}、\texttt{session}、\texttt{prompt\_tag}、\texttt{kind}、\texttt{model}、\texttt{path}、\texttt{domain}、\texttt{status} 等）和可加度量（token 数、持续时间、出现次数）。
+A prompt, an LLM call, a tool invocation, a file read, a GUI click, and a process event are all operation records that differ only in which fields are populated.
+% 提示词、LLM 调用、工具调用、文件读取、GUI 点击和进程事件都是 operation 记录，仅在填充的字段上有所不同。
 
 \subsection{Operation Stacks (R2: Query-Time Aggregation)}
+% Operation Stack（R2：查询时聚合）
 \label{sec:stacks}
 
 An \opstack is an ordered list of fields chosen at query time.
-Given a stack specification $[f_1, f_2, \ldots, f_k]$, each operation
-$o$ is projected to a frame sequence $\langle o.f_1, o.f_2, \ldots,
-o.f_k \rangle$. Operations with identical frame sequences are merged
-and their weights are summed. The result is the standard folded-stack
-representation:
+% 一个 operation stack 是在查询时选择的字段有序列表。
+Given a stack specification $[f_1, f_2, \ldots, f_k]$, each operation $o$ is projected to a frame sequence $\langle o.f_1, o.f_2, \ldots, o.f_k \rangle$.
+% 给定栈规范 $[f_1, f_2, \ldots, f_k]$，每个 operation $o$ 被投影到帧序列 $\langle o.f_1, o.f_2, \ldots, o.f_k \rangle$。
+Operations with identical frame sequences are merged and their weights are summed.
+% 具有相同帧序列的 operation 被合并，权重求和。
+The result is the standard folded-stack representation:
+% 结果是标准的折叠栈表示：
 
 \begin{small}
 \begin{verbatim}
@@ -266,30 +262,32 @@ Agent: prompt:debug;call:llm;tool:bash  4200
 \end{verbatim}
 \end{small}
 
-\noindent Unlike CPU profiling, where the call stack is determined by
-execution, the stack is determined by the query. The same
-operations can be folded as a flat task summary, a fixed-session tree, a
-semantic phase/action hierarchy, or a dataset-native trajectory.
+\noindent Unlike CPU profiling, where the call stack is determined by execution, the stack is determined by the query.
+% 与 CPU 分析中调用栈由执行决定不同，这里的栈由查询决定。
+The same operations can be folded as a flat task summary, a fixed-session tree, a semantic phase/action hierarchy, or a dataset-native trajectory.
+% 同一组 operation 可以折叠为扁平任务摘要、固定会话树、语义阶段/操作层次或数据集原生轨迹。
 Changing the fields changes the aggregation without changing the data.
-Failure, safety, and quality labels are ordinary fields that
-participate in the same projection, so the profiler handles diagnostic
-views without a separate mechanism.
+% 改变字段即改变聚合方式，而无需改变数据。
+Failure, safety, and quality labels are ordinary fields that participate in the same projection, so the profiler handles diagnostic views without a separate mechanism.
+% 故障、安全和质量标签是普通字段，参与相同的投影，因此分析器无需单独机制即可处理诊断视图。
 
-Query-time stack selection directly addresses the fixed-hierarchy problem
-from \S\ref{sec:background}. Sessions and spans are optional operation
-fields,
-not structural skeleton nodes. Including \texttt{session} in the stack
-produces a per-session drilldown (equivalent to a trace tree). Excluding
-it produces an aggregate view that existing trace tools do not
-natively support. The same data supports both debugging and profiling
-views.
+Query-time stack selection directly addresses the fixed-hierarchy problem from \S\ref{sec:background}.
+% 查询时栈选择直接解决了 \S\ref{sec:background} 中的固定层次问题。
+Sessions and spans are optional operation fields, not structural skeleton nodes.
+% 会话和 span 是可选的 operation 字段，而非结构性骨架节点。
+Including \texttt{session} in the stack produces a per-session drilldown (equivalent to a trace tree).
+% 在栈中包含 \texttt{session} 会产生按会话下钻（等同于 trace 树）。
+Excluding it produces an aggregate view that existing trace tools do not natively support.
+% 排除它则产生现有 trace 工具不原生支持的聚合视图。
+The same data supports both debugging and profiling views.
+% 同一数据同时支持调试和分析视图。
 
-A \emph{view} is a triple $(\varphi, \sigma, w)$: a predicate
-$\varphi$ selects which operations participate, a stack function
-$\sigma = [f_1, \ldots, f_k]$ maps each operation to its frame
-sequence, and a weight function $w$ assigns a nonnegative measure. The view formalism supports arbitrary user-defined
-views. Four built-in defaults (Table~\ref{tab:views}) answer common
-questions.
+A \emph{view} is a triple $(\varphi, \sigma, w)$: a predicate $\varphi$ selects which operations participate, a stack function $\sigma = [f_1, \ldots, f_k]$ maps each operation to its frame sequence, and a weight function $w$ assigns a nonnegative measure.
+% 一个视图是三元组 $(\varphi, \sigma, w)$：谓词 $\varphi$ 选择参与的 operation，栈函数 $\sigma = [f_1, \ldots, f_k]$ 将每个 operation 映射到其帧序列，权重函数 $w$ 赋予非负度量。
+The view formalism supports arbitrary user-defined views.
+% 视图形式化支持任意用户自定义视图。
+Four built-in defaults (Table~\ref{tab:views}) answer common questions.
+% 四个内置默认视图（Table~\ref{tab:views}）回答常见问题。
 
 \begin{table}[t]
 \centering\small
@@ -324,7 +322,7 @@ recognition to folded-stack flame graphs.}
 
 Operations and stacks handle heterogeneity and flexible aggregation, but
 folding still requires deterministic frame labels, the precondition
-that agent prompts violate (\S\ref{sec:background}). \toolname solves
+that agent prompts violate (\S\ref{sec:background}). \sys solves
 this by mapping free-form prompts to
 short, stable labels before stack construction.
 
@@ -333,8 +331,8 @@ First, \emph{regex rules} are the production default. Rules have the
 form \texttt{KIND:TAG=REGEX}, where \texttt{KIND} is \texttt{prompt},
 \texttt{llm}, or \texttt{all}, \texttt{TAG} is a short lowercase label,
 and \texttt{REGEX} is a pattern. Rules are evaluated in order; the first
-match wins. The workflow is human--agent collaborative: the developer
-runs \toolname, observes the unmatched rate and sample prompts, adds
+match wins. The workflow is human--agent collaborative. The developer
+runs \sys, observes the unmatched rate and sample prompts, adds
 rules, re-runs, and iterates until unmatched drops below 5\%. This
 typically takes 5--10 rounds. The resulting rule set is deterministic,
 reproducible, and version-controllable.
@@ -353,7 +351,7 @@ and aggregation, not correctness verdicts.
 
 For structured traces such as public benchmark datasets, where action
 types, tool names, and quality annotations are explicit fields, intent
-recognition is unnecessary. \toolname supports deterministic
+recognition is unnecessary. \sys supports deterministic
 \emph{mapping rules} that derive new operation fields from existing
 ones before stack construction. For example, the rule
 \texttt{phase:navigate=type:(click|scroll|key)} maps raw action types
@@ -373,7 +371,7 @@ identically on both.
 \section{Implementation}
 \label{sec:impl}
 
-\toolname is an offline, post-hoc profiler implemented as a Rust CLI
+\sys is an offline, post-hoc profiler implemented as a Rust CLI
 (Figure~\ref{fig:architecture}). It reads recorded traces, not live
 events. The \texttt{agent-session} crate reads Codex and Claude Code local JSONL
 history files and reconstructs prompts, LLM calls, tool invocations, and
@@ -382,7 +380,7 @@ calls, tool calls, and system effects within that span inherit its
 semantic label, connecting intent to system behavior without runtime
 instrumentation. Public benchmark datasets enter as operation JSONL with
 mapping rules deriving fields before stack construction. Standard Chrome
-Trace Event format can also be imported, with non-\toolname protocol
+Trace Event format can also be imported, with non-\sys protocol
 fields preserved as operation fields.
 
 Output formats include pprof protobuf (compatible with
@@ -390,12 +388,12 @@ Output formats include pprof protobuf (compatible with
 \texttt{flamegraph.pl}), standalone SVG flame graphs, and JSON summaries.
 All outputs are deterministic given the same input and profile spec.
 
-\toolname is the offline profiling component of the broader
+\sys is the offline profiling component of the
 AgentSight~\cite{agentsight} observability framework. AgentSight provides real-time eBPF-based
 capture of SSL traffic, process events, and file/network effects.
-\toolname aggregates the recorded traces into semantic profiles. The two
+\sys aggregates the recorded traces into semantic profiles. The two
 are complementary. AgentSight answers ``what happened during this run''
-(debugging), \toolname answers ``where did the budget go across runs''
+(debugging), \sys answers ``where did the budget go across runs''
 (profiling).
 
 %% ===================================================================
@@ -497,7 +495,7 @@ tokens.
 Figure~\ref{fig:rq1-separation} visualizes the ablation.
 Figures~\ref{fig:flamegraph} and~\ref{fig:flamegraph-files} show
 the resulting flame graphs for the \texttt{tokens} and \texttt{files}
-views respectively: changing only the stack fields and weight function
+views respectively, showing that changing only the stack fields and weight function
 produces different aggregates from the same operations.
 
 \begin{figure}[t]
@@ -722,11 +720,11 @@ hierarchies. Pprof supports sample labels and can visualize them as
 pseudo stack frames through tag-root/tag-leaf options. Perfetto
 generalizes trace ingestion with SQL-based analysis and derived
 events~\cite{perfetto}. These systems support query-time aggregation, so
-\toolname does not claim novelty for flexible aggregation alone. The
+\sys does not claim novelty for flexible aggregation alone. The
 difference is structural. Pprof's tagroot adds label-derived frames to
 an existing execution call stack. Agent traces have no execution stack,
 so the entire profiling structure must be constructed from semantic
-fields. The evaluation also differs: \toolname scores profiler output
+fields. The evaluation also differs: \sys scores profiler output
 against hidden agent-trajectory labels, a methodology with no analogue
 in CPU profiling.
 
@@ -741,7 +739,7 @@ agent-specific span kinds that extend OpenTelemetry for agent
 orchestration phases. Wang et al.~\cite{agenttraces-trust} survey
 evidence tracing and execution provenance as foundations for agent
 accountability. These systems excel at single-execution debugging or
-fault detection. \toolname complements them with cross-session aggregate
+fault detection. \sys complements them with cross-session aggregate
 profiling. Datadog LLM Observability~\cite{datadog-llmobs} and Laminar
 Signals~\cite{laminar-signals} take steps toward semantic aggregation by
 clustering user messages or extracting structured events, but they
@@ -756,7 +754,7 @@ outcome leaderboards miss trajectory-level quality.
 TrajAD~\cite{trajad} and AgentFixer~\cite{agentfixer} detect trajectory
 anomalies and recommend fixes. These systems perform \emph{span-level}
 or \emph{step-level} fault localization within a single execution.
-\toolname performs \emph{category-level} aggregate profiling, identifying
+\sys performs \emph{category-level} aggregate profiling, identifying
 which categories of work produce the most failures, consume the most
 budget, or generate repeated system effects across sessions.
 
@@ -764,7 +762,7 @@ budget, or generate repeated system effects across sessions.
 \section{Conclusion}
 
 
-Agent observability needs profiling, not only debugging. \toolname
+Agent observability needs profiling, not only debugging. \sys
 shows that two abstractions, operations and operation stacks, close the
 aggregation problem once intent recognition restores deterministic labels.
 Scoring profiler output against hidden trajectory labels confirms that
@@ -773,7 +771,7 @@ localizes labeled problems at 9.4\% inspection cost versus flat
 summaries, and produces labels that agree with ground truth on 7/9
 held-out datasets. Fixed-session drilldown remains faster to a first
 positive on 4/6 tasks, confirming that profilers and debuggers are
-complementary, and \toolname supports both by including or excluding
+complementary, and \sys supports both by including or excluding
 session fields in the stack query. The main limitations are
 single-project real-session data and placeholder intent-recognition
 quality on free-form prompts. Multi-project evaluation and
