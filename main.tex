@@ -304,10 +304,12 @@ This \emph{intent recognition} step has no analogue in CPU profiling, where func
 
 The three requirements (a uniform record type, query-time aggregation, and deterministic labels for folding) drive the design.
 % 三个需求（统一记录类型、查询时聚合和用于折叠的确定性标签）驱动了设计。
-The profiling pipeline has five stages: (1)~parse raw traces into operations, (2)~label operations via intent recognition or mapping rules, (3)~filter by a user-specified predicate, (4)~project each operation onto a stack frame sequence chosen at query time, and (5)~fold operations with identical stacks, summing their weights.
-% 分析管线有五个阶段：(1) 将原始 trace 解析为 operation，(2) 通过意图识别或映射规则标注 operation，(3) 按用户指定的谓词过滤，(4) 将每个 operation 投影到查询时选择的栈帧序列上，(5) 折叠具有相同栈的 operation 并求和权重。
-We introduce two abstractions that satisfy R1 and R2, operations (\S\ref{sec:ops}) and operation stacks (\S\ref{sec:stacks}), and a pluggable intent-recognition mechanism (\S\ref{sec:intent}) that satisfies R3.
-% 我们引入满足 R1 和 R2 的两个抽象——operation（\S\ref{sec:ops}）和 operation stack（\S\ref{sec:stacks}），以及满足 R3 的可插拔意图识别机制（\S\ref{sec:intent}）。
+The semantic operation stack model has two components: operations (\S\ref{sec:ops}) and operation stacks (\S\ref{sec:stacks}), satisfying R1 and R2.
+% 语义 operation stack 模型有两个组件：operation（\S\ref{sec:ops}）和 operation stack（\S\ref{sec:stacks}），满足 R1 和 R2。
+Two pluggable algorithm frameworks enrich the model: intent attribution (\S\ref{sec:intent}) satisfies R3 by deriving deterministic labels, and stack construction (\S\ref{sec:stacks}) builds aggregation hierarchies from available fields.
+% 两个可插拔算法框架丰富此模型：意图归因（\S\ref{sec:intent}）通过派生确定性标签满足 R3，栈构造（\S\ref{sec:stacks}）从可用字段构建聚合层次。
+The profiling pipeline has five stages: (1)~parse raw traces into operations, (2)~enrich operations via intent attribution or mapping rules, (3)~filter by a user-specified predicate, (4)~project each operation onto a stack frame sequence chosen at query time, and (5)~fold operations with identical stacks, summing their weights.
+% 分析管线有五个阶段：(1) 将原始 trace 解析为 operation，(2) 通过意图归因或映射规则丰富 operation，(3) 按用户指定的谓词过滤，(4) 将每个 operation 投影到查询时选择的栈帧序列上，(5) 折叠具有相同栈的 operation 并求和权重。
 
 \subsection{Operations (R1: Uniform Record Type)}
 % Operation（R1：统一记录类型）
