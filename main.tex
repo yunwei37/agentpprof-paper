@@ -222,9 +222,9 @@ On four public datasets (34{,}539 operations) where the correct
 annotations are known but hidden from the profiler, ranked groups locate
 real problems at 9.4\% inspection work, with 45\% fewer groups than
 per-session grouping.
-% 在四个公开数据集（34,539 个操作）上，正确标签已知但对 profiler 隐藏，排序的分组以 9.4\% 的检查成本定位真实问题，比按会话分组减少 45\% 的分组数。
+% 在四个公开数据集（34,539 个操作）上，正确标注已知但对 profiler 隐藏，排序的分组以 9.4\% 的检查成本定位真实问题，比按会话分组减少 45\% 的分组数。
 Derived tags agree with ground truth on 7 of 9 held-out datasets.
-% 派生标签在 9 个保留数据集中的 7 个上与真实标签一致。
+% 派生标签在 9 个保留数据集中的 7 个上与真实标注一致。
 
 %% ¶7: Contributions
 This paper makes three contributions:
@@ -246,7 +246,7 @@ This paper makes three contributions:
   annotations, analogous to injecting known bottlenecks in CPU profiler
   evaluation, on 325 real trajectories and 4 public datasets
   (\S\ref{sec:eval}).
-% 隐藏标签评估。将 profiler 输出与隐藏的真实轨迹标签评分，类似于在 CPU profiler 评估中注入已知瓶颈，在 325 个真实会话和 4 个公开数据集上验证。
+% 隐藏标注评估。将 profiler 输出与隐藏的真实轨迹标注评分，类似于在 CPU profiler 评估中注入已知瓶颈，在 325 个真实会话和 4 个公开数据集上验证。
 \end{enumerate}
 
 %% ===================================================================
@@ -415,7 +415,7 @@ The same operations can therefore be attributed as a flat task summary, a
 per-session tree, a semantic phase/action hierarchy, or a
 trajectory using the dataset's own annotations, and changing the fields changes the
 attribution without changing the data.
-% 因此同一组 operation 可归因为扁平任务摘要、固定会话树、语义阶段/操作层次或使用数据集自身标签的轨迹，改变字段即改变归因方式而无需改变数据。
+% 因此同一组 operation 可归因为扁平任务摘要、固定会话树、语义阶段/操作层次或使用数据集自身标注的轨迹，改变字段即改变归因方式而无需改变数据。
 Sessions and spans are optional operation fields, not fixed hierarchy levels, so the same data supports both debugging views
 (include \texttt{session}) and aggregate profiling views (exclude
 it).
@@ -521,7 +521,7 @@ We use two classes of data.
 These cover web agents (WebLINX~\cite{weblinx}, Mind2Web~\cite{mind2web}, AgentTrek~\cite{agenttrek}, WebShop~\cite{webshop}), API agents (API-Bank~\cite{apibank}, ToolBench~\cite{toolbench}, tau-bench~\cite{taubench}), coding agents (SWE-agent~\cite{sweagent}), and mobile/GUI agents (AndroidCtrl~\cite{androidcontrol}, GUI-Odyssey~\cite{guiodyssey}, ScaleCUA~\cite{scalecua}).
 % 涵盖 web 智能体（WebLINX、Mind2Web、AgentTrek、WebShop）、API 智能体（API-Bank、ToolBench、tau-bench）、编码智能体（SWE-agent）和移动/GUI 智能体（AndroidCtrl、GUI-Odyssey、ScaleCUA）。
 Four families with ground-truth quality annotations (AgentRewardBench~\cite{agentrewardbench}, SATraj-OS~\cite{safactory}, AgentNet~\cite{agentnet}, OSWorld-Human~\cite{osworldhuman}) provide hidden annotations for RQ2.
-% 四个具有真实质量标注的家族（AgentRewardBench、SATraj-OS、AgentNet、OSWorld-Human）为 RQ2 提供隐藏标签。
+% 四个具有真实质量标注的家族（AgentRewardBench、SATraj-OS、AgentNet、OSWorld-Human）为 RQ2 提供隐藏标注。
 
 %% -------------------------------------------------------------------
 \subsection{RQ1: Does Semantic Profiling Improve Resource Attribution?}
@@ -582,8 +582,8 @@ We run the automatic stack-induction mode (\S\ref{sec:stacks}) on the same six t
 % 我们在 RQ2 使用的同样六个任务上运行自动栈诱导模式（\S\ref{sec:stacks}），将结果的分组数和定位质量与扁平摘要和固定会话下钻进行比较。
 Induced stacks produce a median of 12 groups (versus 285 for per-session and 1 for flat), with 4/6 tasks generating variable-depth stacks.
 % 诱导栈产生中位 12 个分组（固定会话 285 个，扁平 1 个），4/6 任务生成可变深度栈。
-The induced stacks achieve lower AP than hand-specified stacks (median 0.276 vs 0.312) because they use only visible fields, but they reduce inspection work to 65.3\% versus flat summaries without requiring any user configuration.
-% 诱导栈的 AP 低于手动配置栈（中位 0.276 vs 0.312），因为它们仅使用可见字段，但将检查工作量降至扁平摘要的 65.3\%，无需任何用户配置。
+The induced stacks achieve lower average precision (AP, the area under the precision-recall curve when groups are ranked by problem density) than hand-specified stacks (median 0.276 vs 0.312) because they use only visible fields, but they reduce inspection work to 65.3\% versus flat summaries without requiring any user configuration.
+% 诱导栈的平均精度（AP，按问题密度排名分组时的精确率-召回率曲线下面积）低于手动配置栈（中位 0.276 vs 0.312），因为它们仅使用可见字段，但将检查工作量降至扁平摘要的 65.3\%，无需任何用户配置。
 Automatic induction therefore provides a useful zero-configuration baseline: it loses some precision versus hand-specified stacks but still substantially outperforms flat summaries.
 % 因此自动诱导提供了有用的零配置基线：它相比手动配置栈损失了一些精度，但仍然大幅优于扁平摘要。
 
@@ -621,7 +621,7 @@ We use public benchmark datasets that provide ground-truth quality annotations (
 The benchmark uses six tasks across four datasets (AgentRewardBench looping and side-effect, SATraj-OS unsafe operation, AgentNet incorrect and redundant step, and OSWorld-Human group start), totaling 34{,}539 operations and 3{,}699 positives.
 % 基准使用四个数据集的六个任务（AgentRewardBench 循环和副作用、SATraj-OS 不安全操作、AgentNet 不正确和冗余步骤、OSWorld-Human 组起始），共计 34,539 个 operation 和 3,699 个正例。
 We compare seven grouping strategies (flat summary, per-session grouping, native hierarchy, raw-action grouping, operation-stack profiling, operation-stack with oracle fields, and a full oracle that uses the hidden annotations) and rank groups by the fraction of hidden positives they contain.
-% 我们比较七种分组策略（扁平摘要、固定会话分组、原生层次、原始操作分组、operation stack 分析、operation stack 加 oracle 字段，以及使用隐藏标签的完整 oracle），按组包含的隐藏正例比例对组排序。
+% 我们比较七种分组策略（扁平摘要、固定会话分组、原生层次、原始操作分组、operation stack 分析、operation stack 加 oracle 字段，以及使用隐藏标注的完整 oracle），按组包含的隐藏正例比例对组排序。
 
 \begin{table*}[t]
 \centering\small
@@ -691,20 +691,13 @@ RQ1 and RQ2 assume that semantic tags (the tags derived by intent attribution or
 % RQ1 和 RQ2 假设语义标签（由意图归因或映射规则派生的标签）是有用的。
 RQ3 tests whether these semantic tags are accurate by comparing them against ground-truth annotations from the benchmark datasets.
 % RQ3 通过将这些语义标签与基准数据集的真实标注进行比较来测试它们是否准确。
-For real trajectories with natural-language prompts, we measure whether the intent-attribution backends run reliably at scale and produce well-formed tags.
-% 对于自然语言轨迹（真实会话），我们测量意图归因后端是否在规模上可靠运行并产生格式良好的标签。
-Semantic accuracy of the LLM/regex tagger on natural-language prompts remains future work because none of the available datasets (67{,}304 rows across 6 sources) simultaneously expose natural-language text and ground-truth semantic tags, making same-input accuracy evaluation infeasible with current data.
-% LLM/正则标注器在自然语言提示词上的语义精度仍是未来工作，因为现有数据集（6 个来源共 67,304 行）没有同时暴露自然语言文本和真实语义标签，使得同输入精度评估在当前数据下不可行。
-
-On 325 real trajectories, the LLM tagger processes 118{,}021 tag requests with zero failures, 100\% syntax validity, and 70\% cache hit rate (operational details in RQ4).
-% 在 325 个真实会话上，LLM 标注器处理了 118,021 个标注请求，零失败，100\% 语法有效性，70\% 缓存命中率（运行细节见 RQ4）。
 
 Public benchmark datasets provide native action annotations that serve as ground truth for mapping quality.
-% 公开基准数据集提供原生操作标签作为映射质量的真实标准。
+% 公开基准数据集提供原生操作标注作为映射质量的真实标准。
 We run a leave-dataset-out evaluation.
 % 我们运行留一数据集评估。
-For each of 9 datasets, we train mapping rules on the other 8 and measure V-measure between the mapping-derived \texttt{phase} field and the dataset's native \texttt{action} annotations, plus boundary F1 between mapped phase boundaries and native action boundaries.
-% 对于 9 个数据集中的每一个，我们在其余 8 个上训练映射规则，测量映射衍生的 \texttt{phase} 字段与数据集原生 \texttt{action} 标签之间的 V-measure，以及映射阶段边界与原生操作边界之间的边界 F1。
+For each of 9 datasets, we train mapping rules on the other 8 and measure V-measure (a clustering-agreement score ranging from 0 to 1) between the mapping-derived \texttt{phase} field and the dataset's native \texttt{action} annotations, plus boundary F1 (precision and recall of phase-transition points) between mapped phase boundaries and native action boundaries.
+% 对于 9 个数据集中的每一个，我们在其余 8 个上训练映射规则，测量映射衍生的 \texttt{phase} 字段与数据集原生 \texttt{action} 标注之间的 V-measure（聚类一致性分数，范围 0 到 1），以及映射阶段边界与原生操作边界之间的边界 F1（阶段转换点的精确率和召回率）。
 
 \begin{figure}[t]
 \centering
@@ -730,8 +723,8 @@ Seven of nine datasets exceed 0.7 on both metrics, meaning rules trained on othe
 The two low-scoring datasets (toolbench, api-bank) use atypical action vocabularies absent from the training families, confirming that the mapping is pattern-based and degrades predictably when vocabulary shifts.
 % 两个低分数据集（toolbench、api-bank）使用训练家族中不存在的非典型操作词汇，确认映射是基于模式的，在词汇变化时可预测地退化。
 
-Supervised boundary predictors beat simple baselines on 4/5 tested datasets (e.g., F1~0.77 vs 0.71 on OSWorld-Human), confirming that mapping rules produce useful tags but are not automatic intent discovery.
-% 有监督的边界预测器在 4/5 测试的数据集上超过简单基线（例如 OSWorld-Human 上 F1 约 0.77 vs 0.71），确认映射规则产生有用标签但不是自动意图发现。
+As an upper-bound comparison, supervised boundary predictors trained on ground-truth phase transitions beat the rule-based mapping on 4/5 tested datasets (e.g., F1~0.77 vs 0.71 on OSWorld-Human), confirming that mapping rules produce useful tags but leave room for learned intent discovery.
+% 作为上界对比，在真实阶段转换上训练的有监督边界预测器在 4/5 测试数据集上超过基于规则的映射（例如 OSWorld-Human 上 F1 约 0.77 vs 0.71），确认映射规则产生有用标签但仍有提升空间。
 
 %% -------------------------------------------------------------------
 \subsection{RQ4: What Is the Profiling Cost?}
@@ -744,14 +737,10 @@ The profiling cost is the time and resources spent after the session ends.
 
 We re-execute 76 tracked profiling configurations twice (152 invocations) to measure cost and verify determinism.
 % 我们重新执行 76 个跟踪的 profiling configuration 两次（152 次调用）来测量开销并验证确定性。
-All 76 configurations produce byte-identical output across both runs.
-% 全部 76 个配置在两次运行中产生字节相同的输出。
 Median profiling time is 1.6\,s per configuration (p95 2.8\,s, max 4.3\,s), and median output size is 37.5\,KB.
 % 中位分析时间为每配置 1.6 秒（p95 2.8 秒，最大 4.3 秒），中位输出大小为 37.5 KB。
-The slowest configurations process views with over 600 unique stacks, while the 60 robustness configurations all complete within 1.6\,s.
-% 最慢的配置处理超过 600 个唯一栈的视图，而 60 个稳健性配置全部在 1.6 秒内完成。
-The full configuration space (operation files, query predicates, ranking criteria, and stack depth) stays deterministic across all 12 tested variants.
-% 完整的配置空间（operation 文件、查询谓词、排名标准和栈深度）在所有 12 个测试变体中保持确定性。
+The slowest configurations process views with over 600 unique stacks, while 60 configurations that vary only the ranking criteria or stack depth (robustness checks) all complete within 1.6\,s.
+% 最慢的配置处理超过 600 个唯一栈的视图，而 60 个仅改变排名标准或栈深度的配置（稳健性检查）全部在 1.6 秒内完成。
 
 Intent attribution adds a one-time cost for new prompts.
 % 意图归因对新提示词增加一次性开销。
@@ -793,7 +782,7 @@ Agent observability needs profiling, not only debugging.
 \sys shows that the semantic operation stack model, with pluggable intent attribution and stack construction, brings hierarchical attribution to agent trajectories.
 % \sys 表明，语义 operation stack 模型结合可插拔的意图归因和栈构造，为智能体轨迹带来了分层归因能力。
 Scoring profiler output against hidden trajectory annotations confirms that semantic profiling separates over 90\% of system-effect cost that per-session views leave mixed, localizes annotated problems at 9.4\% inspection work versus flat summaries, and produces tags that agree with ground truth on 7/9 held-out datasets.
-% 将分析器输出与隐藏轨迹标签评分确认，语义分析分离了超过 90\% 的混合系统副作用权重，以扁平摘要 9.4\% 的检查工作量定位标注问题，并在 7/9 保留数据集上产生与真实标签一致的标签。
+% 将分析器输出与隐藏轨迹标注评分确认，语义分析分离了超过 90\% 的混合系统副作用权重，以扁平摘要 9.4\% 的检查工作量定位标注问题，并在 7/9 保留数据集上产生与真实标注一致的标签。
 Per-session grouping remains faster to a first positive on 4/6 tasks, confirming that profilers and debuggers are complementary, and \sys supports both by including or excluding session fields in the stack query.
 % 固定会话下钻在 4/6 任务上更快找到首个正例，确认分析器和调试器是互补的，\sys 通过在栈查询中包含或排除会话字段同时支持两者。
 Multi-project evaluation and tracing-ecosystem integration are the most impactful next steps.
