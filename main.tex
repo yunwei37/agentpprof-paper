@@ -107,8 +107,9 @@ aggregation, as distinct from single-execution debugging and tracing.
 % 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责实体来回答这些问题，区别于单次执行调试和 tracing。
 
 %% ¶3: Existing solutions
-Existing agent tools support debugging and tracing but not profiling.
-% 现有智能体工具支持调试和 tracing，但不支持 profiling。
+Yet existing agent tools support debugging and tracing but not
+profiling.
+% 然而现有智能体工具支持调试和 tracing，但不支持 profiling。
 LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse},
 Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize
 events into per-session span trees, effective for diagnosing a single
@@ -130,12 +131,13 @@ Adapting profiling to agent trajectories is challenging
 In traditional software, the responsible entities are code paths.
 Profiling is straightforward because function names are
 deterministic and runtime call nesting provides the aggregation
-hierarchy, and flame graphs~\cite{flamegraphs} visualize the result.
+hierarchy, and flame graphs~\cite{flamegraphs} and pprof~\cite{pprof} call graphs visualize the result.
 % 在传统软件中，负责实体是代码路径。Profiling 是直接的，因为函数名是确定性的，运行时调用嵌套提供聚合层次，火焰图~\cite{flamegraphs}可视化其结果。
 Agent behavior differs fundamentally.
-The responsible entities are semantic categories such as task intent
-and workflow phase, not code paths.
-% 智能体行为有根本不同。负责实体是语义类别（如任务意图和工作流阶段），而非代码路径。
+To answer the questions above, the responsible entities need to be
+semantic categories such as task intent and tool operation, not code
+paths.
+% 智能体行为有根本不同。要回答上述问题，负责实体需要是语义类别（如任务意图和工具操作），而非代码路径。
 Agent trajectories also lack the two properties that make aggregation possible.
 % 智能体轨迹还缺乏使聚合成为可能的两个特性。
 Prompts are natural language, and two prompts expressing the same intent share no common string.
