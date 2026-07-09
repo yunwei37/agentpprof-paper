@@ -1,53 +1,40 @@
 \begin{tikzpicture}[
-  node distance=0.5cm and 0.6cm,
-  box/.style={rectangle, draw, fill=blue!10, minimum width=1.6cm,
-              minimum height=0.55cm, font=\footnotesize, align=center,
-              rounded corners=1pt},
+  node distance=0.5cm and 0.8cm,
+  box/.style={rectangle, draw, fill=blue!15, minimum width=1.8cm,
+              minimum height=0.6cm, font=\footnotesize, align=center,
+              rounded corners=2pt},
   input/.style={rectangle, draw, fill=gray!15, minimum width=1.6cm,
-               minimum height=0.55cm, font=\footnotesize, align=center,
-               rounded corners=1pt},
+               minimum height=0.5cm, font=\footnotesize, align=center,
+               rounded corners=2pt},
   output/.style={rectangle, draw, fill=green!12, minimum width=1.3cm,
-                minimum height=0.55cm, font=\footnotesize, align=center,
-                rounded corners=1pt},
-  arr/.style={-{Stealth[length=1.5mm]}, thick, gray!70},
+                minimum height=0.5cm, font=\footnotesize, align=center,
+                rounded corners=2pt},
+  arr/.style={-{Stealth[length=1.8mm]}, thick, gray!70},
 ]
 
 % Inputs (left)
 \node[input] (local) {Local sessions\\(Codex/Claude)};
-\node[input, below=0.3cm of local] (bench) {Benchmark\\JSONL};
+\node[input, below=0.25cm of local] (bench) {Benchmark\\JSONL};
 
-% Parser
-\node[box, right=0.8cm of local] (parser) {Parser /\\Importer};
+% Node 1: Parsing
+\node[box, right=0.8cm of local, yshift=-0.2cm] (parse) {Parsing};
 
-% Intent recognition
-\node[box, right=0.6cm of parser, fill=orange!15] (intent) {Intent\\Recognition};
+% Node 2: Intent Attribution
+\node[box, right=0.8cm of parse, fill=orange!15] (intent) {Intent\\Attribution};
 \node[font=\scriptsize, below=0.05cm of intent, text=gray] (backends) {regex / LLM / clustering};
 
-% Mapping
-\node[box, below=0.3cm of intent, fill=orange!15] (mapping) {Mapping\\Rules};
+% Node 3: Stack Construction
+\node[box, right=0.8cm of intent] (stack) {Stack\\Construction};
 
-% Operations
-\node[box, right=0.6cm of intent, yshift=-0.3cm, fill=blue!20,
-      minimum width=1.8cm] (ops) {Operations\\with fields};
-
-% Stack query
-\node[box, right=0.6cm of ops, fill=blue!20] (stack) {Stack query\\$(\varphi,\sigma,w)$};
-
-% Outputs (right)
-\node[output, right=0.6cm of stack, yshift=0.4cm] (flame) {Flame graph};
-\node[output, right=0.6cm of stack, yshift=-0.0cm] (pprof) {pprof};
-\node[output, right=0.6cm of stack, yshift=-0.4cm] (json) {JSON};
+% Node 4: Output
+\node[box, right=0.8cm of stack, fill=green!12] (out) {Output};
+\node[font=\scriptsize, below=0.05cm of out, text=gray] {pprof / SVG / JSON};
 
 % Arrows
-\draw[arr] (local) -- (parser);
-\draw[arr] (bench) -| (parser);
-\draw[arr] (parser) -- (intent);
-\draw[arr] (parser) |- (mapping);
-\draw[arr] (intent) -- (ops);
-\draw[arr] (mapping) -- (ops);
-\draw[arr] (ops) -- (stack);
-\draw[arr] (stack) -- (flame);
-\draw[arr] (stack) -- (pprof);
-\draw[arr] (stack) -- (json);
+\draw[arr] (local.east) -| ([xshift=-0.2cm]parse.north);
+\draw[arr] (bench.east) -| ([xshift=-0.2cm]parse.south);
+\draw[arr] (parse) -- (intent);
+\draw[arr] (intent) -- (stack);
+\draw[arr] (stack) -- (out);
 
 \end{tikzpicture}

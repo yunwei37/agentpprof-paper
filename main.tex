@@ -476,32 +476,12 @@ exploration (\S\ref{sec:eval}).
 
 \sys is an offline, post-hoc profiler implemented as a Rust CLI (Figure~\ref{fig:architecture}).
 % \sys 是一个离线、事后分析器，实现为 Rust CLI（Figure~\ref{fig:architecture}）。
-It reads recorded trajectories, not live events.
-% 它读取记录的轨迹，而非实时事件。
-The \texttt{agent-session} crate reads Codex and Claude Code local JSONL history files and reconstructs prompts, LLM calls, tool invocations, and their triggered file and network effects.
+It reads Codex and Claude Code local JSONL history files, Agentsight~\cite{agentsight}  trace files and monitor records for system effects, and reconstructs prompts, LLM calls, tool invocations, and their triggered file and network effects.
 % \texttt{agent-session} crate 读取 Codex 和 Claude Code 本地 JSONL 历史文件，重建提示词、LLM 调用、工具调用及其触发的文件和网络副作用。
-Each prompt opens a span.
-% 每个提示词打开一个 span。
-LLM calls, tool calls, and system effects within that span inherit its semantic tag, connecting intent to system behavior without runtime instrumentation.
-% 该 span 内的 LLM 调用、工具调用和系统副作用继承其语义标签，无需运行时插桩即可连接意图与系统行为。
-Public benchmark datasets enter as operation JSONL with mapping rules deriving fields before stack construction.
-% 公开基准数据集以 operation JSONL 形式进入，映射规则在栈构建之前派生字段。
-Standard Chrome Trace Event format can also be imported, with non-\sys protocol fields preserved as operation fields.
-% 标准 Chrome Trace Event 格式也可导入，非 \sys 协议字段作为 operation 字段保留。
-
+The algorithm can be implemented in any language as a server, e.g. python backend or
+LLM inference service.
 Output formats include pprof protobuf (compatible with \texttt{go tool pprof -http}), folded-stack text (compatible with \texttt{flamegraph.pl}), standalone SVG flame graphs, and JSON summaries.
 % 输出格式包括 pprof protobuf（兼容 \texttt{go tool pprof -http}）、折叠栈文本（兼容 \texttt{flamegraph.pl}）、独立 SVG 火焰图和 JSON 摘要。
-Operations can also be exported as standard Chrome Trace Event JSON and re-imported with byte-identical folded output, enabling interoperability with trace viewers such as Perfetto.
-% Operation 也可以导出为标准 Chrome Trace Event JSON 并重新导入，折叠输出字节相同，支持与 Perfetto 等 trace 查看器的互操作。
-All outputs are deterministic given the same input and profiling configuration.
-% 在相同输入和 profiling configuration 下，所有输出都是确定性的。
-
-\sys is the offline profiling component of the AgentSight~\cite{agentsight} observability framework.
-% \sys 是 AgentSight~\cite{agentsight} 可观测性框架的离线分析组件。
-AgentSight provides real-time eBPF-based capture of SSL traffic, process events, and file/network effects.
-% AgentSight 提供基于 eBPF 的实时 SSL 流量、进程事件和文件/网络副作用捕获。
-\sys aggregates the recorded trajectories into semantic profiles, so the two are complementary: AgentSight answers ``what happened during this run'' (debugging), and \sys answers ``where did the budget go across runs'' (profiling).
-% \sys 将记录的轨迹聚合为语义概要，因此两者互补：AgentSight 回答"这次运行发生了什么"（调试），\sys 回答"预算跨运行花在了哪里"（分析）。
 
 %% ===================================================================
 \section{Evaluation}
@@ -659,10 +639,13 @@ Per-session grouping finds a first positive quickly (WTFP\,=\,0.004) but fragmen
 Operation-stack profiling inspects 9.4\% of the work in the top five groups, recovers 39.0\% of positives within 30\% of the inspection budget, and reduces groups to 157.5.
 % Operation stack 分析在前五组中检查 9.4\% 的工作量，在 30\% 检查预算内恢复 39.0\% 的正例，并将组数减少到 157.5。
 
-Figure~\ref{fig:rq2-tradeoff} visualizes this tradeoff: operation-stack profiling sits in the low-work, moderate-recall region.
-% Figure~\ref{fig:rq2-tradeoff} 可视化了这一权衡：operation stack 分析位于低工作量、中等召回率区域。
-The comparison also serves as evidence for the operation/operation-stack model (\S\ref{sec:design}).
-% 该比较也作为 operation/operation stack 模型（\S\ref{sec:design}）的证据。
+The three non-oracle policies illustrate a tradeoff between inspection effort and coverage.
+Flat summaries require full inspection but trivially find everything.
+Per-session grouping minimizes the work to find a first positive but scatters the remaining positives across hundreds of groups.
+Operation-stack profiling balances the two: it concentrates positives into fewer, higher-quality groups, trading the fast-first-hit property for broader coverage at lower total effort.
+% 三种非 oracle 策略体现了检查工作量与覆盖率之间的权衡。扁平摘要需要检查全部但能找到一切。固定会话分组最小化找到首个正例的工作量，但将其余正例分散到数百个组中。Operation stack 分析平衡两者：它将正例集中到更少、更高质量的组中，以牺牲快速首次命中换取更低总工作量下的更广覆盖。
+The comparison also serves as evidence for the semantic operation stack model (\S\ref{sec:design}).
+% 该比较也作为语义 operation stack 模型（\S\ref{sec:design}）的证据。
 Per-session grouping and native hierarchy are alternative abstractions that fix the hierarchy at session or dataset boundaries.
 % 固定会话下钻和原生层次是在会话或数据集边界固定层次的替代抽象。
 Operation stacks subsume both as special cases (include \texttt{session} in the stack to reproduce per-session grouping; include \texttt{dataset} to reproduce the native hierarchy).
@@ -672,34 +655,15 @@ On localization, operation stacks improve top-five recall over per-session on 5/
 Per-session grouping retains lower work-to-first-positive on 4/6 tasks, confirming that profilers and debuggers are complementary.
 % 固定会话下钻在 4/6 任务上保持更低的首个正例工作量，确认分析器和调试器是互补的。
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/baseline-tradeoff.png}
-\caption{RQ2: Inspection work vs.\ recall at 30\% inspection budget.
-Operation-stack profiling (tagged) achieves low work (0.094) with moderate
-recall (0.39), while flat requires full inspection and per-session
-fragments into 285 groups. Oracle policies (large dots) are upper bounds.}
-\Description{Scatter plot showing inspection work versus budget recall
-for seven profiling policies.}
-\label{fig:rq2-tradeoff}
-\end{figure}
-
 Statistical validation supports these comparisons.
 % 统计验证支持这些比较。
 Bootstrap (10{,}000 resamples) and tag-permutation (2{,}000 trials) confirm that the AP differences are stable and exceed the 95\% confidence threshold on all six tasks.
 % Bootstrap（10,000 次重采样）和标签置换（2,000 次试验）确认 AP 差异在所有六个任务上是稳定的，且超过 95\% 置信阈值。
 
-We also test whether stack depth matters by sweeping the induced-stack depth cap from 1 to 5 on the same six tasks and measuring AP and inspection work at each depth.
-% 我们还通过在同样六个任务上将诱导栈深度上限从 1 扫到 5 来测试栈深度是否重要，并在每个深度测量 AP 和检查工作量。
-AP peaks at depth 3 (median 0.287) while inspection work is lowest at depth 5 (median 0.473).
-% AP 在深度 3 时达到峰值（中位 0.287），而检查工作量在深度 5 时最低（中位 0.473）。
-Different tasks achieve their best AP at different depths (2, 3, 4, and 5), confirming that depth should be tuned per objective rather than fixed globally.
-% 不同任务在不同深度（2、3、4 和 5）达到最佳 AP，确认深度应按目标调整而非全局固定。
-
-The profiler's configuration is also actionable.
-% 分析器的配置也是可操作的。
-Modifying stack fields, mapping rules, or ranking criteria and re-running on the same operations improves AP on 5/6 tasks (median AP improvement 0.038), confirming that the profiler exposes useful tuning knobs rather than requiring a fixed configuration.
-% 修改栈字段、映射规则或排名标准并在相同 operation 上重新运行，在 5/6 任务上改进了 AP（中位 AP 改进 0.038），确认分析器暴露了有用的调节旋钮而非需要固定配置。
+Both stack depth and profiling configuration are effective tuning levers.
+% 栈深度和 profiling 配置都是有效的调节手段。
+Sweeping the depth cap from 1 to 5 shows that AP peaks at depth 3 (median 0.287) while different tasks achieve their best at different depths (2--5), and modifying stack fields, mapping rules, or ranking criteria improves AP on 5/6 tasks (median improvement 0.038).
+% 将深度上限从 1 扫到 5 显示 AP 在深度 3 达到峰值（中位 0.287），不同任务在不同深度（2--5）达到最佳，修改栈字段、映射规则或排名标准在 5/6 任务上改进 AP（中位改进 0.038）。
 
 %% -------------------------------------------------------------------
 \subsection{RQ3: How Accurate Are the Tags?}
