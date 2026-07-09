@@ -151,18 +151,17 @@ function calls produce stack frames.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth,height=3.2cm,keepaspectratio]{figures/flamegraph-tokens.png}\\[2pt]
-\includegraphics[width=\linewidth,height=3.2cm,keepaspectratio]{figures/flamegraph-files.png}
-\caption{Semantic flame graphs of 325 real agent sessions under two
-views. \emph{Top (tokens view):} width represents token count; bottom
-frames show project and agent, middle frames show semantic labels
-(\texttt{review}, \texttt{debug}, \texttt{test}), top frames show LLM
-calls and models. \emph{Bottom (files view):} width represents
-file-operation count. Changing only the stack fields and weight
-function produces a different aggregate from the same operations
-(Table~\ref{tab:views}).}
-\Description{Two wide flame graphs showing token budget and file-access
-distributions across sessions and prompt categories.}
+\includegraphics[width=\linewidth,height=2.6cm,keepaspectratio]{figures/flamegraph-tokens.png}\\[2pt]
+\includegraphics[width=\linewidth,height=2.6cm,keepaspectratio]{figures/flamegraph-time.png}\\[2pt]
+\includegraphics[width=\linewidth,height=2.6cm,keepaspectratio]{figures/flamegraph-files.png}
+\caption{Semantic flame graphs of 325 real agent trajectories under
+three views. \emph{Top (tokens):} width represents token count.
+\emph{Middle (time):} width represents wall-clock duration.
+\emph{Bottom (files):} width represents file-operation count.
+All three are produced from the same operations by changing only the
+stack fields and weight function (Table~\ref{tab:views}).}
+\Description{Three wide flame graphs showing token budget, time, and
+file-access distributions across sessions and prompt categories.}
 \label{fig:flamegraph}
 \end{figure*}
 
