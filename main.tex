@@ -378,8 +378,8 @@ Each operation carries string fields (\texttt{project},
 \texttt{agent}, \texttt{session}, \texttt{prompt\_tag},
 \texttt{kind}, \texttt{model}, \texttt{path}, \texttt{domain},
 \texttt{status}, \ldots) and additive measures (token count,
-duration, occurrence count).
-% 每个 operation 携带字符串字段（\texttt{project}、\texttt{agent}、\texttt{session}、\texttt{prompt\_tag}、\texttt{kind}、\texttt{model}、\texttt{path}、\texttt{domain}、\texttt{status} 等）和可加度量（token 数、持续时间、出现次数）。
+duration, event count).
+% 每个 operation 携带字符串字段（\texttt{project}、\texttt{agent}、\texttt{session}、\texttt{prompt\_tag}、\texttt{kind}、\texttt{model}、\texttt{path}、\texttt{domain}、\texttt{status} 等）和可加度量（token 数、持续时间、事件数）。
 A prompt, an LLM call, a tool invocation, a file read, a GUI click,
 and a process event are all operation records that differ only in
 which fields are populated.
@@ -452,8 +452,8 @@ attribution to folded-stack flame graphs.}
 
 \paragraph{Intent attribution.}
 % 意图归因。
-Intent attribution maps free-form prompts to short, stable tags,
-giving agent trajectories the stable identifiers that traditional
+Intent attribution maps free-form prompts to short, stable,
+repeatable tags, giving agent trajectories the stable identifiers that traditional
 profiling gets for free from function names
 (\S\ref{sec:background}).
 % 意图归因将自由形式的提示词映射为短小、稳定、可重复的标签，为智能体轨迹提供传统 profiling 从函数名免费获得的稳定标识符（\S\ref{sec:background}）。
@@ -609,11 +609,17 @@ We run the automatic stack-induction mode (\S\ref{sec:stacks}) on the same six t
 % 我们在 RQ2 使用的同样六个任务上运行自动栈诱导模式（\S\ref{sec:stacks}），将结果的分组数和定位质量与扁平摘要和固定会话下钻进行比较。
 Induced stacks produce a median of 12 groups (versus 285 for per-session and 1 for flat), with 4/6 tasks generating variable-depth stacks.
 % 诱导栈产生中位 12 个分组（固定会话 285 个，扁平 1 个），4/6 任务生成可变深度栈。
-The induced stacks achieve lower AP than hand-configured stacks (median 0.276 vs 0.312) because they use only visible fields, but they reduce inspection work to 65.3\% versus flat summaries without requiring any user configuration.
+The induced stacks achieve lower AP than hand-specified stacks (median 0.276 vs 0.312) because they use only visible fields, but they reduce inspection work to 65.3\% versus flat summaries without requiring any user configuration.
 % 诱导栈的 AP 低于手动配置栈（中位 0.276 vs 0.312），因为它们仅使用可见字段，但将检查工作量降至扁平摘要的 65.3\%，无需任何用户配置。
 
 Figure~\ref{fig:flamegraph} shows the resulting flame graphs for the \texttt{tokens} and \texttt{files} views, illustrating that changing only the stack fields and weight function produces different aggregates from the same operations.
 % Figure~\ref{fig:flamegraph} 展示了 \texttt{tokens} 和 \texttt{files} 视图的火焰图，说明仅改变栈字段和权重函数即可从同一组 operation 产生不同聚合。
+
+\noindent\textbf{Conclusion.}
+Semantic profiling substantially improves resource attribution over tag-free tools.
+The prompt-level semantic tag is the critical axis---without it, system-effect cost cannot be separated by task intent.
+Field-selectable operation stacks add a second dimension that flat grouping cannot replicate: the same observations yield different, non-redundant views depending on the analysis question.
+% \textbf{结论。} 语义 profiling 显著改善了相对无标签工具的资源归因。提示词级语义标签是关键轴——没有它，系统副作用开销无法按任务意图分离。可选字段的 operation stack 增加了扁平分组无法复制的第二个维度：同样的观测根据分析问题产生不同的、非冗余的视图。
 
 \begin{figure}[t]
 \centering
@@ -644,13 +650,14 @@ We use public benchmark datasets that provide ground-truth quality annotations (
 
 The benchmark uses six tasks across four datasets (AgentRewardBench looping and side-effect, SATraj-OS unsafe operation, AgentNet incorrect and redundant step, and OSWorld-Human group start), totaling 34{,}539 operations and 3{,}699 positives.
 % 基准使用四个数据集的六个任务（AgentRewardBench 循环和副作用、SATraj-OS 不安全操作、AgentNet 不正确和冗余步骤、OSWorld-Human 组起始），共计 34,539 个 operation 和 3,699 个正例。
-We compare six grouping strategies (flat summary, per-session grouping, native hierarchy, raw-action grouping, operation-stack profiling, and an oracle that uses the hidden annotations) and rank groups by the fraction of hidden positives they contain.
-% 我们比较六种分组策略（扁平摘要、固定会话下钻、原生层次、原始操作分组、operation stack 分析，以及使用隐藏标签的 oracle），按组包含的隐藏正例比例对组排序。
+We compare seven grouping strategies (flat summary, per-session grouping, native hierarchy, raw-action grouping, operation-stack profiling, operation-stack with oracle fields, and a full oracle that uses the hidden annotations) and rank groups by the fraction of hidden positives they contain.
+% 我们比较七种分组策略（扁平摘要、固定会话分组、原生层次、原始操作分组、operation stack 分析、operation stack 加 oracle 字段，以及使用隐藏标签的完整 oracle），按组包含的隐藏正例比例对组排序。
 
 \begin{table*}[t]
 \centering\small
 \caption{RQ2 hidden-annotation localization (medians across six tasks).
-AP = average precision. R@5 = recall in top 5 groups. Work@5 = fraction
+AP = average precision. R@5 = recall in top 5 groups. F1@5 = F1 score
+in top 5 groups. Work@5 = fraction
 of total work in top 5 groups. R@30\% = recall at 30\% inspection budget.
 WTFP = work-to-first-positive (fraction inspected before finding one positive).
 Hidden = 1 means the policy uses hidden annotations (oracle upper bound).
@@ -661,7 +668,7 @@ Hidden = 1 means the policy uses hidden annotations (oracle upper bound).
 Policy & Hidden & AP & R@5 & F1@5 & Work@5 & R@30\% & WTFP & Groups \\
 \midrule
 Flat (all-in-one) & 0 & 0.168 & 1.000 & 0.287 & 1.000 & 0.000 & 1.000 & 1.0 \\
-Per-session drilldown & 0 & 0.348 & 0.023 & 0.043 & 0.016 & 0.356 & 0.004 & 285.0 \\
+Per-session grouping & 0 & 0.348 & 0.023 & 0.043 & 0.016 & 0.356 & 0.004 & 285.0 \\
 Native hierarchy & 0 & 0.357 & 0.867 & 0.282 & 0.854 & 0.338 & 0.058 & --- \\
 Raw-action grouping & 0 & 0.274 & 0.244 & 0.220 & 0.151 & 0.333 & 0.037 & --- \\
 Operation-stack profiling & 0 & 0.312 & 0.188 & 0.198 & 0.094 & 0.390 & 0.038 & 157.5 \\
@@ -701,7 +708,7 @@ Operation-stack profiling (tagged) achieves low work (0.094) with moderate
 recall (0.39), while flat requires full inspection and per-session
 fragments into 285 groups. Oracle policies (large dots) are upper bounds.}
 \Description{Scatter plot showing inspection work versus budget recall
-for eight profiling policies.}
+for seven profiling policies.}
 \label{fig:rq2-tradeoff}
 \end{figure}
 
