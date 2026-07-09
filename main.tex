@@ -616,7 +616,7 @@ We use public benchmark datasets that provide ground-truth quality annotations (
 
 The benchmark uses six tasks across four datasets (AgentRewardBench looping and side-effect, SATraj-OS unsafe operation, AgentNet incorrect and redundant step, and OSWorld-Human group start), totaling 34{,}539 operations and 3{,}699 positives.
 % 基准使用四个数据集的六个任务（AgentRewardBench 循环和副作用、SATraj-OS 不安全操作、AgentNet 不正确和冗余步骤、OSWorld-Human 组起始），共计 34,539 个 operation 和 3,699 个正例。
-We compare seven grouping strategies and rank groups by the fraction of hidden positives they contain.
+We compare seven grouping methods and rank groups by the fraction of hidden positives they contain.
 Flat summary places all operations in one group.
 Per-session grouping groups by session boundary.
 Native hierarchy uses the dataset's own structure (e.g., episode and step levels).
@@ -632,12 +632,12 @@ AP = average precision. R@5 = recall in top 5 groups. F1@5 = F1 score
 in top 5 groups. Work@5 = fraction
 of total work in top 5 groups. R@30\% = recall at 30\% inspection budget.
 WTFP = work-to-first-positive (fraction inspected before finding one positive).
-Hidden = 1 means the policy uses hidden annotations (oracle upper bound).
+Hidden = 1 means the method uses hidden annotations (upper bound).
 ``---'' = group count varies by task.}
 \label{tab:localization}
 \begin{tabular}{lrrrrrrrr}
 \toprule
-Policy & Hidden & AP & R@5 & F1@5 & Work@5 & R@30\% & WTFP & Groups \\
+Method & Hidden & AP & R@5 & F1@5 & Work@5 & R@30\% & WTFP & Groups \\
 \midrule
 Flat (all-in-one) & 0 & 0.168 & 1.000 & 0.287 & 1.000 & 0.000 & 1.000 & 1.0 \\
 Per-session grouping & 0 & 0.348 & 0.023 & 0.043 & 0.016 & 0.356 & 0.004 & 285.0 \\
@@ -659,11 +659,11 @@ Per-session grouping finds a first positive quickly (WTFP\,=\,0.004) but fragmen
 Operation-stack profiling inspects 9.4\% of the work in the top five groups, recovers 39.0\% of positives within 30\% of the inspection budget, and reduces groups to 157.5.
 % Operation stack 分析在前五组中检查 9.4\% 的工作量，在 30\% 检查预算内恢复 39.0\% 的正例，并将组数减少到 157.5。
 
-The three non-oracle policies illustrate a tradeoff between inspection effort and coverage.
+These three methods (which do not use hidden annotations) illustrate a tradeoff between inspection effort and coverage.
 Flat summaries require full inspection but trivially find everything.
 Per-session grouping minimizes the work to find a first positive but scatters the remaining positives across hundreds of groups.
 Operation-stack profiling balances the two: it concentrates positives into fewer, higher-quality groups, trading the fast-first-hit property for broader coverage at lower total effort.
-% 三种非 oracle 策略体现了检查工作量与覆盖率之间的权衡。扁平摘要需要检查全部但能找到一切。固定会话分组最小化找到首个正例的工作量，但将其余正例分散到数百个组中。Operation stack 分析平衡两者：它将正例集中到更少、更高质量的组中，以牺牲快速首次命中换取更低总工作量下的更广覆盖。
+% 三种不使用隐藏标注的分组方法体现了检查工作量与覆盖率之间的权衡。扁平摘要需要检查全部但能找到一切。固定会话分组最小化找到首个正例的工作量，但将其余正例分散到数百个组中。Operation stack 分析平衡两者：它将正例集中到更少、更高质量的组中，以牺牲快速首次命中换取更低总工作量下的更广覆盖。
 The comparison also serves as evidence for the semantic operation stack model (\S\ref{sec:design}).
 % 该比较也作为语义 operation stack 模型（\S\ref{sec:design}）的证据。
 Per-session grouping and native hierarchy are alternative abstractions that fix the hierarchy at session or dataset boundaries.
