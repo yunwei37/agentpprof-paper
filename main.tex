@@ -85,17 +85,22 @@ layers, high-level intent (prompts, LLM calls, tool invocations) and
 low-level system effects (process spawns, file and network I/O).
 % AI 智能体编排跨越两层的多步骤活动：高层意图（提示词、LLM 调用、工具调用）和低层系统副作用（进程创建、文件和网络 I/O）。
 As agents evolve from short, scripted workflows into complex systems
-that run for hours, production teams accumulate hundreds of sessions
-over weeks or months.
-% 随着智能体从短小的脚本化工作流进化为运行数小时的复杂系统，生产团队在数周或数月内积累数百个会话。
+that run for hours and days, with a large number of interactions each, production
+teams accumulate many such trajectories over weeks or months.
+% 随着智能体从短小的脚本化工作流进化为每次运行数小时、包含数千次交互的复杂系统，生产团队在数周或数月内积累大量此类轨迹。
 
 %% ¶2: Problem
 To improve agent quality, safety, and cost efficiency, developers
-need to analyze operational behavior across sessions.
+need to analyze operational behavior across trajectories and
+interactions.
 Which categories of tasks consume the most token budget? Where do
 failures concentrate across workflows? Which behavioral patterns
 trigger unsafe system effects?
-% 为了提高智能体质量、安全性和成本效率，开发者需要跨会话分析运维行为：哪类任务消耗最多 token 预算、故障跨工作流集中在哪里、哪些行为模式触发不安全系统副作用。
+% 为了提高智能体质量、安全性和成本效率，开发者需要跨轨迹和交互分析运维行为。哪类任务消耗最多 token 预算？故障跨工作流集中在哪里？哪些行为模式触发不安全系统副作用？
+Answering these questions requires analysis and evaluation across many
+trajectories, a task too costly for manual inspection or
+per-trajectory LLM evaluation~\cite{llm-as-judge}.
+% 回答这些问题需要跨许多轨迹的分析和评估，人工检查或逐轨迹 LLM 评估的成本太高。
 In traditional systems software, profiling answers these questions by
 attributing resource consumption to responsible entities by
 aggregation, as distinct from single-execution debugging and tracing.
@@ -107,7 +112,7 @@ Existing agent tools support debugging and tracing but not profiling.
 LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse},
 Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize
 events into per-session span trees, effective for diagnosing a single
-run but unable to aggregate across sessions by semantic category.
+run but unable to aggregate by semantic category.
 % LangSmith~\cite{langsmith}、Langfuse~\cite{langfuse}、Phoenix~\cite{phoenix} 和 OpenTelemetry GenAI~\cite{otel} 将事件组织为按会话的 span 树，有效诊断单次运行但无法按语义类别跨会话聚合。
 Datadog LLM Observability~\cite{datadog-llmobs} clusters user
 messages by topic, and Laminar~\cite{laminar-signals} extracts
@@ -121,7 +126,7 @@ to downstream tool calls and system effects.
 %% ¶4: Challenge — why traditional profiling doesn't transfer directly
 Adapting profiling to agent trajectories is challenging
 (\S\ref{sec:background}).
-% 将 profiling 适配到智能体 trace 具有挑战性（\S\ref{sec:background}）。
+% 将 profiling 适配到智能体轨迹具有挑战性（\S\ref{sec:background}）。
 In traditional software, the responsible entities are code paths.
 Profiling is straightforward because function names are
 deterministic and runtime call nesting provides the aggregation
@@ -172,7 +177,7 @@ the same data.
 We implement this model in \sys, an offline profiler that compiles
 local agent trajectories into pprof-compatible profiles
 (Figure~\ref{fig:architecture}).
-% 我们在 \sys 中实现此模型，这是一个离线 profiler，将本地智能体 trace 编译为 pprof 兼容的 profile（Figure~\ref{fig:architecture}）。
+% 我们在 \sys 中实现此模型，这是一个离线 profiler，将本地智能体轨迹编译为 pprof 兼容的 profile（Figure~\ref{fig:architecture}）。
 Two pluggable algorithm frameworks enrich the model.
 % 两个可插拔算法框架丰富此模型。
 \emph{Intent attribution} derives deterministic, low-cardinality labels from natural-language fields via regex rules, a local LLM tagger, or unsupervised clustering.
