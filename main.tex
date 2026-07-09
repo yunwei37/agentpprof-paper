@@ -101,21 +101,19 @@ aggregation, as distinct from single-execution debugging and tracing.
 
 %% ¶3: Existing solutions
 Yet existing agent tools support debugging and tracing but not
-profiling.
-% 然而现有智能体工具支持调试和 tracing，但不支持 profiling。
-LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse},
-Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize
-events into per-session span trees, effective for diagnosing a single
-run but unable to aggregate by semantic category.
-% LangSmith~\cite{langsmith}、Langfuse~\cite{langfuse}、Phoenix~\cite{phoenix} 和 OpenTelemetry GenAI~\cite{otel} 将事件组织为按会话的 span 树，有效诊断单次运行但无法按语义类别跨会话聚合。
-Datadog LLM Observability~\cite{datadog-llmobs} clusters user
-messages by topic, and Laminar~\cite{laminar-signals} extracts
-structured signals from traces, but both characterize \emph{input
+profiling (\S\ref{sec:background}).
+% 然而现有智能体工具支持调试和 tracing，但不支持 profiling（\S\ref{sec:background}）。
+Some~\cite{langsmith,langfuse,phoenix,otel} organize events into
+per-execution span trees, effective for diagnosing a single run but
+unable to aggregate by semantic category.
+% 一些工具~\cite{langsmith,langfuse,phoenix,otel}将事件组织为按执行划分的 span 树，有效诊断单次运行但无法按语义类别聚合。
+Others~\cite{datadog-llmobs,laminar-signals} cluster inputs or
+extract structured signals, but characterize \emph{input
 distributions} (``30\% of users ask code questions'') rather than
 \emph{resource attribution} (``review tasks consume 40\% of the
 token budget''), because labels at the request level do not propagate
 to downstream tool calls and system effects.
-% Datadog LLM Observability~\cite{datadog-llmobs} 按主题聚类用户消息，Laminar~\cite{laminar-signals} 从 trace 中提取结构化信号，但两者都刻画输入分布（"30\% 的用户提问代码问题"）而非资源归因（"review 任务消耗了 40\% 的 token 预算"），因为请求级的标签不会传播到下游工具调用和系统副作用。
+% 另一些~\cite{datadog-llmobs,laminar-signals}聚类输入或提取结构化信号，但刻画的是输入分布（"30\% 的用户提问代码问题"）而非资源归因（"review 任务消耗了 40\% 的 token 预算"），因为请求级的标签不会传播到下游工具调用和系统副作用。
 
 %% ¶4: Challenge — why traditional profiling doesn't transfer directly
 Adapting profiling to agent trajectories is challenging
@@ -124,7 +122,7 @@ Adapting profiling to agent trajectories is challenging
 In traditional software, the responsible entities are code paths.
 Profiling is straightforward because function names are
 deterministic and runtime call nesting provides the aggregation
-hierarchy, and flame graphs~\cite{flamegraphs}, pprof~\cite{pprof}, and Perfetto~\cite{perfetto} visualize the result.
+hierarchy (\S\ref{sec:background}).
 % 在传统软件中，负责实体是代码路径。Profiling 是直接的，因为函数名是确定性的，运行时调用嵌套提供聚合层次，火焰图~\cite{flamegraphs}可视化其结果。
 Agent behavior differs fundamentally.
 To answer the questions above, the responsible entities need to be
@@ -144,9 +142,9 @@ function calls produce stack frames.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth,height=2.6cm,keepaspectratio]{figures/flamegraph-tokens.png}\\[2pt]
-\includegraphics[width=\linewidth,height=2.6cm,keepaspectratio]{figures/flamegraph-time.png}\\[2pt]
-\includegraphics[width=\linewidth,height=2.6cm,keepaspectratio]{figures/flamegraph-files.png}
+\includegraphics[width=\linewidth]{figures/flamegraph-tokens.png}\\[2pt]
+\includegraphics[width=\linewidth]{figures/flamegraph-time.png}\\[2pt]
+\includegraphics[width=\linewidth]{figures/flamegraph-files.png}
 \caption{Semantic flame graphs of 325 real agent trajectories under
 three views. \emph{Top (tokens):} width represents token count.
 \emph{Middle (time):} width represents wall-clock duration.
@@ -241,8 +239,8 @@ This paper makes three contributions:
 \section{Background and Motivation}
 \label{sec:background}
 
-\subsection{AI Agent Observability}
-% AI 智能体可观测性
+\subsection{LLMs and AI Agents}
+% AI 智能体
 
 A typical agent trajectory interleaves two layers of activity.
 % 典型的智能体轨迹交织两层活动。
@@ -256,22 +254,14 @@ A single trajectory may contain hundreds of such intent-effect
 cycles, and a production team accumulates many trajectories over
 time.
 % 单条轨迹可能包含数百个这样的意图-副作用循环，生产团队随时间积累许多轨迹。
-Existing tools~\cite{langsmith,langfuse,phoenix,otel} record these
-events as per-execution span trees, effective for debugging a single
-run.
-% 现有工具~\cite{langsmith,langfuse,phoenix,otel}将这些事件记录为按执行划分的 span 树，有效调试单次运行。
-AgentSight~\cite{agentsight} bridges the two layers by correlating
-eBPF-captured system events with intercepted LLM traffic, but the
-resulting traces still lack aggregate profiling.
-% AgentSight~\cite{agentsight} 通过关联 eBPF 捕获的系统事件与拦截的 LLM 流量来桥接两层，但生成的 trace 仍缺乏聚合分析能力。
 
-\subsection{Profiling vs.\ Debugging}
-% 性能分析 vs. 调试
+\subsection{System Profiling}
+% 系统 Profiling
 
-As noted in \S\ref{sec:intro}, profiling attributes resource
-consumption to responsible entities by aggregation, as distinct from
-single-execution debugging and tracing.
-% 如 \S\ref{sec:intro} 所述，profiling 通过聚合将资源消耗归因到负责实体，区别于单次执行调试和 tracing。
+Profiling attributes resource consumption to responsible entities by
+aggregation, as distinct from single-execution debugging and
+tracing.
+% Profiling 通过聚合将资源消耗归因到负责实体，区别于单次执行调试和 tracing。
 In traditional software, the profiling pipeline works as follows:
 a profiler periodically samples execution state, attaches each
 sample to the current call stack, and merges samples with identical
@@ -292,11 +282,20 @@ label-derived pseudo-frames, but only on top of an existing execution
 stack that agent trajectories do not have.
 % Pprof 的 \texttt{tagroot}/\texttt{tagleaf} 选项可以添加标签衍生的伪帧，但仅在智能体轨迹不具备的已有执行栈之上。
 
-\subsection{The Aggregation Gap}
-% 聚合缺口
+\subsection{The Aggregation Gap for Agents}
+% 智能体的聚合缺口
 
-Existing agent observability tools~\cite{langsmith,langfuse,phoenix,otel,datadog-llmobs} are designed for debugging, not profiling, and this creates three concrete gaps.
-% 现有智能体可观测性工具~\cite{langsmith,langfuse,phoenix,otel,datadog-llmobs}为调试而设计，而非性能分析，这造成了三个具体缺口。
+Existing tools~\cite{langsmith,langfuse,phoenix,otel} record agent
+events as per-execution span trees, effective for debugging a single
+run.
+% 现有工具~\cite{langsmith,langfuse,phoenix,otel}将智能体事件记录为按执行划分的 span 树，有效调试单次运行。
+AgentSight~\cite{agentsight} bridges intent and system-effect layers
+by correlating eBPF-captured system events with intercepted LLM
+traffic, but the resulting traces still lack aggregate profiling.
+% AgentSight~\cite{agentsight} 通过关联 eBPF 捕获的系统事件与拦截的 LLM 流量来桥接意图层和系统副作用层，但生成的 trace 仍缺乏聚合分析能力。
+None of these tools provides cross-trajectory resource attribution
+by semantic category, and this creates three concrete gaps.
+% 这些工具都不提供按语义类别的跨轨迹资源归因，这造成了三个具体缺口。
 
 First, sessions are boundaries, not categories.
 % 第一，会话是边界，不是类别。
@@ -317,6 +316,9 @@ A common system effect like running a test suite may appear thousands of times a
 We quantify this in RQ1~(\S\ref{sec:eval}).
 % 我们在 RQ1~(\S\ref{sec:eval}) 中量化了这一点。
 
+\subsection{Design Requirements for Agent Profiling}
+% 智能体 Profiling 的设计需求
+
 These observations yield three design requirements:
 % 这些观察得出三个设计需求：
 
@@ -335,7 +337,7 @@ Sessions and spans must be fields, not fixed hierarchy nodes.
 Free-form prompts must be mapped to short, stable, repeatable labels before folding.
 % 自由形式的提示词必须在折叠前映射为短小、稳定、可重复的标签。
 This \emph{intent attribution} step has no analogue in CPU profiling, where function names are already deterministic.
-% 这一意图识别步骤在 CPU 性能分析中没有对应物，因为函数名已经是确定性的。
+% 这一意图归因步骤在 CPU 性能分析中没有对应物，因为函数名已经是确定性的。
 \end{description}
 
 %% ===================================================================
@@ -860,13 +862,21 @@ The evaluation uses per-session grouping as a proxy for span-tree debugging tool
 \section{Related Work}
 % 相关工作
 
-Agent observability tools~\cite{langsmith,langfuse,phoenix,otel,openinference,agentops,agenttelemetry} and accountability surveys~\cite{agenttraces-trust} focus on single-execution debugging.
-% 智能体可观测性工具~\cite{langsmith,langfuse,phoenix,otel,openinference,agentops,agenttelemetry}和问责综述~\cite{agenttraces-trust}聚焦于单次执行调试。
-Datadog LLM Observability~\cite{datadog-llmobs} and Laminar~\cite{laminar-signals} take steps toward semantic aggregation by clustering user messages or extracting structured events, but they characterize \emph{input distributions}, not \emph{resource attribution}.
-% Datadog LLM Observability~\cite{datadog-llmobs} 和 Laminar~\cite{laminar-signals} 通过聚类用户消息或提取结构化事件向语义聚合迈进，但它们刻画的是输入分布而非资源归因。
-AgentRx~\cite{agentrx}, TELBench~\cite{telbench}, AgentAtlas~\cite{agentatlas}, TrajAD~\cite{trajad}, and AgentFixer~\cite{agentfixer} perform span-level or step-level fault localization within a single execution.
-% AgentRx~\cite{agentrx}、TELBench~\cite{telbench}、AgentAtlas~\cite{agentatlas}、TrajAD~\cite{trajad} 和 AgentFixer~\cite{agentfixer} 在单次执行内执行 span 级或步骤级故障定位。
-\sys complements all of these with category-level aggregate profiling across trajectories.
+Agent observability
+tools~\cite{langsmith,langfuse,phoenix,otel,openinference,agentops,agenttelemetry,agenttraces-trust}
+focus on single-execution debugging.
+% 智能体可观测性工具~\cite{langsmith,langfuse,phoenix,otel,openinference,agentops,agenttelemetry,agenttraces-trust}聚焦于单次执行调试。
+Datadog LLM Observability~\cite{datadog-llmobs} and
+Laminar~\cite{laminar-signals} cluster inputs or extract signals but
+characterize input distributions, not resource attribution.
+% Datadog LLM Observability~\cite{datadog-llmobs} 和 Laminar~\cite{laminar-signals} 聚类输入或提取信号，但刻画的是输入分布而非资源归因。
+AgentRx~\cite{agentrx}, TELBench~\cite{telbench},
+AgentAtlas~\cite{agentatlas}, TrajAD~\cite{trajad}, and
+AgentFixer~\cite{agentfixer} perform per-trajectory fault
+localization.
+% AgentRx~\cite{agentrx}、TELBench~\cite{telbench}、AgentAtlas~\cite{agentatlas}、TrajAD~\cite{trajad} 和 AgentFixer~\cite{agentfixer} 执行逐轨迹故障定位。
+\sys complements all of these with category-level aggregate profiling
+across trajectories.
 % \sys 以跨轨迹的类别级聚合 profiling 补充所有这些工具。
 
 %% ===================================================================
