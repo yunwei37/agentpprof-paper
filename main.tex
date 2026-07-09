@@ -100,9 +100,8 @@ aggregation, as distinct from single-execution debugging and tracing.
 % 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责实体来回答这些问题，区别于单次执行调试和 tracing。
 
 %% ¶3: Existing solutions
-Agent observability today has only debugging and tracing, not
-profiling.
-% 当今的智能体可观测性只有调试和 tracing，没有 profiling。
+Existing agent tools support debugging and tracing but not profiling.
+% 现有智能体工具支持调试和 tracing，但不支持 profiling。
 LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse},
 Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize
 events into per-session span trees, effective for diagnosing a single
