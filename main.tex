@@ -52,7 +52,7 @@ deterministic identifiers and structural hierarchies that make
 aggregation possible.
 % 智能体行为与代码执行有根本不同。负责实体是语义类别（如任务意图和工作流阶段），而非代码路径，且智能体轨迹缺乏使聚合成为可能的确定性标识符和结构层次。
 %% S6: Model (→¶5)
-We propose the first \emph{semantic operation stack model} that
+We propose the a \emph{semantic operation stack model} that
 adapts profiling to agent trajectories.
 Uniform \emph{operations} represent all agent activities, and
 \emph{operation stacks} replace the runtime call stack with
@@ -77,13 +77,9 @@ across agent trajectories.
 \label{sec:intro}
 
 %% ¶1: Background + context
-AI agents orchestrate multi-step activities that span two
-layers, high-level intent (prompts, LLM calls, tool invocations) and
-low-level system effects (process spawns, file and network I/O).
-% AI 智能体编排跨越两层的多步骤活动：高层意图（提示词、LLM 调用、工具调用）和低层系统副作用（进程创建、文件和网络 I/O）。
-As agents evolve from short, scripted workflows into complex systems
-that run for hours and days, with a large number of interactions each, production
-teams accumulate many such trajectories over weeks or months.
+AI agents~\cite{sweagent,claudecode,osworld} orchestrate multi-step activities that span two layers, high-level intent (prompts, LLM calls, tool invocations) and low-level system effects (process spawns, file and network I/O).
+% AI 智能体~\cite{sweagent,claudecode,osworld}编排跨越两层的多步骤活动：高层意图（提示词、LLM 调用、工具调用）和低层系统副作用（进程创建、文件和网络 I/O）。
+As agents evolve from short, scripted workflows into complex systems that run for hours and days, with a large number of interactions each, production teams accumulate many such trajectories over weeks or months.
 % 随着智能体从短小的脚本化工作流进化为每次运行数小时、包含数千次交互的复杂系统，生产团队在数周或数月内积累大量此类轨迹。
 
 %% ¶2: Problem
@@ -95,7 +91,7 @@ failures concentrate across workflows? Which behavioral patterns
 trigger unsafe system effects?
 % 为了提高智能体质量、安全性和成本效率，开发者需要跨轨迹和交互分析运维行为。哪类任务消耗最多 token 预算？故障跨工作流集中在哪里？哪些行为模式触发不安全系统副作用？
 Answering these questions requires analysis and evaluation across many
-trajectories, a task becoming costly for manual inspection or
+trajectories~\cite{agentatlas,agentrewardbench}, a task becoming costly for manual inspection or
 per-trajectory LLM evaluation~\cite{llm-as-judge} at scale.
 % 回答这些问题需要跨许多轨迹的分析和评估，在规模化时人工检查或逐轨迹 LLM 评估的成本越来越高。
 In traditional systems software, profiling answers these questions by
@@ -128,7 +124,7 @@ Adapting profiling to agent trajectories is challenging
 In traditional software, the responsible entities are code paths.
 Profiling is straightforward because function names are
 deterministic and runtime call nesting provides the aggregation
-hierarchy, and flame graphs~\cite{flamegraphs} and pprof~\cite{pprof} call graphs visualize the result.
+hierarchy, and flame graphs~\cite{flamegraphs}, pprof~\cite{pprof}, and Perfetto~\cite{perfetto} visualize the result.
 % 在传统软件中，负责实体是代码路径。Profiling 是直接的，因为函数名是确定性的，运行时调用嵌套提供聚合层次，火焰图~\cite{flamegraphs}可视化其结果。
 Agent behavior differs fundamentally.
 To answer the questions above, the responsible entities need to be
@@ -250,8 +246,8 @@ This paper makes three contributions:
 
 As introduced in \S\ref{sec:intro}, agent activities span both intent and system-effect layers.
 % 如 \S\ref{sec:intro} 所述，智能体活动跨越意图层和系统副作用层。
-Existing observability tools cover these layers separately.
-% 现有可观测性工具分别覆盖这两层。
+Existing observability tools~\cite{agentops,agenttelemetry} cover these layers separately.
+% 现有可观测性工具~\cite{agentops,agenttelemetry}分别覆盖这两层。
 LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse}, Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize agent-level events into per-execution \emph{span trees}.
 % LangSmith~\cite{langsmith}、Langfuse~\cite{langfuse}、Phoenix~\cite{phoenix} 和 OpenTelemetry GenAI~\cite{otel} 将智能体级事件组织为按执行划分的 span 树。
 System monitors show process and file activity without semantic attribution.
@@ -283,14 +279,14 @@ First, prompts are natural language and lack deterministic identifiers.
 % 第一，提示词是自然语言，缺乏确定性标识符。
 Second, agent events have no inherent call stack because they lack the runtime-determined parent-child nesting that function calls provide.
 % 第二，智能体事件没有固有的调用栈，因为它们缺乏函数调用提供的运行时确定的父子嵌套关系。
-Pprof's \texttt{tagroot}/\texttt{tagleaf} options add label-derived pseudo-frames to an existing execution stack, but agent activities have no execution stack to augment.
-% Pprof 的 \texttt{tagroot}/\texttt{tagleaf} 选项在已有执行栈上添加标签衍生的伪帧，但智能体活动没有执行栈可供扩展。
+Pprof's~\cite{pprof} \texttt{tagroot}/\texttt{tagleaf} options add label-derived pseudo-frames to an existing execution stack, but agent activities have no execution stack to augment.
+% Pprof~\cite{pprof} 的 \texttt{tagroot}/\texttt{tagleaf} 选项在已有执行栈上添加标签衍生的伪帧，但智能体活动没有执行栈可供扩展。
 
 \subsection{The Aggregation Gap}
 % 聚合缺口
 
-Existing agent observability tools are designed for debugging, not profiling, and this creates three concrete gaps.
-% 现有智能体可观测性工具为调试而设计，而非性能分析，这造成了三个具体缺口。
+Existing agent observability tools~\cite{langsmith,langfuse,phoenix,otel,datadog-llmobs} are designed for debugging, not profiling, and this creates three concrete gaps.
+% 现有智能体可观测性工具~\cite{langsmith,langfuse,phoenix,otel,datadog-llmobs}为调试而设计，而非性能分析，这造成了三个具体缺口。
 
 First, sessions are boundaries, not categories.
 % 第一，会话是边界，不是类别。
@@ -299,8 +295,8 @@ A single session may contain review, debugging, and refactoring phases, and spli
 Two sessions performing the same task produce separate buckets that cannot be merged without external logic.
 % 执行相同任务的两个会话会产生无法在没有外部逻辑的情况下合并的分离桶。
 
-Second, span names describe mechanisms (\texttt{LLMCall}, \texttt{ToolInvoke}, \texttt{ChatCompletion}), not user intent (\texttt{review}, \texttt{debug}, \texttt{test}).
-% 第二，span 名称描述机制（\texttt{LLMCall}、\texttt{ToolInvoke}、\texttt{ChatCompletion}），而非用户意图（\texttt{review}、\texttt{debug}、\texttt{test}）。
+Second, span names~\cite{otel,openinference} describe mechanisms (\texttt{LLMCall}, \texttt{ToolInvoke}, \texttt{ChatCompletion}), not user intent (\texttt{review}, \texttt{debug}, \texttt{test}).
+% 第二，span 名称~\cite{otel,openinference}描述机制（\texttt{LLMCall}、\texttt{ToolInvoke}、\texttt{ChatCompletion}），而非用户意图（\texttt{review}、\texttt{debug}、\texttt{test}）。
 Grouping by span name tells you how many LLM calls occurred, not which categories of work consumed the budget.
 % 按 span 名称分组只能告诉你发生了多少次 LLM 调用，而非哪些工作类别消耗了预算。
 
