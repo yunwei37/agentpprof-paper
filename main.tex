@@ -149,7 +149,7 @@ three views. \emph{Top (tokens):} width represents token count.
 \emph{Middle (time):} width represents wall-clock duration.
 \emph{Bottom (files):} width represents file-operation count.
 All three are produced from the same operations by changing only the
-stack fields and weight function (Table~\ref{tab:views}).}
+stack fields and weight function.}
 \Description{Three wide flame graphs showing token budget, time, and
 file-access distributions across trajectories and prompt categories.}
 \label{fig:flamegraph}
@@ -399,35 +399,19 @@ $\varphi$ selects which operations participate, a stack function
 $\sigma = [f_1, \ldots, f_k]$ maps each operation to its frame
 sequence, and a weight function $w$ assigns a nonnegative measure.
 % 一个视图是三元组 $(\varphi, \sigma, w)$：谓词 $\varphi$ 选择参与的 operation，栈函数 $\sigma = [f_1, \ldots, f_k]$ 将每个 operation 映射到其帧序列，权重函数 $w$ 赋予非负度量。
-Four built-in defaults (Table~\ref{tab:views}) answer common
-questions.
-% 四个内置默认视图（Table~\ref{tab:views}）回答常见问题。
-
-\begin{table}[t]
-\centering\small
-\caption{Built-in views. Each shares the same operation set
-but selects different activities, stack structures, and weights.}
-\label{tab:views}
-\begin{tabular}{llll}
-\toprule
-View & $\varphi$ (select) & $w$ (width) & Question \\
-\midrule
-\texttt{tokens} & LLM calls & token count & Budget distribution? \\
-\texttt{time} & All timed ops & duration (s) & Time distribution? \\
-\texttt{files} & File-effect ops & event count & Repo coverage? \\
-\texttt{network} & Net-effect ops & event count & External contacts? \\
-\bottomrule
-\end{tabular}
-\end{table}
+Four built-in views cover common questions: \texttt{tokens} (LLM calls weighted by token count), \texttt{time} (all timed operations weighted by duration), \texttt{files} (file operations weighted by event count), and \texttt{network} (network operations weighted by event count).
+% 四个内置视图覆盖常见问题：\texttt{tokens}（LLM 调用按 token 数加权）、\texttt{time}（所有计时操作按时长加权）、\texttt{files}（文件操作按事件数加权）和 \texttt{network}（网络操作按事件数加权）。
 
 \begin{figure}[t]
 \centering
 \resizebox{\linewidth}{!}{\input{figures/fig-architecture.tex}}
-\caption{System architecture. Local agent histories enter through
-\texttt{agent-session} parsing. Public datasets enter as operation JSONL.
-Both paths produce operations. The stack query and output are identical.}
-\Description{Data flow from agent trajectories through parsing and intent
-attribution to folded-stack flame graphs.}
+\caption{Data-flow and algorithm pipeline. Local agent histories enter
+through \texttt{agent-session} parsing; public datasets enter as
+operation JSONL. Both paths produce uniform operations. Intent
+attribution, stack construction, and folding are query-time algorithms
+applied identically to both sources.}
+\Description{Data-flow diagram from agent trajectories through parsing,
+intent attribution, and stack construction to folded-stack output.}
 \label{fig:architecture}
 \end{figure}
 
@@ -681,8 +665,8 @@ The comparison also serves as evidence for the operation/operation-stack model (
 % 该比较也作为 operation/operation stack 模型（\S\ref{sec:design}）的证据。
 Per-session grouping and native hierarchy are alternative abstractions that fix the hierarchy at session or dataset boundaries.
 % 固定会话下钻和原生层次是在会话或数据集边界固定层次的替代抽象。
-Operation stacks subsume both as special cases (include \texttt{session} in the stack to recover per-session; include \texttt{dataset} to recover the native hierarchy).
-% Operation stack 将两者作为特例包含（栈中包含 \texttt{session} 恢复固定会话；包含 \texttt{dataset} 恢复原生层次）。
+Operation stacks subsume both as special cases (include \texttt{session} in the stack to reproduce per-session grouping; include \texttt{dataset} to reproduce the native hierarchy).
+% Operation stack 将两者作为特例包含（栈中包含 \texttt{session} 重现固定会话分组；包含 \texttt{dataset} 重现原生层次）。
 On localization, operation stacks improve top-five recall over per-session on 5/6 tasks, reduce median group count by 45\%, and save 90\% of inspection work versus flat summaries.
 % 在定位方面，operation stack 在 5/6 任务上改进了相对固定会话的前五召回率，中位组数减少 45\%，比扁平摘要节省 90\% 的检查工作量。
 Per-session grouping retains lower work-to-first-positive on 4/6 tasks, confirming that profilers and debuggers are complementary.
