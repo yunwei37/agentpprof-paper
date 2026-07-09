@@ -82,11 +82,20 @@ across agent trajectories.
 % find where failures concentrate, 
 % locate the workflow phases triggering unsafe effects, 
 % and identify the tasks that consumes most budget. 
-% In traditional software, execution profiling solves this 
-% by aggregating resource consumption over deterministic call stacks.
-% However, unlike traditional software where code paths provide a natural hierarchy for profiling, 
-% agent behaviors are driven by unstructured natural language prompts and lack deterministic execution stacks. To bridge this gap, we propose the Semantic Operation Stack model. First, we unify all heterogeneous agent activities (prompts, tool calls, and system I/O) into a single structured record called an operation. Second, we construct dynamic call stacks at query time by projecting these operations onto user-defined semantic fields (e.g., intent -> phase -> action), merging identical sequences to generate flame graphs.
-
+% While performance profiling traditionally answers these questions 
+% for classic software by aggregating resource consumption, 
+% traditional profilers fail for agents.
+% unlike traditional software where code paths provide a natural hierarchy for profiling, 
+% agent behaviors are driven by unstructured natural language prompts 
+% and lack deterministic execution stacks. 
+% To bridge this gap, we propose the Semantic Operation Stack model. 
+% First, we unify all heterogeneous agent activities (prompts, tool calls, 
+% and system I/O) into a single structured record called an operation. 
+% Second, we construct dynamic call stacks at query time by projecting 
+% these operations onto user-defined semantic fields (e.g., intent $\rightarrow$ phase $\rightarrow$ action), merging identical sequences to generate flame graphs.
+% We implement this model in AgentProf, an offline profiler 
+% with pluggable algorithms for intent attribution and stack construction, 
+% compiling local agent trajectories into standard, pprof-compatible profiles. 
 
 \maketitle
 
