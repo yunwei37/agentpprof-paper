@@ -34,14 +34,16 @@ The consequence is that failures, safety violations, and wasted effort remain un
 % 其结果是，故障、安全违规和浪费的算力仍然无法归因到导致它们的任务类别。
 The root cause is structural because agent prompts are natural language, so two prompts with the same intent share no identifiers that a profiler could merge.
 % 根本原因是结构性的，因为智能体提示词是自然语言，两个表达相同意图的提示词没有可供分析器合并的共同标识符。
-We show that agent profiling reduces to two abstractions (uniform \emph{operations} spanning agent intent and system effects, and query-time \emph{operation stacks}) once intent recognition restores the deterministic labels that flame-graph folding requires.
-% 我们表明，一旦意图识别恢复了火焰图折叠所需的确定性标签，智能体性能分析可归结为两个抽象（跨越智能体意图和系统副作用的统一 operation，以及查询时 operation stack）。
+We show that agent profiling reduces to two abstractions, uniform \emph{operations} and query-time \emph{operation stacks}, once intent recognition restores the deterministic labels that flame-graph folding requires.
+% 我们表明，一旦意图识别恢复了火焰图折叠所需的确定性标签，智能体性能分析可归结为两个抽象——统一的 operation 和查询时的 operation stack。
 \sys implements this model as a profiler with pluggable intent-recognition backends.
 % \sys 将此模型实现为一个具有可插拔意图识别后端的分析器。
 On 325 real agent sessions, semantic labels separate over 90\% of system-effect weight that flat views merge.
 % 在 325 个真实智能体会话上，语义标签分离了扁平视图所混合的超过 90\% 的系统副作用权重。
-On four public datasets with hidden ground-truth labels (34{,}539 operations), operation-stack profiling reduces inspection work to 9.4\% versus flat summaries and group fragmentation by 45\% versus fixed-session drilldown.
-% 在四个具有隐藏真实标签的公开数据集（34,539 个操作）上，operation stack 分析将检查工作量降至扁平摘要的 9.4\%，组碎片化比固定会话下钻减少 45\%。
+On four public datasets with hidden ground-truth labels (34{,}539 operations), operation-stack profiling reduces inspection work to 9.4\% versus flat summaries.
+% 在四个具有隐藏真实标签的公开数据集（34,539 个操作）上，operation stack 分析将检查工作量降至扁平摘要的 9.4\%。
+Group fragmentation drops by 45\% versus fixed-session drilldown.
+% 组碎片化比固定会话下钻减少 45\%。
 \end{abstract}
 
 \maketitle
@@ -101,8 +103,10 @@ This paper presents \sys, a Rust profiler built on this model.
 % 本文提出 \sys，一个基于此模型构建的 Rust 分析器。
 On 325 real Codex/Claude sessions, semantic labels separate over 90\% of system-effect weight that flat views merge.
 % 在 325 个真实 Codex/Claude 会话上，语义标签分离了扁平视图所混合的超过 90\% 的系统副作用权重。
-On four public datasets with hidden ground-truth labels, operation-stack profiling reduces inspection work to 9.4\% versus flat summaries and group fragmentation by 45\% versus fixed-session drilldown.
-% 在四个具有隐藏真实标签的公开数据集上，operation stack 分析将检查工作量降至扁平摘要的 9.4\%，组碎片化比固定会话下钻减少 45\%。
+On four public datasets with hidden ground-truth labels, operation-stack profiling reduces inspection work to 9.4\% versus flat summaries.
+% 在四个具有隐藏真实标签的公开数据集上，operation stack 分析将检查工作量降至扁平摘要的 9.4\%。
+Group fragmentation drops by 45\% versus fixed-session drilldown.
+% 组碎片化比固定会话下钻减少 45\%。
 
 %% ¶7: Contributions
 This paper makes three contributions:
@@ -124,8 +128,8 @@ This paper makes three contributions:
 \subsection{AI Agent Observability}
 % AI 智能体可观测性
 
-AI agents orchestrate heterogeneous activities that span two layers, high-level intent (prompts, LLM calls, tool invocations) and low-level system effects (process spawns, file and network I/O).
-% AI 智能体编排跨越两层的异构活动：高层意图（提示词、LLM 调用、工具调用）和低层系统副作用（进程创建、文件和网络 I/O）。
+AI agents orchestrate heterogeneous activities that span two layers: (1)~high-level intent (prompts, LLM calls, tool invocations) and (2)~low-level system effects (process spawns, file and network I/O).
+% AI 智能体编排跨越两层的异构活动：(1) 高层意图（提示词、LLM 调用、工具调用）和 (2) 低层系统副作用（进程创建、文件和网络 I/O）。
 Existing observability tools cover these layers separately.
 % 现有可观测性工具分别覆盖这两层。
 LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse}, Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize agent-level events into per-execution \emph{span trees}.
@@ -142,10 +146,8 @@ AgentSight~\cite{agentsight} bridges the two layers by correlating eBPF-captured
 \subsection{Profiling vs.\ Debugging}
 % 性能分析 vs. 调试
 
-Debugging inspects a single execution.
-% 调试检查单次执行。
-Profiling aggregates across executions to answer questions like ``where does the budget go?''
-% 性能分析跨执行聚合以回答"预算花在哪里？"等问题。
+Debugging inspects a single execution, but profiling aggregates across executions to answer questions like ``where does the budget go?''
+% 调试检查单次执行，而性能分析跨执行聚合以回答"预算花在哪里？"等问题。
 CPU profilers solved this aggregation problem decades ago.
 % CPU 分析器几十年前就解决了这个聚合问题。
 A flame graph~\cite{flamegraphs} represents a profile as weighted \emph{samples}, each attached to a \emph{call stack}.
@@ -228,14 +230,10 @@ We introduce two abstractions that satisfy R1 and R2, operations (\S\ref{sec:ops
 % Operation（R1：统一记录类型）
 \label{sec:ops}
 
-Agent activities span two layers, high-level intent (prompts, LLM calls, tool invocations) and the system effects they trigger (process spawns, file reads, network requests).
-% 智能体活动跨越两层：高层意图（提示词、LLM 调用、工具调用）和它们触发的系统副作用（进程创建、文件读取、网络请求）。
-A profiler should not distinguish between these layers at the object-model level.
-% 分析器不应在对象模型层面区分这两层。
-\sys uses a single abstraction.
-% \sys 使用单一抽象。
-An \operation is a weighted record with string fields and additive measures.
-% 一个 operation 是带有字符串字段和可加度量的加权记录。
+Because agent activities span both the intent and system-effect layers described in \S\ref{sec:background}, a profiler should not distinguish between them at the object-model level.
+% 由于智能体活动跨越 \S\ref{sec:background} 中描述的意图层和系统副作用层，分析器不应在对象模型层面区分它们。
+\sys therefore represents every activity as a single abstraction, the \operation, a weighted record with string fields and additive measures.
+% 因此 \sys 将每个活动表示为单一抽象——operation，一个带有字符串字段和可加度量的加权记录。
 
 Each operation carries string fields (\texttt{project}, \texttt{agent}, \texttt{session}, \texttt{prompt\_tag}, \texttt{kind}, \texttt{model}, \texttt{path}, \texttt{domain}, \texttt{status}, \ldots) and additive measures (token count, duration, occurrence count).
 % 每个 operation 携带字符串字段（\texttt{project}、\texttt{agent}、\texttt{session}、\texttt{prompt\_tag}、\texttt{kind}、\texttt{model}、\texttt{path}、\texttt{domain}、\texttt{status} 等）和可加度量（token 数、持续时间、出现次数）。
@@ -332,10 +330,10 @@ First, \emph{regex rules} are the production default.
 % 第一，正则规则是生产环境的默认选项。
 Rules have the form \texttt{KIND:TAG=REGEX}, where \texttt{KIND} is \texttt{prompt}, \texttt{llm}, or \texttt{all}, \texttt{TAG} is a short lowercase label, and \texttt{REGEX} is a pattern.
 % 规则格式为 \texttt{KIND:TAG=REGEX}，其中 \texttt{KIND} 为 \texttt{prompt}、\texttt{llm} 或 \texttt{all}，\texttt{TAG} 是短小写标签，\texttt{REGEX} 是模式。
-Rules are evaluated in order; the first match wins.
+Rules are evaluated in order, and the first match wins.
 % 规则按顺序求值，首个匹配胜出。
-The workflow is human--agent collaborative.
-% 工作流是人-智能体协作的。
+Humans and agents collaborate on the workflow.
+% 人和智能体协作完成工作流。
 The developer runs \sys, observes the unmatched rate and sample prompts, adds rules, re-runs, and iterates until unmatched drops below 5\%.
 % 开发者运行 \sys，观察未匹配率和样本提示词，添加规则，重新运行，迭代直到未匹配率降至 5\% 以下。
 This typically takes 5--10 rounds.
@@ -562,8 +560,10 @@ RQ2 asks whether the profiler's top groups correspond to real labeled problems, 
 % RQ2 询问分析器的顶级分组是否对应真实的标注问题，具体来说，集中故障、安全违规或浪费算力的类别是否出现在排序输出的顶部。
 The methodology is analogous to injecting known bottlenecks in a CPU profiler evaluation.
 % 该方法类似于在 CPU 分析器评估中注入已知瓶颈。
-Public benchmark datasets provide ground-truth labels (failure, safety violation, redundant step, human-task boundary); we hide these labels, run the profiler, rank the resulting groups, and check whether the top groups contain the hidden positives.
-% 公开基准数据集提供真实标签（故障、安全违规、冗余步骤、人工任务边界）；我们隐藏这些标签，运行分析器，排序结果分组，检查顶级分组是否包含隐藏的正例。
+Public benchmark datasets provide ground-truth labels (failure, safety violation, redundant step, human-task boundary).
+% 公开基准数据集提供真实标签（故障、安全违规、冗余步骤、人工任务边界）。
+We hide these labels, run the profiler, rank the resulting groups, and check whether the top groups contain the hidden positives.
+% 我们隐藏这些标签，运行分析器，排序结果分组，检查顶级分组是否包含隐藏的正例。
 
 The benchmark uses six tasks across four datasets (AgentRewardBench looping and side-effect, SATraj-OS unsafe operation, AgentNet incorrect and redundant step, and OSWorld-Human group start), totaling 34{,}539 operations and 3{,}699 positives.
 % 基准使用四个数据集的六个任务（AgentRewardBench 循环和副作用、SATraj-OS 不安全操作、AgentNet 不正确和冗余步骤、OSWorld-Human 组起始），共计 34,539 个 operation 和 3,699 个正例。
@@ -627,13 +627,13 @@ for eight profiling policies.}
 
 Statistical validation supports these comparisons.
 % 统计验证支持这些比较。
-Bootstrap (10{,}000 resamples) and label-permutation (2{,}000 trials) confirm stable AP deltas exceeding the 95\% prevalence/group-size null on all six tasks.
-% Bootstrap（10,000 次重采样）和标签置换（2,000 次试验）确认所有六个任务上稳定的 AP 增量超过 95\% 普遍率/组大小零假设。
+Bootstrap (10{,}000 resamples) and label-permutation (2{,}000 trials) confirm that the AP differences are stable and exceed the 95\% confidence threshold on all six tasks.
+% Bootstrap（10,000 次重采样）和标签置换（2,000 次试验）确认 AP 差异在所有六个任务上是稳定的，且超过 95\% 置信阈值。
 
 Beyond localization, we test whether profiler output suggests concrete configuration improvements.
 % 除定位外，我们还测试分析器输出是否建议具体的配置改进。
-Executable profile-spec patches modify stack fields, mapping rules, or rankers, then re-run over the same visible operations.
-% 可执行的 profile-spec 补丁修改栈字段、映射规则或排序器，然后在相同可见 operation 上重新运行。
+We modify stack fields, mapping rules, or rankers in the profile spec and re-run on the same operations.
+% 我们在 profile spec 中修改栈字段、映射规则或排序器，然后在相同 operation 上重新运行。
 Five of six patches improve AP, top-five lift, and first-positive work (median AP delta 0.038, median top-five lift delta 0.575).
 % 六个补丁中有五个改进了 AP、前五提升和首个正例工作量（中位 AP 增量 0.038，中位前五提升增量 0.575）。
 Three reusable patterns emerge: (1)~safety/side-effect tasks benefit from field and ranker changes; (2)~step-quality tasks benefit from stack-based localization followed by fixed-session drilldown for examples; (3)~human-boundary tasks require boundary-derived fields.
@@ -643,10 +643,10 @@ The rejected OSWorld-Human patch shows that visible rank features alone are insu
 Folding held-out boundary-derived fields improves AP from 0.240 to 0.258 and reduces groups from 108 to 74, with an explicit work tradeoff.
 % 折叠保留的边界衍生字段将 AP 从 0.240 提高到 0.258，组数从 108 减少到 74，存在明确的工作量权衡。
 
-Rank-feature ablations identify 7 critical feature rows (\texttt{repeat\_signal}, write-action, \texttt{status=success}) and 3 misleading rows.
-% 排名特征消融识别出 7 个关键特征行（\texttt{repeat\_signal}、write-action、\texttt{status=success}）和 3 个误导行。
-Guided repairs improve AP on 2/3 misleading cases but use offline scored feedback, not an automatic learned ranker.
-% 引导修复在 2/3 的误导案例上改进了 AP，但使用离线评分反馈，而非自动学习排序器。
+Ablating rank features reveals that 7 features (including \texttt{repeat\_signal} and write-action) drive localization, while 3 mislead the ranker.
+% 排名特征消融显示 7 个特征（包括 \texttt{repeat\_signal} 和 write-action）驱动定位，而 3 个误导排序器。
+Manually correcting the misleading features improves AP on 2/3 cases, but the correction requires offline scoring rather than automatic learning.
+% 手动修正误导特征在 2/3 案例上改进了 AP，但修正需要离线评分而非自动学习。
 
 %% -------------------------------------------------------------------
 \subsection{RQ3: How Reliable Are the Derived Labels?}
