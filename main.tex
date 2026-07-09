@@ -24,8 +24,8 @@
 \title{AgentPProf: Semantic Profiling for AI Agents}
 
 \begin{abstract}
-AI agents orchestrate heterogeneous activities---prompts, LLM calls,
-tool invocations, GUI actions, and system effects. As deployments grow
+AI agents orchestrate heterogeneous activities (prompts, LLM calls,
+tool invocations, GUI actions, and system effects). As deployments grow
 to hundreds of sessions, developers need aggregate
 views to identify which task categories consume the most budget, where
 failures concentrate, and which workflows waste effort.
@@ -34,12 +34,12 @@ hierarchies suited for single-run debugging but unable to fold events
 across sessions by semantic work category. The consequence is that
 failures, safety violations, and wasted effort remain unattributable to
 the task categories that cause them.
-The root cause is structural: agent prompts are natural language, so
+The root cause is structural because agent prompts are natural language, so
 two prompts with the same intent share no identifiers that a profiler
 could merge.
-We show that agent profiling reduces to two abstractions---uniform
+We show that agent profiling reduces to two abstractions (uniform
 \emph{operations} spanning agent intent and system effects, and
-query-time \emph{operation stacks}---once intent
+query-time \emph{operation stacks}) once intent
 recognition restores the deterministic labels that flame-graph folding
 requires.
 \toolname implements this model as a Rust profiler with pluggable
@@ -58,8 +58,8 @@ group fragmentation by 45\% versus fixed-session drilldown.
 \label{sec:intro}
 
 %% ¶1: Background + Context
-AI agents orchestrate heterogeneous activities: prompts, LLM calls,
-tool invocations, GUI actions, and system effects.
+AI agents orchestrate heterogeneous activities, including prompts, LLM
+calls, tool invocations, GUI actions, and system effects.
 As deployments scale to hundreds of sessions, developers need
 cross-session aggregate views to
 identify which task categories consume the most budget, where failures
@@ -71,12 +71,12 @@ by semantic category. In a real development project,
 \texttt{cargo test} appears 2{,}903 times across 325 sessions, yet no
 observability tool can attribute these executions to the review,
 debugging, or refactoring prompts that triggered them. The same gap
-affects failure and safety analysis: unsafe operations may cluster in
+affects failure and safety analysis because unsafe operations may cluster in
 specific task phases, but no tool surfaces this without manual
 inspection of individual sessions.
 
 %% ¶3: Root cause
-The aggregation problem itself is not new---CPU profilers solved it for
+The aggregation problem itself is not new. CPU profilers solved it for
 programs decades ago.
 Flame graphs~\cite{flamegraphs} fold millions of function-call samples
 into a single chart where width represents cost. The key enabler is
@@ -323,7 +323,7 @@ recognition to folded-stack flame graphs.}
 \label{sec:intent}
 
 Operations and stacks handle heterogeneity and flexible aggregation, but
-folding still requires deterministic frame labels---the precondition
+folding still requires deterministic frame labels, the precondition
 that agent prompts violate (\S\ref{sec:background}). \toolname solves
 this by mapping free-form prompts to
 short, stable labels before stack construction.
@@ -773,7 +773,7 @@ localizes labeled problems at 9.4\% inspection cost versus flat
 summaries, and produces labels that agree with ground truth on 7/9
 held-out datasets. Fixed-session drilldown remains faster to a first
 positive on 4/6 tasks, confirming that profilers and debuggers are
-complementary---\toolname supports both by including or excluding
+complementary, and \toolname supports both by including or excluding
 session fields in the stack query. The main limitations are
 single-project real-session data and placeholder intent-recognition
 quality on free-form prompts. Multi-project evaluation and
