@@ -60,7 +60,7 @@ system-effect weight that remains mixed under session-level views.
 % 在 325 个真实智能体会话上，语义 profiling 分离了会话级视图所混合的超过 90\% 的系统副作用权重。
 On four public datasets with hidden ground-truth labels
 (34{,}539 operations), profiler-ranked groups localize labeled
-problems at 9.4\% inspection cost versus flat summaries, with 45\%
+problems at 9.4\% inspection work versus flat summaries, with 45\%
 fewer groups than fixed-session drilldown.
 % 在四个具有隐藏真实标签的公开数据集（34,539 个操作）上，profiler 排序的分组以 9.4\% 的检查成本定位标注问题，比固定会话下钻减少 45\% 的分组数。
 \end{abstract}
@@ -175,7 +175,7 @@ This restores the folding precondition that CPU profiling obtains for
 free from function names.
 % 意图归因通过正则规则、本地 LLM 标注器或无监督聚类从自然语言字段派生确定性、低基数的标签，恢复 CPU profiling 从函数名免费获得的折叠前提条件。
 \emph{Stack construction} builds aggregation hierarchies from
-available fields, either from a user-specified field chain or via
+available fields, either from a user-specified ordered list of fields or via
 automatic induction that scores semantic shifts and partition
 coherence.
 % 栈构造从可用字段构建聚合层次，可通过用户指定的字段链或通过评分语义转移和分区一致性的自动诱导。
@@ -185,11 +185,11 @@ remains mixed under session-level views.
 % 在 325 个真实 Codex 和 Claude 会话（183,714 个系统观测）上，语义 profiling 分离了会话级视图所混合的超过 90\% 的系统副作用权重。
 On four public datasets with hidden ground-truth labels
 (34{,}539 operations), profiler-ranked groups localize labeled
-problems at 9.4\% inspection cost versus flat summaries, with 45\%
+problems at 9.4\% inspection work versus flat summaries, with 45\%
 fewer groups than fixed-session drilldown.
 % 在四个具有隐藏真实标签的公开数据集（34,539 个操作）上，profiler 排序的分组以 9.4\% 的检查成本定位标注问题，比固定会话下钻减少 45\% 的分组数。
-Label quality exceeds V-measure 0.7 on 7 of 9 held-out datasets.
-% 标签质量在 9 个保留数据集中的 7 个上超过 V-measure 0.7。
+Semantic-label quality exceeds V-measure 0.7 on 7 of 9 held-out datasets.
+% 语义标签质量在 9 个保留数据集中的 7 个上超过 V-measure 0.7。
 
 %% ¶7: Contributions
 This paper makes three contributions:
@@ -221,8 +221,8 @@ This paper makes three contributions:
 \subsection{AI Agent Observability}
 % AI 智能体可观测性
 
-AI agents orchestrate heterogeneous activities that span two layers: (1)~high-level intent (prompts, LLM calls, tool invocations) and (2)~low-level system effects (process spawns, file and network I/O).
-% AI 智能体编排跨越两层的异构活动：(1) 高层意图（提示词、LLM 调用、工具调用）和 (2) 低层系统副作用（进程创建、文件和网络 I/O）。
+As introduced in \S\ref{sec:intro}, agent activities span both intent and system-effect layers.
+% 如 \S\ref{sec:intro} 所述，智能体活动跨越意图层和系统副作用层。
 Existing observability tools cover these layers separately.
 % 现有可观测性工具分别覆盖这两层。
 LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse}, Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize agent-level events into per-execution \emph{span trees}.
@@ -404,14 +404,13 @@ attribution to folded-stack flame graphs.}
 \label{fig:architecture}
 \end{figure}
 
-\subsection{Intent Attribution and Stack Construction}
-% 意图归因与栈构造
+\subsection{Algorithms}
+% 算法
 \label{sec:intent}
 
-%% ¶1: Intent Attribution
-Two pluggable algorithm frameworks enrich the model.
-% 两个可插拔算法框架丰富此模型。
-\emph{Intent attribution} maps free-form prompts to short, stable,
+\paragraph{Intent attribution.}
+% 意图归因。
+Intent attribution maps free-form prompts to short, stable,
 deterministic labels, restoring the folding precondition that agent
 prompts violate (\S\ref{sec:background}).
 % 意图归因将自由形式的提示词映射为短小、稳定、确定性的标签，恢复智能体提示词所违反的折叠前提条件（\S\ref{sec:background}）。
@@ -422,10 +421,10 @@ The framework supports three pluggable backends.
 and the developer iterates with \sys until the unmatched rate drops
 below 5\%, typically in 5--10 rounds.
 % 正则规则是生产环境默认：规则格式为 \texttt{KIND:TAG=REGEX}，按顺序求值（首个匹配胜出），开发者与 \sys 迭代直到未匹配率降至 5\% 以下，通常需要 5--10 轮。
-A \emph{local LLM tagger} (e.g., a 3B-parameter GGUF via llama.cpp)
+A \emph{local LLM tagger} (e.g., a quantized 3B-parameter model via llama.cpp)
 generates a single-word label per prompt with grammar-constrained
-decoding and caching.
-% 本地 LLM 标注器（如通过 llama.cpp 运行的 3B 参数 GGUF）通过语法约束解码和缓存为每个提示词生成单词标签。
+decoding (forcing output to match a predefined token grammar) and caching.
+% 本地 LLM 标注器（如通过 llama.cpp 运行的量化 3B 参数模型）通过语法约束解码（强制输出匹配预定义 token 语法）和缓存为每个提示词生成单词标签。
 \emph{Unsupervised clustering} via TF-IDF and K-Means discovers
 natural prompt groups without predefined rules, feeding rule
 authoring.
@@ -434,15 +433,16 @@ For structured traces where action types and quality annotations are
 explicit fields, \emph{mapping rules} derive new fields from existing
 ones (e.g., \texttt{phase:navigate=type:(click|scroll|key)}).
 % 对于操作类型和质量标注是显式字段的结构化 trace，映射规则从现有字段派生新字段（如 \texttt{phase:navigate=type:(click|scroll|key)}）。
-All backends are pluggable, and a \emph{profile spec} records the
+All backends are pluggable, and a \emph{profiling configuration} records the
 complete analysis configuration for deterministic replay.
-% 所有后端都是可插拔的，profile spec 记录完整的分析配置以实现确定性重放。
+% 所有后端都是可插拔的，profiling configuration 记录完整的分析配置以实现确定性重放。
 
-%% ¶2: Stack Construction
-\emph{Stack construction} builds aggregation hierarchies from
+\paragraph{Stack construction.}
+% 栈构造。
+Stack construction builds aggregation hierarchies from
 available fields.
 % 栈构造从可用字段构建聚合层次。
-When users supply a field chain, the projection is direct.
+When users supply a ordered list of fields, the projection is direct.
 % 当用户提供字段链时，投影是直接的。
 When no chain is supplied, \sys can \emph{induce} operation stacks
 automatically by scoring adjacent operations for semantic shifts,
@@ -481,8 +481,8 @@ Output formats include pprof protobuf (compatible with \texttt{go tool pprof -ht
 % 输出格式包括 pprof protobuf（兼容 \texttt{go tool pprof -http}）、折叠栈文本（兼容 \texttt{flamegraph.pl}）、独立 SVG 火焰图和 JSON 摘要。
 Operations can also be exported as standard Chrome Trace Event JSON and re-imported with byte-identical folded output, enabling interoperability with trace viewers such as Perfetto.
 % Operation 也可以导出为标准 Chrome Trace Event JSON 并重新导入，折叠输出字节相同，支持与 Perfetto 等 trace 查看器的互操作。
-All outputs are deterministic given the same input and profile spec.
-% 在相同输入和 profile spec 下，所有输出都是确定性的。
+All outputs are deterministic given the same input and profiling configuration.
+% 在相同输入和 profiling configuration 下，所有输出都是确定性的。
 
 \sys is the offline profiling component of the AgentSight~\cite{agentsight} observability framework.
 % \sys 是 AgentSight~\cite{agentsight} 可观测性框架的离线分析组件。
@@ -504,10 +504,10 @@ We use two classes of data.
 % 公开标注 trace：15 个家族，涵盖 web、移动、桌面、软件、API 和对话智能体（Table~\ref{tab:datasets}），通过映射规则共计 47,590 个 operation。
 All public traces are real agent or human executions collected and labeled by their respective benchmark projects.
 % 所有公开 trace 都是由各自基准项目收集和标注的真实智能体或人类执行。
-Four oracle-rich families (AgentRewardBench, SATraj-OS, AgentNet, OSWorld-Human) provide hidden ground-truth labels for RQ2.
+Four oracle-rich families (those with ground-truth quality annotations suitable for evaluation: AgentRewardBench, SATraj-OS, AgentNet, OSWorld-Human) provide hidden labels for RQ2.
 % 四个 oracle 丰富的家族（AgentRewardBench、SATraj-OS、AgentNet、OSWorld-Human）为 RQ2 提供隐藏的真实标签。
-We measure semantic separation (mixed-weight percentage), localization quality (AP, recall, work-to-first-positive), and label agreement (V-measure, boundary F1).
-% 我们测量语义分离度（混合权重百分比）、定位质量（AP、召回率、首个正例工作量）和标签一致性（V-measure、边界 F1）。
+We measure semantic separation via the mixed-weight percentage defined in RQ1. For localization quality (RQ2), we use average precision (AP, the area under the precision-recall curve when groups are ranked by suspected problem density), recall at various inspection budgets, and work-to-first-positive (the fraction of groups inspected before finding one positive). For label agreement (RQ3), we use V-measure (a clustering-agreement score ranging from 0 to 1) and boundary F1.
+% 我们通过 RQ1 中定义的混合权重百分比测量语义分离度。对于定位质量（RQ2），我们使用平均精度（AP，按疑似问题密度排序分组时精确率-召回率曲线下面积）、不同检查预算下的召回率和首个正例工作量（找到一个正例前检查的分组比例）。对于标签一致性（RQ3），我们使用 V-measure（聚类一致性分数，范围 0 到 1）和边界 F1。
 
 \begin{table*}[t]
 \centering\small
@@ -541,8 +541,8 @@ To test this, we run a semantic-axis ablation on 325 real Codex/Claude sessions 
 % 为了检验这一点，我们在 325 个真实 Codex/Claude 会话（183,714 个系统观测）上进行语义轴消融。
 We progressively add label axes (no labels, session only, prompt only, both) and measure the \emph{mixed-weight percentage}, the fraction of system-effect weight in buckets that mix observations from multiple task categories.
 % 我们逐步添加标签轴（无标签、仅会话、仅提示词、两者兼有），测量混合权重百分比——混合了多个任务类别观测的桶中的系统副作用权重比例。
-A lower mixed-weight percentage means the profiler correctly separates effects by task category.
-% 更低的混合权重百分比意味着分析器正确地按任务类别分离了效果。
+A lower mixed-weight percentage means the profiler correctly separates effects by task category. The residual percentage measures weight in buckets where the majority category accounts for less than 90\% of the bucket, capturing partial mixing.
+% 更低的混合权重百分比意味着分析器正确地按任务类别分离了效果。残余百分比测量多数类别占桶内不到 90\% 的权重，捕获部分混合。
 
 \begin{table}[t]
 \centering\small
@@ -551,7 +551,7 @@ from 325 real sessions. All rows preserve the same total weight.}
 \label{tab:mixing}
 \begin{tabular}{lrrr}
 \toprule
-Projection & Unique stacks & Mixed wt.\% & Residual\% \\
+Projection & Unique stacks & Mixed weight \% & Residual \% \\
 \midrule
 No semantic labels & 11{,}967 & 90.4 & 44.7 \\
 Session label only & 15{,}027 & 84.4 & 33.4 \\
@@ -574,8 +574,8 @@ The session label alone barely helps (84.4\%), because sessions typically contai
 
 A label-permutation test (1{,}000 shuffles, $p = 0.001$) confirms the separation is not random.
 % 标签置换测试（1,000 次洗牌，$p = 0.001$）确认分离不是随机的。
-Label quality is validated in RQ3.
-% 标签质量在 RQ3 中验证。
+Semantic-label quality is validated in RQ3.
+% 语义标签质量在 RQ3 中验证。
 
 Beyond label separation, we test whether choosing different field selections for the operation stack produces views that flat grouping cannot.
 % 除标签分离外，我们还测试为 operation stack 选择不同字段是否产生扁平分组无法产生的视图。
@@ -643,8 +643,8 @@ distributions across sessions and prompt categories.}
 
 RQ2 tests whether the profiler's top-ranked groups actually contain real failures, safety violations, or wasted effort.
 % RQ2 测试分析器排名靠前的分组是否确实包含真实的故障、安全违规或浪费的算力。
-We use public benchmark datasets that provide ground-truth quality labels (failure, safety violation, redundant step, human-task boundary), hide these labels from the profiler, and check whether the top-ranked groups recover them, analogous to injecting known bottlenecks in a CPU profiler evaluation.
-% 我们使用提供真实质量标签（故障、安全违规、冗余步骤、人工任务边界）的公开基准数据集，对分析器隐藏这些标签，检查排名靠前的分组是否恢复了它们，类似于在 CPU 分析器评估中注入已知瓶颈。
+We use public benchmark datasets that provide ground-truth quality annotations (failure, safety violation, redundant step, human-task boundary), hide these annotations from the profiler, and check whether the top-ranked groups recover them, analogous to injecting known bottlenecks in a CPU profiler evaluation.
+% 我们使用提供真实质量标注（故障、安全违规、冗余步骤、人工任务边界）的公开基准数据集，对分析器隐藏这些标注，检查排名靠前的分组是否恢复了它们，类似于在 CPU 分析器评估中注入已知瓶颈。
 
 The benchmark uses six tasks across four datasets (AgentRewardBench looping and side-effect, SATraj-OS unsafe operation, AgentNet incorrect and redundant step, and OSWorld-Human group start), totaling 34{,}539 operations and 3{,}699 positives.
 % 基准使用四个数据集的六个任务（AgentRewardBench 循环和副作用、SATraj-OS 不安全操作、AgentNet 不正确和冗余步骤、OSWorld-Human 组起始），共计 34,539 个 operation 和 3,699 个正例。
@@ -664,13 +664,13 @@ Hidden = 1 means the policy uses hidden labels (oracle upper bound).
 \toprule
 Policy & Hidden & AP & R@5 & F1@5 & Work@5 & R@30\% & WTFP & Groups \\
 \midrule
-flat:width & 0 & 0.168 & 1.000 & 0.287 & 1.000 & 0.000 & 1.000 & 1.0 \\
-fixed-session:query-aware & 0 & 0.348 & 0.023 & 0.043 & 0.016 & 0.356 & 0.004 & 285.0 \\
-dataset-native:query-aware & 0 & 0.357 & 0.867 & 0.282 & 0.854 & 0.338 & 0.058 & --- \\
-raw-action:query-aware & 0 & 0.274 & 0.244 & 0.220 & 0.151 & 0.333 & 0.037 & --- \\
-op-stack:query-aware & 0 & 0.312 & 0.188 & 0.198 & 0.094 & 0.390 & 0.038 & 157.5 \\
-op-stack:oracle-upper & 1 & 0.599 & 0.300 & 0.403 & 0.044 & 0.564 & 0.012 & --- \\
-label-drilldown:oracle & 1 & 1.000 & 0.670 & 0.797 & 0.115 & 1.000 & 0.038 & --- \\
+Flat (all-in-one) & 0 & 0.168 & 1.000 & 0.287 & 1.000 & 0.000 & 1.000 & 1.0 \\
+Per-session drilldown & 0 & 0.348 & 0.023 & 0.043 & 0.016 & 0.356 & 0.004 & 285.0 \\
+Dataset-native hierarchy & 0 & 0.357 & 0.867 & 0.282 & 0.854 & 0.338 & 0.058 & --- \\
+Raw-action grouping & 0 & 0.274 & 0.244 & 0.220 & 0.151 & 0.333 & 0.037 & --- \\
+Operation-stack profiling & 0 & 0.312 & 0.188 & 0.198 & 0.094 & 0.390 & 0.038 & 157.5 \\
+Op-stack + oracle fields & 1 & 0.599 & 0.300 & 0.403 & 0.044 & 0.564 & 0.012 & --- \\
+Oracle (hidden labels) & 1 & 1.000 & 0.670 & 0.797 & 0.115 & 1.000 & 0.038 & --- \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -686,8 +686,8 @@ Operation-stack profiling inspects 9.4\% of the work in the top five groups, rec
 
 Figure~\ref{fig:rq2-tradeoff} visualizes this tradeoff: operation-stack profiling sits in the low-work, moderate-recall region.
 % Figure~\ref{fig:rq2-tradeoff} 可视化了这一权衡：operation stack 分析位于低工作量、中等召回率区域。
-The comparison also serves as evidence for the two-abstraction model (\S\ref{sec:design}).
-% 该比较也作为双抽象模型（\S\ref{sec:design}）的证据。
+The comparison also serves as evidence for the operation/operation-stack model (\S\ref{sec:design}).
+% 该比较也作为 operation/operation stack 模型（\S\ref{sec:design}）的证据。
 Fixed-session drilldown and dataset-native hierarchy are alternative abstractions that fix the hierarchy at session or dataset boundaries.
 % 固定会话下钻和数据集原生层次是在会话或数据集边界固定层次的替代抽象。
 Operation stacks subsume both as special cases (include \texttt{session} in the stack to recover fixed-session; include \texttt{dataset} to recover dataset-native).
@@ -730,12 +730,10 @@ Modifying stack fields, mapping rules, or ranking criteria and re-running on the
 \subsection{RQ3: How Accurate Are the Labels?}
 % RQ3：标签有多准确？
 
-RQ1 and RQ2 assume that semantic labels are useful.
-% RQ1 和 RQ2 假设语义标签是有用的。
-RQ3 tests whether the labels themselves are accurate.
-% RQ3 测试标签本身是否准确。
-For structured traces (public datasets), we compare mapping-derived labels against ground-truth annotations.
-% 对于结构化 trace（公开数据集），我们将映射衍生标签与真实标注进行比较。
+RQ1 and RQ2 assume that semantic labels (the labels derived by intent attribution or mapping rules) are useful.
+% RQ1 和 RQ2 假设语义标签（由意图归因或映射规则派生的标签）是有用的。
+RQ3 tests whether these semantic labels are accurate by comparing them against ground-truth annotations from the benchmark datasets.
+% RQ3 通过将这些语义标签与基准数据集的真实标注进行比较来测试它们是否准确。
 For free-form traces (real sessions), we measure whether the intent-attribution backends run reliably at scale and produce well-formed labels.
 % 对于自由形式 trace（真实会话），我们测量意图归因后端是否在规模上可靠运行并产生格式良好的标签。
 Semantic accuracy of the LLM/regex tagger on free-form prompts remains future work because none of the available datasets (67{,}304 rows across 6 sources) simultaneously expose free-form text and ground-truth semantic labels, making same-input accuracy evaluation infeasible with current data.
@@ -805,8 +803,8 @@ Supervised boundary predictors beat simple baselines on 4/5 tested datasets (e.g
 The profiling cost is the time and resources spent after the session ends.
 % 分析开销是会话结束后花费的时间和资源。
 
-We re-execute 76 tracked profile specs twice (152 invocations) to measure cost and verify determinism.
-% 我们重新执行 76 个跟踪的 profile spec 两次（152 次调用）来测量开销并验证确定性。
+We re-execute 76 tracked profiling configurations twice (152 invocations) to measure cost and verify determinism.
+% 我们重新执行 76 个跟踪的 profiling configuration 两次（152 次调用）来测量开销并验证确定性。
 All 76 specs produce byte-identical output across both runs.
 % 全部 76 个 spec 在两次运行中产生字节相同的输出。
 Median profiling time is 1.6\,s per spec (p95 2.8\,s, max 4.3\,s), and median output size is 37.5\,KB.
@@ -814,7 +812,7 @@ Median profiling time is 1.6\,s per spec (p95 2.8\,s, max 4.3\,s), and median ou
 The slowest specs process views with over 600 unique stacks, while the 60 robustness-check specs all complete within 1.6\,s.
 % 最慢的 spec 处理超过 600 个唯一栈的视图，而 60 个稳健性检查 spec 全部在 1.6 秒内完成。
 The full profile-spec composition path (operation files, query predicates, rank rules, and stack depth) stays deterministic across all 12 tested configuration variants.
-% 完整的 profile spec 组合路径（operation 文件、查询谓词、排名规则和栈深度）在所有 12 个测试的配置变体中保持确定性。
+% 完整的 profiling configuration 组合路径（operation 文件、查询谓词、排名规则和栈深度）在所有 12 个测试的配置变体中保持确定性。
 
 Intent attribution adds a one-time cost for new prompts.
 % 意图归因对新提示词增加一次性开销。
@@ -829,7 +827,7 @@ Because labels are cached, re-profiling the same sessions with different stack f
 % 局限性。
 The real-session data comes from a single multi-month development project, so the label distributions may not generalize to other domains.
 % 真实会话数据来自单个多月开发项目，标签分布可能无法推广到其他领域。
-Semantic accuracy of the intent-attribution backends on free-form prompts remains unevaluated because no available dataset simultaneously exposes free-form text and ground-truth semantic labels (\S RQ3).
+Semantic accuracy of the intent-attribution backends on free-form prompts remains unevaluated because no available dataset simultaneously exposes free-form text and ground-truth semantic labels (as discussed in RQ3 above).
 % 意图归因后端在自由形式提示词上的语义精度仍未评估，因为没有可用数据集同时暴露自由形式文本和真实语义标签（见 RQ3）。
 The evaluation uses fixed-session drilldown as a proxy for span-tree debugging tools, not a real OpenTelemetry or LangSmith trace import.
 % 评估使用固定会话下钻作为 span 树调试工具的代理，而非真实的 OpenTelemetry 或 LangSmith trace 导入。
@@ -891,7 +889,7 @@ Agent observability needs profiling, not only debugging.
 % 智能体可观测性需要性能分析，不仅仅是调试。
 \sys shows that the semantic operation stack model, combined with pluggable intent attribution and stack construction algorithms, closes the aggregation gap for agent traces.
 % \sys 表明，语义 operation stack 模型结合可插拔的意图归因和栈构造算法，填补了智能体 trace 的聚合缺口。
-Scoring profiler output against hidden trajectory labels confirms that semantic profiling separates over 90\% of mixed system-effect weight, localizes labeled problems at 9.4\% inspection cost versus flat summaries, and produces labels that agree with ground truth on 7/9 held-out datasets.
+Scoring profiler output against hidden trajectory labels confirms that semantic profiling separates over 90\% of mixed system-effect weight, localizes labeled problems at 9.4\% inspection work versus flat summaries, and produces labels that agree with ground truth on 7/9 held-out datasets.
 % 将分析器输出与隐藏轨迹标签评分确认，语义分析分离了超过 90\% 的混合系统副作用权重，以扁平摘要 9.4\% 的检查成本定位标注问题，并在 7/9 保留数据集上产生与真实标签一致的标签。
 Fixed-session drilldown remains faster to a first positive on 4/6 tasks, confirming that profilers and debuggers are complementary, and \sys supports both by including or excluding session fields in the stack query.
 % 固定会话下钻在 4/6 任务上更快找到首个正例，确认分析器和调试器是互补的，\sys 通过在栈查询中包含或排除会话字段同时支持两者。
