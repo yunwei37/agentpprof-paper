@@ -535,13 +535,15 @@ AgentNet~\cite{agentnet} & Step correctness, redundancy & HF JSONL & Real deskto
 \end{table*}
 
 %% -------------------------------------------------------------------
-\subsection{RQ1: Does Semantic Profiling Separate What Flat Views Mix?}
-% RQ1：语义分析能否分离扁平视图所混合的内容？
+\subsection{RQ1: What Does Semantic Profiling Reveal?}
+% RQ1：语义分析揭示了什么？
 
-The strongest argument against semantic profiling (aggregation by intent-derived labels) is that traditional tools ``can already see the same information.''
-% 反对语义分析（按意图衍生标签聚合）的最强论点是传统工具"已经能看到相同信息"。
-RQ1 tests this claim directly by measuring how much system-effect weight falls into \emph{mixed-intent} buckets (those containing observations from multiple semantic regions) under different projection choices.
-% RQ1 通过测量在不同投影选择下有多少系统副作用权重落入混合意图桶（包含来自多个语义区域观测的桶）来直接检验此声称。
+The strongest argument against semantic profiling is that traditional tools ``can already see the same information.''
+% 反对语义分析的最强论点是传统工具"已经能看到相同信息"。
+RQ1 tests this claim by measuring how much system-effect weight is attributed to the wrong task category when semantic labels are absent.
+% RQ1 通过测量在缺少语义标签时有多少系统副作用权重被归因到错误的任务类别来检验此声称。
+We progressively add label axes and measure the fraction of weight in buckets that mix observations from multiple task categories.
+% 我们逐步添加标签轴，测量混合了多个任务类别观测的桶中的权重比例。
 
 \begin{table}[t]
 \centering\small
@@ -644,11 +646,13 @@ sessions and prompt categories.}
 \end{figure*}
 
 %% -------------------------------------------------------------------
-\subsection{RQ2: Can Profiler Groups Localize Hidden Labeled Problems?}
-% RQ2：分析器分组能否定位隐藏标签问题？
+\subsection{RQ2: Does Profiler Output Correspond to Real Problems?}
+% RQ2：分析器输出是否对应真实问题？
 
-RQ2 asks whether the profiler's top groups correspond to real labeled problems, specifically whether categories that concentrate failures, safety violations, or wasted effort surface at the top of ranked output.
-% RQ2 询问分析器的顶级分组是否对应真实的标注问题，具体来说，集中故障、安全违规或浪费算力的类别是否出现在排序输出的顶部。
+RQ2 tests whether the profiler's top-ranked groups actually contain real failures, safety violations, or wasted effort.
+% RQ2 测试分析器排名靠前的分组是否确实包含真实的故障、安全违规或浪费的算力。
+We use public benchmark datasets that provide ground-truth quality labels, hide these labels from the profiler, and check whether the top groups recover them.
+% 我们使用提供真实质量标签的公开基准数据集，对分析器隐藏这些标签，然后检查排名靠前的分组是否恢复了它们。
 The methodology is analogous to injecting known bottlenecks in a CPU profiler evaluation.
 % 该方法类似于在 CPU 分析器评估中注入已知瓶颈。
 Public benchmark datasets provide ground-truth labels (failure, safety violation, redundant step, human-task boundary).
@@ -750,22 +754,26 @@ Manually correcting the misleading features improves AP on 2/3 cases, but the co
 % 手动修正误导特征在 2/3 案例上改进了 AP，但修正需要离线评分而非自动学习。
 
 %% -------------------------------------------------------------------
-\subsection{RQ3: How Reliable Are the Derived Labels?}
-% RQ3：衍生标签的可靠性如何？
+\subsection{RQ3: How Accurate Are the Labels?}
+% RQ3：标签有多准确？
 
 RQ1 and RQ2 assume that semantic labels are useful.
 % RQ1 和 RQ2 假设语义标签是有用的。
-RQ3 tests the label-derivation pipeline itself.
-% RQ3 测试标签衍生管线本身。
-For structured traces (public datasets), we evaluate the \emph{mapping} path against ground-truth annotations.
-% 对于结构化 trace（公开数据集），我们针对真实标注评估映射路径。
-For free-form traces (real sessions), we evaluate the \emph{intent-recognition} path at the scale and syntax level.
-% 对于自由形式 trace（真实会话），我们在规模和语法层面评估意图识别路径。
-Quality assessment of the LLM/regex tagger against free-form ground truth remains future work.
-% LLM/正则标注器相对自由形式真实标签的质量评估仍是未来工作。
+RQ3 tests whether the labels themselves are accurate.
+% RQ3 测试标签本身是否准确。
+For structured traces (public datasets), we compare mapping-derived labels against ground-truth annotations.
+% 对于结构化 trace（公开数据集），我们将映射衍生标签与真实标注进行比较。
+For free-form traces (real sessions), we measure the operational reliability and syntax validity of the intent-attribution backends.
+% 对于自由形式 trace（真实会话），我们测量意图归因后端的运行可靠性和语法有效性。
+Semantic accuracy of the LLM/regex tagger on free-form prompts remains future work because none of the available datasets (67{,}304 rows across 6 sources) simultaneously expose free-form text and ground-truth semantic labels, making same-input accuracy evaluation infeasible with current data.
+% LLM/正则标注器在自由形式提示词上的语义精度仍是未来工作，因为现有数据集（6 个来源共 67,304 行）没有同时暴露自由形式文本和真实语义标签，使得同输入精度评估在当前数据下不可行。
 
 On 325 real sessions, the LLM tagger processes 118{,}021 tag requests with zero failures and p95 latency of 31\,ms per label.
 % 在 325 个真实会话上，LLM 标注器处理了 118,021 个标注请求，零失败，p95 延迟为每标签 31 ms。
+The cache hit rate is 70\% (82{,}886 of 118{,}021 requests), so repeated prompts incur no LLM calls.
+% 缓存命中率为 70\%（118,021 个请求中的 82,886 个），因此重复提示词不产生 LLM 调用。
+Grammar-constrained decoding produces syntactically valid labels on all 2{,}700 test inputs (100\% syntax validity).
+% 语法约束解码在全部 2,700 个测试输入上产生语法有效的标签（100\% 语法有效性）。
 
 Public benchmark datasets provide native action labels that serve as ground truth for mapping quality.
 % 公开基准数据集提供原生操作标签作为映射质量的真实标准。
