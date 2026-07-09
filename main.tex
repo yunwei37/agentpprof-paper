@@ -734,13 +734,12 @@ As an upper-bound comparison, supervised boundary predictors trained on ground-t
 % \sys 是离线事后分析器，对智能体运行时不增加任何开销。
 The profiling cost is the time and resources spent after the session ends.
 % 分析开销是会话结束后花费的时间和资源。
-
-We re-execute 76 tracked profiling configurations twice (152 invocations) to measure cost and verify determinism.
-% 我们重新执行 76 个跟踪的 profiling configuration 两次（152 次调用）来测量开销并验证确定性。
-Median profiling time is 1.6\,s per configuration (p95 2.8\,s, max 4.3\,s), and median output size is 37.5\,KB.
-% 中位分析时间为每配置 1.6 秒（p95 2.8 秒，最大 4.3 秒），中位输出大小为 37.5 KB。
-The slowest configurations process views with over 600 unique stacks, while 60 configurations that vary only the ranking criteria or stack depth (robustness checks) all complete within 1.6\,s.
-% 最慢的配置处理超过 600 个唯一栈的视图，而 60 个仅改变排名标准或栈深度的配置（稳健性检查）全部在 1.6 秒内完成。
+Each profiling run chooses a stack-field list, a predicate, a weight function, and ranking criteria, then executes the full pipeline (parse, enrich, construct stacks, fold) on the input operations.
+% 每次 profiling 运行选择栈字段列表、谓词、权重函数和排名标准，然后在输入 operation 上执行完整管线（解析、丰富、构造栈、折叠）。
+Across 76 configurations, median end-to-end time is 1.6\,s (p95 2.8\,s, max 4.3\,s).
+% 中位端到端时间为每次运行 1.6 秒（p95 2.8 秒，最大 4.3 秒）。
+The slowest runs process views with over 600 unique stacks, while runs that vary only ranking criteria or stack depth all complete within 1.6\,s.
+% 最慢的运行处理超过 600 个唯一栈的视图，而仅改变排名标准或栈深度的运行全部在 1.6 秒内完成。
 
 Intent attribution adds a one-time cost for new prompts.
 % 意图归因对新提示词增加一次性开销。
