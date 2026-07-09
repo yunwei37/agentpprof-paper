@@ -354,8 +354,8 @@ Changing the fields changes the aggregation without changing the data.
 Failure, safety, and quality labels are ordinary fields that participate in the same projection, so the profiler handles diagnostic views without a separate mechanism.
 % 故障、安全和质量标签是普通字段，参与相同的投影，因此分析器无需单独机制即可处理诊断视图。
 
-Query-time stack selection directly addresses the fixed-hierarchy problem from \S\ref{sec:background}.
-% 查询时栈选择直接解决了 \S\ref{sec:background} 中的固定层次问题。
+Choosing different field selections for the operation stack directly addresses the fixed-hierarchy problem from \S\ref{sec:background}.
+% 为 operation stack 选择不同字段直接解决了 \S\ref{sec:background} 中的固定层次问题。
 Sessions and spans are optional operation fields, not structural skeleton nodes.
 % 会话和 span 是可选的 operation 字段，而非结构性骨架节点。
 Including \texttt{session} in the stack produces a per-session drilldown (equivalent to a trace tree).
@@ -590,10 +590,10 @@ A label-permutation test (1{,}000 shuffles, $p = 0.001$) confirms the separation
 Label quality is validated in RQ3.
 % 标签质量在 RQ3 中验证。
 
-Beyond label separation, we test whether query-time stack selection produces views that flat grouping cannot.
-% 除标签分离外，我们还测试查询时栈选择是否产生扁平分组无法产生的视图。
-We take the same 13{,}265 operations from the four oracle-rich families and fold them with five different stack-field selections, counting how many distinct groups each produces.
-% 我们取四个 oracle 丰富家族的同样 13,265 个 operation，用五种不同栈字段选择折叠，计算每种产生多少不同分组。
+Beyond label separation, we test whether choosing different field selections for the operation stack produces views that flat grouping cannot.
+% 除标签分离外，我们还测试为 operation stack 选择不同字段是否产生扁平分组无法产生的视图。
+We take the same 13{,}265 operations from the four oracle-rich families and fold them with five different field selections, counting how many distinct groups each produces.
+% 我们取四个 oracle 丰富家族的同样 13,265 个 operation，用五种不同字段选择折叠，计算每种产生多少不同分组。
 The same operations fold into 9~dataset groups, 57~phase groups, 226~semantic groups, 455~action groups, or 3{,}757~fixed-session groups by changing only the stack fields.
 % 同样的 operation 仅通过改变栈字段即可折叠为 9 个数据集分组、57 个阶段分组、226 个语义分组、455 个操作分组或 3,757 个固定会话分组。
 A flat GROUP BY on a single label cannot produce these views because different stack depths answer different questions (task-level budget vs.\ action-level duplication vs.\ session-level drilldown).
