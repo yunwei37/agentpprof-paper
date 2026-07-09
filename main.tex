@@ -543,7 +543,7 @@ We use two classes of data.
 % 我们使用两类数据。
 \textbf{Real agent trajectories}: 325 readable local trajectories (198~Codex, 50~Claude, 77~Claude subagent) from a multi-month development project, containing 183{,}714 system observations.
 % 真实智能体会话：来自一个多月开发项目的 325 个可读本地会话（198 个 Codex、50 个 Claude、77 个 Claude 子智能体），包含 183,714 个系统观测。
-\textbf{Public labeled traces}: 15 families of real agent or human executions, totaling 47{,}590 operations through mapping rules.
+\textbf{Public annotated traces}: 15 families of real agent or human executions, totaling 47{,}590 operations through mapping rules.
 % 公开标注 trace：15 个真实智能体或人类执行的家族，通过映射规则共计 47,590 个 operation。
 These cover web agents (WebLINX~\cite{weblinx}, Mind2Web~\cite{mind2web}, AgentTrek~\cite{agenttrek}, WebShop~\cite{webshop}), API agents (API-Bank~\cite{apibank}, ToolBench~\cite{toolbench}, tau-bench~\cite{taubench}), coding agents (SWE-agent~\cite{sweagent}), and mobile/GUI agents (AndroidCtrl~\cite{androidcontrol}, GUI-Odyssey~\cite{guiodyssey}, ScaleCUA~\cite{scalecua}).
 % 涵盖 web 智能体（WebLINX、Mind2Web、AgentTrek、WebShop）、API 智能体（API-Bank、ToolBench、tau-bench）、编码智能体（SWE-agent）和移动/GUI 智能体（AndroidCtrl、GUI-Odyssey、ScaleCUA）。
@@ -553,7 +553,7 @@ We measure semantic separation via the mixed-weight percentage defined in RQ1.
 % 我们通过 RQ1 中定义的混合权重百分比测量语义分离度。
 For localization quality (RQ2), we use average precision (AP, the area under the precision-recall curve when groups are ranked by suspected problem density), recall at various inspection budgets, and work-to-first-positive (the fraction of groups inspected before finding one positive).
 % 对于定位质量（RQ2），我们使用平均精度（AP，按疑似问题密度排序分组时精确率-召回率曲线下面积）、不同检查预算下的召回率和首个正例工作量（找到一个正例前检查的分组比例）。
-For label agreement (RQ3), we use V-measure (a clustering-agreement score ranging from 0 to 1) and boundary F1.
+For tag agreement (RQ3), we use V-measure (a clustering-agreement score ranging from 0 to 1) and boundary F1.
 % 对于标签一致性（RQ3），我们使用 V-measure（聚类一致性分数，范围 0 到 1）和边界 F1。
 
 %% -------------------------------------------------------------------
@@ -564,53 +564,36 @@ The strongest argument against semantic profiling is that traditional tools ``ca
 % 反对语义分析的最强论点是传统工具"已经能看到相同信息"。
 To test this, we run a semantic-axis ablation on 325 real Codex/Claude trajectories (183{,}714 system observations).
 % 为了检验这一点，我们在 325 个真实 Codex/Claude 会话（183,714 个系统观测）上进行语义轴消融。
-We progressively add label axes (no labels, session only, prompt only, both) and measure the mixed-weight percentage, the fraction of system-effect cost in groups that mix observations from multiple task categories.
+We progressively add tag axes (no tags, session only, prompt only, both) and measure the mixed-weight percentage, the fraction of system-effect cost in groups that mix observations from multiple task categories.
 % 我们逐步添加标签轴（无标签、仅会话、仅提示词、两者兼有），测量混合权重百分比——混合了多个任务类别观测的桶中的系统副作用权重比例。
 A lower mixed-weight percentage means the profiler correctly separates effects by task category.
 % 更低的混合权重百分比意味着分析器正确地按任务类别分离了效果。
 The residual percentage measures weight in groups where the majority category accounts for less than 90\% of the group, capturing partial mixing.
 % 残余百分比测量多数类别占桶内不到 90\% 的权重，捕获部分混合。
 
-\begin{table}[t]
-\centering\small
-\caption{Semantic-axis ablation on 183{,}714 system observations
-from 325 real trajectories. All rows preserve the same total weight.}
-\label{tab:mixing}
-\begin{tabular}{lrrr}
-\toprule
-Projection & Unique stacks & Mixed weight \% & Residual \% \\
-\midrule
-No semantic tags & 11{,}967 & 90.4 & 44.7 \\
-Session label only & 15{,}027 & 84.4 & 33.4 \\
-Prompt label only & 24{,}703 & 36.7 & 7.5 \\
-Session + prompt & 26{,}829 & 0.0 & 0.0 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Table~\ref{tab:mixing} shows the result on 325 real Codex/Claude trajectories.
-% Table~\ref{tab:mixing} 展示了 325 个真实 Codex/Claude 会话上的结果。
+Figure~\ref{fig:rq1-separation} shows the result on 325 real Codex/Claude trajectories.
+% Figure~\ref{fig:rq1-separation} 展示了 325 个真实 Codex/Claude 会话上的结果。
 Without semantic tags, 90.4\% of system-effect cost falls into mixed groups.
 % 没有语义标签时，90.4\% 的系统副作用权重落入混合桶。
 A flat \texttt{cargo~test} counter shows 2{,}903 executions but cannot distinguish whether they came from \texttt{review}, \texttt{debug}, \texttt{refactor}, or \texttt{test} prompts.
 % 扁平的 \texttt{cargo test} 计数器显示 2,903 次执行，但无法区分它们来自 \texttt{review}、\texttt{debug}、\texttt{refactor} 还是 \texttt{test} 提示词。
 Adding only the prompt tag reduces mixed weight to 36.7\% and residual to 7.5\%.
 % 仅添加提示词标签就将混合权重降至 36.7\%，残余降至 7.5\%。
-The session label alone barely helps (84.4\%), because trajectories typically contain multiple intent phases.
+The session tag alone barely helps (84.4\%), because trajectories typically contain multiple intent phases.
 % 仅会话标签几乎没有帮助（84.4\%），因为会话通常包含多个意图阶段。
 
-A label-permutation test (1{,}000 shuffles, $p = 0.001$) confirms the separation is not random.
+A tag-permutation test (1{,}000 shuffles, $p = 0.001$) confirms the separation is not random.
 % 标签置换测试（1,000 次洗牌，$p = 0.001$）确认分离不是随机的。
 Semantic-tag quality is validated in RQ3.
 % 语义标签质量在 RQ3 中验证。
 
-Beyond label separation, we test whether choosing different field selections for the operation stack produces views that flat grouping cannot.
+Beyond tag separation, we test whether choosing different field selections for the operation stack produces views that flat grouping cannot.
 % 除标签分离外，我们还测试为 operation stack 选择不同字段是否产生扁平分组无法产生的视图。
 We take the same 13{,}265 operations from the four oracle-rich families and fold them with five different field selections, counting how many distinct groups each produces.
 % 我们取四个 oracle 丰富家族的同样 13,265 个 operation，用五种不同字段选择折叠，计算每种产生多少不同分组。
 The same operations fold into 9~dataset groups, 57~phase groups, 226~semantic groups, 455~action groups, or 3{,}757~per-session groups by changing only the stack fields.
 % 同样的 operation 仅通过改变栈字段即可折叠为 9 个数据集分组、57 个阶段分组、226 个语义分组、455 个操作分组或 3,757 个固定会话分组。
-A flat GROUP BY on a single label cannot produce these views because different stack depths answer different questions (budget by task vs.\ duplication by action vs.\ per-session detail).
+A flat GROUP BY on a single tag cannot produce these views because different stack depths answer different questions (budget by task vs.\ duplication by action vs.\ per-session detail).
 % 单标签的扁平 GROUP BY 无法产生这些视图，因为不同栈深度回答不同问题（任务级预算 vs. 操作级重复 vs. 会话级下钻）。
 The same model also covers all 15 public trace families (Table~\ref{tab:datasets}) without type-specific objects.
 % 同一模型也覆盖了所有 15 个公开 trace 家族（Table~\ref{tab:datasets}），无需特定类型对象。
@@ -639,11 +622,16 @@ Figure~\ref{fig:flamegraph} shows the resulting flame graphs for the \texttt{tok
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/fig-rq1-separation.pdf}
-\caption{RQ1: Semantic-axis ablation on 183{,}714 system observations.
-Adding prompt tags reduces mixed weight from 90.4\% to 36.7\%.
-Session labels alone barely help (84.4\%).}
-\Description{Stacked bar chart showing mixed vs separated weight
-under four projection choices.}
+\caption{RQ1: Semantic-axis ablation on 183{,}714 system observations
+from 325 real trajectories.
+Bars show mixed weight and residual percentages (left axis);
+the line shows unique stacks (right axis).
+Adding prompt tags reduces mixed weight from 90.4\% to 36.7\%
+while increasing unique stacks from 12k to 25k.
+Session tags alone barely help (84.4\%).}
+\Description{Grouped bar chart with dual y-axis showing mixed weight
+percentage, residual percentage, and unique stack count under four
+semantic-tag projection choices.}
 \label{fig:rq1-separation}
 \end{figure}
 
@@ -713,7 +701,7 @@ Per-session grouping retains lower work-to-first-positive on 4/6 tasks, confirmi
 \centering
 \includegraphics[width=\linewidth]{figures/baseline-tradeoff.png}
 \caption{RQ2: Inspection work vs.\ recall at 30\% inspection budget.
-Operation-stack profiling (labeled) achieves low work (0.094) with moderate
+Operation-stack profiling (tagged) achieves low work (0.094) with moderate
 recall (0.39), while flat requires full inspection and per-session
 fragments into 285 groups. Oracle policies (large dots) are upper bounds.}
 \Description{Scatter plot showing inspection work versus budget recall
@@ -723,7 +711,7 @@ for eight profiling policies.}
 
 Statistical validation supports these comparisons.
 % 统计验证支持这些比较。
-Bootstrap (10{,}000 resamples) and label-permutation (2{,}000 trials) confirm that the AP differences are stable and exceed the 95\% confidence threshold on all six tasks.
+Bootstrap (10{,}000 resamples) and tag-permutation (2{,}000 trials) confirm that the AP differences are stable and exceed the 95\% confidence threshold on all six tasks.
 % Bootstrap（10,000 次重采样）和标签置换（2,000 次试验）确认 AP 差异在所有六个任务上是稳定的，且超过 95\% 置信阈值。
 
 We also test whether stack depth matters by sweeping the induced-stack depth cap from 1 to 5 on the same six tasks and measuring AP and inspection work at each depth.
@@ -742,11 +730,11 @@ Modifying stack fields, mapping rules, or ranking criteria and re-running on the
 \subsection{RQ3: How Accurate Are the Labels?}
 % RQ3：标签有多准确？
 
-RQ1 and RQ2 assume that semantic tags (the labels derived by intent attribution or mapping rules) are useful.
+RQ1 and RQ2 assume that semantic tags (the tags derived by intent attribution or mapping rules) are useful.
 % RQ1 和 RQ2 假设语义标签（由意图归因或映射规则派生的标签）是有用的。
 RQ3 tests whether these semantic tags are accurate by comparing them against ground-truth annotations from the benchmark datasets.
 % RQ3 通过将这些语义标签与基准数据集的真实标注进行比较来测试它们是否准确。
-For free-form traces (real trajectories), we measure whether the intent-attribution backends run reliably at scale and produce well-formed labels.
+For free-form traces (real trajectories), we measure whether the intent-attribution backends run reliably at scale and produce well-formed tags.
 % 对于自由形式 trace（真实会话），我们测量意图归因后端是否在规模上可靠运行并产生格式良好的标签。
 Semantic accuracy of the LLM/regex tagger on free-form prompts remains future work because none of the available datasets (67{,}304 rows across 6 sources) simultaneously expose free-form text and ground-truth semantic tags, making same-input accuracy evaluation infeasible with current data.
 % LLM/正则标注器在自由形式提示词上的语义精度仍是未来工作，因为现有数据集（6 个来源共 67,304 行）没有同时暴露自由形式文本和真实语义标签，使得同输入精度评估在当前数据下不可行。
@@ -754,17 +742,17 @@ Semantic accuracy of the LLM/regex tagger on free-form prompts remains future wo
 On 325 real trajectories, the LLM tagger processes 118{,}021 tag requests with zero failures, 100\% syntax validity, and 70\% cache hit rate (operational details in RQ4).
 % 在 325 个真实会话上，LLM 标注器处理了 118,021 个标注请求，零失败，100\% 语法有效性，70\% 缓存命中率（运行细节见 RQ4）。
 
-Public benchmark datasets provide native action labels that serve as ground truth for mapping quality.
+Public benchmark datasets provide native action annotations that serve as ground truth for mapping quality.
 % 公开基准数据集提供原生操作标签作为映射质量的真实标准。
 We run a leave-dataset-out evaluation.
 % 我们运行留一数据集评估。
-For each of 9 datasets, we train mapping rules on the other 8 and measure V-measure between the mapping-derived \texttt{phase} field and the dataset's native \texttt{action} labels, plus boundary F1 between mapped phase boundaries and native action boundaries.
+For each of 9 datasets, we train mapping rules on the other 8 and measure V-measure between the mapping-derived \texttt{phase} field and the dataset's native \texttt{action} annotations, plus boundary F1 between mapped phase boundaries and native action boundaries.
 % 对于 9 个数据集中的每一个，我们在其余 8 个上训练映射规则，测量映射衍生的 \texttt{phase} 字段与数据集原生 \texttt{action} 标签之间的 V-measure，以及映射阶段边界与原生操作边界之间的边界 F1。
 
 \begin{table}[t]
 \centering\small
 \caption{Leave-dataset-out mapping quality. V-measure between
-mapping-derived \texttt{phase} and native \texttt{action} labels.
+mapping-derived \texttt{phase} and native \texttt{action} annotations.
 13{,}265 operations from the four oracle-rich families
 across 9 held-out evaluations.}
 \label{tab:vmeasure}
@@ -789,7 +777,7 @@ api-bank & 48 & 0.000 & --- \\
 \centering
 \includegraphics[width=\linewidth]{figures/fig-rq3-vmeasure.pdf}
 \caption{RQ3: Leave-dataset-out V-measure between mapping-derived
-\texttt{phase} and native \texttt{action} labels. The dashed line
+\texttt{phase} and native \texttt{action} annotations. The dashed line
 marks 0.7. Seven of nine datasets exceed this threshold.}
 \Description{Bar chart showing V-measure for nine held-out datasets,
 with a dashed line at 0.7.}
@@ -798,12 +786,12 @@ with a dashed line at 0.7.}
 
 Table~\ref{tab:vmeasure} and Figure~\ref{fig:rq3-vmeasure} show the results.
 % Table~\ref{tab:vmeasure} 和 Figure~\ref{fig:rq3-vmeasure} 展示了结果。
-On 7/9 datasets, V-measure exceeds 0.7, indicating strong agreement between mapping-derived and native labels.
+On 7/9 datasets, V-measure exceeds 0.7, indicating strong agreement between mapping-derived tags and native annotations.
 % 在 7/9 数据集上，V-measure 超过 0.7，表明映射衍生标签与原生标签之间有很强的一致性。
 The two low-scoring datasets (toolbench, api-bank) have atypical action vocabularies that the held-out mapping rules do not cover.
 % 两个低分数据集（toolbench、api-bank）具有保留映射规则未覆盖的非典型操作词汇。
 
-Supervised boundary predictors beat simple baselines on 4/5 tested datasets (e.g., F1~0.77 vs 0.71 on OSWorld-Human), confirming that mapping rules produce useful labels but are not automatic intent discovery.
+Supervised boundary predictors beat simple baselines on 4/5 tested datasets (e.g., F1~0.77 vs 0.71 on OSWorld-Human), confirming that mapping rules produce useful tags but are not automatic intent discovery.
 % 有监督的边界预测器在 4/5 测试的数据集上超过简单基线（例如 OSWorld-Human 上 F1 约 0.77 vs 0.71），确认映射规则产生有用标签但不是自动意图发现。
 
 %% -------------------------------------------------------------------
@@ -828,21 +816,13 @@ The full profile-spec composition path (operation files, query predicates, rank 
 
 Intent attribution adds a one-time cost for new prompts.
 % 意图归因对新提示词增加一次性开销。
-Of 118{,}021 tag requests on 325 real trajectories, 70\% are cache hits (zero cost), and the remaining 35{,}136 new calls complete at p95 latency of 31\,ms per label using a local 3B-parameter model.
+Of 118{,}021 tag requests on 325 real trajectories, 70\% are cache hits (zero cost), and the remaining 35{,}136 new calls complete at p95 latency of 31\,ms per tag using a local 3B-parameter model.
 % 在 325 个真实会话的 118,021 个标注请求中，70\% 为缓存命中（零开销），其余 35,136 个新调用使用本地 3B 参数模型以 p95 延迟 31 毫秒/标签完成。
-Grammar-constrained decoding ensures 100\% syntax validity (2{,}700/2{,}700 test labels).
+Grammar-constrained decoding ensures 100\% syntax validity (2{,}700/2{,}700 test tags).
 % 语法约束解码确保 100\% 语法有效性（2,700/2,700 测试标签）。
-Because labels are cached, re-profiling the same trajectories with different stack fields or predicates incurs no additional LLM calls.
+Because tags are cached, re-profiling the same trajectories with different stack fields or predicates incurs no additional LLM calls.
 % 因为标签被缓存，用不同栈字段或谓词重新分析相同会话不产生额外 LLM 调用。
 
-\paragraph{Limitations.}
-% 局限性。
-The real-session data comes from a single multi-month development project, so the label distributions may not generalize to other domains.
-% 真实会话数据来自单个多月开发项目，标签分布可能无法推广到其他领域。
-Semantic accuracy of the intent-attribution backends on free-form prompts remains unevaluated because no available dataset simultaneously exposes free-form text and ground-truth semantic tags (as discussed in RQ3 above).
-% 意图归因后端在自由形式提示词上的语义精度仍未评估，因为没有可用数据集同时暴露自由形式文本和真实语义标签（见 RQ3）。
-The evaluation uses per-session grouping as a proxy for span-tree debugging tools, not a real OpenTelemetry or LangSmith trace import.
-% 评估使用固定会话下钻作为 span 树调试工具的代理，而非真实的 OpenTelemetry 或 LangSmith trace 导入。
 
 %% ===================================================================
 \section{Related Work}
@@ -873,7 +853,7 @@ Agent observability needs profiling, not only debugging.
 % 智能体可观测性需要性能分析，不仅仅是调试。
 \sys shows that the semantic operation stack model, combined with pluggable intent attribution and stack construction algorithms, closes the aggregation gap for agent traces.
 % \sys 表明，语义 operation stack 模型结合可插拔的意图归因和栈构造算法，填补了智能体 trace 的聚合缺口。
-Scoring profiler output against hidden trajectory labels confirms that semantic profiling separates over 90\% of system-effect cost that per-session views leave mixed, localizes labeled problems at 9.4\% inspection work versus flat summaries, and produces labels that agree with ground truth on 7/9 held-out datasets.
+Scoring profiler output against hidden trajectory annotations confirms that semantic profiling separates over 90\% of system-effect cost that per-session views leave mixed, localizes annotated problems at 9.4\% inspection work versus flat summaries, and produces tags that agree with ground truth on 7/9 held-out datasets.
 % 将分析器输出与隐藏轨迹标签评分确认，语义分析分离了超过 90\% 的混合系统副作用权重，以扁平摘要 9.4\% 的检查工作量定位标注问题，并在 7/9 保留数据集上产生与真实标签一致的标签。
 Per-session grouping remains faster to a first positive on 4/6 tasks, confirming that profilers and debuggers are complementary, and \sys supports both by including or excluding session fields in the stack query.
 % 固定会话下钻在 4/6 任务上更快找到首个正例，确认分析器和调试器是互补的，\sys 通过在栈查询中包含或排除会话字段同时支持两者。
