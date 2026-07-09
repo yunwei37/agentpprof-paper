@@ -24,26 +24,38 @@
 \title{AgentProf: Semantic Profiling for AI Agents}
 
 \begin{abstract}
-AI agents orchestrate heterogeneous activities (prompts, LLM calls, tool invocations, GUI actions, and system effects).
-% AI 智能体编排异构活动（提示词、LLM 调用、工具调用、GUI 操作和系统副作用）。
-As deployments grow to hundreds of sessions, developers need aggregate views to identify which task categories consume the most budget, where failures concentrate, and which workflows waste effort.
-% 当部署规模增长到数百个会话时，开发者需要聚合视图来识别哪些任务类别消耗最多预算、故障集中在哪里、以及哪些工作流浪费了算力。
-Yet, existing observability tools organize events into fixed session/span hierarchies suited for single-run debugging but unable to fold events across sessions by semantic work category.
-% 然而，现有可观测性工具将事件组织为固定的会话/span 层次结构，适用于单次运行调试，但无法按语义工作类别跨会话折叠事件。
-The consequence is that failures, safety violations, and wasted effort remain unattributable to the task categories that cause them.
-% 其结果是，故障、安全违规和浪费的算力仍然无法归因到导致它们的任务类别。
-The root cause is structural because agent prompts are natural language, so two prompts with the same intent share no identifiers that a profiler could merge.
-% 根本原因是结构性的，因为智能体提示词是自然语言，两个表达相同意图的提示词没有可供分析器合并的共同标识符。
-We show that agent profiling reduces to two abstractions, uniform \emph{operations} and query-time \emph{operation stacks}, once intent recognition restores the deterministic labels that flame-graph folding requires.
-% 我们表明，一旦意图识别恢复了火焰图折叠所需的确定性标签，智能体性能分析可归结为两个抽象——统一的 operation 和查询时的 operation stack。
-\sys implements this model as a profiler with pluggable intent-recognition backends.
-% \sys 将此模型实现为一个具有可插拔意图识别后端的分析器。
-On 325 real agent sessions, semantic labels separate over 90\% of system-effect weight that flat views merge.
-% 在 325 个真实智能体会话上，语义标签分离了扁平视图所混合的超过 90\% 的系统副作用权重。
-On four public datasets with hidden ground-truth labels (34{,}539 operations), operation-stack profiling reduces inspection work to 9.4\% versus flat summaries.
-% 在四个具有隐藏真实标签的公开数据集（34,539 个操作）上，operation stack 分析将检查工作量降至扁平摘要的 9.4\%。
-Group fragmentation drops by 45\% versus fixed-session drilldown.
-% 组碎片化比固定会话下钻减少 45\%。
+AI agents now orchestrate complex, multi-step activities across
+hundreds of sessions in production deployments, and developers need
+aggregate views to answer operational questions: where does the token
+budget go by task category, where do failures concentrate, and which
+workflows waste effort.
+% AI 智能体如今在生产部署中编排跨数百个会话的复杂多步骤活动，开发者需要聚合视图来回答运维问题：token 预算按任务类别花在了哪里、故障集中在哪里、哪些工作流浪费了算力。
+Existing observability tools provide per-session debugging views but
+no cross-session profiling layer.
+% 现有可观测性工具提供按会话的调试视图，但没有跨会话的 profiling 层。
+The profiling methodology that answers these questions for traditional
+software---fold identical call stacks into flame graphs---does not
+directly apply because agent activities lack deterministic identifiers
+and runtime call-stack hierarchies.
+% 为传统软件回答这些问题的 profiling 方法论——将相同调用栈折叠为火焰图——不能直接适用，因为智能体活动缺乏确定性标识符和运行时调用栈层次。
+We propose a semantic profiling model that adapts this methodology:
+all activities are represented as uniform \emph{semantic operations},
+\emph{intent attribution} derives deterministic labels from
+natural-language fields, and \emph{profile projections} construct
+aggregation hierarchies from field selections at query time.
+% 我们提出一个语义 profiling 模型来适配此方法论：所有活动表示为统一的语义 operation，意图归因从自然语言字段派生确定性标签，profile 投影在查询时从字段选择构造聚合层次。
+\sys implements this model as a profiler that compiles local agent
+traces into pprof-compatible profiles with pluggable
+intent-attribution backends.
+% \sys 将此模型实现为一个 profiler，将本地智能体 trace 编译为 pprof 兼容的 profile，支持可插拔的意图归因后端。
+On 325 real agent sessions, semantic profiling separates over 90\% of
+system-effect weight that session-level views merge.
+% 在 325 个真实智能体会话上，语义 profiling 分离了会话级视图所混合的超过 90\% 的系统副作用权重。
+On four public datasets with hidden ground-truth labels
+(34{,}539 operations), profiler-ranked groups localize labeled
+problems at 9.4\% inspection cost versus flat summaries, with 45\%
+fewer groups than fixed-session drilldown.
+% 在四个具有隐藏真实标签的公开数据集（34,539 个操作）上，profiler 排序的分组以 9.4\% 的检查成本定位标注问题，比固定会话下钻减少 45\% 的分组数。
 \end{abstract}
 
 \maketitle
@@ -567,14 +579,17 @@ We hide these labels, run the profiler, rank the resulting groups, and check whe
 
 The benchmark uses six tasks across four datasets (AgentRewardBench looping and side-effect, SATraj-OS unsafe operation, AgentNet incorrect and redundant step, and OSWorld-Human group start), totaling 34{,}539 operations and 3{,}699 positives.
 % 基准使用四个数据集的六个任务（AgentRewardBench 循环和副作用、SATraj-OS 不安全操作、AgentNet 不正确和冗余步骤、OSWorld-Human 组起始），共计 34,539 个 operation 和 3,699 个正例。
-Six views (flat, fixed-session, dataset-native, raw-action, operation-stack, label-drilldown) and four rankers (width, visible-risk, query-aware, oracle).
-% 六种视图（扁平、固定会话、数据集原生、原始操作、operation stack、标签下钻）和四种排序器（宽度、可见风险、查询感知、oracle）。
+We compare six grouping strategies (flat summary, fixed-session drilldown, dataset-native hierarchy, raw-action grouping, operation-stack profiling, and an oracle that uses the hidden labels) and rank groups by the fraction of hidden positives they contain.
+% 我们比较六种分组策略（扁平摘要、固定会话下钻、数据集原生层次、原始操作分组、operation stack 分析，以及使用隐藏标签的 oracle），按组包含的隐藏正例比例对组排序。
 
 \begin{table*}[t]
 \centering\small
 \caption{RQ2 hidden-label localization (medians across six tasks).
-Hidden policies serve only as upper bounds. WTFP = work-to-first-positive.
-``---'' = group count varies by task; no single median is reported.}
+AP = average precision. R@5 = recall in top 5 groups. Work@5 = fraction
+of total work in top 5 groups. R@30\% = recall at 30\% inspection budget.
+WTFP = work-to-first-positive (fraction inspected before finding one positive).
+Hidden = 1 means the policy uses hidden labels (oracle upper bound).
+``---'' = group count varies by task.}
 \label{tab:localization}
 \begin{tabular}{lrrrrrrrr}
 \toprule
@@ -597,11 +612,11 @@ Flat summaries recover all positives but require inspecting everything (Work@5\,
 % 扁平摘要恢复所有正例但需要检查全部内容（Work@5 = 1.0）。
 Fixed-session drilldown finds a first positive quickly (WTFP\,=\,0.004) but fragments the workload into 285 groups with only 2.3\% top-five recall.
 % 固定会话下钻快速找到首个正例（WTFP = 0.004），但将工作量碎片化为 285 个组，前五召回率仅 2.3\%。
-Operation-stack query-aware profiling inspects 9.4\% of the work in the top five groups, achieves 39.0\% budget-30 recall, and reduces groups to 157.5.
-% Operation stack 查询感知分析在前五组中检查 9.4\% 的工作量，达到 39.0\% 的 budget-30 召回率，并将组数减少到 157.5。
+Operation-stack profiling inspects 9.4\% of the work in the top five groups, recovers 39.0\% of positives within 30\% of the inspection budget, and reduces groups to 157.5.
+% Operation stack 分析在前五组中检查 9.4\% 的工作量，在 30\% 检查预算内恢复 39.0\% 的正例，并将组数减少到 157.5。
 
-Figure~\ref{fig:rq2-tradeoff} visualizes this tradeoff: op-stack query-aware sits in the low-work, moderate-recall region.
-% Figure~\ref{fig:rq2-tradeoff} 可视化了这一权衡：op-stack query-aware 位于低工作量、中等召回率区域。
+Figure~\ref{fig:rq2-tradeoff} visualizes this tradeoff: operation-stack profiling sits in the low-work, moderate-recall region.
+% Figure~\ref{fig:rq2-tradeoff} 可视化了这一权衡：operation stack 分析位于低工作量、中等召回率区域。
 The comparison also serves as evidence for the two-abstraction model (\S\ref{sec:design}).
 % 该比较也作为双抽象模型（\S\ref{sec:design}）的证据。
 Fixed-session drilldown and dataset-native hierarchy are alternative abstractions that fix the hierarchy at session or dataset boundaries.
@@ -616,8 +631,8 @@ Fixed-session drilldown retains lower work-to-first-positive on 4/6 tasks, confi
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/baseline-tradeoff.png}
-\caption{RQ2: Inspection work vs.\ budget-30 recall across policies.
-Op-stack query-aware (labeled) achieves low work (0.094) with moderate
+\caption{RQ2: Inspection work vs.\ recall at 30\% inspection budget.
+Operation-stack profiling (labeled) achieves low work (0.094) with moderate
 recall (0.39), while flat requires full inspection and fixed-session
 fragments into 285 groups. Oracle policies (large dots) are upper bounds.}
 \Description{Scatter plot showing inspection work versus budget recall
@@ -634,14 +649,14 @@ Beyond localization, we test whether profiler output suggests concrete configura
 % 除定位外，我们还测试分析器输出是否建议具体的配置改进。
 We modify stack fields, mapping rules, or rankers in the profile spec and re-run on the same operations.
 % 我们在 profile spec 中修改栈字段、映射规则或排序器，然后在相同 operation 上重新运行。
-Five of six patches improve AP, top-five lift, and first-positive work (median AP delta 0.038, median top-five lift delta 0.575).
-% 六个补丁中有五个改进了 AP、前五提升和首个正例工作量（中位 AP 增量 0.038，中位前五提升增量 0.575）。
+Five of six changes improve AP, top-five recall, and work-to-first-positive (median AP improvement 0.038).
+% 六个变更中有五个改进了 AP、前五召回率和首个正例工作量（中位 AP 改进 0.038）。
 Three reusable patterns emerge: (1)~safety/side-effect tasks benefit from field and ranker changes; (2)~step-quality tasks benefit from stack-based localization followed by fixed-session drilldown for examples; (3)~human-boundary tasks require boundary-derived fields.
 % 三种可复用模式浮现：(1) 安全/副作用任务受益于字段和排序器变更；(2) 步骤质量任务受益于基于栈的定位后跟固定会话下钻获取示例；(3) 人工边界任务需要边界衍生字段。
-The rejected OSWorld-Human patch shows that visible rank features alone are insufficient for boundary objectives.
-% 被拒绝的 OSWorld-Human 补丁表明仅可见排名特征不足以实现边界目标。
-Folding held-out boundary-derived fields improves AP from 0.240 to 0.258 and reduces groups from 108 to 74, with an explicit work tradeoff.
-% 折叠保留的边界衍生字段将 AP 从 0.240 提高到 0.258，组数从 108 减少到 74，存在明确的工作量权衡。
+The OSWorld-Human task shows that features visible without the hidden labels are insufficient for detecting task boundaries.
+% OSWorld-Human 任务表明不使用隐藏标签时可见的特征不足以检测任务边界。
+Adding fields derived from the hidden boundary annotations improves AP from 0.240 to 0.258 and reduces groups from 108 to 74, confirming that boundary detection requires oracle information.
+% 添加从隐藏边界标注衍生的字段将 AP 从 0.240 提高到 0.258，组数从 108 减少到 74，确认边界检测需要 oracle 信息。
 
 Ablating rank features reveals that 7 features (including \texttt{repeat\_signal} and write-action) drive localization, while 3 mislead the ranker.
 % 排名特征消融显示 7 个特征（包括 \texttt{repeat\_signal} 和 write-action）驱动定位，而 3 个误导排序器。
@@ -715,13 +730,14 @@ On 7/9 datasets, V-measure exceeds 0.7, indicating strong agreement between mapp
 The two low-scoring datasets (toolbench, api-bank) have atypical action vocabularies that the held-out mapping rules do not cover.
 % 两个低分数据集（toolbench、api-bank）具有保留映射规则未覆盖的非典型操作词汇。
 
-A supervised boundary-derivation backend further validates the field pipeline.
-% 有监督的边界衍生后端进一步验证了字段管线。
+A supervised boundary predictor further validates the mapping approach.
+% 有监督的边界预测器进一步验证了映射方法。
 On OSWorld-Human held-out adjacent pairs, a learned boundary predictor achieves F1~0.77, beating the best simple baseline (\texttt{always\_boundary}, F1~0.71).
 % 在 OSWorld-Human 保留相邻对上，学习的边界预测器达到 F1 约 0.77，超过最佳简单基线（\texttt{always\_boundary}，F1 约 0.71）。
-Learned backends beat simple baselines on 4/5 tested boundary families, while AgentRewardBench looping is fully explained by \texttt{repeat\_signal\_change} (baseline F1~1.0).
-% 学习后端在 4/5 测试的边界家族上超过简单基线，而 AgentRewardBench 循环完全由 \texttt{repeat\_signal\_change} 解释（基线 F1 约 1.0）。
-These baseline comparisons support field derivation as a guarded configuration step, not automatic intent discovery.
+Learned predictors beat simple baselines on 4/5 tested datasets, while AgentRewardBench looping is fully explained by a single repeat-signal feature (baseline F1~1.0).
+% 学习预测器在 4/5 测试的数据集上超过简单基线，而 AgentRewardBench 循环完全由单个重复信号特征解释（基线 F1 约 1.0）。
+These comparisons confirm that mapping rules produce useful labels but are not automatic intent discovery.
+% 这些比较确认映射规则产生有用的标签，但不是自动意图发现。
 % 这些基线比较支持字段衍生作为受保护的配置步骤，而非自动意图发现。
 
 All results are backed by profile specs for deterministic replay.
