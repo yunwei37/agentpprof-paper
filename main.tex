@@ -206,7 +206,7 @@ categories.
 % 在 325 个真实 Codex 和 Claude 轨迹（183,714 个系统观测）上，语义 profiling 分离了按会话视图无法归因到任务类别的超过 90\% 的系统副作用开销。
 On four public datasets (34{,}539 operations) where the correct
 labels are known but hidden from the profiler, ranked groups locate
-real problems at 9.4\% inspection cost, with 45\% fewer groups than
+real problems at 9.4\% inspection work, with 45\% fewer groups than
 per-session grouping.
 % 在四个公开数据集（34,539 个操作）上，正确标签已知但对 profiler 隐藏，排序的分组以 9.4\% 的检查成本定位真实问题，比按会话分组减少 45\% 的分组数。
 Derived labels agree with ground truth on 7 of 9 held-out datasets.
@@ -294,21 +294,20 @@ by correlating eBPF-captured system events with intercepted LLM
 traffic, but the resulting traces still lack aggregate profiling.
 % AgentSight~\cite{agentsight} 通过关联 eBPF 捕获的系统事件与拦截的 LLM 流量来桥接意图层和系统副作用层，但生成的 trace 仍缺乏聚合分析能力。
 None of these tools provides cross-trajectory resource attribution
-by semantic category, and this creates three concrete gaps.
-% 这些工具都不提供按语义类别的跨轨迹资源归因，这造成了三个具体缺口。
+by semantic category, 
 
+and this creates three concrete gaps.
+% 这些工具都不提供按语义类别的跨轨迹资源归因，这造成了三个具体缺口。
 First, sessions are boundaries, not categories.
 % 第一，会话是边界，不是类别。
-A single session may contain review, debugging, and refactoring phases, and splitting by session assigns all of them to the same bucket.
-% 单个会话可能包含 review、debugging 和 refactoring 阶段，按会话拆分会将它们全部分配到同一桶中。
-Two sessions performing the same task produce separate buckets that cannot be merged without external logic.
-% 执行相同任务的两个会话会产生无法在没有外部逻辑的情况下合并的分离桶。
-
+A single session may contain review, debugging, and refactoring phases, and splitting by session assigns all of them to the same group.
+% 单个会话可能包含 review、debugging 和 refactoring 阶段，按会话拆分会将它们全部分配到同一组中。
+Two sessions performing the same task produce separate groups that cannot be merged without external logic.
+% 执行相同任务的两个会话会产生无法在没有外部逻辑的情况下合并的分离组。
 Second, span names~\cite{otel,openinference} describe mechanisms (\texttt{LLMCall}, \texttt{ToolInvoke}, \texttt{ChatCompletion}), not user intent (\texttt{review}, \texttt{debug}, \texttt{test}).
 % 第二，span 名称~\cite{otel,openinference}描述机制（\texttt{LLMCall}、\texttt{ToolInvoke}、\texttt{ChatCompletion}），而非用户意图（\texttt{review}、\texttt{debug}、\texttt{test}）。
 Grouping by span name tells you how many LLM calls occurred, not which categories of work consumed the budget.
 % 按 span 名称分组只能告诉你发生了多少次 LLM 调用，而非哪些工作类别消耗了预算。
-
 Third, these limitations compound in practice.
 % 第三，这些限制在实践中叠加放大。
 A common system effect like running a test suite may appear thousands of times across trajectories, but a flat summary shows only a single counter with no way to attribute executions to the semantic intent that triggered them.
@@ -351,7 +350,7 @@ The semantic operation stack model has two components, operations (\S\ref{sec:op
 % 语义 operation stack 模型有两个组件——operation（\S\ref{sec:ops}）和 operation stack（\S\ref{sec:stacks}）——满足 R1 和 R2。
 Two pluggable algorithm frameworks enrich the model. Intent attribution (\S\ref{sec:intent}) satisfies R3 by deriving deterministic labels, and stack construction (\S\ref{sec:stacks}) builds aggregation hierarchies from available fields.
 % 两个可插拔算法框架丰富此模型。意图归因（\S\ref{sec:intent}）通过派生确定性标签满足 R3，栈构造（\S\ref{sec:stacks}）从可用字段构建聚合层次。
-The profiling pipeline has five stages: (1)~parse raw traces into operations, (2)~enrich operations via intent attribution or mapping rules, (3)~filter by a user-specified predicate, (4)~project each operation onto a stack frame sequence chosen at query time, and (5)~fold operations with identical stacks, summing their weights.
+The profiling pipeline has five stages: (1)~parse raw trajectories into operations, (2)~enrich operations via intent attribution or mapping rules, (3)~filter by a user-specified predicate, (4)~project each operation onto a stack frame sequence chosen at query time, and (5)~fold operations with identical stacks, summing their weights.
 % 分析管线有五个阶段：(1) 将原始 trace 解析为 operation，(2) 通过意图归因或映射规则丰富 operation，(3) 按用户指定的谓词过滤，(4) 将每个 operation 投影到查询时选择的栈帧序列上，(5) 折叠具有相同栈的 operation 并求和权重。
 
 \subsection{Semantic Operation Stack Model}
@@ -446,9 +445,10 @@ attribution to folded-stack flame graphs.}
 \paragraph{Intent attribution.}
 % 意图归因。
 Intent attribution maps free-form prompts to short, stable,
-deterministic labels, restoring the folding precondition that agent
-prompts violate (\S\ref{sec:background}).
-% 意图归因将自由形式的提示词映射为短小、稳定、确定性的标签，恢复智能体提示词所违反的折叠前提条件（\S\ref{sec:background}）。
+deterministic labels, giving agent trajectories the stable
+identifiers that traditional profiling gets for free from function
+names (\S\ref{sec:background}).
+% 意图归因将自由形式的提示词映射为短小、稳定、确定性的标签，为智能体轨迹提供传统 profiling 从函数名免费获得的稳定标识符（\S\ref{sec:background}）。
 The framework supports three pluggable backends.
 % 该框架支持三种可插拔后端。
 Regex rules are the production default: rules have the form
@@ -533,42 +533,20 @@ AgentSight provides real-time eBPF-based capture of SSL traffic, process events,
 
 We use two classes of data.
 % 我们使用两类数据。
-\textbf{Real agent sessions}: 325 readable local trajectories (198~Codex, 50~Claude, 77~Claude subagent) from a multi-month development project, containing 183{,}714 system observations.
+\textbf{Real agent trajectories}: 325 readable local trajectories (198~Codex, 50~Claude, 77~Claude subagent) from a multi-month development project, containing 183{,}714 system observations.
 % 真实智能体会话：来自一个多月开发项目的 325 个可读本地会话（198 个 Codex、50 个 Claude、77 个 Claude 子智能体），包含 183,714 个系统观测。
-\textbf{Public labeled traces}: 15 families covering web, mobile, desktop, software, API, and dialogue agents (Table~\ref{tab:datasets}), totaling 47{,}590 operations through mapping rules.
-% 公开标注 trace：15 个家族，涵盖 web、移动、桌面、软件、API 和对话智能体（Table~\ref{tab:datasets}），通过映射规则共计 47,590 个 operation。
-All public traces are real agent or human executions collected and labeled by their respective benchmark projects.
-% 所有公开 trace 都是由各自基准项目收集和标注的真实智能体或人类执行。
-Four oracle-rich families (those with ground-truth quality annotations suitable for evaluation: AgentRewardBench, SATraj-OS, AgentNet, OSWorld-Human) provide hidden labels for RQ2.
-% 四个 oracle 丰富的家族（AgentRewardBench、SATraj-OS、AgentNet、OSWorld-Human）为 RQ2 提供隐藏的真实标签。
+\textbf{Public labeled traces}: 15 families of real agent or human executions, totaling 47{,}590 operations through mapping rules.
+% 公开标注 trace：15 个真实智能体或人类执行的家族，通过映射规则共计 47,590 个 operation。
+These cover web agents (WebLINX~\cite{weblinx}, Mind2Web~\cite{mind2web}, AgentTrek~\cite{agenttrek}, WebShop~\cite{webshop}), API agents (API-Bank~\cite{apibank}, ToolBench~\cite{toolbench}, tau-bench~\cite{taubench}), coding agents (SWE-agent~\cite{sweagent}), and mobile/GUI agents (AndroidCtrl~\cite{androidcontrol}, GUI-Odyssey~\cite{guiodyssey}, ScaleCUA~\cite{scalecua}).
+% 涵盖 web 智能体（WebLINX、Mind2Web、AgentTrek、WebShop）、API 智能体（API-Bank、ToolBench、tau-bench）、编码智能体（SWE-agent）和移动/GUI 智能体（AndroidCtrl、GUI-Odyssey、ScaleCUA）。
+Four families with ground-truth quality annotations (AgentRewardBench~\cite{agentrewardbench}, SATraj-OS~\cite{safactory}, AgentNet~\cite{agentnet}, OSWorld-Human~\cite{osworldhuman}) provide hidden labels for RQ2.
+% 四个具有真实质量标注的家族（AgentRewardBench、SATraj-OS、AgentNet、OSWorld-Human）为 RQ2 提供隐藏标签。
 We measure semantic separation via the mixed-weight percentage defined in RQ1.
 % 我们通过 RQ1 中定义的混合权重百分比测量语义分离度。
 For localization quality (RQ2), we use average precision (AP, the area under the precision-recall curve when groups are ranked by suspected problem density), recall at various inspection budgets, and work-to-first-positive (the fraction of groups inspected before finding one positive).
 % 对于定位质量（RQ2），我们使用平均精度（AP，按疑似问题密度排序分组时精确率-召回率曲线下面积）、不同检查预算下的召回率和首个正例工作量（找到一个正例前检查的分组比例）。
 For label agreement (RQ3), we use V-measure (a clustering-agreement score ranging from 0 to 1) and boundary F1.
 % 对于标签一致性（RQ3），我们使用 V-measure（聚类一致性分数，范围 0 到 1）和边界 F1。
-
-\begin{table*}[t]
-\centering\small
-\caption{Public labeled trace families. All traces are real agent or
-human executions. The bottom four rows provide oracle labels for RQ2.}
-\label{tab:datasets}
-\begin{tabular}{p{0.17\linewidth}p{0.22\linewidth}p{0.15\linewidth}p{0.17\linewidth}p{0.17\linewidth}}
-\toprule
-Family & Native labels & Access & Trace origin & Eval.\ role \\
-\midrule
-WebLINX~\cite{weblinx}, Mind2Web~\cite{mind2web}, AgentTrek~\cite{agenttrek}, WebShop~\cite{webshop} & Web actions, tasks, rewards & HF / public & Real web agents & Coverage \\
-API-Bank~\cite{apibank}, ToolBench~\cite{toolbench}, tau-bench~\cite{taubench} & API calls, outcomes & HF / JSONL & Real API agents & Coverage \\
-SWE-agent~\cite{sweagent} & Issue trajectories & HF viewer & Real coding agent & Coverage \\
-AndroidCtrl~\cite{androidcontrol}, GUI-Odyssey~\cite{guiodyssey}, ScaleCUA~\cite{scalecua} & Mobile/GUI actions & Public/HF & Real mobile agents & Coverage \\
-\midrule
-AgentRewardBench~\cite{agentrewardbench} & Success, side-effect, looping & HF annotations & Real BrowserGym agents & RQ2 tasks \\
-SATraj-OS~\cite{safactory} & Safety, reward, attack type & HF config & Real desktop agents & RQ2 task \\
-OSWorld-Human~\cite{osworldhuman} & Human grouped-action traces & GitHub JSON & Real human OS use & RQ2 task \\
-AgentNet~\cite{agentnet} & Step correctness, redundancy & HF JSONL & Real desktop agents & RQ2 tasks \\
-\bottomrule
-\end{tabular}
-\end{table*}
 
 %% -------------------------------------------------------------------
 \subsection{RQ1: Does Semantic Profiling Improve Resource Attribution?}
@@ -582,7 +560,7 @@ We progressively add label axes (no labels, session only, prompt only, both) and
 % 我们逐步添加标签轴（无标签、仅会话、仅提示词、两者兼有），测量混合权重百分比——混合了多个任务类别观测的桶中的系统副作用权重比例。
 A lower mixed-weight percentage means the profiler correctly separates effects by task category.
 % 更低的混合权重百分比意味着分析器正确地按任务类别分离了效果。
-The residual percentage measures weight in buckets where the majority category accounts for less than 90\% of the bucket, capturing partial mixing.
+The residual percentage measures weight in groups where the majority category accounts for less than 90\% of the group, capturing partial mixing.
 % 残余百分比测量多数类别占桶内不到 90\% 的权重，捕获部分混合。
 
 \begin{table}[t]
@@ -760,12 +738,12 @@ RQ1 and RQ2 assume that semantic labels (the labels derived by intent attributio
 % RQ1 和 RQ2 假设语义标签（由意图归因或映射规则派生的标签）是有用的。
 RQ3 tests whether these semantic labels are accurate by comparing them against ground-truth annotations from the benchmark datasets.
 % RQ3 通过将这些语义标签与基准数据集的真实标注进行比较来测试它们是否准确。
-For free-form traces (real sessions), we measure whether the intent-attribution backends run reliably at scale and produce well-formed labels.
+For free-form traces (real trajectories), we measure whether the intent-attribution backends run reliably at scale and produce well-formed labels.
 % 对于自由形式 trace（真实会话），我们测量意图归因后端是否在规模上可靠运行并产生格式良好的标签。
 Semantic accuracy of the LLM/regex tagger on free-form prompts remains future work because none of the available datasets (67{,}304 rows across 6 sources) simultaneously expose free-form text and ground-truth semantic labels, making same-input accuracy evaluation infeasible with current data.
 % LLM/正则标注器在自由形式提示词上的语义精度仍是未来工作，因为现有数据集（6 个来源共 67,304 行）没有同时暴露自由形式文本和真实语义标签，使得同输入精度评估在当前数据下不可行。
 
-On 325 real sessions, the LLM tagger processes 118{,}021 tag requests with zero failures, 100\% syntax validity, and 70\% cache hit rate (operational details in RQ4).
+On 325 real trajectories, the LLM tagger processes 118{,}021 tag requests with zero failures, 100\% syntax validity, and 70\% cache hit rate (operational details in RQ4).
 % 在 325 个真实会话上，LLM 标注器处理了 118,021 个标注请求，零失败，100\% 语法有效性，70\% 缓存命中率（运行细节见 RQ4）。
 
 Public benchmark datasets provide native action labels that serve as ground truth for mapping quality.
@@ -842,11 +820,11 @@ The full profile-spec composition path (operation files, query predicates, rank 
 
 Intent attribution adds a one-time cost for new prompts.
 % 意图归因对新提示词增加一次性开销。
-Of 118{,}021 tag requests on 325 real sessions, 70\% are cache hits (zero cost), and the remaining 35{,}136 new calls complete at p95 latency of 31\,ms per label using a local 3B-parameter model.
+Of 118{,}021 tag requests on 325 real trajectories, 70\% are cache hits (zero cost), and the remaining 35{,}136 new calls complete at p95 latency of 31\,ms per label using a local 3B-parameter model.
 % 在 325 个真实会话的 118,021 个标注请求中，70\% 为缓存命中（零开销），其余 35,136 个新调用使用本地 3B 参数模型以 p95 延迟 31 毫秒/标签完成。
 Grammar-constrained decoding ensures 100\% syntax validity (2{,}700/2{,}700 test labels).
 % 语法约束解码确保 100\% 语法有效性（2,700/2,700 测试标签）。
-Because labels are cached, re-profiling the same sessions with different stack fields or predicates incurs no additional LLM calls.
+Because labels are cached, re-profiling the same trajectories with different stack fields or predicates incurs no additional LLM calls.
 % 因为标签被缓存，用不同栈字段或谓词重新分析相同会话不产生额外 LLM 调用。
 
 \paragraph{Limitations.}
