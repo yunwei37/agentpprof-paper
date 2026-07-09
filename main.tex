@@ -326,25 +326,29 @@ We quantify this in RQ1~(\S\ref{sec:eval}).
 \subsection{Design Requirements for Agent Profiling}
 % 智能体 Profiling 的设计需求
 
-These observations yield three design requirements:
-% 这些观察得出三个设计需求：
+Traditional profiling relies on three mechanisms that the call stack provides automatically.
+% 传统 profiling 依赖调用栈自动提供的三种机制。
+Agent profiling needs all three but must achieve them without a call stack:
+% 智能体 profiling 需要这三种机制，但必须在没有调用栈的情况下实现：
 
 \begin{description}
-\item[R1: Uniform record type.]
-Agent activities mix prompts, LLM calls, tool invocations, GUI actions, process events, and benchmark annotations.
-% 智能体活动混合了提示词、LLM 调用、工具调用、GUI 操作、进程事件和基准标签。
-The profiler needs a single record type that can represent all of them without type-specific objects.
-% 分析器需要一种能表示所有这些活动的单一记录类型，无需特定类型的对象。
-\item[R2: Query-time aggregation.]
-The same data must support multiple aggregation shapes (by task, phase, action, session, or dataset) without rebuilding the input.
-% 同一数据必须支持多种聚合形状（按任务、阶段、操作、会话或数据集），无需重建输入。
-Sessions and spans must be fields, not fixed hierarchy nodes.
-% 会话和 span 必须是字段，而非固定层次节点。
-\item[R3: Stable tags for folding.]
-Free-form prompts must be mapped to short, stable, repeatable tags before folding.
-% 自由形式的提示词必须在折叠前映射为短小、稳定、可重复的标签。
-This \emph{intent attribution} step has no analogue in CPU profiling, where function names are already stable identifiers.
-% 这一意图归因步骤在 CPU 性能分析中没有对应物，因为函数名已经是稳定标识符。
+\item[R1: Cross-layer resource projection.]
+In traditional profiling, each sample is taken inside a call context, so resource consumption is automatically attributed to the code path that caused it.
+% 在传统 profiling 中，每个采样在调用上下文内完成，因此资源消耗自动归因到造成它的代码路径。
+Agent activities span two layers: intent (prompts, LLM calls) and system effects (file I/O, process spawns).
+% 智能体活动跨越两层：意图（提示词、LLM 调用）和系统副作用（文件 I/O、进程创建）。
+The profiler must connect system-layer resource consumption to intent-layer semantic categories.
+% 分析器必须将系统层的资源消耗连接到意图层的语义类别。
+\item[R2: Stable tags for folding.]
+In traditional profiling, function names are stable identifiers that enable folding identical stacks.
+% 在传统 profiling 中，函数名是稳定标识符，能够折叠相同的栈。
+Agent prompts are natural language, so the profiler must derive short, stable, repeatable tags before folding.
+% 智能体提示词是自然语言，因此分析器必须在折叠前派生短小、稳定、可重复的标签。
+\item[R3: Hierarchy construction.]
+In traditional profiling, the runtime call stack provides the aggregation hierarchy: function calls nest, and folding identical stacks produces the tree that profiles visualize.
+% 在传统 profiling 中，运行时调用栈提供聚合层次：函数调用嵌套，折叠相同的栈产生 profile 可视化的树。
+Agent events are not nested by execution, so the profiler must construct aggregation hierarchies from the data.
+% 智能体事件没有执行嵌套，因此分析器必须从数据中构造聚合层次。
 \end{description}
 
 %% ===================================================================
@@ -352,12 +356,14 @@ This \emph{intent attribution} step has no analogue in CPU profiling, where func
 % 设计
 \label{sec:design}
 
-The three requirements (a uniform record type, query-time aggregation, and stable tags for folding) drive the design.
-% 三个需求（统一记录类型、查询时聚合和用于折叠的稳定标签）驱动了设计。
-The semantic operation stack model has two components, operations (\S\ref{sec:ops}) and operation stacks (\S\ref{sec:stacks}), satisfying R1 and R2.
-% 语义 operation stack 模型有两个组件——operation（\S\ref{sec:ops}）和 operation stack（\S\ref{sec:stacks}）——满足 R1 和 R2。
-Two pluggable algorithm frameworks enrich the model. Intent attribution (\S\ref{sec:intent}) satisfies R3 by deriving stable tags, and stack construction (\S\ref{sec:stacks}) builds aggregation hierarchies from available fields.
-% 两个可插拔算法框架丰富此模型。意图归因（\S\ref{sec:intent}）通过派生稳定标签满足 R3，栈构造（\S\ref{sec:stacks}）从可用字段构建聚合层次。
+The three requirements (cross-layer resource projection, stable tags, and hierarchy construction) drive the design.
+% 三个需求（跨层资源投影、稳定标签和层次构造）驱动了设计。
+Operations (\S\ref{sec:ops}) satisfy R1 by representing intent and system-effect activities in a single record with tag inheritance, so intent-layer tags propagate to the system effects they trigger.
+% Operation（\S\ref{sec:ops}）通过将意图和系统副作用活动表示在带标签继承的单一记录中满足 R1，使意图层标签传播到其触发的系统副作用。
+\emph{Intent attribution} (\S\ref{sec:intent}) satisfies R2 by deriving stable tags from natural-language fields.
+% 意图归因（\S\ref{sec:intent}）通过从自然语言字段派生稳定标签满足 R2。
+\emph{Operation stacks} (\S\ref{sec:stacks}) satisfy R3 by constructing aggregation hierarchies from query-time field projections, so the same data supports multiple views without rebuilding the input.
+% Operation stack（\S\ref{sec:stacks}）通过查询时字段投影构造聚合层次满足 R3，使同一数据支持多种视图而无需重建输入。
 The profiling pipeline has five stages: (1)~parse raw trajectories into operations, (2)~enrich operations via intent attribution or mapping rules, (3)~filter by a user-specified predicate, (4)~project each operation onto a stack frame sequence chosen at query time, and (5)~fold operations with identical stacks, summing their weights.
 % 分析管线有五个阶段：(1) 将原始 trace 解析为 operation，(2) 通过意图归因或映射规则丰富 operation，(3) 按用户指定的谓词过滤，(4) 将每个 operation 投影到查询时选择的栈帧序列上，(5) 折叠具有相同栈的 operation 并求和权重。
 
@@ -452,11 +458,11 @@ attribution to folded-stack flame graphs.}
 
 \paragraph{Intent attribution.}
 % 意图归因。
-Intent attribution maps free-form prompts to short, stable,
+Intent attribution maps natural-language prompts to short, stable,
 repeatable tags, giving agent trajectories the stable identifiers that traditional
 profiling gets for free from function names
 (\S\ref{sec:background}).
-% 意图归因将自由形式的提示词映射为短小、稳定、可重复的标签，为智能体轨迹提供传统 profiling 从函数名免费获得的稳定标识符（\S\ref{sec:background}）。
+% 意图归因将自然语言的提示词映射为短小、稳定、可重复的标签，为智能体轨迹提供传统 profiling 从函数名免费获得的稳定标识符（\S\ref{sec:background}）。
 The framework supports three pluggable backends.
 % 该框架支持三种可插拔后端。
 Regex rules are the production default: rules have the form
@@ -584,6 +590,8 @@ A tag-permutation test (1{,}000 shuffles, $p = 0.001$) confirms the separation i
 % 标签置换测试（1,000 次洗牌，$p = 0.001$）确认分离不是随机的。
 Semantic-tag quality is validated in RQ3.
 % 语义标签质量在 RQ3 中验证。
+This confirms that traditional tag-free tools cannot separate system effects by task intent; the prompt-level semantic tag is necessary for meaningful resource attribution.
+% 这确认了传统无标签工具无法按任务意图分离系统副作用；提示词级语义标签对于有意义的资源归因是必要的。
 
 Beyond tag separation, we test whether choosing different field selections for the operation stack produces views that flat grouping cannot.
 % 除标签分离外，我们还测试为 operation stack 选择不同字段是否产生扁平分组无法产生的视图。
@@ -595,13 +603,17 @@ A flat GROUP BY on a single tag cannot produce these views because different sta
 % 单标签的扁平 GROUP BY 无法产生这些视图，因为不同栈深度回答不同问题（任务级预算 vs. 操作级重复 vs. 会话级下钻）。
 The same model also covers all 15 public trajectory families without type-specific objects.
 % 同一模型也覆盖了所有 15 个公开 trace 家族，无需特定类型对象。
+This shows that operation stacks provide a multi-resolution view that flat grouping cannot: one model answers questions at dataset, phase, action, and session granularity by changing only the field selection.
+% 这表明 operation stack 提供了扁平分组无法实现的多分辨率视图：一个模型仅通过改变字段选择就能在数据集、阶段、操作和会话粒度上回答问题。
 
-Different views also produce different rankings.
-% 不同视图也产生不同排名。
+A profiler that supports only one weight function (e.g., token count) might miss bottlenecks visible under a different metric. We test whether different weight functions produce redundant or distinct rankings on the same trajectories.
+% 只支持一种权重函数（如 token 数）的分析器可能遗漏在另一指标下可见的瓶颈。我们测试不同权重函数在相同会话上产生冗余还是不同的排名。
 The \texttt{time} and \texttt{tokens} views of the same 325 trajectories share only 7/10 top prompt categories (Spearman $\rho = 0.623$).
 % 同一 325 个会话的 \texttt{time} 和 \texttt{tokens} 视图仅共享 7/10 的顶级提示词类别（Spearman $\rho = 0.623$）。
-\texttt{network}-tagged prompts rank 8th by time (I/O wait) but 93rd by tokens, showing that the choice of weight function changes the analysis conclusions.
-% \texttt{network} 标记的提示词按时间排第 8（I/O 等待）但按 token 排第 93，表明权重函数的选择改变了分析结论。
+\texttt{network}-tagged prompts rank 8th by time (I/O wait) but 93rd by tokens.
+% \texttt{network} 标记的提示词按时间排第 8（I/O 等待）但按 token 排第 93。
+The rankings are not redundant: a single weight function would miss bottlenecks that are prominent under a different metric, confirming that multi-view profiling is necessary.
+% 排名不是冗余的：单一权重函数会遗漏在另一指标下突出的瓶颈，确认多视图 profiling 是必要的。
 
 Finally, we test whether the profiler can produce useful groups without any user-specified fields.
 % 最后，我们测试分析器能否在不需要任何用户指定字段的情况下产生有用的分组。
@@ -611,15 +623,12 @@ Induced stacks produce a median of 12 groups (versus 285 for per-session and 1 f
 % 诱导栈产生中位 12 个分组（固定会话 285 个，扁平 1 个），4/6 任务生成可变深度栈。
 The induced stacks achieve lower AP than hand-specified stacks (median 0.276 vs 0.312) because they use only visible fields, but they reduce inspection work to 65.3\% versus flat summaries without requiring any user configuration.
 % 诱导栈的 AP 低于手动配置栈（中位 0.276 vs 0.312），因为它们仅使用可见字段，但将检查工作量降至扁平摘要的 65.3\%，无需任何用户配置。
+Automatic induction therefore provides a useful zero-configuration baseline: it loses some precision versus hand-specified stacks but still substantially outperforms flat summaries.
+% 因此自动诱导提供了有用的零配置基线：它相比手动配置栈损失了一些精度，但仍然大幅优于扁平摘要。
 
 Figure~\ref{fig:flamegraph} shows the resulting flame graphs for the \texttt{tokens} and \texttt{files} views, illustrating that changing only the stack fields and weight function produces different aggregates from the same operations.
 % Figure~\ref{fig:flamegraph} 展示了 \texttt{tokens} 和 \texttt{files} 视图的火焰图，说明仅改变栈字段和权重函数即可从同一组 operation 产生不同聚合。
 
-\noindent\textbf{Conclusion.}
-Semantic profiling substantially improves resource attribution over tag-free tools.
-The prompt-level semantic tag is the critical axis---without it, system-effect cost cannot be separated by task intent.
-Field-selectable operation stacks add a second dimension that flat grouping cannot replicate: the same observations yield different, non-redundant views depending on the analysis question.
-% \textbf{结论。} 语义 profiling 显著改善了相对无标签工具的资源归因。提示词级语义标签是关键轴——没有它，系统副作用开销无法按任务意图分离。可选字段的 operation stack 增加了扁平分组无法复制的第二个维度：同样的观测根据分析问题产生不同的、非冗余的视图。
 
 \begin{figure}[t]
 \centering
@@ -737,10 +746,10 @@ RQ1 and RQ2 assume that semantic tags (the tags derived by intent attribution or
 % RQ1 和 RQ2 假设语义标签（由意图归因或映射规则派生的标签）是有用的。
 RQ3 tests whether these semantic tags are accurate by comparing them against ground-truth annotations from the benchmark datasets.
 % RQ3 通过将这些语义标签与基准数据集的真实标注进行比较来测试它们是否准确。
-For real trajectories with free-form prompts, we measure whether the intent-attribution backends run reliably at scale and produce well-formed tags.
-% 对于自由形式 trace（真实会话），我们测量意图归因后端是否在规模上可靠运行并产生格式良好的标签。
-Semantic accuracy of the LLM/regex tagger on free-form prompts remains future work because none of the available datasets (67{,}304 rows across 6 sources) simultaneously expose free-form text and ground-truth semantic tags, making same-input accuracy evaluation infeasible with current data.
-% LLM/正则标注器在自由形式提示词上的语义精度仍是未来工作，因为现有数据集（6 个来源共 67,304 行）没有同时暴露自由形式文本和真实语义标签，使得同输入精度评估在当前数据下不可行。
+For real trajectories with natural-language prompts, we measure whether the intent-attribution backends run reliably at scale and produce well-formed tags.
+% 对于自然语言 trace（真实会话），我们测量意图归因后端是否在规模上可靠运行并产生格式良好的标签。
+Semantic accuracy of the LLM/regex tagger on natural-language prompts remains future work because none of the available datasets (67{,}304 rows across 6 sources) simultaneously expose natural-language text and ground-truth semantic tags, making same-input accuracy evaluation infeasible with current data.
+% LLM/正则标注器在自然语言提示词上的语义精度仍是未来工作，因为现有数据集（6 个来源共 67,304 行）没有同时暴露自然语言文本和真实语义标签，使得同输入精度评估在当前数据下不可行。
 
 On 325 real trajectories, the LLM tagger processes 118{,}021 tag requests with zero failures, 100\% syntax validity, and 70\% cache hit rate (operational details in RQ4).
 % 在 325 个真实会话上，LLM 标注器处理了 118,021 个标注请求，零失败，100\% 语法有效性，70\% 缓存命中率（运行细节见 RQ4）。
