@@ -19,6 +19,8 @@
 \newcommand{\operation}{\texttt{operation}\xspace}
 \newcommand{\opstack}{\texttt{operation stack}\xspace}
 
+\newcommand{\ckupdate}[1]{\textcolor{blue}{#1}}
+
 \begin{document}
 
 \title{AgentProf: Semantic Profiling for AI Agents}
@@ -30,9 +32,10 @@ activities involving thousands to millions of interactions with
 users, tools, and system resources.
 % AI 智能体编排长时间运行的多步骤活动，涉及与用户、工具和系统资源的数千到数百万次交互。
 %% S2: Need (→¶2)
-To improve quality, safety, and cost efficiency, developers need to
-determine which task categories consume the most budget, where
-failures concentrate, and which workflows trigger unsafe effects.
+To improve quality, safety, and cost efficiency of AI agent, 
+developers need to determine where failures concentrate, 
+which workflows trigger unsafe effects, 
+and which task categories consume the most budget.
 % 为了提高质量、安全性和成本效率，开发者需要确定哪类任务消耗最多预算、故障集中在哪里、哪些工作流触发不安全副作用。
 %% S3: Traditional profiling (→¶2+¶4)
 To answer similar questions in traditional systems software, profiling
@@ -70,6 +73,20 @@ semantic profiling effectively attributes cost and locates problems
 across agent trajectories.
 % 在真实轨迹和公开数据集上，我们的评估表明语义 profiling 能有效地跨智能体轨迹归因开销和定位问题。
 \end{abstract}
+
+% AI agents increasingly orchestrate long-running, multi-step
+% activities involving thousands to millions of interactions with
+% users, tools, and system resources.
+% To optimize the quality, safety, and cost of agents, developers must 
+% analyze behaviors across thousands of runs to 
+% find where failures concentrate, 
+% locate the workflow phases triggering unsafe effects, 
+% and identify the tasks that consumes most budget. 
+% In traditional software, execution profiling solves this 
+% by aggregating resource consumption over deterministic call stacks.
+% However, unlike traditional software where code paths provide a natural hierarchy for profiling, 
+% agent behaviors are driven by unstructured natural language prompts and lack deterministic execution stacks. To bridge this gap, we propose the Semantic Operation Stack model. First, we unify all heterogeneous agent activities (prompts, tool calls, and system I/O) into a single structured record called an operation. Second, we construct dynamic call stacks at query time by projecting these operations onto user-defined semantic fields (e.g., intent -> phase -> action), merging identical sequences to generate flame graphs.
+
 
 \maketitle
 
