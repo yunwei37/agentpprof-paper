@@ -149,6 +149,23 @@ tool calls, and system effects are not nested by execution the way
 function calls produce stack frames.
 % 智能体事件没有运行时调用栈层次，因为提示词、工具调用和系统副作用不像函数调用那样通过执行嵌套产生栈帧。
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth,height=3.2cm,keepaspectratio]{figures/flamegraph-tokens.png}\\[2pt]
+\includegraphics[width=\linewidth,height=3.2cm,keepaspectratio]{figures/flamegraph-files.png}
+\caption{Semantic flame graphs of 325 real agent sessions under two
+views. \emph{Top (tokens view):} width represents token count; bottom
+frames show project and agent, middle frames show semantic labels
+(\texttt{review}, \texttt{debug}, \texttt{test}), top frames show LLM
+calls and models. \emph{Bottom (files view):} width represents
+file-operation count. Changing only the stack fields and weight
+function produces a different aggregate from the same operations
+(Table~\ref{tab:views}).}
+\Description{Two wide flame graphs showing token budget and file-access
+distributions across sessions and prompt categories.}
+\label{fig:flamegraph}
+\end{figure*}
+
 %% ¶5: Model
 Despite these differences, the fundamental profiling
 methodology (define units, assign stable labels, construct
@@ -168,7 +185,8 @@ time.
 % Operation stack 是在查询时选择的字段有序列表。
 Each operation is projected to a frame sequence, and operations
 with identical sequences merge, producing the folded-stack
-representation that flame graphs visualize.
+representation that flame graphs visualize
+(Figure~\ref{fig:flamegraph}).
 % 每个 operation 被投影到帧序列，具有相同序列的 operation 合并，产生火焰图可视化的折叠栈表示。
 Different field selections answer different questions (by task
 category, by execution phase, by session, or by action type) from
@@ -638,22 +656,7 @@ under four projection choices.}
 \label{fig:rq1-separation}
 \end{figure}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\linewidth,height=3.2cm,keepaspectratio]{figures/flamegraph-tokens.png}\\[2pt]
-\includegraphics[width=\linewidth,height=3.2cm,keepaspectratio]{figures/flamegraph-files.png}
-\caption{Flame graphs of the same 325 sessions under two different views.
-\emph{Top (tokens view):} width represents token count; bottom frames show
-project and agent, middle frames show prompt labels, top frames show LLM
-calls and models.
-\emph{Bottom (files view):} width represents file-operation count;
-\texttt{prompt:review} and \texttt{prompt:continue} dominate file activity.
-Changing only the stack fields and weight function produces a different
-aggregate from the same operations (Table~\ref{tab:views}).}
-\Description{Two wide flame graphs showing token budget and file-access
-distributions across sessions and prompt categories.}
-\label{fig:flamegraph}
-\end{figure*}
+%% flamegraph figure moved to intro (between ¶4 and ¶5)
 
 %% -------------------------------------------------------------------
 \subsection{RQ2: Does Profiler Output Correspond to Real Problems?}
