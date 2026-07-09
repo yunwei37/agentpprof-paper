@@ -31,18 +31,19 @@ debugging views with no cross-session profiling layer.
 To improve quality, safety, and cost efficiency, developers need
 aggregate analysis of which task categories consume the most budget,
 where failures concentrate, and which workflows trigger unsafe
-side-effects, but today the only option is manual inspection of
-individual sessions.
-% 为了提高质量、安全性和成本效率，开发者需要聚合分析哪类任务消耗最多预算、故障集中在哪里、哪些工作流触发不安全副作用，但目前唯一的选择是逐个检查单个会话。
+side-effects.
+% 为了提高质量、安全性和成本效率，开发者需要聚合分析哪类任务消耗最多预算、故障集中在哪里、哪些工作流触发不安全副作用。
+Today the only option is manual inspection of individual sessions.
+% 目前唯一的选择是逐个检查单个会话。
 The flame-graph profiling methodology that answers these questions for
 traditional software does not directly apply because agent traces lack
 deterministic identifiers and runtime call-stack hierarchies.
 % 为传统软件回答这些问题的火焰图 profiling 方法论不能直接适用，因为智能体 trace 缺乏确定性标识符和运行时调用栈层次。
-We propose a \emph{semantic operation stack model}: uniform
-\emph{operations} represent all agent activities, and
+We propose a \emph{semantic operation stack model}.
+Uniform \emph{operations} represent all agent activities, and
 \emph{operation stacks} replace the runtime call stack with
 query-time field projections that fold identical frame sequences.
-% 我们提出语义 operation stack 模型：统一的 operation 表示所有智能体活动，operation stack 用查询时字段投影替代运行时调用栈，折叠相同帧序列。
+% 我们提出语义 operation stack 模型。统一的 operation 表示所有智能体活动，operation stack 用查询时字段投影替代运行时调用栈，折叠相同帧序列。
 \sys implements this model as a profiler with pluggable algorithms
 for \emph{intent attribution} (deriving deterministic labels from
 natural-language fields) and \emph{stack construction} (building
@@ -50,7 +51,7 @@ aggregation hierarchies from available fields), compiling local agent
 traces into pprof-compatible profiles.
 % \sys 将此模型实现为具有可插拔算法的 profiler，包括意图归因（从自然语言字段派生确定性标签）和栈构造（从可用字段构建聚合层次），将本地智能体 trace 编译为 pprof 兼容的 profile。
 On 325 real agent sessions, semantic profiling separates over 90\% of
-system-effect weight that session-level views merge.
+system-effect weight that remains mixed under session-level views.
 % 在 325 个真实智能体会话上，语义 profiling 分离了会话级视图所混合的超过 90\% 的系统副作用权重。
 On four public datasets with hidden ground-truth labels
 (34{,}539 operations), profiler-ranked groups localize labeled
@@ -67,7 +68,7 @@ fewer groups than fixed-session drilldown.
 
 %% ¶1: Background + context
 AI agents orchestrate multi-step activities that span two
-layers: high-level intent (prompts, LLM calls, tool invocations) and
+layers, high-level intent (prompts, LLM calls, tool invocations) and
 low-level system effects (process spawns, file and network I/O).
 % AI 智能体编排跨越两层的多步骤活动：高层意图（提示词、LLM 调用、工具调用）和低层系统副作用（进程创建、文件和网络 I/O）。
 As agents evolve from short, scripted workflows into complex systems
@@ -77,10 +78,10 @@ over weeks or months.
 
 %% ¶2: Problem
 To improve agent quality, safety, and cost efficiency, developers
-need to analyze operational behavior across sessions to determine
-which categories of tasks consume the most token budget, where
-failures concentrate across workflows, and which behavioral patterns
-trigger unsafe system side-effects.
+need to analyze operational behavior across sessions.
+Which categories of tasks consume the most token budget? Where do
+failures concentrate across workflows? Which behavioral patterns
+trigger unsafe system effects?
 % 为了提高智能体质量、安全性和成本效率，开发者需要跨会话分析运维行为：哪类任务消耗最多 token 预算、故障跨工作流集中在哪里、哪些行为模式触发不安全系统副作用。
 Systems observability has long distinguished this kind of aggregate
 analysis (profiling) from single-execution debugging.
@@ -112,20 +113,21 @@ software.
 Flame graphs~\cite{flamegraphs} fold identical call stacks into a
 single chart where width represents cost.
 % 火焰图~\cite{flamegraphs}将相同调用栈折叠为一张图，宽度代表开销。
-Two properties make this work: function names are deterministic, so
-identical code paths always produce the same stack frames, and runtime
-call nesting provides the aggregation hierarchy.
+Two properties make this work.
+Function names are deterministic, so identical code paths always
+produce the same stack frames, and runtime call nesting provides the
+aggregation hierarchy.
 % 两个特性使其有效：函数名是确定性的，相同代码路径始终产生相同栈帧；运行时调用嵌套提供聚合层次。
 Agent traces break both (\S\ref{sec:background}).
 % 智能体 trace 两者都打破了（\S\ref{sec:background}）。
 First, the core unit of agent work is a natural-language prompt, and
-two prompts expressing the same intent share no common string;
-framework-level span names (\texttt{LLMCall}, \texttt{ToolInvoke})
+two prompts expressing the same intent share no common string.
+Framework-level span names (\texttt{LLMCall}, \texttt{ToolInvoke})
 describe mechanisms, not semantic intent.
 % 第一，智能体工作的核心单元是自然语言提示词，表达相同意图的两个提示词没有共同字符串；框架级 span 名称（\texttt{LLMCall}、\texttt{ToolInvoke}）描述机制，而非语义意图。
-Second, agent events have no runtime call-stack hierarchy: prompts,
-tool calls, and system effects are not nested by execution the way
-function calls produce stack frames.
+Second, agent events have no runtime call-stack hierarchy because
+prompts, tool calls, and system effects are not nested by execution
+the way function calls produce stack frames.
 % 第二，智能体事件没有运行时调用栈层次：提示词、工具调用和系统副作用不像函数调用那样通过执行嵌套产生栈帧。
 
 %% ¶5: Model
@@ -163,8 +165,9 @@ Two pluggable algorithm frameworks enrich the model.
 % 两个可插拔算法框架丰富此模型。
 \emph{Intent attribution} derives deterministic, low-cardinality
 labels from natural-language fields via regex rules, a local LLM
-tagger, or unsupervised clustering, restoring the folding
-precondition that CPU profiling obtains for free from function names.
+tagger, or unsupervised clustering.
+This restores the folding precondition that CPU profiling obtains for
+free from function names.
 % 意图归因通过正则规则、本地 LLM 标注器或无监督聚类从自然语言字段派生确定性、低基数的标签，恢复 CPU profiling 从函数名免费获得的折叠前提条件。
 \emph{Stack construction} builds aggregation hierarchies from
 available fields, either from a user-specified field chain or via
@@ -396,8 +399,8 @@ attribution to folded-stack flame graphs.}
 \label{fig:architecture}
 \end{figure}
 
-\subsection{Algorithms}
-% 算法
+\subsection{Intent Attribution and Stack Construction}
+% 意图归因与栈构造
 \label{sec:intent}
 
 %% ¶1: Intent Attribution
@@ -480,12 +483,8 @@ All outputs are deterministic given the same input and profile spec.
 % \sys 是 AgentSight~\cite{agentsight} 可观测性框架的离线分析组件。
 AgentSight provides real-time eBPF-based capture of SSL traffic, process events, and file/network effects.
 % AgentSight 提供基于 eBPF 的实时 SSL 流量、进程事件和文件/网络副作用捕获。
-\sys aggregates the recorded traces into semantic profiles.
-% \sys 将记录的 trace 聚合为语义概要。
-The two are complementary.
-% 两者互补。
-AgentSight answers ``what happened during this run'' (debugging), \sys answers ``where did the budget go across runs'' (profiling).
-% AgentSight 回答"这次运行发生了什么"（调试），\sys 回答"预算跨运行花在了哪里"（分析）。
+\sys aggregates the recorded traces into semantic profiles, so the two are complementary: AgentSight answers ``what happened during this run'' (debugging), and \sys answers ``where did the budget go across runs'' (profiling).
+% \sys 将记录的 trace 聚合为语义概要，因此两者互补：AgentSight 回答"这次运行发生了什么"（调试），\sys 回答"预算跨运行花在了哪里"（分析）。
 
 %% ===================================================================
 \section{Evaluation}
@@ -602,8 +601,8 @@ The induced stacks achieve lower AP than hand-configured stacks (median 0.276 vs
 
 Figure~\ref{fig:rq1-separation} visualizes the ablation.
 % Figure~\ref{fig:rq1-separation} 可视化了消融实验。
-Figures~\ref{fig:flamegraph} and~\ref{fig:flamegraph-files} show the resulting flame graphs for the \texttt{tokens} and \texttt{files} views respectively, showing that changing only the stack fields and weight function produces different aggregates from the same operations.
-% Figures~\ref{fig:flamegraph} 和~\ref{fig:flamegraph-files} 分别展示了 \texttt{tokens} 和 \texttt{files} 视图的火焰图，表明仅改变栈字段和权重函数即可从同一组 operation 产生不同聚合。
+Figure~\ref{fig:flamegraph} shows the resulting flame graphs for the \texttt{tokens} and \texttt{files} views, illustrating that changing only the stack fields and weight function produces different aggregates from the same operations.
+% Figure~\ref{fig:flamegraph} 展示了 \texttt{tokens} 和 \texttt{files} 视图的火焰图，说明仅改变栈字段和权重函数即可从同一组 operation 产生不同聚合。
 
 \begin{figure}[t]
 \centering
@@ -618,30 +617,19 @@ under four projection choices.}
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{figures/flamegraph-tokens.png}
-\caption{Flame graph of the \texttt{tokens} view across 325 real
-sessions. Width represents token count. The bottom frames show project
-and agent; middle frames show sessions and prompt labels
-(\texttt{continue}, \texttt{query}, \texttt{review}, \texttt{design});
-top frames show individual LLM calls and models. The same data produces
-different views by changing the stack fields
-(Table~\ref{tab:views}).}
-\Description{Wide flame graph showing token budget distribution across
-sessions, prompt categories, and LLM models.}
+\includegraphics[width=\linewidth,height=3.2cm,keepaspectratio]{figures/flamegraph-tokens.png}\\[2pt]
+\includegraphics[width=\linewidth,height=3.2cm,keepaspectratio]{figures/flamegraph-files.png}
+\caption{Flame graphs of the same 325 sessions under two different views.
+\emph{Top (tokens view):} width represents token count; bottom frames show
+project and agent, middle frames show prompt labels, top frames show LLM
+calls and models.
+\emph{Bottom (files view):} width represents file-operation count;
+\texttt{prompt:review} and \texttt{prompt:continue} dominate file activity.
+Changing only the stack fields and weight function produces a different
+aggregate from the same operations (Table~\ref{tab:views}).}
+\Description{Two wide flame graphs showing token budget and file-access
+distributions across sessions and prompt categories.}
 \label{fig:flamegraph}
-\end{figure*}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/flamegraph-files.png}
-\caption{Flame graph of the \texttt{files} view across the same
-sessions. Width represents file-operation count.
-\texttt{prompt:review} and \texttt{prompt:continue} dominate file
-activity. Changing only the stack fields and weight function produces
-a different aggregate without re-parsing.}
-\Description{Wide flame graph showing file-access distribution across
-sessions and prompt categories.}
-\label{fig:flamegraph-files}
 \end{figure*}
 
 %% -------------------------------------------------------------------
@@ -832,24 +820,29 @@ Grammar-constrained decoding ensures 100\% syntax validity (2{,}700/2{,}700 test
 Because labels are cached, re-profiling the same sessions with different stack fields or predicates incurs no additional LLM calls.
 % 因为标签被缓存，用不同栈字段或谓词重新分析相同会话不产生额外 LLM 调用。
 
+\paragraph{Limitations.}
+% 局限性。
+The real-session data comes from a single multi-month development project, so the label distributions may not generalize to other domains.
+% 真实会话数据来自单个多月开发项目，标签分布可能无法推广到其他领域。
+Semantic accuracy of the intent-attribution backends on free-form prompts remains unevaluated because no available dataset simultaneously exposes free-form text and ground-truth semantic labels (\S RQ3).
+% 意图归因后端在自由形式提示词上的语义精度仍未评估，因为没有可用数据集同时暴露自由形式文本和真实语义标签（见 RQ3）。
+The evaluation uses fixed-session drilldown as a proxy for span-tree debugging tools, not a real OpenTelemetry or LangSmith trace import.
+% 评估使用固定会话下钻作为 span 树调试工具的代理，而非真实的 OpenTelemetry 或 LangSmith trace 导入。
+
 %% ===================================================================
 \section{Related Work}
 % 相关工作
 
-Flame graphs~\cite{flamegraphs} and pprof~\cite{pprof} establish the folded-stack lineage.
-% 火焰图~\cite{flamegraphs}和 pprof~\cite{pprof} 建立了折叠栈的谱系。
-Profiles are weighted samples with location hierarchies.
-% 概要是带有位置层次的加权样本。
+Flame graphs~\cite{flamegraphs} and pprof~\cite{pprof} establish the folded-stack lineage, where profiles are weighted samples with location hierarchies.
+% 火焰图~\cite{flamegraphs}和 pprof~\cite{pprof} 建立了折叠栈的谱系，其中 profile 是带有位置层次的加权样本。
 Pprof supports sample labels and can visualize them as pseudo stack frames through tag-root/tag-leaf options.
 % Pprof 支持样本标签，并可通过 tag-root/tag-leaf 选项将其可视化为伪栈帧。
 Perfetto generalizes trace ingestion with SQL-based analysis and derived events~\cite{perfetto}.
 % Perfetto 通过基于 SQL 的分析和衍生事件~\cite{perfetto}泛化了 trace 摄取。
 These systems support query-time aggregation, so \sys does not claim novelty for flexible aggregation alone.
 % 这些系统支持查询时聚合，因此 \sys 不单独声称灵活聚合的新颖性。
-The difference is structural.
-% 差异是结构性的。
-Pprof's tagroot adds label-derived frames to an existing execution call stack.
-% Pprof 的 tagroot 在已有执行调用栈上添加标签衍生帧。
+The difference is structural: pprof's tagroot adds label-derived frames to an existing execution call stack.
+% 差异是结构性的：pprof 的 tagroot 在已有执行调用栈上添加标签衍生帧。
 Agent traces have no execution stack, so the entire profiling structure must be constructed from semantic fields.
 % 智能体 trace 没有执行栈，因此整个分析结构必须从语义字段构建。
 The evaluation also differs: \sys scores profiler output against hidden agent-trajectory labels, a methodology with no analogue in CPU profiling.
@@ -897,8 +890,6 @@ Scoring profiler output against hidden trajectory labels confirms that semantic 
 % 将分析器输出与隐藏轨迹标签评分确认，语义分析分离了超过 90\% 的混合系统副作用权重，以扁平摘要 9.4\% 的检查成本定位标注问题，并在 7/9 保留数据集上产生与真实标签一致的标签。
 Fixed-session drilldown remains faster to a first positive on 4/6 tasks, confirming that profilers and debuggers are complementary, and \sys supports both by including or excluding session fields in the stack query.
 % 固定会话下钻在 4/6 任务上更快找到首个正例，确认分析器和调试器是互补的，\sys 通过在栈查询中包含或排除会话字段同时支持两者。
-The main limitations are single-project real-session data and placeholder intent-attribution quality on free-form prompts.
-% 主要局限是单项目真实会话数据和自由形式提示词上的占位符意图识别质量。
 Multi-project evaluation and trace-ecosystem integration are the most impactful next steps.
 % 多项目评估和 trace 生态系统集成是最有影响力的下一步。
 
