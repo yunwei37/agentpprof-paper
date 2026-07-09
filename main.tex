@@ -244,43 +244,53 @@ This paper makes three contributions:
 \subsection{AI Agent Observability}
 % AI 智能体可观测性
 
-As introduced in \S\ref{sec:intro}, agent activities span both intent and system-effect layers.
-% 如 \S\ref{sec:intro} 所述，智能体活动跨越意图层和系统副作用层。
-Existing observability tools~\cite{agentops,agenttelemetry} cover these layers separately.
-% 现有可观测性工具~\cite{agentops,agenttelemetry}分别覆盖这两层。
-LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse}, Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize agent-level events into per-execution \emph{span trees}.
-% LangSmith~\cite{langsmith}、Langfuse~\cite{langfuse}、Phoenix~\cite{phoenix} 和 OpenTelemetry GenAI~\cite{otel} 将智能体级事件组织为按执行划分的 span 树。
-System monitors show process and file activity without semantic attribution.
-% 系统监控器显示进程和文件活动，但没有语义归因。
-The span-tree design is effective for debugging.
-% span 树设计对调试是有效的。
-A developer can locate a failing span, inspect its attributes, and trace its parent chain.
-% 开发者可以定位失败的 span、检查其属性并追踪其父链。
-AgentSight~\cite{agentsight} bridges the two layers by correlating eBPF-captured system events with intercepted LLM traffic, but the resulting traces still lack aggregate profiling.
+A typical agent trajectory interleaves two layers of activity.
+% 典型的智能体轨迹交织两层活动。
+At the intent layer, the agent receives a user prompt, issues LLM
+calls, and invokes tools (code execution, web search, file editing).
+% 在意图层，智能体接收用户提示词、发出 LLM 调用并调用工具（代码执行、网络搜索、文件编辑）。
+Each tool invocation triggers system effects at the lower layer:
+process spawns, file reads and writes, and network requests.
+% 每次工具调用在下层触发系统副作用：进程创建、文件读写和网络请求。
+A single trajectory may contain hundreds of such intent-effect
+cycles, and a production team accumulates many trajectories over
+time.
+% 单条轨迹可能包含数百个这样的意图-副作用循环，生产团队随时间积累许多轨迹。
+Existing tools~\cite{langsmith,langfuse,phoenix,otel} record these
+events as per-execution span trees, effective for debugging a single
+run.
+% 现有工具~\cite{langsmith,langfuse,phoenix,otel}将这些事件记录为按执行划分的 span 树，有效调试单次运行。
+AgentSight~\cite{agentsight} bridges the two layers by correlating
+eBPF-captured system events with intercepted LLM traffic, but the
+resulting traces still lack aggregate profiling.
 % AgentSight~\cite{agentsight} 通过关联 eBPF 捕获的系统事件与拦截的 LLM 流量来桥接两层，但生成的 trace 仍缺乏聚合分析能力。
 
 \subsection{Profiling vs.\ Debugging}
 % 性能分析 vs. 调试
 
-Debugging inspects a single execution, but profiling aggregates across executions to answer questions like ``where does the budget go?''
-% 调试检查单次执行，而性能分析跨执行聚合以回答"预算花在哪里？"等问题。
-CPU profilers solved this aggregation problem decades ago.
-% CPU 分析器几十年前就解决了这个聚合问题。
-A flame graph~\cite{flamegraphs} represents a profile as weighted \emph{samples}, each attached to a \emph{call stack}.
-% 火焰图~\cite{flamegraphs}将性能概要表示为加权样本，每个样本附带一个调用栈。
-Identical stacks merge, and width represents aggregate cost.
-% 相同的栈合并，宽度代表聚合开销。
-The key enabler is \emph{deterministic} function names, so the same code path always produces the same frames.
-% 关键条件是确定性的函数名，使相同代码路径始终产生相同的栈帧。
-
-Agent activities break this precondition in two ways.
-% 智能体活动从两方面打破了这一前提。
-First, prompts are natural language and lack deterministic identifiers.
-% 第一，提示词是自然语言，缺乏确定性标识符。
-Second, agent events have no inherent call stack because they lack the runtime-determined parent-child nesting that function calls provide.
-% 第二，智能体事件没有固有的调用栈，因为它们缺乏函数调用提供的运行时确定的父子嵌套关系。
-Pprof's~\cite{pprof} \texttt{tagroot}/\texttt{tagleaf} options add label-derived pseudo-frames to an existing execution stack, but agent activities have no execution stack to augment.
-% Pprof~\cite{pprof} 的 \texttt{tagroot}/\texttt{tagleaf} 选项在已有执行栈上添加标签衍生的伪帧，但智能体活动没有执行栈可供扩展。
+As noted in \S\ref{sec:intro}, profiling attributes resource
+consumption to responsible entities by aggregation, as distinct from
+single-execution debugging and tracing.
+% 如 \S\ref{sec:intro} 所述，profiling 通过聚合将资源消耗归因到负责实体，区别于单次执行调试和 tracing。
+In traditional software, the profiling pipeline works as follows:
+a profiler periodically samples execution state, attaches each
+sample to the current call stack, and merges samples with identical
+stacks.
+% 在传统软件中，profiling 管线如下工作：profiler 周期性采样执行状态，将每个样本附加到当前调用栈，合并具有相同栈的样本。
+Flame graphs~\cite{flamegraphs} and pprof~\cite{pprof} call graphs
+visualize the result, where width or node size represents aggregate
+cost.
+% 火焰图~\cite{flamegraphs}和 pprof~\cite{pprof} 调用图可视化其结果，宽度或节点大小代表聚合开销。
+Perfetto~\cite{perfetto} generalizes this with SQL-based analysis
+and derived events.
+% Perfetto~\cite{perfetto} 通过基于 SQL 的分析和衍生事件进行泛化。
+These tools support flexible aggregation, but they all assume
+deterministic function names and a runtime call stack.
+% 这些工具支持灵活聚合，但都假设确定性函数名和运行时调用栈。
+Pprof's \texttt{tagroot}/\texttt{tagleaf} options can add
+label-derived pseudo-frames, but only on top of an existing execution
+stack that agent trajectories do not have.
+% Pprof 的 \texttt{tagroot}/\texttt{tagleaf} 选项可以添加标签衍生的伪帧，但仅在智能体轨迹不具备的已有执行栈之上。
 
 \subsection{The Aggregation Gap}
 % 聚合缺口
@@ -850,50 +860,14 @@ The evaluation uses per-session grouping as a proxy for span-tree debugging tool
 \section{Related Work}
 % 相关工作
 
-Flame graphs~\cite{flamegraphs} and pprof~\cite{pprof} establish the folded-stack lineage, where profiles are weighted samples with location hierarchies.
-% 火焰图~\cite{flamegraphs}和 pprof~\cite{pprof} 建立了折叠栈的谱系，其中 profile 是带有位置层次的加权样本。
-Pprof supports sample labels and can visualize them as pseudo stack frames through tag-root/tag-leaf options.
-% Pprof 支持样本标签，并可通过 tag-root/tag-leaf 选项将其可视化为伪栈帧。
-Perfetto generalizes trace ingestion with SQL-based analysis and derived events~\cite{perfetto}.
-% Perfetto 通过基于 SQL 的分析和衍生事件~\cite{perfetto}泛化了 trace 摄取。
-These systems support query-time aggregation, so \sys does not claim novelty for flexible aggregation alone.
-% 这些系统支持查询时聚合，因此 \sys 不单独声称灵活聚合的新颖性。
-The difference is structural: pprof's tagroot adds label-derived frames to an existing execution call stack.
-% 差异是结构性的：pprof 的 tagroot 在已有执行调用栈上添加标签衍生帧。
-Agent traces have no execution stack, so the entire profiling structure must be constructed from semantic fields.
-% 智能体 trace 没有执行栈，因此整个分析结构必须从语义字段构建。
-The evaluation also differs: \sys scores profiler output against hidden agent-trajectory labels, a methodology with no analogue in CPU profiling.
-% 评估也不同：\sys 将分析器输出与隐藏的智能体轨迹标签进行评分，这一方法在 CPU 分析中没有对应物。
-
-OpenTelemetry GenAI and OpenInference standardize GenAI spans~\cite{otel, openinference}.
-% OpenTelemetry GenAI 和 OpenInference 标准化了 GenAI span~\cite{otel, openinference}。
-LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse}, and Phoenix~\cite{phoenix} provide trace visualization, session management, evaluations, and dashboards.
-% LangSmith~\cite{langsmith}、Langfuse~\cite{langfuse} 和 Phoenix~\cite{phoenix} 提供 trace 可视化、会话管理、评估和仪表盘。
-AgentOps~\cite{agentops} argues for structured agent observability covering goals, plans, tools, and artifacts.
-% AgentOps~\cite{agentops} 主张涵盖目标、计划、工具和制品的结构化智能体可观测性。
-AgentTelemetry~\cite{agenttelemetry} defines 14 fault types over 9 agent-specific span kinds that extend OpenTelemetry for agent orchestration phases.
-% AgentTelemetry~\cite{agenttelemetry} 定义了 9 种智能体特定 span 类型上的 14 种故障类型，扩展了 OpenTelemetry 以覆盖智能体编排阶段。
-Wang et al.~\cite{agenttraces-trust} survey evidence tracing and execution provenance as foundations for agent accountability.
-% Wang et al.~\cite{agenttraces-trust} 综述了证据追踪和执行溯源作为智能体问责的基础。
-These systems excel at single-execution debugging or fault detection.
-% 这些系统擅长单次执行调试或故障检测。
-\sys complements them with cross-session aggregate profiling.
-% \sys 以跨会话聚合分析作为补充。
-Datadog LLM Observability~\cite{datadog-llmobs} and Laminar Signals~\cite{laminar-signals} take steps toward semantic aggregation by clustering user messages or extracting structured events, but they characterize \emph{input distributions}, not \emph{resource attribution}.
-% Datadog LLM Observability~\cite{datadog-llmobs} 和 Laminar Signals~\cite{laminar-signals} 通过聚类用户消息或提取结构化事件向语义聚合迈进，但它们刻画的是输入分布而非资源归因。
-
-AgentRx~\cite{agentrx} releases annotated failure trajectories and uses constraint checking plus an LLM judge for root-cause localization.
-% AgentRx~\cite{agentrx} 发布标注的失败轨迹，使用约束检查加 LLM 评判进行根因定位。
-TELBench~\cite{telbench} builds span-localization benchmarks from semantic error annotations.
-% TELBench~\cite{telbench} 从语义错误标注构建 span 定位基准。
-AgentAtlas~\cite{agentatlas} argues that outcome leaderboards miss trajectory-level quality.
-% AgentAtlas~\cite{agentatlas} 认为结果排行榜忽略了轨迹级质量。
-TrajAD~\cite{trajad} and AgentFixer~\cite{agentfixer} detect trajectory anomalies and recommend fixes.
-% TrajAD~\cite{trajad} 和 AgentFixer~\cite{agentfixer} 检测轨迹异常并推荐修复。
-These systems perform \emph{span-level} or \emph{step-level} fault localization within a single execution.
-% 这些系统在单次执行内执行 span 级或步骤级故障定位。
-\sys performs \emph{category-level} aggregate profiling, identifying which categories of work produce the most failures, consume the most budget, or generate repeated system effects across sessions.
-% \sys 执行类别级聚合分析，识别哪些工作类别产生最多故障、消耗最多预算或跨会话产生重复系统副作用。
+Agent observability tools~\cite{langsmith,langfuse,phoenix,otel,openinference,agentops,agenttelemetry} and accountability surveys~\cite{agenttraces-trust} focus on single-execution debugging.
+% 智能体可观测性工具~\cite{langsmith,langfuse,phoenix,otel,openinference,agentops,agenttelemetry}和问责综述~\cite{agenttraces-trust}聚焦于单次执行调试。
+Datadog LLM Observability~\cite{datadog-llmobs} and Laminar~\cite{laminar-signals} take steps toward semantic aggregation by clustering user messages or extracting structured events, but they characterize \emph{input distributions}, not \emph{resource attribution}.
+% Datadog LLM Observability~\cite{datadog-llmobs} 和 Laminar~\cite{laminar-signals} 通过聚类用户消息或提取结构化事件向语义聚合迈进，但它们刻画的是输入分布而非资源归因。
+AgentRx~\cite{agentrx}, TELBench~\cite{telbench}, AgentAtlas~\cite{agentatlas}, TrajAD~\cite{trajad}, and AgentFixer~\cite{agentfixer} perform span-level or step-level fault localization within a single execution.
+% AgentRx~\cite{agentrx}、TELBench~\cite{telbench}、AgentAtlas~\cite{agentatlas}、TrajAD~\cite{trajad} 和 AgentFixer~\cite{agentfixer} 在单次执行内执行 span 级或步骤级故障定位。
+\sys complements all of these with category-level aggregate profiling across trajectories.
+% \sys 以跨轨迹的类别级聚合 profiling 补充所有这些工具。
 
 %% ===================================================================
 \section{Conclusion}
