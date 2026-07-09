@@ -76,24 +76,41 @@ def make_rq1_separation():
 def make_rq3_vmeasure():
     datasets = ['mind2web', 'webshop', 'swe-agent', 'weblinx',
                 'agenttrek', 'gui-odyssey', 'android', 'toolbench', 'api-bank']
-    vmeasure = [1.000, 1.000, 0.926, 0.872, 0.862, 0.811, 0.716, 0.134, 0.000]
+    vmeasure =    [1.000, 1.000, 0.926, 0.872, 0.862, 0.811, 0.716, 0.134, 0.000]
+    boundary_f1 = [1.000, 1.000, 0.962, 0.860, None,  0.842, 0.727, 0.353, None]
+    ops =         [774,   2504,  496,   500,   200,   7868,  9,     866,   48]
 
-    colors = [BLUE if v >= 0.7 else GRAY for v in vmeasure]
-
-    fig, ax = plt.subplots(figsize=(3.5, 2.2))
     x = np.arange(len(datasets))
-    bars = ax.bar(x, vmeasure, 0.6, color=colors, alpha=0.85, edgecolor='white')
+    width = 0.35
 
-    ax.axhline(y=0.7, color=RED, linestyle='--', linewidth=1.2, label='Threshold (0.7)')
-    ax.set_ylabel('V-measure')
+    fig, ax = plt.subplots(figsize=(3.5, 2.8))
+
+    vm_colors = [BLUE if v >= 0.7 else GRAY for v in vmeasure]
+    bf_colors = ['#81D4FA' if (b is not None and b >= 0.7) else '#BDBDBD'
+                 for b in boundary_f1]
+
+    ax.bar(x - width/2, vmeasure, width, color=vm_colors, alpha=0.85,
+           edgecolor='white', label='V-measure')
+
+    bf_vals = [b if b is not None else 0 for b in boundary_f1]
+    ax.bar(x + width/2, bf_vals, width, color=bf_colors, alpha=0.85,
+           edgecolor='white', label='Boundary F1')
+    for i, b in enumerate(boundary_f1):
+        if b is None:
+            ax.text(i + width/2, 0.02, '---', ha='center', va='bottom',
+                    fontsize=5, color=GRAY)
+
+    ax.axhline(y=0.7, color=RED, linestyle='--', linewidth=1.0, label='Threshold (0.7)')
+    ax.set_ylabel('Score')
     ax.set_xticks(x)
-    ax.set_xticklabels(datasets, fontsize=6.5, rotation=35, ha='right')
-    ax.set_ylim(0, 1.12)
-    ax.legend(fontsize=7, loc='upper right', framealpha=0.9)
+    ax.set_xticklabels(datasets, fontsize=6, rotation=40, ha='right')
+    ax.set_ylim(0, 1.18)
+    ax.legend(fontsize=6, loc='upper right', framealpha=0.9, ncol=1)
 
     for i, v in enumerate(vmeasure):
         if v > 0.05:
-            ax.text(i, v + 0.02, f'{v:.2f}', ha='center', va='bottom', fontsize=6)
+            ax.text(i - width/2, v + 0.02, f'{v:.2f}', ha='center', va='bottom',
+                    fontsize=5, color='#1565C0')
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)

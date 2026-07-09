@@ -50,7 +50,7 @@ The responsible entities are semantic categories such as task intent
 and workflow phase, not code paths, and agent trajectories lack the
 stable identifiers and structural hierarchies that make
 aggregation possible.
-% 智能体行为与代码执行有根本不同。负责实体是语义类别（如任务意图和工作流阶段），而非代码路径，且智能体轨迹缺乏使聚合成为可能的确定性标识符和结构层次。
+% 智能体行为与代码执行有根本不同。负责实体是语义类别（如任务意图和工作流阶段），而非代码路径，且智能体轨迹缺乏使聚合成为可能的稳定标识符和结构层次。
 %% S6: Model (→¶5)
 We propose a \emph{semantic operation stack model} that
 adapts profiling to agent trajectories.
@@ -123,7 +123,7 @@ In traditional software, the responsible entities are code paths.
 Profiling is straightforward because function names are
 stable and runtime call nesting provides the aggregation
 hierarchy (\S\ref{sec:background}).
-% 在传统软件中，负责实体是代码路径。Profiling 是直接的，因为函数名是确定性的，运行时调用嵌套提供聚合层次，火焰图~\cite{flamegraphs}可视化其结果。
+% 在传统软件中，负责实体是代码路径。Profiling 是直接的，因为函数名是稳定的，运行时调用嵌套提供聚合层次。
 Agent behavior differs fundamentally.
 To answer the questions above, the responsible entities need to be
 semantic categories such as task intent and tool operation, not code
@@ -191,7 +191,7 @@ local agent trajectories into pprof-compatible profiles
 Two pluggable algorithm frameworks enrich the model.
 % 两个可插拔算法框架丰富此模型。
 \emph{Intent attribution} derives stable, low-cardinality tags from natural-language fields via regex rules, a local LLM tagger, or unsupervised clustering.
-% 意图归因通过正则规则、本地 LLM 标注器或无监督聚类从自然语言字段派生确定性、低基数的标签。
+% 意图归因通过正则规则、本地 LLM 标注器或无监督聚类从自然语言字段派生稳定、低基数的标签。
 This gives agents the stable tags that traditional profiling gets
 for free from function names.
 % 这为智能体提供了传统 profiling 从函数名免费获得的稳定标签。
@@ -276,7 +276,7 @@ and derived events.
 % Perfetto~\cite{perfetto} 通过基于 SQL 的分析和衍生事件进行泛化。
 These tools support flexible aggregation, but they all assume
 stable function names and a runtime call stack.
-% 这些工具支持灵活聚合，但都假设确定性函数名和运行时调用栈。
+% 这些工具支持灵活聚合，但都假设稳定的函数名和运行时调用栈。
 Pprof's \texttt{tagroot}/\texttt{tagleaf} options can add
 label-derived pseudo-frames, but only on top of an existing execution
 stack that agent trajectories do not have.
@@ -314,7 +314,7 @@ The second challenge is that agent trajectories lack the two
 properties that make traditional aggregation possible:
 prompts are natural language without stable identifiers, and
 agent events have no runtime call-stack hierarchy.
-% 第二个挑战是智能体轨迹缺乏使传统聚合成为可能的两个特性：提示词是没有确定性标识符的自然语言，智能体事件没有运行时调用栈层次。
+% 第二个挑战是智能体轨迹缺乏使传统聚合成为可能的两个特性：提示词是没有稳定标识符的自然语言，智能体事件没有运行时调用栈层次。
 As a result, a common system effect like running a test suite may
 appear thousands of times across trajectories, but without semantic
 tags no tool can attribute these executions to the task categories
@@ -353,11 +353,11 @@ This \emph{intent attribution} step has no analogue in CPU profiling, where func
 \label{sec:design}
 
 The three requirements (a uniform record type, query-time aggregation, and stable tags for folding) drive the design.
-% 三个需求（统一记录类型、查询时聚合和用于折叠的确定性标签）驱动了设计。
+% 三个需求（统一记录类型、查询时聚合和用于折叠的稳定标签）驱动了设计。
 The semantic operation stack model has two components, operations (\S\ref{sec:ops}) and operation stacks (\S\ref{sec:stacks}), satisfying R1 and R2.
 % 语义 operation stack 模型有两个组件——operation（\S\ref{sec:ops}）和 operation stack（\S\ref{sec:stacks}）——满足 R1 和 R2。
 Two pluggable algorithm frameworks enrich the model. Intent attribution (\S\ref{sec:intent}) satisfies R3 by deriving stable tags, and stack construction (\S\ref{sec:stacks}) builds aggregation hierarchies from available fields.
-% 两个可插拔算法框架丰富此模型。意图归因（\S\ref{sec:intent}）通过派生确定性标签满足 R3，栈构造（\S\ref{sec:stacks}）从可用字段构建聚合层次。
+% 两个可插拔算法框架丰富此模型。意图归因（\S\ref{sec:intent}）通过派生稳定标签满足 R3，栈构造（\S\ref{sec:stacks}）从可用字段构建聚合层次。
 The profiling pipeline has five stages: (1)~parse raw trajectories into operations, (2)~enrich operations via intent attribution or mapping rules, (3)~filter by a user-specified predicate, (4)~project each operation onto a stack frame sequence chosen at query time, and (5)~fold operations with identical stacks, summing their weights.
 % 分析管线有五个阶段：(1) 将原始 trace 解析为 operation，(2) 通过意图归因或映射规则丰富 operation，(3) 按用户指定的谓词过滤，(4) 将每个 operation 投影到查询时选择的栈帧序列上，(5) 折叠具有相同栈的 operation 并求和权重。
 
@@ -401,7 +401,7 @@ execution, the stack is determined by the query.
 % 与 CPU 分析中调用栈由执行决定不同，这里的栈由查询决定。
 The same operations can be folded as a flat task summary, a
 per-session tree, a semantic phase/action hierarchy, or a
-trajectory using the dataset's own labels, and changing the fields changes the
+trajectory using the dataset's own annotations, and changing the fields changes the
 aggregation without changing the data.
 % 同一组 operation 可以折叠为扁平任务摘要、固定会话树、语义阶段/操作层次或使用数据集自身标签的轨迹，改变字段即改变聚合方式而无需改变数据。
 Sessions and spans are optional operation fields, not structural
@@ -452,11 +452,11 @@ attribution to folded-stack flame graphs.}
 
 \paragraph{Intent attribution.}
 % 意图归因。
-Intent attribution maps free-form prompts to short, stable,
-stable tags, giving agent trajectories the stable
-identifiers that traditional profiling gets for free from function
-names (\S\ref{sec:background}).
-% 意图归因将自由形式的提示词映射为短小、稳定、确定性的标签，为智能体轨迹提供传统 profiling 从函数名免费获得的稳定标识符（\S\ref{sec:background}）。
+Intent attribution maps free-form prompts to short, stable tags,
+giving agent trajectories the stable identifiers that traditional
+profiling gets for free from function names
+(\S\ref{sec:background}).
+% 意图归因将自由形式的提示词映射为短小、稳定、可重复的标签，为智能体轨迹提供传统 profiling 从函数名免费获得的稳定标识符（\S\ref{sec:background}）。
 The framework supports three pluggable backends.
 % 该框架支持三种可插拔后端。
 Regex rules are the production default: rules have the form
@@ -507,7 +507,7 @@ exploration (\S\ref{sec:eval}).
 
 \sys is an offline, post-hoc profiler implemented as a Rust CLI (Figure~\ref{fig:architecture}).
 % \sys 是一个离线、事后分析器，实现为 Rust CLI（Figure~\ref{fig:architecture}）。
-It reads recorded traces, not live events.
+It reads recorded trajectories, not live events.
 % 它读取记录的 trace，而非实时事件。
 The \texttt{agent-session} crate reads Codex and Claude Code local JSONL history files and reconstructs prompts, LLM calls, tool invocations, and their triggered file and network effects.
 % \texttt{agent-session} crate 读取 Codex 和 Claude Code 本地 JSONL 历史文件，重建提示词、LLM 调用、工具调用及其触发的文件和网络副作用。
@@ -531,7 +531,7 @@ All outputs are deterministic given the same input and profiling configuration.
 % \sys 是 AgentSight~\cite{agentsight} 可观测性框架的离线分析组件。
 AgentSight provides real-time eBPF-based capture of SSL traffic, process events, and file/network effects.
 % AgentSight 提供基于 eBPF 的实时 SSL 流量、进程事件和文件/网络副作用捕获。
-\sys aggregates the recorded traces into semantic profiles, so the two are complementary: AgentSight answers ``what happened during this run'' (debugging), and \sys answers ``where did the budget go across runs'' (profiling).
+\sys aggregates the recorded trajectories into semantic profiles, so the two are complementary: AgentSight answers ``what happened during this run'' (debugging), and \sys answers ``where did the budget go across runs'' (profiling).
 % \sys 将记录的 trace 聚合为语义概要，因此两者互补：AgentSight 回答"这次运行发生了什么"（调试），\sys 回答"预算跨运行花在了哪里"（分析）。
 
 %% ===================================================================
@@ -543,7 +543,7 @@ We use two classes of data.
 % 我们使用两类数据。
 \textbf{Real agent trajectories}: 325 readable local trajectories (198~Codex, 50~Claude, 77~Claude subagent) from a multi-month development project, containing 183{,}714 system observations.
 % 真实智能体会话：来自一个多月开发项目的 325 个可读本地会话（198 个 Codex、50 个 Claude、77 个 Claude 子智能体），包含 183,714 个系统观测。
-\textbf{Public annotated traces}: 15 families of real agent or human executions, totaling 47{,}590 operations through mapping rules.
+\textbf{Public annotated trajectories}: 15 families of real agent or human executions, totaling 47{,}590 operations through mapping rules.
 % 公开标注 trace：15 个真实智能体或人类执行的家族，通过映射规则共计 47,590 个 operation。
 These cover web agents (WebLINX~\cite{weblinx}, Mind2Web~\cite{mind2web}, AgentTrek~\cite{agenttrek}, WebShop~\cite{webshop}), API agents (API-Bank~\cite{apibank}, ToolBench~\cite{toolbench}, tau-bench~\cite{taubench}), coding agents (SWE-agent~\cite{sweagent}), and mobile/GUI agents (AndroidCtrl~\cite{androidcontrol}, GUI-Odyssey~\cite{guiodyssey}, ScaleCUA~\cite{scalecua}).
 % 涵盖 web 智能体（WebLINX、Mind2Web、AgentTrek、WebShop）、API 智能体（API-Bank、ToolBench、tau-bench）、编码智能体（SWE-agent）和移动/GUI 智能体（AndroidCtrl、GUI-Odyssey、ScaleCUA）。
@@ -571,16 +571,14 @@ A lower mixed-weight percentage means the profiler correctly separates effects b
 The residual percentage measures weight in groups where the majority category accounts for less than 90\% of the group, capturing partial mixing.
 % 残余百分比测量多数类别占桶内不到 90\% 的权重，捕获部分混合。
 
-Figure~\ref{fig:rq1-separation} shows the result on 325 real Codex/Claude trajectories.
-% Figure~\ref{fig:rq1-separation} 展示了 325 个真实 Codex/Claude 会话上的结果。
-Without semantic tags, 90.4\% of system-effect cost falls into mixed groups.
-% 没有语义标签时，90.4\% 的系统副作用权重落入混合桶。
-A flat \texttt{cargo~test} counter shows 2{,}903 executions but cannot distinguish whether they came from \texttt{review}, \texttt{debug}, \texttt{refactor}, or \texttt{test} prompts.
-% 扁平的 \texttt{cargo test} 计数器显示 2,903 次执行，但无法区分它们来自 \texttt{review}、\texttt{debug}、\texttt{refactor} 还是 \texttt{test} 提示词。
-Adding only the prompt tag reduces mixed weight to 36.7\% and residual to 7.5\%.
-% 仅添加提示词标签就将混合权重降至 36.7\%，残余降至 7.5\%。
-The session tag alone barely helps (84.4\%), because trajectories typically contain multiple intent phases.
-% 仅会话标签几乎没有帮助（84.4\%），因为会话通常包含多个意图阶段。
+Figure~\ref{fig:rq1-separation} shows the result.
+% Figure~\ref{fig:rq1-separation} 展示了结果。
+Without semantic tags, nearly all system-effect cost falls into mixed groups: a flat \texttt{cargo~test} counter shows 2{,}903 executions but cannot distinguish whether they came from \texttt{review}, \texttt{debug}, \texttt{refactor}, or \texttt{test} prompts.
+% 没有语义标签时，几乎所有系统副作用权重落入混合桶：扁平的 \texttt{cargo test} 计数器显示 2,903 次执行，但无法区分来源。
+The prompt tag is the decisive axis: it drops both mixed weight and residual by more than half and nearly doubles the number of unique stacks, because it separates observations that share the same system call but originate from different task intents.
+% 提示词标签是决定性轴：它将混合权重和残余都降低一半以上，唯一栈数量几乎翻倍，因为它分离了共享相同系统调用但来自不同任务意图的观测。
+The session tag alone barely helps because trajectories typically contain multiple intent phases.
+% 仅会话标签几乎没有帮助，因为会话通常包含多个意图阶段。
 
 A tag-permutation test (1{,}000 shuffles, $p = 0.001$) confirms the separation is not random.
 % 标签置换测试（1,000 次洗牌，$p = 0.001$）确认分离不是随机的。
@@ -614,8 +612,6 @@ Induced stacks produce a median of 12 groups (versus 285 for per-session and 1 f
 The induced stacks achieve lower AP than hand-configured stacks (median 0.276 vs 0.312) because they use only visible fields, but they reduce inspection work to 65.3\% versus flat summaries without requiring any user configuration.
 % 诱导栈的 AP 低于手动配置栈（中位 0.276 vs 0.312），因为它们仅使用可见字段，但将检查工作量降至扁平摘要的 65.3\%，无需任何用户配置。
 
-Figure~\ref{fig:rq1-separation} visualizes the ablation.
-% Figure~\ref{fig:rq1-separation} 可视化了消融实验。
 Figure~\ref{fig:flamegraph} shows the resulting flame graphs for the \texttt{tokens} and \texttt{files} views, illustrating that changing only the stack fields and weight function produces different aggregates from the same operations.
 % Figure~\ref{fig:flamegraph} 展示了 \texttt{tokens} 和 \texttt{files} 视图的火焰图，说明仅改变栈字段和权重函数即可从同一组 operation 产生不同聚合。
 
