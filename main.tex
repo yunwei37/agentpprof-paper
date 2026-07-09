@@ -24,43 +24,47 @@
 \title{AgentProf: Semantic Profiling for AI Agents}
 
 \begin{abstract}
+%% S1: Context (→¶1)
 AI agents orchestrate multi-step activities across hundreds of
-sessions, but existing observability tools provide only per-session
-debugging views with no cross-session profiling layer.
-% AI 智能体跨数百个会话编排多步骤活动，但现有可观测性工具仅提供按会话的调试视图，没有跨会话的 profiling 层。
-To improve quality, safety, and cost efficiency, developers need
-aggregate analysis of which task categories consume the most budget,
-where failures concentrate, and which workflows trigger unsafe
-side-effects.
-% 为了提高质量、安全性和成本效率，开发者需要聚合分析哪类任务消耗最多预算、故障集中在哪里、哪些工作流触发不安全副作用。
-Systems observability calls this aggregate analysis \emph{profiling},
-and agent observability today has only the debugging layer.
-% 系统可观测性将这种聚合分析称为 profiling，而当今的智能体可观测性只有调试层。
+sessions.
+% AI 智能体跨数百个会话编排多步骤活动。
+%% S2: Problem/need (→¶2 前半)
+To improve quality, safety, and cost efficiency, developers need to
+profile agent behavior across sessions to determine which task
+categories consume the most budget, where failures concentrate, and
+which workflows trigger unsafe effects.
+% 为了提高质量、安全性和成本效率，开发者需要跨会话 profile 智能体行为，以确定哪类任务消耗最多预算、故障集中在哪里、哪些工作流触发不安全副作用。
+%% S3: Gap naming (→¶2 后半)
+Yet, agent observability today provides only single-execution debugging.
+% 当今的智能体可观测性只提供单次执行调试。
+%% S4: Existing tools (→¶3)
 Existing tools organize events into per-session span trees or cluster
 inputs by topic, but none provides cross-session resource attribution
 by semantic category.
 % 现有工具将事件组织为按会话的 span 树或按主题聚类输入，但没有工具提供按语义类别的跨会话资源归因。
+%% S5: Challenge (→¶4)
 The flame-graph profiling methodology that answers these questions for
 traditional software does not directly apply because agent traces lack
 deterministic identifiers and runtime call-stack hierarchies.
 % 为传统软件回答这些问题的火焰图 profiling 方法论不能直接适用，因为智能体 trace 缺乏确定性标识符和运行时调用栈层次。
+%% S6: Model (→¶5)
 We propose a \emph{semantic operation stack model}.
 Uniform \emph{operations} represent all agent activities, and
 \emph{operation stacks} replace the runtime call stack with
 query-time field projections that fold identical frame sequences.
 % 我们提出语义 operation stack 模型。统一的 operation 表示所有智能体活动，operation stack 用查询时字段投影替代运行时调用栈，折叠相同帧序列。
+%% S7: System (→¶6)
 \sys implements this model as a profiler with pluggable algorithms
-for \emph{intent attribution} (deriving deterministic labels from
-natural-language fields) and \emph{stack construction} (building
-aggregation hierarchies from available fields), compiling local agent
-traces into pprof-compatible profiles.
-% \sys 将此模型实现为具有可插拔算法的 profiler，包括意图归因（从自然语言字段派生确定性标签）和栈构造（从可用字段构建聚合层次），将本地智能体 trace 编译为 pprof 兼容的 profile。
+for \emph{intent attribution} and \emph{stack construction},
+compiling local agent traces into pprof-compatible profiles.
+% \sys 将此模型实现为具有可插拔意图归因和栈构造算法的 profiler，将本地智能体 trace 编译为 pprof 兼容的 profile。
+%% S8-S9: Results (→¶6)
 On 325 real agent sessions, semantic profiling separates over 90\% of
 system-effect weight that remains mixed under session-level views.
 % 在 325 个真实智能体会话上，语义 profiling 分离了会话级视图所混合的超过 90\% 的系统副作用权重。
 On four public datasets with hidden ground-truth labels
 (34{,}539 operations), profiler-ranked groups localize labeled
-problems at 9.4\% inspection work versus flat summaries, with 45\%
+problems at 9.4\% inspection cost versus flat summaries, with 45\%
 fewer groups than fixed-session drilldown.
 % 在四个具有隐藏真实标签的公开数据集（34,539 个操作）上，profiler 排序的分组以 9.4\% 的检查成本定位标注问题，比固定会话下钻减少 45\% 的分组数。
 \end{abstract}
@@ -111,7 +115,7 @@ token budget''), because labels at the request level do not propagate
 to downstream tool calls and system effects.
 % Datadog LLM Observability~\cite{datadog-llmobs} 按主题聚类用户消息，Laminar~\cite{laminar-signals} 从 trace 中提取结构化信号，但两者都刻画输入分布（"30\% 的用户提问代码问题"）而非资源归因（"review 任务消耗了 40\% 的 token 预算"），因为请求级的标签不会传播到下游工具调用和系统副作用。
 
-%% ¶4: Root cause — why traditional profiling doesn't transfer directly
+%% ¶4: Challenge — why traditional profiling doesn't transfer directly
 The profiling methodology is well-established for traditional
 software.
 % Profiling 方法论对传统软件已经成熟。
@@ -367,7 +371,7 @@ skeleton nodes, so the same data supports both debugging views
 (include \texttt{session}) and aggregate profiling views (exclude
 it).
 % 会话和 span 是可选的 operation 字段而非结构性骨架节点，因此同一数据既支持调试视图（包含 \texttt{session}）也支持聚合 profiling 视图（排除它）。
-A \emph{view} is a triple $(\varphi, \sigma, w)$: a predicate
+A view is a triple $(\varphi, \sigma, w)$: a predicate
 $\varphi$ selects which operations participate, a stack function
 $\sigma = [f_1, \ldots, f_k]$ maps each operation to its frame
 sequence, and a weight function $w$ assigns a nonnegative measure.
@@ -416,25 +420,25 @@ prompts violate (\S\ref{sec:background}).
 % 意图归因将自由形式的提示词映射为短小、稳定、确定性的标签，恢复智能体提示词所违反的折叠前提条件（\S\ref{sec:background}）。
 The framework supports three pluggable backends.
 % 该框架支持三种可插拔后端。
-\emph{Regex rules} are the production default: rules have the form
+Regex rules are the production default: rules have the form
 \texttt{KIND:TAG=REGEX}, are evaluated in order (first match wins),
 and the developer iterates with \sys until the unmatched rate drops
 below 5\%, typically in 5--10 rounds.
 % 正则规则是生产环境默认：规则格式为 \texttt{KIND:TAG=REGEX}，按顺序求值（首个匹配胜出），开发者与 \sys 迭代直到未匹配率降至 5\% 以下，通常需要 5--10 轮。
-A \emph{local LLM tagger} (e.g., a quantized 3B-parameter model via llama.cpp)
+A local LLM tagger (e.g., a quantized 3B-parameter model via llama.cpp)
 generates a single-word label per prompt with grammar-constrained
 decoding (forcing output to match a predefined token grammar) and caching.
 % 本地 LLM 标注器（如通过 llama.cpp 运行的量化 3B 参数模型）通过语法约束解码（强制输出匹配预定义 token 语法）和缓存为每个提示词生成单词标签。
-\emph{Unsupervised clustering} via TF-IDF and K-Means discovers
+Unsupervised clustering via TF-IDF and K-Means discovers
 natural prompt groups without predefined rules, feeding rule
 authoring.
 % 通过 TF-IDF 和 K-Means 的无监督聚类在没有预定义规则的情况下发现自然提示词分组，为规则编写提供输入。
 For structured traces where action types and quality annotations are
-explicit fields, \emph{mapping rules} derive new fields from existing
+explicit fields, mapping rules derive new fields from existing
 ones (e.g., \texttt{phase:navigate=type:(click|scroll|key)}).
 % 对于操作类型和质量标注是显式字段的结构化 trace，映射规则从现有字段派生新字段（如 \texttt{phase:navigate=type:(click|scroll|key)}）。
-All backends are pluggable, and a \emph{profiling configuration} records the
-complete analysis configuration for deterministic replay.
+All backends are pluggable, and a profiling configuration records the
+complete analysis setup for deterministic replay.
 % 所有后端都是可插拔的，profiling configuration 记录完整的分析配置以实现确定性重放。
 
 \paragraph{Stack construction.}
@@ -444,7 +448,7 @@ available fields.
 % 栈构造从可用字段构建聚合层次。
 When users supply a ordered list of fields, the projection is direct.
 % 当用户提供字段链时，投影是直接的。
-When no chain is supplied, \sys can \emph{induce} operation stacks
+When no chain is supplied, \sys can induce operation stacks
 automatically by scoring adjacent operations for semantic shifts,
 field changes, and partition coherence, then cutting at boundaries
 where the evidence is strongest.
@@ -498,9 +502,9 @@ AgentSight provides real-time eBPF-based capture of SSL traffic, process events,
 
 We use two classes of data.
 % 我们使用两类数据。
-\emph{Real agent sessions}: 325 readable local sessions (198~Codex, 50~Claude, 77~Claude subagent) from a multi-month development project, containing 183{,}714 system observations.
+\textbf{Real agent sessions}: 325 readable local sessions (198~Codex, 50~Claude, 77~Claude subagent) from a multi-month development project, containing 183{,}714 system observations.
 % 真实智能体会话：来自一个多月开发项目的 325 个可读本地会话（198 个 Codex、50 个 Claude、77 个 Claude 子智能体），包含 183,714 个系统观测。
-\emph{Public labeled traces}: 15 families covering web, mobile, desktop, software, API, and dialogue agents (Table~\ref{tab:datasets}), totaling 47{,}590 operations through mapping rules.
+\textbf{Public labeled traces}: 15 families covering web, mobile, desktop, software, API, and dialogue agents (Table~\ref{tab:datasets}), totaling 47{,}590 operations through mapping rules.
 % 公开标注 trace：15 个家族，涵盖 web、移动、桌面、软件、API 和对话智能体（Table~\ref{tab:datasets}），通过映射规则共计 47,590 个 operation。
 All public traces are real agent or human executions collected and labeled by their respective benchmark projects.
 % 所有公开 trace 都是由各自基准项目收集和标注的真实智能体或人类执行。
@@ -539,7 +543,7 @@ The strongest argument against semantic profiling is that traditional tools ``ca
 % 反对语义分析的最强论点是传统工具"已经能看到相同信息"。
 To test this, we run a semantic-axis ablation on 325 real Codex/Claude sessions (183{,}714 system observations).
 % 为了检验这一点，我们在 325 个真实 Codex/Claude 会话（183,714 个系统观测）上进行语义轴消融。
-We progressively add label axes (no labels, session only, prompt only, both) and measure the \emph{mixed-weight percentage}, the fraction of system-effect weight in buckets that mix observations from multiple task categories.
+We progressively add label axes (no labels, session only, prompt only, both) and measure the mixed-weight percentage, the fraction of system-effect weight in buckets that mix observations from multiple task categories.
 % 我们逐步添加标签轴（无标签、仅会话、仅提示词、两者兼有），测量混合权重百分比——混合了多个任务类别观测的桶中的系统副作用权重比例。
 A lower mixed-weight percentage means the profiler correctly separates effects by task category. The residual percentage measures weight in buckets where the majority category accounts for less than 90\% of the bucket, capturing partial mixing.
 % 更低的混合权重百分比意味着分析器正确地按任务类别分离了效果。残余百分比测量多数类别占桶内不到 90\% 的权重，捕获部分混合。
