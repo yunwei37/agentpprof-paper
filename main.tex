@@ -447,12 +447,13 @@ The framework supports three pluggable backends.
 % 该框架支持三种可插拔后端。
 Regex rules are the production default: rules have the form
 \texttt{KIND:TAG=REGEX}, are evaluated in order (first match wins),
-and the developer iterates with \sys until the unmatched rate drops
+and an AI Agent can iterates the regex with \sys until the unmatched rate drops
 below 5\%, typically in 5--10 rounds.
-% 正则规则是生产环境默认：规则格式为 \texttt{KIND:TAG=REGEX}，按顺序求值（首个匹配胜出），开发者与 \sys 迭代直到未匹配率降至 5\% 以下，通常需要 5--10 轮。
+% 正则规则是生产环境默认：规则格式为 \texttt{KIND:TAG=REGEX}，按顺序求值（首个匹配胜出），AI Agent 可以与 \sys 迭代直到未匹配率降至 5\% 以下，通常需要 5--10 轮。
 A local LLM tagger (e.g., a quantized 3B-parameter model via llama.cpp)
 generates a single-word tag per prompt with grammar-constrained
-decoding (forcing output to match a predefined token grammar) and caching.
+decoding (forcing output to match a predefined token grammar) and caching, so AI
+Agent can help iterate the prompt as part of the configuration.
 % 本地 LLM 标注器（如通过 llama.cpp 运行的量化 3B 参数模型）通过语法约束解码（强制输出匹配预定义 token 语法）和缓存为每个提示词生成单词标签。
 Unsupervised clustering via TF-IDF and K-Means discovers
 natural prompt groups without predefined rules, feeding rule
@@ -462,9 +463,6 @@ For structured trajectories where action types and quality annotations are
 explicit fields, mapping rules derive new fields from existing
 ones (e.g., \texttt{phase:navigate=type:(click|scroll|key)}).
 % 对于操作类型和质量标注是显式字段的结构化轨迹，映射规则从现有字段派生新字段（如 \texttt{phase:navigate=type:(click|scroll|key)}）。
-All backends are pluggable, and a profiling configuration records the
-complete analysis setup for deterministic replay.
-% 所有后端都是可插拔的，profiling configuration 记录完整的分析配置以实现确定性重放。
 
 \paragraph{Stack construction.}
 % 栈构造。
@@ -507,29 +505,23 @@ Output formats include pprof protobuf (compatible with \texttt{go tool pprof -ht
 
 We use two classes of data.
 % 我们使用两类数据。
-\textbf{Real agent trajectories}: 325 readable local trajectories (198~Codex, 50~Claude, 77~Claude subagent) from a multi-month development project, containing 183{,}714 system observations.
+\emph{Real agent trajectories}: 325 readable local trajectories (198~Codex, 50~Claude, 77~Claude subagent) from a multi-month development project, containing 183{,}714 system observations.
 % 真实智能体会话：来自一个多月开发项目的 325 个可读本地会话（198 个 Codex、50 个 Claude、77 个 Claude 子智能体），包含 183,714 个系统观测。
-\textbf{Public annotated trajectories}: 15 families of real agent or human executions, totaling 47{,}590 operations through mapping rules.
+\emph{Public annotated trajectories}: 15 families of real agent or human executions, totaling 47{,}590 operations through mapping rules.
 % 公开标注轨迹：15 个真实智能体或人类执行的家族，通过映射规则共计 47,590 个 operation。
 These cover web agents (WebLINX~\cite{weblinx}, Mind2Web~\cite{mind2web}, AgentTrek~\cite{agenttrek}, WebShop~\cite{webshop}), API agents (API-Bank~\cite{apibank}, ToolBench~\cite{toolbench}, tau-bench~\cite{taubench}), coding agents (SWE-agent~\cite{sweagent}), and mobile/GUI agents (AndroidCtrl~\cite{androidcontrol}, GUI-Odyssey~\cite{guiodyssey}, ScaleCUA~\cite{scalecua}).
 % 涵盖 web 智能体（WebLINX、Mind2Web、AgentTrek、WebShop）、API 智能体（API-Bank、ToolBench、tau-bench）、编码智能体（SWE-agent）和移动/GUI 智能体（AndroidCtrl、GUI-Odyssey、ScaleCUA）。
 Four families with ground-truth quality annotations (AgentRewardBench~\cite{agentrewardbench}, SATraj-OS~\cite{safactory}, AgentNet~\cite{agentnet}, OSWorld-Human~\cite{osworldhuman}) provide hidden annotations for RQ2.
 % 四个具有真实质量标注的家族（AgentRewardBench、SATraj-OS、AgentNet、OSWorld-Human）为 RQ2 提供隐藏标签。
-We measure semantic separation via the mixed-weight percentage defined in RQ1.
-% 我们通过 RQ1 中定义的混合权重百分比测量语义分离度。
-For localization quality (RQ2), we use average precision (AP, the area under the precision-recall curve when groups are ranked by suspected problem density), recall at various inspection budgets, and work-to-first-positive (the fraction of groups inspected before finding one positive).
-% 对于定位质量（RQ2），我们使用平均精度（AP，按疑似问题密度排序分组时精确率-召回率曲线下面积）、不同检查预算下的召回率和首个正例工作量（找到一个正例前检查的分组比例）。
-For tag agreement (RQ3), we use V-measure (a clustering-agreement score ranging from 0 to 1) and boundary F1.
-% 对于标签一致性（RQ3），我们使用 V-measure（聚类一致性分数，范围 0 到 1）和边界 F1。
 
 %% -------------------------------------------------------------------
 \subsection{RQ1: Does Semantic Profiling Improve Resource Attribution?}
 % RQ1：语义分析能否改善资源归因？
 
-The strongest argument against semantic profiling is that traditional tools ``can already see the same information.''
-% 反对语义分析的最强论点是传统工具"已经能看到相同信息"。
-To test this, we run a semantic-axis ablation on 325 real Codex/Claude trajectories (183{,}714 system observations).
-% 为了检验这一点，我们在 325 个真实 Codex/Claude 会话（183,714 个系统观测）上进行语义轴消融。
+We test whether semantic tags improve resource attribution beyond what traditional tag-free tools provide.
+% 我们测试语义标签是否能超越传统无标签工具改善资源归因。
+We run a semantic-axis ablation on 325 real Codex/Claude trajectories (183{,}714 system observations).
+% 我们在 325 个真实 Codex/Claude 轨迹（183,714 个系统观测）上进行语义轴消融。
 We progressively add tag axes (no tags, session only, prompt only, both) and measure the mixed-weight percentage, the fraction of system-effect cost in groups that mix observations from multiple task categories.
 % 我们逐步添加标签轴（无标签、仅会话、仅提示词、两者兼有），测量混合权重百分比——混合了多个任务类别观测的桶中的系统副作用权重比例。
 A lower mixed-weight percentage means the profiler correctly separates effects by task category.
