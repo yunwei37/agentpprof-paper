@@ -474,12 +474,12 @@ exploration (\S\ref{sec:eval}).
 % 实现
 \label{sec:impl}
 
-\sys is an offline, post-hoc profiler implemented as a Rust CLI (Figure~\ref{fig:architecture}).
-% \sys 是一个离线、事后分析器，实现为 Rust CLI（Figure~\ref{fig:architecture}）。
-It reads Codex and Claude Code local JSONL history files, Agentsight~\cite{agentsight}  trace files and monitor records for system effects, and reconstructs prompts, LLM calls, tool invocations, and their triggered file and network effects.
-% \texttt{agent-session} crate 读取 Codex 和 Claude Code 本地 JSONL 历史文件，重建提示词、LLM 调用、工具调用及其触发的文件和网络副作用。
-The algorithm can be implemented in any language as a server, e.g. python backend or
-LLM inference service.
+\sys is an offline, post-hoc profiler implemented as a Rust CLI ({$\sim$}9.8K LOC, Figure~\ref{fig:architecture}).
+% \sys 是一个离线、事后分析器，实现为 Rust CLI（约 9.8K 行代码，Figure~\ref{fig:architecture}）。
+It reads Codex and Claude Code local JSONL history files and AgentSight~\cite{agentsight} recordings for system effects, and reconstructs prompts, LLM calls, tool invocations, and their triggered file and network effects.
+% 它读取 Codex 和 Claude Code 本地 JSONL 历史文件以及 AgentSight~\cite{agentsight} 的系统副作用记录，重建提示词、LLM 调用、工具调用及其触发的文件和网络副作用。
+The algorithms are language-independent and can run as a server (e.g., a Python backend or LLM inference service).
+% 算法与语言无关，可作为服务运行（如 Python 后端或 LLM 推理服务）。
 Output formats include pprof protobuf (compatible with \texttt{go tool pprof -http}), folded-stack text (compatible with \texttt{flamegraph.pl}), standalone SVG flame graphs, and JSON summaries.
 % 输出格式包括 pprof protobuf（兼容 \texttt{go tool pprof -http}）、折叠栈文本（兼容 \texttt{flamegraph.pl}）、独立 SVG 火焰图和 JSON 摘要。
 
