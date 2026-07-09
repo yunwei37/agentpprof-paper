@@ -28,18 +28,22 @@ AI agents orchestrate multi-step activities across hundreds of
 sessions, but existing observability tools provide only per-session
 debugging views with no cross-session profiling layer.
 % AI 智能体跨数百个会话编排多步骤活动，但现有可观测性工具仅提供按会话的调试视图，没有跨会话的 profiling 层。
-Developers cannot answer aggregate questions---which task categories
-consume the most token budget, where failures concentrate, or which
-workflows trigger unsafe side-effects---without manually inspecting
+To improve quality, safety, and cost efficiency, developers need
+aggregate analysis of which task categories consume the most budget,
+where failures concentrate, and which workflows trigger unsafe
+side-effects, but today the only option is manual inspection of
 individual sessions.
-% 开发者无法回答聚合问题——哪类任务消耗最多 token 预算、故障集中在哪里、哪些工作流触发不安全副作用——除非逐个检查单个会话。
-We propose a \emph{semantic profiling model} that adapts the
-flame-graph methodology to agent traces: uniform \emph{semantic
-operations} represent all activities, \emph{intent attribution}
-derives deterministic labels from natural-language fields, and
-\emph{profile projections} construct aggregation hierarchies from
-field selections at query time.
-% 我们提出一个语义 profiling 模型，将火焰图方法论适配到智能体 trace：统一的语义 operation 表示所有活动，意图归因从自然语言字段派生确定性标签，profile 投影在查询时从字段选择构造聚合层次。
+% 为了提高质量、安全性和成本效率，开发者需要聚合分析哪类任务消耗最多预算、故障集中在哪里、哪些工作流触发不安全副作用，但目前唯一的选择是逐个检查单个会话。
+The flame-graph profiling methodology that answers these questions for
+traditional software does not directly apply because agent traces lack
+deterministic identifiers and runtime call-stack hierarchies.
+% 为传统软件回答这些问题的火焰图 profiling 方法论不能直接适用，因为智能体 trace 缺乏确定性标识符和运行时调用栈层次。
+We propose a \emph{semantic profiling model} that adapts this
+methodology: uniform \emph{semantic operations} represent all
+activities, \emph{intent attribution} derives deterministic labels
+from natural-language fields, and \emph{profile projections} construct
+aggregation hierarchies from field selections at query time.
+% 我们提出一个语义 profiling 模型来适配此方法论：统一的语义 operation 表示所有活动，意图归因从自然语言字段派生确定性标签，profile 投影在查询时从字段选择构造聚合层次。
 \sys implements this model as a profiler that compiles local agent
 traces into pprof-compatible profiles with pluggable
 intent-attribution backends.
@@ -72,21 +76,20 @@ over weeks or months.
 
 %% ¶2: Problem
 To improve agent quality, safety, and cost efficiency, developers
-need to analyze operational behavior across sessions: which categories
-of tasks consume the most token budget, where failures concentrate
-across workflows, and which behavioral patterns trigger unsafe system
-side-effects.
+need to analyze operational behavior across sessions to determine
+which categories of tasks consume the most token budget, where
+failures concentrate across workflows, and which behavioral patterns
+trigger unsafe system side-effects.
 % 为了提高智能体质量、安全性和成本效率，开发者需要跨会话分析运维行为：哪类任务消耗最多 token 预算、故障跨工作流集中在哪里、哪些行为模式触发不安全系统副作用。
 Systems observability has long distinguished this kind of aggregate
-analysis---profiling---from single-execution debugging.
-% 系统可观测性早已将这种聚合分析——profiling——与单次执行调试区分开来。
+analysis (profiling) from single-execution debugging.
+% 系统可观测性早已将这种聚合分析（profiling）与单次执行调试区分开来。
 Agent observability today has only the debugging layer.
 % 当今的智能体可观测性只有调试层。
 
 %% ¶3: Existing solutions
-No existing tool provides cross-session aggregate views by semantic
-category.
-% 没有现有工具能按语义类别提供跨会话聚合视图。
+Existing agent observability tools do not fill this gap.
+% 现有智能体可观测性工具没有填补此缺口。
 LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse},
 Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize
 events into per-session span trees, effective for diagnosing a single
@@ -126,15 +129,15 @@ function calls produce stack frames.
 
 %% ¶5: Model
 Despite these differences, the fundamental profiling
-methodology---define units, assign stable labels, construct
-aggregation hierarchies, fold identical stacks---transfers to agent
+methodology (define units, assign stable labels, construct
+aggregation hierarchies, fold identical stacks) transfers to agent
 traces.
 % 尽管有这些差异，基本的 profiling 方法论——定义单元、赋予稳定标签、构造聚合层次、折叠相同栈——可以迁移到智能体 trace。
 We propose a \emph{semantic profiling model} with three components.
 % 我们提出一个包含三个组件的语义 profiling 模型。
 \emph{Semantic operations} are uniform records with string fields and
-additive measures that represent all agent activities---prompts, LLM
-calls, tool invocations, and system effects---without type-specific
+additive measures that represent all agent activities (prompts, LLM
+calls, tool invocations, and system effects) without type-specific
 objects.
 % 语义 operation 是带有字符串字段和可加度量的统一记录，表示所有智能体活动——提示词、LLM 调用、工具调用和系统副作用——无需特定类型对象。
 \emph{Intent attribution} derives deterministic, low-cardinality
@@ -145,9 +148,8 @@ precondition that CPU profiling obtains for free from function names.
 time to construct aggregation hierarchies, replacing the runtime call
 stack.
 % Profile 投影在查询时选择字段有序列表来构造聚合层次，替代运行时调用栈。
-Different field selections answer different questions---by task
-category, by execution phase, by session, by action type---from the
-same data.
+Different field selections answer different questions (by task category, by execution phase, by session, or by
+action type) from the same data.
 % 不同的字段选择从同一数据回答不同问题——按任务类别、按执行阶段、按会话、按操作类型。
 
 %% ¶6: This paper + system + results
@@ -822,7 +824,6 @@ Learned predictors beat simple baselines on 4/5 tested datasets, while AgentRewa
 % 学习预测器在 4/5 测试的数据集上超过简单基线，而 AgentRewardBench 循环完全由单个重复信号特征解释（基线 F1 约 1.0）。
 These comparisons confirm that mapping rules produce useful labels but are not automatic intent discovery.
 % 这些比较确认映射规则产生有用的标签，但不是自动意图发现。
-% 这些基线比较支持字段衍生作为受保护的配置步骤，而非自动意图发现。
 
 All results are backed by profile specs for deterministic replay.
 % 所有结果都有 profile spec 支持确定性重放。
