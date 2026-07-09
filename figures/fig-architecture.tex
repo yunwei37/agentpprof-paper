@@ -21,7 +21,7 @@
 
 % Intent recognition
 \node[box, right=0.6cm of parser, fill=orange!15] (intent) {Intent\\Recognition};
-\node[font=\scriptsize, below=0.05cm of intent, text=gray] (backends) {regex / LLM / clustering};
+\node[font=\scriptsize, below=0.01cm of intent, text=gray] (backends) {regex / LLM / clustering};
 
 % Mapping
 \node[box, below=0.3cm of intent, fill=orange!15] (mapping) {Mapping\\Rules};
@@ -34,9 +34,9 @@
 \node[box, right=0.6cm of ops, fill=blue!20] (stack) {Stack query\\$(\varphi,\sigma,w)$};
 
 % Outputs (right)
-\node[output, right=0.6cm of stack, yshift=0.4cm] (flame) {Flame graph};
+\node[output, right=0.6cm of stack, yshift=0.6cm] (flame) {Flame graph};
 \node[output, right=0.6cm of stack, yshift=-0.0cm] (pprof) {pprof};
-\node[output, right=0.6cm of stack, yshift=-0.4cm] (json) {JSON};
+\node[output, right=0.6cm of stack, yshift=-0.6cm] (json) {JSON};
 
 % Arrows
 \draw[arr] (local) -- (parser);
