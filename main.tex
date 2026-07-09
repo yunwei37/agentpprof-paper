@@ -71,26 +71,22 @@ over weeks or months.
 % 随着智能体从短小的脚本化工作流进化为运行数小时的复杂系统，生产团队在数周或数月内积累数百个会话。
 
 %% ¶2: Problem
-However, no existing tool provides cross-session aggregate views by
-semantic category.
-% 然而，没有现有工具能按语义类别提供跨会话聚合视图。
-Developers need to answer operational questions---which categories of
-tasks consume the most token budget, where failures concentrate across
-workflows, and which behavioral patterns trigger unsafe system
-side-effects---but the only option today is manual inspection of
-individual sessions.
-% 开发者需要回答运维问题——哪类任务消耗最多 token 预算、故障跨工作流集中在哪里、哪些行为模式触发不安全系统副作用——但目前唯一的选择是逐个检查单个会话。
-The gap is the distinction between debugging and profiling:
-debugging inspects a single execution to find a fault, while
-profiling aggregates across executions to answer ``where does the
-cost go?''
-% 这个缺口就是调试与 profiling 的区别：调试检查单次执行以定位故障，而 profiling 跨执行聚合以回答"开销花在了哪里？"
+To improve agent quality, safety, and cost efficiency, developers
+need to analyze operational behavior across sessions: which categories
+of tasks consume the most token budget, where failures concentrate
+across workflows, and which behavioral patterns trigger unsafe system
+side-effects.
+% 为了提高智能体质量、安全性和成本效率，开发者需要跨会话分析运维行为：哪类任务消耗最多 token 预算、故障跨工作流集中在哪里、哪些行为模式触发不安全系统副作用。
+Systems observability has long distinguished this kind of aggregate
+analysis---profiling---from single-execution debugging.
+% 系统可观测性早已将这种聚合分析——profiling——与单次执行调试区分开来。
 Agent observability today has only the debugging layer.
 % 当今的智能体可观测性只有调试层。
 
 %% ¶3: Existing solutions
-Existing agent observability tools do not fill this gap.
-% 现有智能体可观测性工具没有填补此缺口。
+No existing tool provides cross-session aggregate views by semantic
+category.
+% 没有现有工具能按语义类别提供跨会话聚合视图。
 LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse},
 Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize
 events into per-session span trees, effective for diagnosing a single
