@@ -52,7 +52,7 @@ deterministic identifiers and structural hierarchies that make
 aggregation possible.
 % 智能体行为与代码执行有根本不同。负责实体是语义类别（如任务意图和工作流阶段），而非代码路径，且智能体轨迹缺乏使聚合成为可能的确定性标识符和结构层次。
 %% S6: Model (→¶5)
-We propose the a \emph{semantic operation stack model} that
+We propose a \emph{semantic operation stack model} that
 adapts profiling to agent trajectories.
 Uniform \emph{operations} represent all agent activities, and
 \emph{operation stacks} replace the runtime call stack with
@@ -152,7 +152,7 @@ three views. \emph{Top (tokens):} width represents token count.
 All three are produced from the same operations by changing only the
 stack fields and weight function (Table~\ref{tab:views}).}
 \Description{Three wide flame graphs showing token budget, time, and
-file-access distributions across sessions and prompt categories.}
+file-access distributions across trajectories and prompt categories.}
 \label{fig:flamegraph}
 \end{figure*}
 
@@ -230,7 +230,7 @@ This paper makes three contributions:
 \item \textbf{Hidden-label evaluation.}
   We evaluate profiler output against hidden ground-truth trajectory
   labels, analogous to injecting known bottlenecks in CPU profiler
-  evaluation, on 325 real sessions and 4 public datasets
+  evaluation, on 325 real trajectories and 4 public datasets
   (\S\ref{sec:eval}).
 % 隐藏标签评估。将 profiler 输出与隐藏的真实轨迹标签评分，类似于在 CPU profiler 评估中注入已知瓶颈，在 325 个真实会话和 4 个公开数据集上验证。
 \end{enumerate}
@@ -311,7 +311,7 @@ Grouping by span name tells you how many LLM calls occurred, not which categorie
 
 Third, these limitations compound in practice.
 % 第三，这些限制在实践中叠加放大。
-A common system effect like running a test suite may appear thousands of times across sessions, but a flat summary shows only a single counter with no way to attribute executions to the semantic intent that triggered them.
+A common system effect like running a test suite may appear thousands of times across trajectories, but a flat summary shows only a single counter with no way to attribute executions to the semantic intent that triggered them.
 % 像运行测试套件这样的常见系统副作用可能在会话中出现数千次，但扁平摘要只显示一个计数器，无法将执行归因到触发它们的语义意图。
 We quantify this in RQ1~(\S\ref{sec:eval}).
 % 我们在 RQ1~(\S\ref{sec:eval}) 中量化了这一点。
@@ -533,7 +533,7 @@ AgentSight provides real-time eBPF-based capture of SSL traffic, process events,
 
 We use two classes of data.
 % 我们使用两类数据。
-\textbf{Real agent sessions}: 325 readable local sessions (198~Codex, 50~Claude, 77~Claude subagent) from a multi-month development project, containing 183{,}714 system observations.
+\textbf{Real agent sessions}: 325 readable local trajectories (198~Codex, 50~Claude, 77~Claude subagent) from a multi-month development project, containing 183{,}714 system observations.
 % 真实智能体会话：来自一个多月开发项目的 325 个可读本地会话（198 个 Codex、50 个 Claude、77 个 Claude 子智能体），包含 183,714 个系统观测。
 \textbf{Public labeled traces}: 15 families covering web, mobile, desktop, software, API, and dialogue agents (Table~\ref{tab:datasets}), totaling 47{,}590 operations through mapping rules.
 % 公开标注 trace：15 个家族，涵盖 web、移动、桌面、软件、API 和对话智能体（Table~\ref{tab:datasets}），通过映射规则共计 47,590 个 operation。
@@ -576,7 +576,7 @@ AgentNet~\cite{agentnet} & Step correctness, redundancy & HF JSONL & Real deskto
 
 The strongest argument against semantic profiling is that traditional tools ``can already see the same information.''
 % 反对语义分析的最强论点是传统工具"已经能看到相同信息"。
-To test this, we run a semantic-axis ablation on 325 real Codex/Claude sessions (183{,}714 system observations).
+To test this, we run a semantic-axis ablation on 325 real Codex/Claude trajectories (183{,}714 system observations).
 % 为了检验这一点，我们在 325 个真实 Codex/Claude 会话（183,714 个系统观测）上进行语义轴消融。
 We progressively add label axes (no labels, session only, prompt only, both) and measure the mixed-weight percentage, the fraction of system-effect cost in groups that mix observations from multiple task categories.
 % 我们逐步添加标签轴（无标签、仅会话、仅提示词、两者兼有），测量混合权重百分比——混合了多个任务类别观测的桶中的系统副作用权重比例。
@@ -588,7 +588,7 @@ The residual percentage measures weight in buckets where the majority category a
 \begin{table}[t]
 \centering\small
 \caption{Semantic-axis ablation on 183{,}714 system observations
-from 325 real sessions. All rows preserve the same total weight.}
+from 325 real trajectories. All rows preserve the same total weight.}
 \label{tab:mixing}
 \begin{tabular}{lrrr}
 \toprule
@@ -602,7 +602,7 @@ Session + prompt & 26{,}829 & 0.0 & 0.0 \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:mixing} shows the result on 325 real Codex/Claude sessions.
+Table~\ref{tab:mixing} shows the result on 325 real Codex/Claude trajectories.
 % Table~\ref{tab:mixing} 展示了 325 个真实 Codex/Claude 会话上的结果。
 Without semantic labels, 90.4\% of system-effect cost falls into mixed groups.
 % 没有语义标签时，90.4\% 的系统副作用权重落入混合桶。
@@ -610,7 +610,7 @@ A flat \texttt{cargo~test} counter shows 2{,}903 executions but cannot distingui
 % 扁平的 \texttt{cargo test} 计数器显示 2,903 次执行，但无法区分它们来自 \texttt{review}、\texttt{debug}、\texttt{refactor} 还是 \texttt{test} 提示词。
 Adding only the prompt label reduces mixed weight to 36.7\% and residual to 7.5\%.
 % 仅添加提示词标签就将混合权重降至 36.7\%，残余降至 7.5\%。
-The session label alone barely helps (84.4\%), because sessions typically contain multiple intent phases.
+The session label alone barely helps (84.4\%), because trajectories typically contain multiple intent phases.
 % 仅会话标签几乎没有帮助（84.4\%），因为会话通常包含多个意图阶段。
 
 A label-permutation test (1{,}000 shuffles, $p = 0.001$) confirms the separation is not random.
@@ -631,7 +631,7 @@ The same model also covers all 15 public trace families (Table~\ref{tab:datasets
 
 Different views also produce different rankings.
 % 不同视图也产生不同排名。
-The \texttt{time} and \texttt{tokens} views of the same 325 sessions share only 7/10 top prompt categories (Spearman $\rho = 0.623$).
+The \texttt{time} and \texttt{tokens} views of the same 325 trajectories share only 7/10 top prompt categories (Spearman $\rho = 0.623$).
 % 同一 325 个会话的 \texttt{time} 和 \texttt{tokens} 视图仅共享 7/10 的顶级提示词类别（Spearman $\rho = 0.623$）。
 \texttt{network}-tagged prompts rank 8th by time (I/O wait) but 93rd by tokens, showing that the choice of weight function changes the analysis conclusions.
 % \texttt{network} 标记的提示词按时间排第 8（I/O 等待）但按 token 排第 93，表明权重函数的选择改变了分析结论。
