@@ -64,73 +64,152 @@ fewer groups than fixed-session drilldown.
 \section{Introduction}
 \label{sec:intro}
 
-%% ¶1: Background + Context
-AI agents orchestrate heterogeneous activities, including prompts, LLM calls, tool invocations, GUI actions, and system effects.
-% AI 智能体编排异构活动，包括提示词、LLM 调用、工具调用、GUI 操作和系统副作用。
-As deployments scale to hundreds of sessions, developers need cross-session aggregate views to identify which task categories consume the most budget, where failures concentrate, and which workflows waste effort.
-% 当部署规模扩展到数百个会话时，开发者需要跨会话聚合视图来识别哪些任务类别消耗最多预算、故障集中在哪里、以及哪些工作流浪费了算力。
+%% ¶1: Context
+AI agents have evolved from short, scripted workflows into complex,
+open-ended systems that run for hours, generating thousands of
+interactions per session.
+% AI 智能体已从短小的脚本化工作流进化为复杂的开放式系统，运行数小时，每次会话产生数千次交互。
+In production, teams accumulate hundreds of sessions over weeks or
+months.
+% 在生产环境中，团队在数周或数月内积累数百个会话。
 
-%% ¶2: Problem + example
-However, no existing tool provides cross-session resource attribution by semantic category.
-% 然而，没有现有工具能按语义类别提供跨会话资源归因。
-In a real development project, \texttt{cargo test} appears 2{,}903 times across 325 sessions, yet no observability tool can attribute these executions to the review, debugging, or refactoring prompts that triggered them.
-% 在一个真实开发项目中，\texttt{cargo test} 在 325 个会话中出现了 2,903 次，但没有可观测性工具能将这些执行归因到触发它们的 review、debugging 或 refactoring 提示词。
-The same gap affects failure and safety analysis because unsafe operations may cluster in specific task phases, but no tool surfaces this without manual inspection of individual sessions.
-% 同样的缺口也影响故障和安全分析，因为不安全操作可能集中在特定任务阶段，但没有工具能在不逐个检查会话的情况下揭示这一点。
+%% ¶2: Problem
+Developers need aggregate views to answer operational questions: which
+categories of tasks consume the most token budget? Where do failures
+concentrate across workflows? Which behavioral patterns trigger
+excessive or unsafe system side-effects?
+% 开发者需要聚合视图来回答运维问题：哪类任务消耗最多 token 预算？故障跨工作流集中在哪里？哪些行为模式触发了过多或不安全的系统副作用？
+Today, a team facing hundreds of sessions has no tool that answers
+``review tasks consume 40\% of the token budget'' or ``unsafe
+operations cluster in debugging phases.''
+% 如今，面对数百个会话的团队没有工具能回答"review 任务消耗了 40\% 的 token 预算"或"不安全操作集中在 debugging 阶段"。
+The only option is manual inspection of individual sessions.
+% 唯一的选择是逐个检查单个会话。
 
-%% ¶3: Root cause
-The aggregation problem itself is not new.
-% 聚合问题本身并不新。
-CPU profilers solved it for programs decades ago.
-% CPU 分析器几十年前就为程序解决了这个问题。
-Flame graphs~\cite{flamegraphs} fold millions of function-call samples into a single chart where width represents cost.
-% 火焰图~\cite{flamegraphs}将数百万函数调用样本折叠成一张图，宽度代表开销。
-The key enabler is \emph{deterministic} function names that merge identical call stacks.
-% 关键条件是确定性的函数名，使相同调用栈能够合并。
-Agent traces break this precondition because prompts are natural language, and two prompts expressing the same intent share no characters (\S\ref{sec:background}).
-% 智能体 trace 打破了这一前提，因为提示词是自然语言，表达相同意图的两个提示词没有共同字符（\S\ref{sec:background}）。
+%% ¶3: Existing work + gap
+Systems observability has long distinguished debugging from profiling.
+% 系统可观测性早已区分调试与 profiling。
+Debugging inspects a single execution to find a specific fault.
+% 调试检查单次执行以定位特定故障。
+Profiling aggregates across executions to answer ``where does the
+cost go?''
+% Profiling 跨执行聚合以回答"开销花在了哪里？"
+Agent observability today has only the debugging layer.
+% 当今的智能体可观测性只有调试层。
+LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse},
+Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize
+events into per-session span trees, effective for diagnosing a single
+run but unable to aggregate across sessions by semantic category.
+% LangSmith~\cite{langsmith}、Langfuse~\cite{langfuse}、Phoenix~\cite{phoenix} 和 OpenTelemetry GenAI~\cite{otel} 将事件组织为按会话的 span 树，有效诊断单次运行但无法按语义类别跨会话聚合。
+Datadog LLM Observability~\cite{datadog-llmobs} clusters user
+messages by topic, and Laminar~\cite{laminar-signals} extracts
+structured signals from traces, but both characterize \emph{input
+distributions} (``30\% of users ask code questions'') rather than
+\emph{resource attribution} (``review tasks consume 40\% of the
+token budget''), because labels at the request level do not propagate
+to downstream tool calls and system effects.
+% Datadog LLM Observability~\cite{datadog-llmobs} 按主题聚类用户消息，Laminar~\cite{laminar-signals} 从 trace 中提取结构化信号，但两者都刻画输入分布（"30\% 的用户提问代码问题"）而非资源归因（"review 任务消耗了 40\% 的 token 预算"），因为请求级的标签不会传播到下游工具调用和系统副作用。
+Agent observability lacks a profiling layer.
+% 智能体可观测性缺少 profiling 层。
 
-%% ¶4: Existing solutions fail
-Existing agent observability tools do not solve the aggregation problem.
-% 现有智能体可观测性工具没有解决聚合问题。
-LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse}, Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize events into per-execution span trees, enabling single-run debugging but not cross-session aggregation.
-% LangSmith~\cite{langsmith}、Langfuse~\cite{langfuse}、Phoenix~\cite{phoenix} 和 OpenTelemetry GenAI~\cite{otel} 将事件组织为按执行划分的 span 树，支持单次运行调试但不支持跨会话聚合。
-Datadog LLM Observability~\cite{datadog-llmobs} clusters user messages by topic, and Laminar~\cite{laminar-signals} extracts structured signals from traces.
-% Datadog LLM Observability~\cite{datadog-llmobs} 按主题聚类用户消息，Laminar~\cite{laminar-signals} 从 trace 中提取结构化信号。
-Both characterize \emph{input distributions} (``30\% of users ask code questions'') but not \emph{resource attribution} (``code-review tasks consume 40\% of the token budget''), because clustering at the request level does not propagate labels to downstream system effects.
-% 两者都刻画输入分布（"30\% 的用户提问代码问题"）而非资源归因（"code-review 任务消耗了 40\% 的 token 预算"），因为请求级别的聚类不会将标签传播到下游系统副作用。
+%% ¶4: Why hard
+The profiling methodology is well-established for traditional
+software.
+% Profiling 方法论对传统软件已经成熟。
+Flame graphs~\cite{flamegraphs} fold identical call stacks into a
+single chart where width represents cost.
+% 火焰图~\cite{flamegraphs}将相同调用栈折叠为一张图，宽度代表开销。
+Two properties make this work: function names are deterministic, so
+identical code paths always produce the same stack frames, and runtime
+call nesting provides the aggregation hierarchy.
+% 两个特性使其有效：函数名是确定性的，相同代码路径始终产生相同栈帧；运行时调用嵌套提供聚合层次。
+Agent traces break both (\S\ref{sec:background}).
+% 智能体 trace 两者都打破了（\S\ref{sec:background}）。
+First, the core unit of agent work is a natural-language prompt, and
+two prompts expressing the same intent share no common string.
+% 第一，智能体工作的核心单元是自然语言提示词，表达相同意图的两个提示词没有共同字符串。
+Framework-level span names (\texttt{LLMCall}, \texttt{ToolInvoke})
+describe mechanisms, not semantic intent.
+% 框架级 span 名称（\texttt{LLMCall}、\texttt{ToolInvoke}）描述机制，而非语义意图。
+Second, agent events have no runtime call-stack hierarchy: prompts,
+tool calls, and system effects are not nested by execution the way
+function calls produce stack frames.
+% 第二，智能体事件没有运行时调用栈层次：提示词、工具调用和系统副作用不像函数调用那样通过执行嵌套产生栈帧。
+These are the same questions that traditional observability answered
+for deterministic software---what is the profiling unit, and where
+does the aggregation hierarchy come from---but they must be
+re-answered for natural-language-driven, non-deterministic agent
+execution.
+% 这些与传统可观测性为确定性软件回答过的问题相同——profiling 的单元是什么、聚合层次从哪来——但必须为自然语言驱动的非确定性智能体执行重新回答。
 
-%% ¶5: Key insight
-We observe that three interdependent elements restore cross-session aggregation for agent traces.
-% 我们观察到三个相互依赖的要素可以恢复智能体 trace 的跨会话聚合。
-A uniform \emph{operation} record that spans both agent intent and system effects replaces the missing call-stack sample.
-% 一个跨越智能体意图和系统副作用的统一 operation 记录替代了缺失的调用栈样本。
-A query-time \emph{operation stack} replaces the call stack with a field projection chosen at query time.
-% 查询时 operation stack 用查询时选择的字段投影替代调用栈。
-And \emph{intent recognition} restores the deterministic labels that flame-graph folding requires.
-% 而意图识别恢复了火焰图折叠所需的确定性标签。
+%% ¶5: Model
+Despite these differences, the fundamental profiling
+methodology---define units, assign stable labels, construct
+aggregation hierarchies, fold identical stacks---transfers to agent
+traces.
+% 尽管有这些差异，基本的 profiling 方法论——定义单元、赋予稳定标签、构造聚合层次、折叠相同栈——可以迁移到智能体 trace。
+We propose a \emph{semantic profiling model} with three components.
+% 我们提出一个包含三个组件的语义 profiling 模型。
+\emph{Semantic operations} are uniform records with string fields and
+additive measures that represent all agent activities---prompts, LLM
+calls, tool invocations, and system effects---without type-specific
+objects.
+% 语义 operation 是带有字符串字段和可加度量的统一记录，表示所有智能体活动——提示词、LLM 调用、工具调用和系统副作用——无需特定类型对象。
+\emph{Intent attribution} derives deterministic, low-cardinality
+labels from natural-language fields, restoring the folding
+precondition that CPU profiling obtains for free from function names.
+% 意图归因从自然语言字段派生确定性、低基数的标签，恢复 CPU profiling 从函数名免费获得的折叠前提条件。
+\emph{Profile projections} select an ordered list of fields at query
+time to construct aggregation hierarchies, replacing the runtime call
+stack.
+% Profile 投影在查询时选择字段有序列表来构造聚合层次，替代运行时调用栈。
+Different field selections answer different questions---by task
+category, by execution phase, by session, by action type---from the
+same data.
+% 不同的字段选择从同一数据回答不同问题——按任务类别、按执行阶段、按会话、按操作类型。
 
-%% ¶6: This paper + numbers
-This paper presents \sys, a Rust profiler built on this model.
-% 本文提出 \sys，一个基于此模型构建的 Rust 分析器。
-On 325 real Codex/Claude sessions, semantic labels separate over 90\% of system-effect weight that flat views merge.
-% 在 325 个真实 Codex/Claude 会话上，语义标签分离了扁平视图所混合的超过 90\% 的系统副作用权重。
-On four public datasets with hidden ground-truth labels, operation-stack profiling reduces inspection work to 9.4\% versus flat summaries.
-% 在四个具有隐藏真实标签的公开数据集上，operation stack 分析将检查工作量降至扁平摘要的 9.4\%。
-Group fragmentation drops by 45\% versus fixed-session drilldown.
-% 组碎片化比固定会话下钻减少 45\%。
+%% ¶6: This paper + system + results
+We implement this model in \sys, an offline profiler that compiles
+local agent traces into pprof-compatible profiles
+(Figure~\ref{fig:architecture}).
+% 我们在 \sys 中实现此模型，这是一个离线 profiler，将本地智能体 trace 编译为 pprof 兼容的 profile（Figure~\ref{fig:architecture}）。
+Intent attribution supports pluggable backends: regex rules for
+production use, a local LLM tagger for exploration, and unsupervised
+clustering for bootstrapping.
+% 意图归因支持可插拔后端：正则规则用于生产、本地 LLM 标注器用于探索、无监督聚类用于引导。
+On 325 real Codex and Claude sessions (183{,}714 system observations),
+semantic profiling separates over 90\% of system-effect weight that
+session-level views merge.
+% 在 325 个真实 Codex 和 Claude 会话（183,714 个系统观测）上，语义 profiling 分离了会话级视图所混合的超过 90\% 的系统副作用权重。
+On four public datasets with hidden ground-truth labels
+(34{,}539 operations), profiler-ranked groups localize labeled
+problems at 9.4\% inspection cost versus flat summaries, with 45\%
+fewer groups than fixed-session drilldown.
+% 在四个具有隐藏真实标签的公开数据集（34,539 个操作）上，profiler 排序的分组以 9.4\% 的检查成本定位标注问题，比固定会话下钻减少 45\% 的分组数。
+Label quality exceeds V-measure 0.7 on 7 of 9 held-out datasets.
+% 标签质量在 9 个保留数据集中的 7 个上超过 V-measure 0.7。
 
 %% ¶7: Contributions
 This paper makes three contributions:
 % 本文做出三项贡献：
 
 \begin{enumerate}
-\item \textbf{A profiling model} that defines a uniform operation record spanning agent intent and system effects, a query-time operation stack, and an intent-recognition step for restoring deterministic labels (\S\ref{sec:background}--\S\ref{sec:design}).
-% 一个分析模型，定义了跨越智能体意图和系统副作用的统一 operation 记录、查询时 operation stack，以及用于恢复确定性标签的意图识别步骤。
-\item \textbf{System: \sys.} A profiler that realizes this model with pluggable intent recognition (regex rules, local LLM tagging, unsupervised clustering) and produces output (pprof, SVG, JSON) consumable by both developers and automated analysis agents (\S\ref{sec:impl}).
-% 系统：\sys。一个通过可插拔意图识别（正则规则、本地 LLM 标注、无监督聚类）实现此模型的分析器，输出格式（pprof、SVG、JSON）可供开发者和自动分析智能体使用。
-\item \textbf{Evaluation via hidden-label localization.} We score profiler output against hidden ground-truth trajectory labels (failure, safety, redundancy, and human-task boundaries), analogous to injecting known bottlenecks in CPU profiler evaluation (\S\ref{sec:eval}).
-% 通过隐藏标签定位进行评估。我们将分析器输出与隐藏的真实轨迹标签（故障、安全、冗余和人工任务边界）进行评分，类似于在 CPU 分析器评估中注入已知瓶颈。
+\item \textbf{Profiling gap and semantic profiling model.}
+  We identify the missing profiling layer in agent observability and
+  propose a model covering semantic operations, intent attribution,
+  and profile projections
+  (\S\ref{sec:background}--\S\ref{sec:design}).
+% 识别智能体可观测性中缺失的 profiling 层，提出涵盖语义 operation、意图归因和 profile 投影的模型。
+\item \textbf{System: \sys.}
+  A profiler that implements this model with pluggable intent
+  attribution and pprof-compatible output (\S\ref{sec:impl}).
+% 系统：\sys。实现此模型的 profiler，具有可插拔意图归因和 pprof 兼容输出。
+\item \textbf{Hidden-label evaluation.}
+  We evaluate profiler output against hidden ground-truth trajectory
+  labels, analogous to injecting known bottlenecks in CPU profiler
+  evaluation, on 325 real sessions and 4 public datasets
+  (\S\ref{sec:eval}).
+% 隐藏标签评估。将 profiler 输出与隐藏的真实轨迹标签评分，类似于在 CPU profiler 评估中注入已知瓶颈，在 325 个真实会话和 4 个公开数据集上验证。
 \end{enumerate}
 
 %% ===================================================================
