@@ -33,6 +33,13 @@ aggregate analysis of which task categories consume the most budget,
 where failures concentrate, and which workflows trigger unsafe
 side-effects.
 % 为了提高质量、安全性和成本效率，开发者需要聚合分析哪类任务消耗最多预算、故障集中在哪里、哪些工作流触发不安全副作用。
+Systems observability calls this aggregate analysis \emph{profiling},
+and agent observability today has only the debugging layer.
+% 系统可观测性将这种聚合分析称为 profiling，而当今的智能体可观测性只有调试层。
+Existing tools organize events into per-session span trees or cluster
+inputs by topic, but none provides cross-session resource attribution
+by semantic category.
+% 现有工具将事件组织为按会话的 span 树或按主题聚类输入，但没有工具提供按语义类别的跨会话资源归因。
 The flame-graph profiling methodology that answers these questions for
 traditional software does not directly apply because agent traces lack
 deterministic identifiers and runtime call-stack hierarchies.
