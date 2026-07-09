@@ -52,11 +52,12 @@ deterministic identifiers and structural hierarchies that make
 aggregation possible.
 % 智能体行为与代码执行有根本不同。负责实体是语义类别（如任务意图和工作流阶段），而非代码路径，且智能体轨迹缺乏使聚合成为可能的确定性标识符和结构层次。
 %% S6: Model (→¶5)
-We propose a \emph{semantic operation stack model}.
+We propose the first \emph{semantic operation stack model} that
+adapts profiling to agent trajectories.
 Uniform \emph{operations} represent all agent activities, and
 \emph{operation stacks} replace the runtime call stack with
 query-time field projections that fold identical frame sequences.
-% 我们提出语义 operation stack 模型。统一的 operation 表示所有智能体活动，operation stack 用查询时字段投影替代运行时调用栈，折叠相同帧序列。
+% 我们提出首个将 profiling 适配到智能体轨迹的语义 operation stack 模型。统一的 operation 表示所有智能体活动，operation stack 用查询时字段投影替代运行时调用栈，折叠相同帧序列。
 %% S7: System (→¶6)
 \sys implements this model as a profiler with pluggable algorithms
 for \emph{intent attribution} and \emph{stack construction},
@@ -64,9 +65,9 @@ compiling local agent trajectories into pprof-compatible profiles.
 % \sys 将此模型实现为具有可插拔意图归因和栈构造算法的 profiler，将本地智能体轨迹编译为 pprof 兼容的 profile。
 %% S8: Results (→¶6)
 On real trajectories and public datasets, our evaluation shows that
-semantic profiling can help attribute cost and locate problems with
-lower cost.
-% 在真实轨迹和公开数据集上，我们的评估表明语义 profiling 能以更低成本帮助归因开销和定位问题。
+semantic profiling effectively attributes cost and locates problems
+across agent trajectories.
+% 在真实轨迹和公开数据集上，我们的评估表明语义 profiling 能有效地跨智能体轨迹归因开销和定位问题。
 \end{abstract}
 
 \maketitle
