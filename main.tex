@@ -94,15 +94,15 @@ Which categories of tasks consume the most token budget? Where do
 failures concentrate across workflows? Which behavioral patterns
 trigger unsafe system effects?
 % 为了提高智能体质量、安全性和成本效率，开发者需要跨会话分析运维行为：哪类任务消耗最多 token 预算、故障跨工作流集中在哪里、哪些行为模式触发不安全系统副作用。
-Systems observability has long distinguished this kind of aggregate
-analysis (profiling) from single-execution debugging.
-% 系统可观测性早已将这种聚合分析（profiling）与单次执行调试区分开来。
-Agent observability today has only the debugging layer.
-% 当今的智能体可观测性只有调试层。
+In traditional systems software, profiling answers these questions by
+attributing resource consumption to responsible entities by
+aggregation, as distinct from single-execution debugging and tracing.
+% 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责实体来回答这些问题，区别于单次执行调试和 tracing。
 
 %% ¶3: Existing solutions
-Existing agent observability tools do not fill this gap.
-% 现有智能体可观测性工具没有填补此缺口。
+Agent observability today has only debugging and tracing, not
+profiling.
+% 当今的智能体可观测性只有调试和 tracing，没有 profiling。
 LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse},
 Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize
 events into per-session span trees, effective for diagnosing a single
@@ -118,28 +118,29 @@ to downstream tool calls and system effects.
 % Datadog LLM Observability~\cite{datadog-llmobs} 按主题聚类用户消息，Laminar~\cite{laminar-signals} 从 trace 中提取结构化信号，但两者都刻画输入分布（"30\% 的用户提问代码问题"）而非资源归因（"review 任务消耗了 40\% 的 token 预算"），因为请求级的标签不会传播到下游工具调用和系统副作用。
 
 %% ¶4: Challenge — why traditional profiling doesn't transfer directly
-The profiling methodology is well-established for traditional
-software.
-% Profiling 方法论对传统软件已经成熟。
-Flame graphs~\cite{flamegraphs} fold identical call stacks into a
-single chart where width represents cost.
-% 火焰图~\cite{flamegraphs}将相同调用栈折叠为一张图，宽度代表开销。
-Two properties make this work.
-Function names are deterministic, so identical code paths always
-produce the same stack frames, and runtime call nesting provides the
-aggregation hierarchy.
-% 两个特性使其有效：函数名是确定性的，相同代码路径始终产生相同栈帧；运行时调用嵌套提供聚合层次。
-Agent traces break both (\S\ref{sec:background}).
-% 智能体 trace 两者都打破了（\S\ref{sec:background}）。
-First, the core unit of agent work is a natural-language prompt, and
-two prompts expressing the same intent share no common string.
+Adapting profiling to agent traces requires addressing two
+fundamental differences (\S\ref{sec:background}).
+% 将 profiling 适配到智能体 trace 需要解决两个根本差异（\S\ref{sec:background}）。
+In traditional software, the responsible entities are code paths.
+Profiling is straightforward because function names are
+deterministic and runtime call nesting provides the aggregation
+hierarchy, and flame graphs~\cite{flamegraphs} visualize the result.
+% 在传统软件中，负责实体是代码路径。Profiling 是直接的，因为函数名是确定性的，运行时调用嵌套提供聚合层次，火焰图~\cite{flamegraphs}可视化其结果。
+Agent behavior differs fundamentally.
+The responsible entities are semantic categories such as task intent
+and workflow phase, not code paths.
+% 智能体行为有根本不同。负责实体是语义类别（如任务意图和工作流阶段），而非代码路径。
+Agent traces also lack the two properties that make aggregation
+possible.
+Prompts are natural language, and two prompts expressing the same
+intent share no common string.
 Framework-level span names (\texttt{LLMCall}, \texttt{ToolInvoke})
 describe mechanisms, not semantic intent.
-% 第一，智能体工作的核心单元是自然语言提示词，表达相同意图的两个提示词没有共同字符串；框架级 span 名称（\texttt{LLMCall}、\texttt{ToolInvoke}）描述机制，而非语义意图。
-Second, agent events have no runtime call-stack hierarchy because
-prompts, tool calls, and system effects are not nested by execution
-the way function calls produce stack frames.
-% 第二，智能体事件没有运行时调用栈层次：提示词、工具调用和系统副作用不像函数调用那样通过执行嵌套产生栈帧。
+% 智能体 trace 还缺乏使聚合成为可能的两个特性。提示词是自然语言，表达相同意图的两个提示词没有共同字符串。框架级 span 名称（\texttt{LLMCall}、\texttt{ToolInvoke}）描述机制，而非语义意图。
+Agent events have no runtime call-stack hierarchy because prompts,
+tool calls, and system effects are not nested by execution the way
+function calls produce stack frames.
+% 智能体事件没有运行时调用栈层次，因为提示词、工具调用和系统副作用不像函数调用那样通过执行嵌套产生栈帧。
 
 %% ¶5: Model
 Despite these differences, the fundamental profiling
