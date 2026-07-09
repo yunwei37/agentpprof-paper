@@ -143,10 +143,12 @@ calls, tool invocations, and system effects) without type-specific
 objects.
 % Operation 是带有字符串字段和可加度量的统一记录，表示所有智能体活动（提示词、LLM 调用、工具调用和系统副作用），无需特定类型对象。
 \emph{Operation stacks} are ordered lists of fields chosen at query
-time; each operation is projected to a frame sequence, and operations
+time.
+% Operation stack 是在查询时选择的字段有序列表。
+Each operation is projected to a frame sequence, and operations
 with identical sequences merge, producing the folded-stack
 representation that flame graphs visualize.
-% Operation stack 是在查询时选择的字段有序列表；每个 operation 被投影到帧序列，具有相同序列的 operation 合并，产生火焰图可视化的折叠栈表示。
+% 每个 operation 被投影到帧序列，具有相同序列的 operation 合并，产生火焰图可视化的折叠栈表示。
 Different field selections answer different questions (by task
 category, by execution phase, by session, or by action type) from
 the same data.
@@ -244,10 +246,8 @@ Agent activities break this precondition in two ways.
 % 智能体活动从两方面打破了这一前提。
 First, prompts are natural language and lack deterministic identifiers.
 % 第一，提示词是自然语言，缺乏确定性标识符。
-Second, there is no inherent call stack.
-% 第二，不存在固有的调用栈。
-Agent events have no runtime-determined parent-child nesting analogous to function calls.
-% 智能体事件没有类似函数调用的运行时确定的父子嵌套关系。
+Second, agent events have no inherent call stack because they lack the runtime-determined parent-child nesting that function calls provide.
+% 第二，智能体事件没有固有的调用栈，因为它们缺乏函数调用提供的运行时确定的父子嵌套关系。
 Pprof's \texttt{tagroot}/\texttt{tagleaf} options add label-derived pseudo-frames to an existing execution stack, but agent activities have no execution stack to augment.
 % Pprof 的 \texttt{tagroot}/\texttt{tagleaf} 选项在已有执行栈上添加标签衍生的伪帧，但智能体活动没有执行栈可供扩展。
 
@@ -293,7 +293,7 @@ Sessions and spans must be fields, not fixed hierarchy nodes.
 \item[R3: Deterministic labels for folding.]
 Free-form prompts must be mapped to short, stable, repeatable labels before folding.
 % 自由形式的提示词必须在折叠前映射为短小、稳定、可重复的标签。
-This \emph{intent recognition} step has no analogue in CPU profiling, where function names are already deterministic.
+This \emph{intent attribution} step has no analogue in CPU profiling, where function names are already deterministic.
 % 这一意图识别步骤在 CPU 性能分析中没有对应物，因为函数名已经是确定性的。
 \end{description}
 
@@ -304,80 +304,69 @@ This \emph{intent recognition} step has no analogue in CPU profiling, where func
 
 The three requirements (a uniform record type, query-time aggregation, and deterministic labels for folding) drive the design.
 % 三个需求（统一记录类型、查询时聚合和用于折叠的确定性标签）驱动了设计。
-The semantic operation stack model has two components: operations (\S\ref{sec:ops}) and operation stacks (\S\ref{sec:stacks}), satisfying R1 and R2.
-% 语义 operation stack 模型有两个组件：operation（\S\ref{sec:ops}）和 operation stack（\S\ref{sec:stacks}），满足 R1 和 R2。
-Two pluggable algorithm frameworks enrich the model: intent attribution (\S\ref{sec:intent}) satisfies R3 by deriving deterministic labels, and stack construction (\S\ref{sec:stacks}) builds aggregation hierarchies from available fields.
-% 两个可插拔算法框架丰富此模型：意图归因（\S\ref{sec:intent}）通过派生确定性标签满足 R3，栈构造（\S\ref{sec:stacks}）从可用字段构建聚合层次。
+The semantic operation stack model has two components, operations (\S\ref{sec:ops}) and operation stacks (\S\ref{sec:stacks}), satisfying R1 and R2.
+% 语义 operation stack 模型有两个组件——operation（\S\ref{sec:ops}）和 operation stack（\S\ref{sec:stacks}）——满足 R1 和 R2。
+Two pluggable algorithm frameworks enrich the model. Intent attribution (\S\ref{sec:intent}) satisfies R3 by deriving deterministic labels, and stack construction (\S\ref{sec:stacks}) builds aggregation hierarchies from available fields.
+% 两个可插拔算法框架丰富此模型。意图归因（\S\ref{sec:intent}）通过派生确定性标签满足 R3，栈构造（\S\ref{sec:stacks}）从可用字段构建聚合层次。
 The profiling pipeline has five stages: (1)~parse raw traces into operations, (2)~enrich operations via intent attribution or mapping rules, (3)~filter by a user-specified predicate, (4)~project each operation onto a stack frame sequence chosen at query time, and (5)~fold operations with identical stacks, summing their weights.
 % 分析管线有五个阶段：(1) 将原始 trace 解析为 operation，(2) 通过意图归因或映射规则丰富 operation，(3) 按用户指定的谓词过滤，(4) 将每个 operation 投影到查询时选择的栈帧序列上，(5) 折叠具有相同栈的 operation 并求和权重。
 
-\subsection{Operations (R1: Uniform Record Type)}
-% Operation（R1：统一记录类型）
+\subsection{Semantic Operation Stack Model}
+% 语义 Operation Stack 模型
 \label{sec:ops}
 
-Because agent activities span both the intent and system-effect layers described in \S\ref{sec:background}, a profiler should not distinguish between them at the object-model level.
+%% ¶1: Operations
+Because agent activities span both the intent and system-effect
+layers described in \S\ref{sec:background}, a profiler should not
+distinguish between them at the object-model level.
 % 由于智能体活动跨越 \S\ref{sec:background} 中描述的意图层和系统副作用层，分析器不应在对象模型层面区分它们。
-\sys therefore represents every activity as a single abstraction, the \operation, a weighted record with string fields and additive measures.
+\sys therefore represents every activity as a single abstraction, the
+\operation, a weighted record with string fields and additive
+measures.
 % 因此 \sys 将每个活动表示为单一抽象——operation，一个带有字符串字段和可加度量的加权记录。
-
-Each operation carries string fields (\texttt{project}, \texttt{agent}, \texttt{session}, \texttt{prompt\_tag}, \texttt{kind}, \texttt{model}, \texttt{path}, \texttt{domain}, \texttt{status}, \ldots) and additive measures (token count, duration, occurrence count).
+Each operation carries string fields (\texttt{project},
+\texttt{agent}, \texttt{session}, \texttt{prompt\_tag},
+\texttt{kind}, \texttt{model}, \texttt{path}, \texttt{domain},
+\texttt{status}, \ldots) and additive measures (token count,
+duration, occurrence count).
 % 每个 operation 携带字符串字段（\texttt{project}、\texttt{agent}、\texttt{session}、\texttt{prompt\_tag}、\texttt{kind}、\texttt{model}、\texttt{path}、\texttt{domain}、\texttt{status} 等）和可加度量（token 数、持续时间、出现次数）。
-A prompt, an LLM call, a tool invocation, a file read, a GUI click, and a process event are all operation records that differ only in which fields are populated.
+A prompt, an LLM call, a tool invocation, a file read, a GUI click,
+and a process event are all operation records that differ only in
+which fields are populated.
 % 提示词、LLM 调用、工具调用、文件读取、GUI 点击和进程事件都是 operation 记录，仅在填充的字段上有所不同。
 
-\subsection{Operation Stacks (R2: Query-Time Aggregation)}
-% Operation Stack（R2：查询时聚合）
+%% ¶2: Operation Stacks
 \label{sec:stacks}
-
 An \opstack is an ordered list of fields chosen at query time.
 % 一个 operation stack 是在查询时选择的字段有序列表。
-Given a stack specification $[f_1, f_2, \ldots, f_k]$, each operation $o$ is projected to a frame sequence $\langle o.f_1, o.f_2, \ldots, o.f_k \rangle$.
+Given a stack specification $[f_1, f_2, \ldots, f_k]$, each
+operation $o$ is projected to a frame sequence
+$\langle o.f_1, o.f_2, \ldots, o.f_k \rangle$.
 % 给定栈规范 $[f_1, f_2, \ldots, f_k]$，每个 operation $o$ 被投影到帧序列 $\langle o.f_1, o.f_2, \ldots, o.f_k \rangle$。
-Operations with identical frame sequences are merged and their weights are summed.
+Operations with identical frame sequences are merged and their
+weights are summed.
 % 具有相同帧序列的 operation 被合并，权重求和。
-The result is the standard folded-stack representation:
-% 结果是标准的折叠栈表示：
-
-\begin{small}
-\begin{verbatim}
-CPU:   main;parse;tokenize          42
-Agent: prompt:debug;call:llm;tool:bash  4200
-\end{verbatim}
-\end{small}
-
-\noindent Unlike CPU profiling, where the call stack is determined by execution, the stack is determined by the query.
+Unlike CPU profiling, where the call stack is determined by
+execution, the stack is determined by the query.
 % 与 CPU 分析中调用栈由执行决定不同，这里的栈由查询决定。
-The same operations can be folded as a flat task summary, a fixed-session tree, a semantic phase/action hierarchy, or a dataset-native trajectory.
-% 同一组 operation 可以折叠为扁平任务摘要、固定会话树、语义阶段/操作层次或数据集原生轨迹。
-Changing the fields changes the aggregation without changing the data.
-% 改变字段即改变聚合方式，而无需改变数据。
-Failure, safety, and quality labels are ordinary fields that participate in the same projection, so the profiler handles diagnostic views without a separate mechanism.
-% 故障、安全和质量标签是普通字段，参与相同的投影，因此分析器无需单独机制即可处理诊断视图。
-
-Choosing different field selections for the operation stack directly addresses the fixed-hierarchy problem from \S\ref{sec:background}.
-% 为 operation stack 选择不同字段直接解决了 \S\ref{sec:background} 中的固定层次问题。
-Sessions and spans are optional operation fields, not structural skeleton nodes.
-% 会话和 span 是可选的 operation 字段，而非结构性骨架节点。
-Including \texttt{session} in the stack produces a per-session drilldown (equivalent to a trace tree).
-% 在栈中包含 \texttt{session} 会产生按会话下钻（等同于 trace 树）。
-Excluding it produces an aggregate view that existing trace tools do not natively support.
-% 排除它则产生现有 trace 工具不原生支持的聚合视图。
-The same data supports both debugging and profiling views.
-% 同一数据同时支持调试和分析视图。
-
-A \emph{view} is a triple $(\varphi, \sigma, w)$: a predicate $\varphi$ selects which operations participate, a stack function $\sigma = [f_1, \ldots, f_k]$ maps each operation to its frame sequence, and a weight function $w$ assigns a nonnegative measure.
+The same operations can be folded as a flat task summary, a
+fixed-session tree, a semantic phase/action hierarchy, or a
+dataset-native trajectory, and changing the fields changes the
+aggregation without changing the data.
+% 同一组 operation 可以折叠为扁平任务摘要、固定会话树、语义阶段/操作层次或数据集原生轨迹，改变字段即改变聚合方式而无需改变数据。
+Sessions and spans are optional operation fields, not structural
+skeleton nodes, so the same data supports both debugging views
+(include \texttt{session}) and aggregate profiling views (exclude
+it).
+% 会话和 span 是可选的 operation 字段而非结构性骨架节点，因此同一数据既支持调试视图（包含 \texttt{session}）也支持聚合 profiling 视图（排除它）。
+A \emph{view} is a triple $(\varphi, \sigma, w)$: a predicate
+$\varphi$ selects which operations participate, a stack function
+$\sigma = [f_1, \ldots, f_k]$ maps each operation to its frame
+sequence, and a weight function $w$ assigns a nonnegative measure.
 % 一个视图是三元组 $(\varphi, \sigma, w)$：谓词 $\varphi$ 选择参与的 operation，栈函数 $\sigma = [f_1, \ldots, f_k]$ 将每个 operation 映射到其帧序列，权重函数 $w$ 赋予非负度量。
-The view formalism supports arbitrary user-defined views.
-% 视图形式化支持任意用户自定义视图。
-Four built-in defaults (Table~\ref{tab:views}) answer common questions.
+Four built-in defaults (Table~\ref{tab:views}) answer common
+questions.
 % 四个内置默认视图（Table~\ref{tab:views}）回答常见问题。
-
-When a user does not supply a field chain, \sys can \emph{induce} operation stacks automatically by scoring adjacent operations for semantic shifts, field changes, and partition coherence, then cutting at boundaries where the evidence is strongest.
-% 当用户不提供字段链时，\sys 可以通过对相邻 operation 评分语义转移、字段变化和分区一致性来自动诱导 operation stack，然后在证据最强的边界处切分。
-The induced stacks have variable depth (the same field may recur at different recursive levels), and a configurable depth cap controls the granularity.
-% 诱导的栈具有可变深度（同一字段可在不同递归层级重复出现），可配置的深度上限控制粒度。
-This mode produces coarser groups than hand-specified stacks but requires no domain knowledge, making it useful for initial exploration (\S\ref{sec:eval}).
-% 此模式产生比手动指定栈更粗的分组，但不需要领域知识，适用于初始探索（\S\ref{sec:eval}）。
 
 \begin{table}[t]
 \centering\small
@@ -403,68 +392,62 @@ View & $\varphi$ (select) & $w$ (width) & Question \\
 \texttt{agent-session} parsing. Public datasets enter as operation JSONL.
 Both paths produce operations. The stack query and output are identical.}
 \Description{Data flow from agent traces through parsing and intent
-recognition to folded-stack flame graphs.}
+attribution to folded-stack flame graphs.}
 \label{fig:architecture}
 \end{figure}
 
-\subsection{Intent Recognition (R3: Deterministic Labels)}
-% 意图识别（R3：确定性标签）
+\subsection{Algorithms}
+% 算法
 \label{sec:intent}
 
-Operations and stacks handle heterogeneity and flexible aggregation, but folding still requires deterministic frame labels, the precondition that agent prompts violate (\S\ref{sec:background}).
-% Operation 和 stack 处理了异构性和灵活聚合，但折叠仍需要确定性帧标签，而这正是智能体提示词所违反的前提（\S\ref{sec:background}）。
-\sys solves this by mapping free-form prompts to short, stable labels before stack construction.
-% \sys 通过在栈构建之前将自由形式的提示词映射为短小、稳定的标签来解决此问题。
+%% ¶1: Intent Attribution
+Two pluggable algorithm frameworks enrich the model.
+% 两个可插拔算法框架丰富此模型。
+\emph{Intent attribution} maps free-form prompts to short, stable,
+deterministic labels, restoring the folding precondition that agent
+prompts violate (\S\ref{sec:background}).
+% 意图归因将自由形式的提示词映射为短小、稳定、确定性的标签，恢复智能体提示词所违反的折叠前提条件（\S\ref{sec:background}）。
+The framework supports three pluggable backends.
+% 该框架支持三种可插拔后端。
+\emph{Regex rules} are the production default: rules have the form
+\texttt{KIND:TAG=REGEX}, are evaluated in order (first match wins),
+and the developer iterates with \sys until the unmatched rate drops
+below 5\%, typically in 5--10 rounds.
+% 正则规则是生产环境默认：规则格式为 \texttt{KIND:TAG=REGEX}，按顺序求值（首个匹配胜出），开发者与 \sys 迭代直到未匹配率降至 5\% 以下，通常需要 5--10 轮。
+A \emph{local LLM tagger} (e.g., a 3B-parameter GGUF via llama.cpp)
+generates a single-word label per prompt with grammar-constrained
+decoding and caching.
+% 本地 LLM 标注器（如通过 llama.cpp 运行的 3B 参数 GGUF）通过语法约束解码和缓存为每个提示词生成单词标签。
+\emph{Unsupervised clustering} via TF-IDF and K-Means discovers
+natural prompt groups without predefined rules, feeding rule
+authoring.
+% 通过 TF-IDF 和 K-Means 的无监督聚类在没有预定义规则的情况下发现自然提示词分组，为规则编写提供输入。
+For structured traces where action types and quality annotations are
+explicit fields, \emph{mapping rules} derive new fields from existing
+ones (e.g., \texttt{phase:navigate=type:(click|scroll|key)}).
+% 对于操作类型和质量标注是显式字段的结构化 trace，映射规则从现有字段派生新字段（如 \texttt{phase:navigate=type:(click|scroll|key)}）。
+All backends are pluggable, and a \emph{profile spec} records the
+complete analysis configuration for deterministic replay.
+% 所有后端都是可插拔的，profile spec 记录完整的分析配置以实现确定性重放。
 
-The design uses a pluggable tagger framework with three backends.
-% 设计采用可插拔的标注器框架，有三种后端。
-First, \emph{regex rules} are the production default.
-% 第一，正则规则是生产环境的默认选项。
-Rules have the form \texttt{KIND:TAG=REGEX}, where \texttt{KIND} is \texttt{prompt}, \texttt{llm}, or \texttt{all}, \texttt{TAG} is a short lowercase label, and \texttt{REGEX} is a pattern.
-% 规则格式为 \texttt{KIND:TAG=REGEX}，其中 \texttt{KIND} 为 \texttt{prompt}、\texttt{llm} 或 \texttt{all}，\texttt{TAG} 是短小写标签，\texttt{REGEX} 是模式。
-Rules are evaluated in order, and the first match wins.
-% 规则按顺序求值，首个匹配胜出。
-Humans and agents collaborate on the workflow.
-% 人和智能体协作完成工作流。
-The developer runs \sys, observes the unmatched rate and sample prompts, adds rules, re-runs, and iterates until unmatched drops below 5\%.
-% 开发者运行 \sys，观察未匹配率和样本提示词，添加规则，重新运行，迭代直到未匹配率降至 5\% 以下。
-This typically takes 5--10 rounds.
-% 这通常需要 5--10 轮。
-The resulting rule set is deterministic, reproducible, and version-controllable.
-% 最终的规则集是确定性的、可重现的、可版本控制的。
-Second, a \emph{local LLM tagger} handles exploration or complex multilingual prompts.
-% 第二，本地 LLM 标注器处理探索性或复杂多语言提示词。
-A local model (e.g., a 3B-parameter GGUF via llama.cpp) generates a single-word label per prompt.
-% 本地模型（如通过 llama.cpp 运行的 3B 参数 GGUF）为每个提示词生成单词标签。
-Grammar-constrained decoding ensures output validity.
-% 语法约束解码确保输出有效性。
-Labels are cached, so re-runs with unchanged prompts incur zero LLM calls.
-% 标签被缓存，因此对未变更提示词的重新运行不产生 LLM 调用。
-Third, \emph{unsupervised clustering} via TF-IDF vectorization and K-Means discovers natural prompt groups without predefined rules, feeding rule authoring.
-% 第三，通过 TF-IDF 向量化和 K-Means 的无监督聚类在没有预定义规则的情况下发现自然提示词分组，为规则编写提供输入。
-
-The one-word label design is deliberate.
-% 单词标签设计是有意为之的。
-Flame-graph frames must be short because long summaries make charts unreadable.
-% 火焰图帧必须短小，因为长摘要会使图表不可读。
-Labels serve navigation and aggregation, not correctness verdicts.
-% 标签服务于导航和聚合，而非正确性判定。
-
-For structured traces such as public benchmark datasets, where action types, tool names, and quality annotations are explicit fields, intent recognition is unnecessary.
-% 对于公开基准数据集等结构化 trace，其中操作类型、工具名和质量标注是显式字段，意图识别是不必要的。
-\sys supports deterministic \emph{mapping rules} that derive new operation fields from existing ones before stack construction.
-% \sys 支持确定性映射规则，在栈构建之前从现有字段派生新的 operation 字段。
-For example, the rule \texttt{phase:navigate=type:(click|scroll|key)} maps raw action types to a coarser \texttt{phase} field, enabling cross-dataset aggregation without modifying the input.
-% 例如，规则 \texttt{phase:navigate=type:(click|scroll|key)} 将原始操作类型映射到更粗粒度的 \texttt{phase} 字段，无需修改输入即可实现跨数据集聚合。
-
-The intent-recognition and mapping-rule paths are both pluggable.
-% 意图识别和映射规则路径都是可插拔的。
-New backends (e.g., embedding-based classifiers, external LLM APIs, or domain-specific heuristics) can be added without changing the operation or stack abstractions.
-% 新后端（如基于 embedding 的分类器、外部 LLM API 或领域特定启发式）可以在不改变 operation 或 stack 抽象的情况下添加。
-A \emph{profile spec} records the complete analysis configuration (data sources, backend choice, mappings, predicates, stack fields, and outputs) for deterministic replay.
-% Profile spec 记录完整的分析配置（数据源、后端选择、映射、谓词、栈字段和输出）以实现确定性重放。
-Both paths produce operations with fields, and the stack query works identically on both.
-% 两条路径都产生带字段的 operation，栈查询在两者上的工作方式完全相同。
+%% ¶2: Stack Construction
+\emph{Stack construction} builds aggregation hierarchies from
+available fields.
+% 栈构造从可用字段构建聚合层次。
+When users supply a field chain, the projection is direct.
+% 当用户提供字段链时，投影是直接的。
+When no chain is supplied, \sys can \emph{induce} operation stacks
+automatically by scoring adjacent operations for semantic shifts,
+field changes, and partition coherence, then cutting at boundaries
+where the evidence is strongest.
+% 当不提供字段链时，\sys 可以通过对相邻 operation 评分语义转移、字段变化和分区一致性来自动诱导 operation stack，然后在证据最强的边界处切分。
+The induced stacks have variable depth, and a configurable depth cap
+controls the granularity.
+% 诱导的栈具有可变深度，可配置的深度上限控制粒度。
+This mode produces coarser groups than hand-specified stacks but
+requires no domain knowledge, making it useful for initial
+exploration (\S\ref{sec:eval}).
+% 此模式产生比手动指定栈更粗的分组，但不需要领域知识，适用于初始探索（\S\ref{sec:eval}）。
 
 %% ===================================================================
 \section{Implementation}
@@ -908,13 +891,13 @@ These systems perform \emph{span-level} or \emph{step-level} fault localization 
 
 Agent observability needs profiling, not only debugging.
 % 智能体可观测性需要性能分析，不仅仅是调试。
-\sys shows that two abstractions, operations and operation stacks, close the aggregation problem once intent recognition restores deterministic labels.
-% \sys 表明，一旦意图识别恢复了确定性标签，operation 和 operation stack 这两个抽象即可解决聚合问题。
+\sys shows that the semantic operation stack model, combined with pluggable intent attribution and stack construction algorithms, closes the aggregation gap for agent traces.
+% \sys 表明，语义 operation stack 模型结合可插拔的意图归因和栈构造算法，填补了智能体 trace 的聚合缺口。
 Scoring profiler output against hidden trajectory labels confirms that semantic profiling separates over 90\% of mixed system-effect weight, localizes labeled problems at 9.4\% inspection cost versus flat summaries, and produces labels that agree with ground truth on 7/9 held-out datasets.
 % 将分析器输出与隐藏轨迹标签评分确认，语义分析分离了超过 90\% 的混合系统副作用权重，以扁平摘要 9.4\% 的检查成本定位标注问题，并在 7/9 保留数据集上产生与真实标签一致的标签。
 Fixed-session drilldown remains faster to a first positive on 4/6 tasks, confirming that profilers and debuggers are complementary, and \sys supports both by including or excluding session fields in the stack query.
 % 固定会话下钻在 4/6 任务上更快找到首个正例，确认分析器和调试器是互补的，\sys 通过在栈查询中包含或排除会话字段同时支持两者。
-The main limitations are single-project real-session data and placeholder intent-recognition quality on free-form prompts.
+The main limitations are single-project real-session data and placeholder intent-attribution quality on free-form prompts.
 % 主要局限是单项目真实会话数据和自由形式提示词上的占位符意图识别质量。
 Multi-project evaluation and trace-ecosystem integration are the most impactful next steps.
 % 多项目评估和 trace 生态系统集成是最有影响力的下一步。
