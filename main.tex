@@ -24,26 +24,22 @@
 \title{AgentProf: Semantic Profiling for AI Agents}
 
 \begin{abstract}
-AI agents now orchestrate complex, multi-step activities across
-hundreds of sessions in production deployments, and developers need
-aggregate views to answer operational questions: where does the token
-budget go by task category, where do failures concentrate, and which
-workflows waste effort.
-% AI 智能体如今在生产部署中编排跨数百个会话的复杂多步骤活动，开发者需要聚合视图来回答运维问题：token 预算按任务类别花在了哪里、故障集中在哪里、哪些工作流浪费了算力。
-Existing observability tools provide per-session debugging views but
-no cross-session profiling layer.
-% 现有可观测性工具提供按会话的调试视图，但没有跨会话的 profiling 层。
-The profiling methodology that answers these questions for traditional
-software---fold identical call stacks into flame graphs---does not
-directly apply because agent activities lack deterministic identifiers
-and runtime call-stack hierarchies.
-% 为传统软件回答这些问题的 profiling 方法论——将相同调用栈折叠为火焰图——不能直接适用，因为智能体活动缺乏确定性标识符和运行时调用栈层次。
-We propose a semantic profiling model that adapts this methodology:
-all activities are represented as uniform \emph{semantic operations},
-\emph{intent attribution} derives deterministic labels from
-natural-language fields, and \emph{profile projections} construct
-aggregation hierarchies from field selections at query time.
-% 我们提出一个语义 profiling 模型来适配此方法论：所有活动表示为统一的语义 operation，意图归因从自然语言字段派生确定性标签，profile 投影在查询时从字段选择构造聚合层次。
+AI agents orchestrate multi-step activities across hundreds of
+sessions, but existing observability tools provide only per-session
+debugging views with no cross-session profiling layer.
+% AI 智能体跨数百个会话编排多步骤活动，但现有可观测性工具仅提供按会话的调试视图，没有跨会话的 profiling 层。
+Developers cannot answer aggregate questions---which task categories
+consume the most token budget, where failures concentrate, or which
+workflows trigger unsafe side-effects---without manually inspecting
+individual sessions.
+% 开发者无法回答聚合问题——哪类任务消耗最多 token 预算、故障集中在哪里、哪些工作流触发不安全副作用——除非逐个检查单个会话。
+We propose a \emph{semantic profiling model} that adapts the
+flame-graph methodology to agent traces: uniform \emph{semantic
+operations} represent all activities, \emph{intent attribution}
+derives deterministic labels from natural-language fields, and
+\emph{profile projections} construct aggregation hierarchies from
+field selections at query time.
+% 我们提出一个语义 profiling 模型，将火焰图方法论适配到智能体 trace：统一的语义 operation 表示所有活动，意图归因从自然语言字段派生确定性标签，profile 投影在查询时从字段选择构造聚合层次。
 \sys implements this model as a profiler that compiles local agent
 traces into pprof-compatible profiles with pluggable
 intent-attribution backends.
@@ -64,38 +60,37 @@ fewer groups than fixed-session drilldown.
 \section{Introduction}
 \label{sec:intro}
 
-%% ¶1: Context
-AI agents have evolved from short, scripted workflows into complex,
-open-ended systems that run for hours, generating thousands of
-interactions per session.
-% AI 智能体已从短小的脚本化工作流进化为复杂的开放式系统，运行数小时，每次会话产生数千次交互。
-In production, teams accumulate hundreds of sessions over weeks or
-months.
-% 在生产环境中，团队在数周或数月内积累数百个会话。
+%% ¶1: Background + context
+AI agents orchestrate multi-step activities that span two
+layers: high-level intent (prompts, LLM calls, tool invocations) and
+low-level system effects (process spawns, file and network I/O).
+% AI 智能体编排跨越两层的多步骤活动：高层意图（提示词、LLM 调用、工具调用）和低层系统副作用（进程创建、文件和网络 I/O）。
+As agents evolve from short, scripted workflows into complex systems
+that run for hours, production teams accumulate hundreds of sessions
+over weeks or months.
+% 随着智能体从短小的脚本化工作流进化为运行数小时的复杂系统，生产团队在数周或数月内积累数百个会话。
 
 %% ¶2: Problem
-Developers need aggregate views to answer operational questions: which
-categories of tasks consume the most token budget? Where do failures
-concentrate across workflows? Which behavioral patterns trigger
-excessive or unsafe system side-effects?
-% 开发者需要聚合视图来回答运维问题：哪类任务消耗最多 token 预算？故障跨工作流集中在哪里？哪些行为模式触发了过多或不安全的系统副作用？
-Today, a team facing hundreds of sessions has no tool that answers
-``review tasks consume 40\% of the token budget'' or ``unsafe
-operations cluster in debugging phases.''
-% 如今，面对数百个会话的团队没有工具能回答"review 任务消耗了 40\% 的 token 预算"或"不安全操作集中在 debugging 阶段"。
-The only option is manual inspection of individual sessions.
-% 唯一的选择是逐个检查单个会话。
-
-%% ¶3: Existing work + gap
-Systems observability has long distinguished debugging from profiling.
-% 系统可观测性早已区分调试与 profiling。
-Debugging inspects a single execution to find a specific fault.
-% 调试检查单次执行以定位特定故障。
-Profiling aggregates across executions to answer ``where does the
+However, no existing tool provides cross-session aggregate views by
+semantic category.
+% 然而，没有现有工具能按语义类别提供跨会话聚合视图。
+Developers need to answer operational questions---which categories of
+tasks consume the most token budget, where failures concentrate across
+workflows, and which behavioral patterns trigger unsafe system
+side-effects---but the only option today is manual inspection of
+individual sessions.
+% 开发者需要回答运维问题——哪类任务消耗最多 token 预算、故障跨工作流集中在哪里、哪些行为模式触发不安全系统副作用——但目前唯一的选择是逐个检查单个会话。
+The gap is the distinction between debugging and profiling:
+debugging inspects a single execution to find a fault, while
+profiling aggregates across executions to answer ``where does the
 cost go?''
-% Profiling 跨执行聚合以回答"开销花在了哪里？"
+% 这个缺口就是调试与 profiling 的区别：调试检查单次执行以定位故障，而 profiling 跨执行聚合以回答"开销花在了哪里？"
 Agent observability today has only the debugging layer.
 % 当今的智能体可观测性只有调试层。
+
+%% ¶3: Existing solutions
+Existing agent observability tools do not fill this gap.
+% 现有智能体可观测性工具没有填补此缺口。
 LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse},
 Phoenix~\cite{phoenix}, and OpenTelemetry GenAI~\cite{otel} organize
 events into per-session span trees, effective for diagnosing a single
@@ -109,10 +104,8 @@ distributions} (``30\% of users ask code questions'') rather than
 token budget''), because labels at the request level do not propagate
 to downstream tool calls and system effects.
 % Datadog LLM Observability~\cite{datadog-llmobs} 按主题聚类用户消息，Laminar~\cite{laminar-signals} 从 trace 中提取结构化信号，但两者都刻画输入分布（"30\% 的用户提问代码问题"）而非资源归因（"review 任务消耗了 40\% 的 token 预算"），因为请求级的标签不会传播到下游工具调用和系统副作用。
-Agent observability lacks a profiling layer.
-% 智能体可观测性缺少 profiling 层。
 
-%% ¶4: Why hard
+%% ¶4: Root cause — why traditional profiling doesn't transfer directly
 The profiling methodology is well-established for traditional
 software.
 % Profiling 方法论对传统软件已经成熟。
@@ -126,21 +119,14 @@ call nesting provides the aggregation hierarchy.
 Agent traces break both (\S\ref{sec:background}).
 % 智能体 trace 两者都打破了（\S\ref{sec:background}）。
 First, the core unit of agent work is a natural-language prompt, and
-two prompts expressing the same intent share no common string.
-% 第一，智能体工作的核心单元是自然语言提示词，表达相同意图的两个提示词没有共同字符串。
-Framework-level span names (\texttt{LLMCall}, \texttt{ToolInvoke})
+two prompts expressing the same intent share no common string;
+framework-level span names (\texttt{LLMCall}, \texttt{ToolInvoke})
 describe mechanisms, not semantic intent.
-% 框架级 span 名称（\texttt{LLMCall}、\texttt{ToolInvoke}）描述机制，而非语义意图。
+% 第一，智能体工作的核心单元是自然语言提示词，表达相同意图的两个提示词没有共同字符串；框架级 span 名称（\texttt{LLMCall}、\texttt{ToolInvoke}）描述机制，而非语义意图。
 Second, agent events have no runtime call-stack hierarchy: prompts,
 tool calls, and system effects are not nested by execution the way
 function calls produce stack frames.
 % 第二，智能体事件没有运行时调用栈层次：提示词、工具调用和系统副作用不像函数调用那样通过执行嵌套产生栈帧。
-These are the same questions that traditional observability answered
-for deterministic software---what is the profiling unit, and where
-does the aggregation hierarchy come from---but they must be
-re-answered for natural-language-driven, non-deterministic agent
-execution.
-% 这些与传统可观测性为确定性软件回答过的问题相同——profiling 的单元是什么、聚合层次从哪来——但必须为自然语言驱动的非确定性智能体执行重新回答。
 
 %% ¶5: Model
 Despite these differences, the fundamental profiling
@@ -378,6 +364,13 @@ The view formalism supports arbitrary user-defined views.
 Four built-in defaults (Table~\ref{tab:views}) answer common questions.
 % 四个内置默认视图（Table~\ref{tab:views}）回答常见问题。
 
+When a user does not supply a field chain, \sys can \emph{induce} operation stacks automatically by scoring adjacent operations for semantic shifts, field changes, and partition coherence, then cutting at boundaries where the evidence is strongest.
+% 当用户不提供字段链时，\sys 可以通过对相邻 operation 评分语义转移、字段变化和分区一致性来自动诱导 operation stack，然后在证据最强的边界处切分。
+The induced stacks have variable depth (the same field may recur at different recursive levels), and a configurable depth cap controls the granularity.
+% 诱导的栈具有可变深度（同一字段可在不同递归层级重复出现），可配置的深度上限控制粒度。
+This mode produces coarser groups than hand-specified stacks but requires no domain knowledge, making it useful for initial exploration (\S\ref{sec:eval}).
+% 此模式产生比手动指定栈更粗的分组，但不需要领域知识，适用于初始探索（\S\ref{sec:eval}）。
+
 \begin{table}[t]
 \centering\small
 \caption{Built-in views. Each shares the same operation set
@@ -487,6 +480,8 @@ Standard Chrome Trace Event format can also be imported, with non-\sys protocol 
 
 Output formats include pprof protobuf (compatible with \texttt{go tool pprof -http}), folded-stack text (compatible with \texttt{flamegraph.pl}), standalone SVG flame graphs, and JSON summaries.
 % 输出格式包括 pprof protobuf（兼容 \texttt{go tool pprof -http}）、折叠栈文本（兼容 \texttt{flamegraph.pl}）、独立 SVG 火焰图和 JSON 摘要。
+Operations can also be exported as standard Chrome Trace Event JSON and re-imported with byte-identical folded output, enabling interoperability with trace viewers such as Perfetto.
+% Operation 也可以导出为标准 Chrome Trace Event JSON 并重新导入，折叠输出字节相同，支持与 Perfetto 等 trace 查看器的互操作。
 All outputs are deterministic given the same input and profile spec.
 % 在相同输入和 profile spec 下，所有输出都是确定性的。
 
@@ -598,6 +593,13 @@ The \texttt{time} and \texttt{tokens} views of the same sessions share only 7/10
 % 同一会话的 \texttt{time} 和 \texttt{tokens} 视图仅共享 7/10 的顶级提示词类别（Spearman $\rho = 0.623$）。
 \texttt{network}-tagged prompts rank 8th by time (I/O wait) but 93rd by tokens.
 % \texttt{network} 标记的提示词按时间排第 8（I/O 等待）但按 token 排第 93。
+
+When no field chain is provided, the automatic stack-induction mode (\S\ref{sec:stacks}) produces useful groups without domain knowledge.
+% 当不提供字段链时，自动栈诱导模式（\S\ref{sec:stacks}）无需领域知识即可产生有用的分组。
+On the same six hidden-label tasks used in RQ2, induced stacks produce a median of 12 groups (versus 285 for fixed-session drilldown and 1 for flat summaries), with 4/6 tasks generating variable-depth stacks.
+% 在 RQ2 使用的同样六个隐藏标签任务上，诱导栈产生中位 12 个分组（固定会话下钻 285 个，扁平摘要 1 个），4/6 任务生成可变深度栈。
+The induced stacks achieve lower AP than hand-configured stacks (median 0.276 vs 0.312) because they use only visible fields, but they reduce inspection work to a median of 65.3\% versus flat summaries without requiring any user configuration.
+% 诱导栈的 AP 低于手动配置栈（中位 0.276 vs 0.312），因为它们仅使用可见字段，但将检查工作量降至扁平摘要的 65.3\%，无需任何用户配置。
 
 Figure~\ref{fig:rq1-separation} visualizes the ablation.
 % Figure~\ref{fig:rq1-separation} 可视化了消融实验。
@@ -724,6 +726,13 @@ Statistical validation supports these comparisons.
 Bootstrap (10{,}000 resamples) and label-permutation (2{,}000 trials) confirm that the AP differences are stable and exceed the 95\% confidence threshold on all six tasks.
 % Bootstrap（10,000 次重采样）和标签置换（2,000 次试验）确认 AP 差异在所有六个任务上是稳定的，且超过 95\% 置信阈值。
 
+Stack depth is an actionable configuration parameter, not a fixed choice.
+% 栈深度是一个可操作的配置参数，而非固定选择。
+Sweeping the induced-stack depth cap from 1 to 5 on the same six tasks, AP peaks at depth 3 (median 0.287) while inspection work is lowest at depth 5 (median 0.473).
+% 在同样六个任务上将诱导栈深度上限从 1 扫到 5，AP 在深度 3 时达到峰值（中位 0.287），而检查工作量在深度 5 时最低（中位 0.473）。
+Different tasks achieve their best AP at different depths (2, 3, 4, and 5), confirming that depth should be tuned per objective rather than fixed globally.
+% 不同任务在不同深度（2、3、4 和 5）达到最佳 AP，确认深度应按目标调整而非全局固定。
+
 Beyond localization, we test whether profiler output suggests concrete configuration improvements.
 % 除定位外，我们还测试分析器输出是否建议具体的配置改进。
 We modify stack fields, mapping rules, or rankers in the profile spec and re-run on the same operations.
@@ -823,6 +832,8 @@ All results are backed by profile specs for deterministic replay.
 % 所有结果都有 profile spec 支持确定性重放。
 We re-execute 76 tracked specs twice (152 invocations), and all produce identical output with median runtime 1.6\,s per spec.
 % 我们重新执行 76 个跟踪的 spec 两次（152 次调用），全部产生相同输出，中位运行时间每 spec 1.6 秒。
+The full profile-spec composition path (operation files, query predicates, rank rules, and stack depth) stays deterministic across all 12 tested configuration variants.
+% 完整的 profile spec 组合路径（operation 文件、查询谓词、排名规则和栈深度）在所有 12 个测试的配置变体中保持确定性。
 
 %% ===================================================================
 \section{Related Work}
