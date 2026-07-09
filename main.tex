@@ -197,25 +197,25 @@ Two pluggable algorithm frameworks enrich the model.
 % 两个可插拔算法框架丰富此模型。
 \emph{Intent attribution} derives deterministic, low-cardinality labels from natural-language fields via regex rules, a local LLM tagger, or unsupervised clustering.
 % 意图归因通过正则规则、本地 LLM 标注器或无监督聚类从自然语言字段派生确定性、低基数的标签。
-This restores the folding precondition that CPU profiling obtains for free from function names.
-% 这恢复了 CPU profiling 从函数名免费获得的折叠前提条件。
+This gives agents the stable labels that traditional profiling gets
+for free from function names.
+% 这为智能体提供了传统 profiling 从函数名免费获得的稳定标签。
 \emph{Stack construction} builds aggregation hierarchies from
-available fields, either from a user-specified ordered list of fields or via
-automatic induction that scores semantic shifts and partition
-coherence.
-% 栈构造从可用字段构建聚合层次，可通过用户指定的有序字段列表或通过评分语义转移和分区一致性的自动诱导。
+available fields, either from a user-specified field list or by
+automatically detecting boundaries between distinct work phases.
+% 栈构造从可用字段构建聚合层次，可通过用户指定的字段列表或自动检测不同工作阶段之间的边界。
 On 325 real Codex and Claude trajectories (183{,}714 system
 observations), semantic profiling separates over 90\% of
 system-effect cost that per-session views cannot attribute to task
 categories.
-% 在 325 个真实 Codex 和 Claude 轨迹（183,714 个系统观测）上，语义 profiling 分离了按会话视图无法归因到任务类别的超过 90\% 的系统操作开销。
-On four public datasets with hidden ground-truth labels
-(34{,}539 operations), profiler-ranked groups localize labeled
-problems at 9.4\% inspection cost versus flat summaries, with 45\%
-fewer groups than per-session grouping.
-% 在四个具有隐藏真实标签的公开数据集（34,539 个操作）上，profiler 排序的分组以 9.4\% 的检查成本定位标注问题，比按会话分组减少 45\% 的分组数。
-Semantic-label quality exceeds V-measure 0.7 on 7 of 9 held-out datasets.
-% 语义标签质量在 9 个保留数据集中的 7 个上超过 V-measure 0.7。
+% 在 325 个真实 Codex 和 Claude 轨迹（183,714 个系统观测）上，语义 profiling 分离了按会话视图无法归因到任务类别的超过 90\% 的系统副作用开销。
+On four public datasets (34{,}539 operations) where the correct
+labels are known but hidden from the profiler, ranked groups locate
+real problems at 9.4\% inspection cost, with 45\% fewer groups than
+per-session grouping.
+% 在四个公开数据集（34,539 个操作）上，正确标签已知但对 profiler 隐藏，排序的分组以 9.4\% 的检查成本定位真实问题，比按会话分组减少 45\% 的分组数。
+Derived labels agree with ground truth on 7 of 9 held-out datasets.
+% 派生标签在 9 个保留数据集中的 7 个上与真实标签一致。
 
 %% ¶7: Contributions
 This paper makes three contributions:

@@ -111,60 +111,73 @@
   doi       = {10.1145/3766882.3767169},
 }
 
-% VERIFIED: unverified
+% VERIFIED: 2026-07-08
 % REAL: yes
-% PDF: not yet downloaded
+% PDF: https://dl.acm.org/doi/10.1145/3805760.3814931
 % ABSTRACT: Defines 14 fault types over 9 agent-specific span kinds.
 %   First dedicated benchmark for detecting faults from agent telemetry.
+%   2940 configurations (14 faults x 5 conditions x 7 frameworks x 6 models).
 % USED_FOR: Agent observability benchmark (related work)
-% TODO: verify full author list, exact venue name, pages from ACM DL
+% NOTE: Author confirmed as Krishna Chaitanya Balusu via AIware '26 program.
+%   Published in Benchmark & Dataset Track.
 @inproceedings{agenttelemetry,
-  author    = {Balusu, Sai Sree Harsha},
+  author    = {Balusu, Krishna Chaitanya},
   title     = {{AgentTelemetry}: A Fault Detection Benchmark and Toolkit for {LLM} Agent Observability},
   booktitle = {Proceedings of the 3rd ACM International Conference on AI-Powered Software (AIware '26)},
   year      = {2026},
   url       = {https://dl.acm.org/doi/10.1145/3805760.3814931},
+  doi       = {10.1145/3805760.3814931},
 }
 
-% VERIFIED: unverified
+% VERIFIED: 2026-07-08
 % REAL: yes
-% PDF: not yet downloaded
+% PDF: https://arxiv.org/pdf/2606.04990
 % ABSTRACT: Survey of evidence tracing and execution provenance in LLM agents.
+%   Defines execution provenance as the typed graph of an agent execution and
+%   evidence tracing as its projection onto evidence-support relations.
 %   Unifies retrieval grounding, tool-use safety, memory lineage, and observability.
 % USED_FOR: Broader agent trace survey (related work)
-% TODO: download PDF, verify author list matches arxiv page
 @misc{agenttraces-trust,
-  author    = {Wang, Yiqi and Zhang, Jiaqi and Cai, Taotao and others},
+  author    = {Wang, Yiqi and Zhang, Jiaqi and Cai, Taotao and Liu, Zirui and Sun, Qingqiang and Sun, Zequn and Wu, Zhangkai and Dong, Manqing and Zheng, Mingkai and Yin, Xuefei and Zhu, Yanming},
   title     = {From Agent Traces to Trust: A Survey of Evidence Tracing and Execution Provenance in {LLM} Agents},
-  journal   = {arXiv preprint arXiv:2606.04990},
+  howpublished = {arXiv preprint arXiv:2606.04990},
   year      = {2026},
+  doi       = {10.48550/arXiv.2606.04990},
 }
 
-% VERIFIED: unverified
+% VERIFIED: 2026-07-08
 % REAL: yes
-% PDF: not yet downloaded
-% ABSTRACT: Trajectory anomaly detection for trustworthy LLM agents.
+% PDF: https://arxiv.org/pdf/2602.06443
+% ABSTRACT: Runtime trajectory anomaly detection for trustworthy LLM agents.
+%   Formulates Trajectory Anomaly Detection with precise error localization
+%   for rollback-and-retry. Constructs TrajBench via perturb-and-complete
+%   strategy. Proposes TrajAD verifier trained with fine-grained process supervision.
 % USED_FOR: Agent failure diagnosis (related work)
-% TODO: download PDF, verify abstract matches
 @misc{trajad,
   author    = {Liu, Yibing and Zhang, Chong and Han, Zhongyi and Liu, Hansong and Wang, Yong and Yu, Yang and Wang, Xiaoyan and Yin, Yilong},
   title     = {{TrajAD}: Trajectory Anomaly Detection for Trustworthy {LLM} Agents},
-  journal   = {arXiv preprint arXiv:2602.06443},
+  howpublished = {arXiv preprint arXiv:2602.06443},
   year      = {2026},
   doi       = {10.48550/arXiv.2602.06443},
 }
 
-% VERIFIED: unverified
+% VERIFIED: 2026-07-08
 % REAL: yes
-% PDF: not yet downloaded
-% ABSTRACT: From failure detection to fix recommendations in LLM agentic systems.
+% PDF: https://arxiv.org/pdf/2603.29848
+% ABSTRACT: Comprehensive validation framework for LLM agentic systems.
+%   Fifteen failure-detection tools and two root-cause analysis modules.
+%   Integrates rule-based checks with LLM-as-a-judge assessments.
+%   Applied to IBM CUGA on AppWorld and WebArena benchmarks.
 % USED_FOR: Agent failure diagnosis (related work)
-% TODO: download PDF, verify abstract matches
-@misc{agentfixer,
+% NOTE: Published at 1st International Workshop on Agentic Engineering
+%   (AGENT 2026), co-located with ICSE 2026. Proceedings DOI not yet
+%   finalized in ACM DL; keeping arxiv DOI for now.
+@inproceedings{agentfixer,
   author    = {Mulian, Hadar and Zeltyn, Sergey and Levy, Ido and Galanti, Liane and Yaeli, Avi and Shlomov, Segev},
   title     = {{AgentFixer}: From Failure Detection to Fix Recommendations in {LLM} Agentic Systems},
-  journal   = {arXiv preprint arXiv:2603.29848},
+  booktitle = {Proceedings of the 1st International Workshop on Agentic Engineering (AGENT '26, co-located with ICSE)},
   year      = {2026},
+  url       = {https://arxiv.org/abs/2603.29848},
   doi       = {10.48550/arXiv.2603.29848},
 }
 
@@ -583,16 +596,18 @@
   doi = {10.48550/arXiv.2509.15221},
 }
 
-% VERIFIED: unverified
+% VERIFIED: 2026-07-08
 % REAL: yes
-% PDF: not yet downloaded
-% ABSTRACT: Proposes using LLMs as judges for evaluating model outputs,
-%   introduces MT-Bench and Chatbot Arena for systematic evaluation.
+% PDF: https://arxiv.org/pdf/2306.05685
+% ABSTRACT: Explores using strong LLMs as judges to evaluate chat assistants.
+%   Examines position, verbosity, and self-enhancement biases. Introduces
+%   MT-Bench (multi-turn question set) and Chatbot Arena (crowdsourced battle
+%   platform). GPT-4 judge achieves >80% agreement with human preferences.
 % USED_FOR: Motivating the cost of per-trajectory LLM evaluation (intro)
 @inproceedings{llm-as-judge,
   author    = {Zheng, Lianmin and Chiang, Wei-Lin and Sheng, Ying and Zhuang, Siyuan and Wu, Zhanghao and Zhuang, Yonghao and Lin, Zi and Li, Zhuohan and Li, Dacheng and Xing, Eric P. and Zhang, Hao and Gonzalez, Joseph E. and Stoica, Ion},
   title     = {Judging {LLM}-as-a-Judge with {MT-Bench} and {Chatbot Arena}},
-  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  booktitle = {Advances in Neural Information Processing Systems 36 (NeurIPS), Datasets and Benchmarks Track},
   year      = {2023},
   url       = {https://arxiv.org/abs/2306.05685},
 }
