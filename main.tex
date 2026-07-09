@@ -19,6 +19,8 @@
 \newcommand{\operation}{\texttt{operation}\xspace}
 \newcommand{\opstack}{\texttt{operation stack}\xspace}
 
+\newcommand{\ckupdate}[1]{\textcolor{blue}{#1}}
+
 \begin{document}
 
 \title{AgentProf: Semantic Profiling for AI Agents}
@@ -30,9 +32,10 @@ activities involving thousands to millions of interactions with
 users, tools, and system resources.
 % AI 智能体编排长时间运行的多步骤活动，涉及与用户、工具和系统资源的数千到数百万次交互。
 %% S2: Need (→¶2)
-To improve quality, safety, and cost efficiency, developers need to
-determine which task categories consume the most budget, where
-failures concentrate, and which workflows trigger unsafe effects.
+To improve quality, safety, and cost efficiency of AI agent, 
+developers need to determine where failures concentrate, 
+which workflows trigger unsafe effects, 
+and which task categories consume the most budget.
 % 为了提高质量、安全性和成本效率，开发者需要确定哪类任务消耗最多预算、故障集中在哪里、哪些工作流触发不安全副作用。
 %% S3: Traditional profiling (→¶2+¶4)
 To answer similar questions in traditional systems software, profiling
@@ -52,8 +55,8 @@ deterministic identifiers and structural hierarchies that make
 aggregation possible.
 % 智能体行为与代码执行有根本不同。负责实体是语义类别（如任务意图和工作流阶段），而非代码路径，且智能体轨迹缺乏使聚合成为可能的确定性标识符和结构层次。
 %% S6: Model (→¶5)
-We propose a \emph{semantic operation stack model}.
-Uniform \emph{operations} represent all agent activities, and
+We propose a \emph{semantic operation stack model}, in which the 
+uniform \emph{operations} represent all agent activities, and
 \emph{operation stacks} replace the runtime call stack with
 query-time field projections that fold identical frame sequences.
 % 我们提出语义 operation stack 模型。统一的 operation 表示所有智能体活动，operation stack 用查询时字段投影替代运行时调用栈，折叠相同帧序列。
@@ -72,6 +75,20 @@ problems at 9.4\% inspection cost versus flat summaries, with 45\%
 fewer groups than fixed-session drilldown.
 % 在四个具有隐藏真实标签的公开数据集（34,539 个操作）上，profiler 排序的分组以 9.4\% 的检查工作量定位标注问题，比固定会话下钻减少 45\% 的分组数。
 \end{abstract}
+
+% AI agents increasingly orchestrate long-running, multi-step
+% activities involving thousands to millions of interactions with
+% users, tools, and system resources.
+% To optimize the quality, safety, and cost of agents, developers must 
+% analyze behaviors across thousands of runs to 
+% find where failures concentrate, 
+% locate the workflow phases triggering unsafe effects, 
+% and identify the tasks that consumes most budget. 
+% In traditional software, execution profiling solves this 
+% by aggregating resource consumption over deterministic call stacks.
+% However, unlike traditional software where code paths provide a natural hierarchy for profiling, 
+% agent behaviors are driven by unstructured natural language prompts and lack deterministic execution stacks. To bridge this gap, we propose the Semantic Operation Stack model. First, we unify all heterogeneous agent activities (prompts, tool calls, and system I/O) into a single structured record called an operation. Second, we construct dynamic call stacks at query time by projecting these operations onto user-defined semantic fields (e.g., intent -> phase -> action), merging identical sequences to generate flame graphs.
+
 
 \maketitle
 
