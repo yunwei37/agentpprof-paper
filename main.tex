@@ -282,8 +282,8 @@ label-derived pseudo-frames, but only on top of an existing execution
 stack that agent trajectories do not have.
 % Pprof 的 \texttt{tagroot}/\texttt{tagleaf} 选项可以添加标签衍生的伪帧，但仅在智能体轨迹不具备的已有执行栈之上。
 
-\subsection{The Aggregation Gap for Agents}
-% 智能体的聚合缺口
+\subsection{Challenges for Agent Profiling}
+% 智能体 Profiling 的挑战
 
 Existing tools~\cite{langsmith,langfuse,phoenix,otel} record agent
 events as per-execution span trees, effective for debugging a single
@@ -293,25 +293,33 @@ AgentSight~\cite{agentsight} bridges intent and system-effect layers
 by correlating eBPF-captured system events with intercepted LLM
 traffic, but the resulting traces still lack aggregate profiling.
 % AgentSight~\cite{agentsight} 通过关联 eBPF 捕获的系统事件与拦截的 LLM 流量来桥接意图层和系统副作用层，但生成的 trace 仍缺乏聚合分析能力。
-None of these tools provides cross-trajectory resource attribution
-by semantic category, 
 
-and this creates three concrete gaps.
-% 这些工具都不提供按语义类别的跨轨迹资源归因，这造成了三个具体缺口。
-First, sessions are boundaries, not categories.
-% 第一，会话是边界，不是类别。
-A single session may contain review, debugging, and refactoring phases, and splitting by session assigns all of them to the same group.
-% 单个会话可能包含 review、debugging 和 refactoring 阶段，按会话拆分会将它们全部分配到同一组中。
-Two sessions performing the same task produce separate groups that cannot be merged without external logic.
-% 执行相同任务的两个会话会产生无法在没有外部逻辑的情况下合并的分离组。
-Second, span names~\cite{otel,openinference} describe mechanisms (\texttt{LLMCall}, \texttt{ToolInvoke}, \texttt{ChatCompletion}), not user intent (\texttt{review}, \texttt{debug}, \texttt{test}).
-% 第二，span 名称~\cite{otel,openinference}描述机制（\texttt{LLMCall}、\texttt{ToolInvoke}、\texttt{ChatCompletion}），而非用户意图（\texttt{review}、\texttt{debug}、\texttt{test}）。
-Grouping by span name tells you how many LLM calls occurred, not which categories of work consumed the budget.
-% 按 span 名称分组只能告诉你发生了多少次 LLM 调用，而非哪些工作类别消耗了预算。
-Third, these limitations compound in practice.
-% 第三，这些限制在实践中叠加放大。
-A common system effect like running a test suite may appear thousands of times across trajectories, but a flat summary shows only a single counter with no way to attribute executions to the semantic intent that triggered them.
-% 像运行测试套件这样的常见系统副作用可能在会话中出现数千次，但扁平摘要只显示一个计数器，无法将执行归因到触发它们的语义意图。
+
+Adapting profiling to agent trajectories faces two core challenges.
+% 将 profiling 适配到智能体轨迹面临两个核心挑战。
+The first is that the responsible entities differ.
+% 第一个挑战是负责实体不同。
+In traditional software, profiling attributes cost to code paths, but
+in agent trajectories the relevant entities are semantic categories
+such as task intent and workflow phase.
+% 在传统软件中，profiling 将开销归因到代码路径，但在智能体轨迹中，相关实体是语义类别（如任务意图和工作流阶段）。
+Existing tools do not capture these categories: sessions are
+boundaries, not categories (a single session may mix review,
+debugging, and refactoring phases), and span
+names~\cite{otel,openinference} describe mechanisms
+(\texttt{LLMCall}, \texttt{ToolInvoke}), not user intent
+(\texttt{review}, \texttt{debug}).
+% 现有工具不捕获这些类别：会话是边界而非类别（单个会话可能混合 review、debugging 和 refactoring 阶段），span 名称~\cite{otel,openinference}描述机制（\texttt{LLMCall}、\texttt{ToolInvoke}），而非用户意图（\texttt{review}、\texttt{debug}）。
+The second challenge is that agent trajectories lack the two
+properties that make traditional aggregation possible:
+prompts are natural language without deterministic identifiers, and
+agent events have no runtime call-stack hierarchy.
+% 第二个挑战是智能体轨迹缺乏使传统聚合成为可能的两个特性：提示词是没有确定性标识符的自然语言，智能体事件没有运行时调用栈层次。
+As a result, a common system effect like running a test suite may
+appear thousands of times across trajectories, but without semantic
+labels no tool can attribute these executions to the task categories
+that triggered them.
+% 因此，像运行测试套件这样的常见系统副作用可能在轨迹中出现数千次，但没有语义标签，任何工具都无法将这些执行归因到触发它们的任务类别。
 We quantify this in RQ1~(\S\ref{sec:eval}).
 % 我们在 RQ1~(\S\ref{sec:eval}) 中量化了这一点。
 
