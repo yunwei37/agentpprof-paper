@@ -62,15 +62,11 @@ query-time field projections that fold identical frame sequences.
 for \emph{intent attribution} and \emph{stack construction},
 compiling local agent trajectories into pprof-compatible profiles.
 % \sys 将此模型实现为具有可插拔意图归因和栈构造算法的 profiler，将本地智能体轨迹编译为 pprof 兼容的 profile。
-%% S8-S9: Results (→¶6)
-On 325 real agent sessions, semantic profiling separates over 90\% of
-system-effect weight that remains mixed under session-level views.
-% 在 325 个真实智能体会话上，语义 profiling 分离了会话级视图所混合的超过 90\% 的系统副作用权重。
-On four public datasets with hidden ground-truth labels
-(34{,}539 operations), profiler-ranked groups localize labeled
-problems at 9.4\% inspection cost versus flat summaries, with 45\%
-fewer groups than fixed-session drilldown.
-% 在四个具有隐藏真实标签的公开数据集（34,539 个操作）上，profiler 排序的分组以 9.4\% 的检查工作量定位标注问题，比固定会话下钻减少 45\% 的分组数。
+%% S8: Results (→¶6)
+On real trajectories and public datasets, our evaluation shows that
+semantic profiling can help attribute cost and locate problems with
+lower cost.
+% 在真实轨迹和公开数据集上，我们的评估表明语义 profiling 能以更低成本帮助归因开销和定位问题。
 \end{abstract}
 
 \maketitle
@@ -208,15 +204,16 @@ available fields, either from a user-specified ordered list of fields or via
 automatic induction that scores semantic shifts and partition
 coherence.
 % 栈构造从可用字段构建聚合层次，可通过用户指定的有序字段列表或通过评分语义转移和分区一致性的自动诱导。
-On 325 real Codex and Claude sessions (183{,}714 system observations),
-semantic profiling separates over 90\% of system-effect weight that
-remains mixed under session-level views.
-% 在 325 个真实 Codex 和 Claude 会话（183,714 个系统观测）上，语义 profiling 分离了会话级视图所混合的超过 90\% 的系统副作用权重。
+On 325 real Codex and Claude trajectories (183{,}714 system
+observations), semantic profiling separates over 90\% of
+system-effect cost that per-session views cannot attribute to task
+categories.
+% 在 325 个真实 Codex 和 Claude 轨迹（183,714 个系统观测）上，语义 profiling 分离了按会话视图无法归因到任务类别的超过 90\% 的系统操作开销。
 On four public datasets with hidden ground-truth labels
 (34{,}539 operations), profiler-ranked groups localize labeled
-problems at 9.4\% inspection work versus flat summaries, with 45\%
-fewer groups than fixed-session drilldown.
-% 在四个具有隐藏真实标签的公开数据集（34,539 个操作）上，profiler 排序的分组以 9.4\% 的检查工作量定位标注问题，比固定会话下钻减少 45\% 的分组数。
+problems at 9.4\% inspection cost versus flat summaries, with 45\%
+fewer groups than per-session grouping.
+% 在四个具有隐藏真实标签的公开数据集（34,539 个操作）上，profiler 排序的分组以 9.4\% 的检查成本定位标注问题，比按会话分组减少 45\% 的分组数。
 Semantic-label quality exceeds V-measure 0.7 on 7 of 9 held-out datasets.
 % 语义标签质量在 9 个保留数据集中的 7 个上超过 V-measure 0.7。
 
@@ -387,7 +384,7 @@ Unlike CPU profiling, where the call stack is determined by
 execution, the stack is determined by the query.
 % 与 CPU 分析中调用栈由执行决定不同，这里的栈由查询决定。
 The same operations can be folded as a flat task summary, a
-fixed-session tree, a semantic phase/action hierarchy, or a
+per-session tree, a semantic phase/action hierarchy, or a
 dataset-native trajectory, and changing the fields changes the
 aggregation without changing the data.
 % 同一组 operation 可以折叠为扁平任务摘要、固定会话树、语义阶段/操作层次或数据集原生轨迹，改变字段即改变聚合方式而无需改变数据。
@@ -572,7 +569,7 @@ The strongest argument against semantic profiling is that traditional tools ``ca
 % 反对语义分析的最强论点是传统工具"已经能看到相同信息"。
 To test this, we run a semantic-axis ablation on 325 real Codex/Claude sessions (183{,}714 system observations).
 % 为了检验这一点，我们在 325 个真实 Codex/Claude 会话（183,714 个系统观测）上进行语义轴消融。
-We progressively add label axes (no labels, session only, prompt only, both) and measure the mixed-weight percentage, the fraction of system-effect weight in buckets that mix observations from multiple task categories.
+We progressively add label axes (no labels, session only, prompt only, both) and measure the mixed-weight percentage, the fraction of system-effect cost in groups that mix observations from multiple task categories.
 % 我们逐步添加标签轴（无标签、仅会话、仅提示词、两者兼有），测量混合权重百分比——混合了多个任务类别观测的桶中的系统副作用权重比例。
 A lower mixed-weight percentage means the profiler correctly separates effects by task category.
 % 更低的混合权重百分比意味着分析器正确地按任务类别分离了效果。
@@ -598,7 +595,7 @@ Session + prompt & 26{,}829 & 0.0 & 0.0 \\
 
 Table~\ref{tab:mixing} shows the result on 325 real Codex/Claude sessions.
 % Table~\ref{tab:mixing} 展示了 325 个真实 Codex/Claude 会话上的结果。
-Without semantic labels, 90.4\% of system-effect weight falls into mixed buckets.
+Without semantic labels, 90.4\% of system-effect cost falls into mixed groups.
 % 没有语义标签时，90.4\% 的系统副作用权重落入混合桶。
 A flat \texttt{cargo~test} counter shows 2{,}903 executions but cannot distinguish whether they came from \texttt{review}, \texttt{debug}, \texttt{refactor}, or \texttt{test} prompts.
 % 扁平的 \texttt{cargo test} 计数器显示 2,903 次执行，但无法区分它们来自 \texttt{review}、\texttt{debug}、\texttt{refactor} 还是 \texttt{test} 提示词。
@@ -616,9 +613,9 @@ Beyond label separation, we test whether choosing different field selections for
 % 除标签分离外，我们还测试为 operation stack 选择不同字段是否产生扁平分组无法产生的视图。
 We take the same 13{,}265 operations from the four oracle-rich families and fold them with five different field selections, counting how many distinct groups each produces.
 % 我们取四个 oracle 丰富家族的同样 13,265 个 operation，用五种不同字段选择折叠，计算每种产生多少不同分组。
-The same operations fold into 9~dataset groups, 57~phase groups, 226~semantic groups, 455~action groups, or 3{,}757~fixed-session groups by changing only the stack fields.
+The same operations fold into 9~dataset groups, 57~phase groups, 226~semantic groups, 455~action groups, or 3{,}757~per-session groups by changing only the stack fields.
 % 同样的 operation 仅通过改变栈字段即可折叠为 9 个数据集分组、57 个阶段分组、226 个语义分组、455 个操作分组或 3,757 个固定会话分组。
-A flat GROUP BY on a single label cannot produce these views because different stack depths answer different questions (task-level budget vs.\ action-level duplication vs.\ session-level drilldown).
+A flat GROUP BY on a single label cannot produce these views because different stack depths answer different questions (budget by task vs.\ duplication by action vs.\ per-session detail).
 % 单标签的扁平 GROUP BY 无法产生这些视图，因为不同栈深度回答不同问题（任务级预算 vs. 操作级重复 vs. 会话级下钻）。
 The same model also covers all 15 public trace families (Table~\ref{tab:datasets}) without type-specific objects.
 % 同一模型也覆盖了所有 15 个公开 trace 家族（Table~\ref{tab:datasets}），无需特定类型对象。
@@ -632,9 +629,9 @@ The \texttt{time} and \texttt{tokens} views of the same 325 sessions share only 
 
 Finally, we test whether the profiler can produce useful groups without any user-specified fields.
 % 最后，我们测试分析器能否在不需要任何用户指定字段的情况下产生有用的分组。
-We run the automatic stack-induction mode (\S\ref{sec:stacks}) on the same six tasks used in RQ2 and compare the resulting group count and localization quality against flat summaries and fixed-session drilldown.
+We run the automatic stack-induction mode (\S\ref{sec:stacks}) on the same six tasks used in RQ2 and compare the resulting group count and localization quality against flat summaries and per-session grouping.
 % 我们在 RQ2 使用的同样六个任务上运行自动栈诱导模式（\S\ref{sec:stacks}），将结果的分组数和定位质量与扁平摘要和固定会话下钻进行比较。
-Induced stacks produce a median of 12 groups (versus 285 for fixed-session and 1 for flat), with 4/6 tasks generating variable-depth stacks.
+Induced stacks produce a median of 12 groups (versus 285 for per-session and 1 for flat), with 4/6 tasks generating variable-depth stacks.
 % 诱导栈产生中位 12 个分组（固定会话 285 个，扁平 1 个），4/6 任务生成可变深度栈。
 The induced stacks achieve lower AP than hand-configured stacks (median 0.276 vs 0.312) because they use only visible fields, but they reduce inspection work to 65.3\% versus flat summaries without requiring any user configuration.
 % 诱导栈的 AP 低于手动配置栈（中位 0.276 vs 0.312），因为它们仅使用可见字段，但将检查工作量降至扁平摘要的 65.3\%，无需任何用户配置。
@@ -668,7 +665,7 @@ We use public benchmark datasets that provide ground-truth quality annotations (
 
 The benchmark uses six tasks across four datasets (AgentRewardBench looping and side-effect, SATraj-OS unsafe operation, AgentNet incorrect and redundant step, and OSWorld-Human group start), totaling 34{,}539 operations and 3{,}699 positives.
 % 基准使用四个数据集的六个任务（AgentRewardBench 循环和副作用、SATraj-OS 不安全操作、AgentNet 不正确和冗余步骤、OSWorld-Human 组起始），共计 34,539 个 operation 和 3,699 个正例。
-We compare six grouping strategies (flat summary, fixed-session drilldown, dataset-native hierarchy, raw-action grouping, operation-stack profiling, and an oracle that uses the hidden labels) and rank groups by the fraction of hidden positives they contain.
+We compare six grouping strategies (flat summary, per-session grouping, dataset-native hierarchy, raw-action grouping, operation-stack profiling, and an oracle that uses the hidden labels) and rank groups by the fraction of hidden positives they contain.
 % 我们比较六种分组策略（扁平摘要、固定会话下钻、数据集原生层次、原始操作分组、operation stack 分析，以及使用隐藏标签的 oracle），按组包含的隐藏正例比例对组排序。
 
 \begin{table*}[t]
@@ -699,7 +696,7 @@ Table~\ref{tab:localization} summarizes the results.
 % Table~\ref{tab:localization} 总结了结果。
 Flat summaries recover all positives but require inspecting everything (Work@5\,=\,1.0).
 % 扁平摘要恢复所有正例但需要检查全部内容（Work@5 = 1.0）。
-Fixed-session drilldown finds a first positive quickly (WTFP\,=\,0.004) but fragments the workload into 285 groups with only 2.3\% top-five recall.
+Per-session grouping finds a first positive quickly (WTFP\,=\,0.004) but fragments the workload into 285 groups with only 2.3\% top-five recall.
 % 固定会话下钻快速找到首个正例（WTFP = 0.004），但将工作量碎片化为 285 个组，前五召回率仅 2.3\%。
 Operation-stack profiling inspects 9.4\% of the work in the top five groups, recovers 39.0\% of positives within 30\% of the inspection budget, and reduces groups to 157.5.
 % Operation stack 分析在前五组中检查 9.4\% 的工作量，在 30\% 检查预算内恢复 39.0\% 的正例，并将组数减少到 157.5。
@@ -708,13 +705,13 @@ Figure~\ref{fig:rq2-tradeoff} visualizes this tradeoff: operation-stack profilin
 % Figure~\ref{fig:rq2-tradeoff} 可视化了这一权衡：operation stack 分析位于低工作量、中等召回率区域。
 The comparison also serves as evidence for the operation/operation-stack model (\S\ref{sec:design}).
 % 该比较也作为 operation/operation stack 模型（\S\ref{sec:design}）的证据。
-Fixed-session drilldown and dataset-native hierarchy are alternative abstractions that fix the hierarchy at session or dataset boundaries.
+Per-session grouping and dataset-native hierarchy are alternative abstractions that fix the hierarchy at session or dataset boundaries.
 % 固定会话下钻和数据集原生层次是在会话或数据集边界固定层次的替代抽象。
-Operation stacks subsume both as special cases (include \texttt{session} in the stack to recover fixed-session; include \texttt{dataset} to recover dataset-native).
+Operation stacks subsume both as special cases (include \texttt{session} in the stack to recover per-session; include \texttt{dataset} to recover dataset-native).
 % Operation stack 将两者作为特例包含（栈中包含 \texttt{session} 恢复固定会话；包含 \texttt{dataset} 恢复数据集原生）。
-On localization, operation stacks improve top-five recall over fixed-session on 5/6 tasks, reduce median group count by 45\%, and save 90\% of inspection work versus flat summaries.
+On localization, operation stacks improve top-five recall over per-session on 5/6 tasks, reduce median group count by 45\%, and save 90\% of inspection work versus flat summaries.
 % 在定位方面，operation stack 在 5/6 任务上改进了相对固定会话的前五召回率，中位组数减少 45\%，比扁平摘要节省 90\% 的检查工作量。
-Fixed-session drilldown retains lower work-to-first-positive on 4/6 tasks, confirming that profilers and debuggers are complementary.
+Per-session grouping retains lower work-to-first-positive on 4/6 tasks, confirming that profilers and debuggers are complementary.
 % 固定会话下钻在 4/6 任务上保持更低的首个正例工作量，确认分析器和调试器是互补的。
 
 \begin{figure}[t]
@@ -722,7 +719,7 @@ Fixed-session drilldown retains lower work-to-first-positive on 4/6 tasks, confi
 \includegraphics[width=\linewidth]{figures/baseline-tradeoff.png}
 \caption{RQ2: Inspection work vs.\ recall at 30\% inspection budget.
 Operation-stack profiling (labeled) achieves low work (0.094) with moderate
-recall (0.39), while flat requires full inspection and fixed-session
+recall (0.39), while flat requires full inspection and per-session
 fragments into 285 groups. Oracle policies (large dots) are upper bounds.}
 \Description{Scatter plot showing inspection work versus budget recall
 for eight profiling policies.}
@@ -849,7 +846,7 @@ The real-session data comes from a single multi-month development project, so th
 % 真实会话数据来自单个多月开发项目，标签分布可能无法推广到其他领域。
 Semantic accuracy of the intent-attribution backends on free-form prompts remains unevaluated because no available dataset simultaneously exposes free-form text and ground-truth semantic labels (as discussed in RQ3 above).
 % 意图归因后端在自由形式提示词上的语义精度仍未评估，因为没有可用数据集同时暴露自由形式文本和真实语义标签（见 RQ3）。
-The evaluation uses fixed-session drilldown as a proxy for span-tree debugging tools, not a real OpenTelemetry or LangSmith trace import.
+The evaluation uses per-session grouping as a proxy for span-tree debugging tools, not a real OpenTelemetry or LangSmith trace import.
 % 评估使用固定会话下钻作为 span 树调试工具的代理，而非真实的 OpenTelemetry 或 LangSmith trace 导入。
 
 %% ===================================================================
@@ -909,9 +906,9 @@ Agent observability needs profiling, not only debugging.
 % 智能体可观测性需要性能分析，不仅仅是调试。
 \sys shows that the semantic operation stack model, combined with pluggable intent attribution and stack construction algorithms, closes the aggregation gap for agent traces.
 % \sys 表明，语义 operation stack 模型结合可插拔的意图归因和栈构造算法，填补了智能体 trace 的聚合缺口。
-Scoring profiler output against hidden trajectory labels confirms that semantic profiling separates over 90\% of mixed system-effect weight, localizes labeled problems at 9.4\% inspection work versus flat summaries, and produces labels that agree with ground truth on 7/9 held-out datasets.
+Scoring profiler output against hidden trajectory labels confirms that semantic profiling separates over 90\% of system-effect cost that per-session views leave mixed, localizes labeled problems at 9.4\% inspection work versus flat summaries, and produces labels that agree with ground truth on 7/9 held-out datasets.
 % 将分析器输出与隐藏轨迹标签评分确认，语义分析分离了超过 90\% 的混合系统副作用权重，以扁平摘要 9.4\% 的检查工作量定位标注问题，并在 7/9 保留数据集上产生与真实标签一致的标签。
-Fixed-session drilldown remains faster to a first positive on 4/6 tasks, confirming that profilers and debuggers are complementary, and \sys supports both by including or excluding session fields in the stack query.
+Per-session grouping remains faster to a first positive on 4/6 tasks, confirming that profilers and debuggers are complementary, and \sys supports both by including or excluding session fields in the stack query.
 % 固定会话下钻在 4/6 任务上更快找到首个正例，确认分析器和调试器是互补的，\sys 通过在栈查询中包含或排除会话字段同时支持两者。
 Multi-project evaluation and trace-ecosystem integration are the most impactful next steps.
 % 多项目评估和 trace 生态系统集成是最有影响力的下一步。
