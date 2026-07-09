@@ -28,25 +28,23 @@
 AI agents orchestrate multi-step activities across hundreds of
 sessions.
 % AI 智能体跨数百个会话编排多步骤活动。
-%% S2: Problem/need (→¶2 前半)
+%% S2: Need (→¶2)
 To improve quality, safety, and cost efficiency, developers need to
-profile agent behavior across sessions to determine which task
-categories consume the most budget, where failures concentrate, and
-which workflows trigger unsafe effects.
-% 为了提高质量、安全性和成本效率，开发者需要跨会话 profile 智能体行为，以确定哪类任务消耗最多预算、故障集中在哪里、哪些工作流触发不安全副作用。
-%% S3: Gap naming (→¶2 后半)
-Yet, agent observability today provides only single-execution debugging.
-% 当今的智能体可观测性只提供单次执行调试。
-%% S4: Existing tools (→¶3)
-Existing tools organize events into per-session span trees or cluster
-inputs by topic, but none provides cross-session resource attribution
-by semantic category.
-% 现有工具将事件组织为按会话的 span 树或按主题聚类输入，但没有工具提供按语义类别的跨会话资源归因。
-%% S5: Challenge (→¶4)
-The profiling methodology used by traditional software, such as flame
-graphs, does not directly apply because agent traces lack
-deterministic identifiers and runtime call-stack hierarchies.
-% 传统软件使用的 profiling 方法论（如火焰图）不能直接适用，因为智能体 trace 缺乏确定性标识符和运行时调用栈层次。
+determine which task categories consume the most budget, where
+failures concentrate, and which workflows trigger unsafe effects.
+% 为了提高质量、安全性和成本效率，开发者需要确定哪类任务消耗最多预算、故障集中在哪里、哪些工作流触发不安全副作用。
+%% S3: Traditional profiling (→¶2+¶4)
+To answer similar questions in traditional systems software, profiling
+attributes resource consumption to responsible code paths by
+aggregation, rather than single-execution debugging or tracing.
+% 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责的代码路径，而非单次执行调试或 tracing。
+%% S4: Agent challenge (→¶4)
+Agent behavior differs fundamentally from code execution.
+The responsible entities are semantic categories such as task intent
+and workflow phase, not code paths, and agent traces lack the
+deterministic identifiers and structural hierarchies that make
+aggregation possible.
+% 智能体行为与代码执行有根本不同。负责实体是语义类别（如任务意图和工作流阶段），而非代码路径，且智能体 trace 缺乏使聚合成为可能的确定性标识符和结构层次。
 %% S6: Model (→¶5)
 We propose a \emph{semantic operation stack model}.
 Uniform \emph{operations} represent all agent activities, and
