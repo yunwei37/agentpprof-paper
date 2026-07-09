@@ -1,39 +1,33 @@
 \begin{tikzpicture}[
   node distance=0.5cm and 0.8cm,
-  box/.style={rectangle, draw, fill=blue!15, minimum width=1.8cm,
-              minimum height=0.6cm, font=\footnotesize, align=center,
+  box/.style={rectangle, draw, fill=blue!15, minimum width=2.2cm,
+              minimum height=0.8cm, font=\small, align=center,
               rounded corners=2pt},
-  input/.style={rectangle, draw, fill=gray!15, minimum width=1.6cm,
-               minimum height=0.5cm, font=\footnotesize, align=center,
+  input/.style={rectangle, draw, fill=gray!15, minimum width=2.0cm,
+               minimum height=0.7cm, font=\small, align=center,
                rounded corners=2pt},
-  output/.style={rectangle, draw, fill=green!12, minimum width=1.3cm,
-                minimum height=0.5cm, font=\footnotesize, align=center,
+  output/.style={rectangle, draw, fill=green!12, minimum width=1.6cm,
+                minimum height=0.7cm, font=\small, align=center,
                 rounded corners=2pt},
   arr/.style={-{Stealth[length=1.8mm]}, thick, gray!70},
 ]
 
-% Inputs (left)
-\node[input] (local) {Local sessions\\(Codex/Claude)};
-\node[input, below=0.25cm of local] (bench) {Benchmark\\JSONL};
+% Input (left)
+\node[input] (traj) {Agent\\Trajectories};
 
-% Node 1: Parsing
-\node[box, right=0.8cm of local, yshift=-0.2cm] (parse) {Parsing};
-
-% Node 2: Intent Attribution
-\node[box, right=0.8cm of parse, fill=orange!15] (intent) {Intent\\Attribution};
-\node[font=\scriptsize, below=0.05cm of intent, text=gray] (backends) {regex / LLM / clustering};
+% Node 1: Intent Attribution
+\node[box, right=0.8cm of traj, fill=orange!15] (intent) {Intent\\Attribution};
+\node[font=\footnotesize, below=0.05cm of intent, text=gray] (backends) {regex / LLM / clustering};
 
 % Node 3: Stack Construction
 \node[box, right=0.8cm of intent] (stack) {Stack\\Construction};
 
 % Node 4: Output
 \node[box, right=0.8cm of stack, fill=green!12] (out) {Output};
-\node[font=\scriptsize, below=0.05cm of out, text=gray] {pprof / SVG / JSON};
+\node[font=\footnotesize, below=0.05cm of out, text=gray] {pprof / SVG / JSON};
 
 % Arrows
-\draw[arr] (local.east) -| ([xshift=-0.2cm]parse.north);
-\draw[arr] (bench.east) -| ([xshift=-0.2cm]parse.south);
-\draw[arr] (parse) -- (intent);
+\draw[arr] (traj) -- (intent);
 \draw[arr] (intent) -- (stack);
 \draw[arr] (stack) -- (out);
 
