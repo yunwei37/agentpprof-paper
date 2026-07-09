@@ -35,9 +35,10 @@ failures concentrate, and which workflows trigger unsafe effects.
 % 为了提高质量、安全性和成本效率，开发者需要确定哪类任务消耗最多预算、故障集中在哪里、哪些工作流触发不安全副作用。
 %% S3: Traditional profiling (→¶2+¶4)
 To answer similar questions in traditional systems software, profiling
-attributes resource consumption to responsible code paths by
-aggregation, rather than single-execution debugging or tracing.
-% 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责的代码路径，而非单次执行调试或 tracing。
+attributes resource consumption to responsible entities, such as code
+paths, by aggregation, rather than single-execution debugging or
+tracing.
+% 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责实体（如代码路径），而非单次执行调试或 tracing。
 %% S4: Gap (→¶2+¶3)
 Yet, agent observability tools today are mainly for debugging and tracing instead of profiling.
 % 当今的智能体可观测性工具主要用于调试和 tracing，而非 profiling。
