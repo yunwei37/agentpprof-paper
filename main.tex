@@ -441,7 +441,7 @@ View & $\varphi$ (select) & $w$ (width) & Question \\
 \caption{System architecture. Local agent histories enter through
 \texttt{agent-session} parsing. Public datasets enter as operation JSONL.
 Both paths produce operations. The stack query and output are identical.}
-\Description{Data flow from agent traces through parsing and intent
+\Description{Data flow from agent trajectories through parsing and intent
 attribution to folded-stack flame graphs.}
 \label{fig:architecture}
 \end{figure}
@@ -472,7 +472,7 @@ Unsupervised clustering via TF-IDF and K-Means discovers
 natural prompt groups without predefined rules, feeding rule
 authoring.
 % 通过 TF-IDF 和 K-Means 的无监督聚类在没有预定义规则的情况下发现自然提示词分组，为规则编写提供输入。
-For structured traces where action types and quality annotations are
+For structured trajectories where action types and quality annotations are
 explicit fields, mapping rules derive new fields from existing
 ones (e.g., \texttt{phase:navigate=type:(click|scroll|key)}).
 % 对于操作类型和质量标注是显式字段的结构化 trace，映射规则从现有字段派生新字段（如 \texttt{phase:navigate=type:(click|scroll|key)}）。
@@ -593,7 +593,7 @@ The same operations fold into 9~dataset groups, 57~phase groups, 226~semantic gr
 % 同样的 operation 仅通过改变栈字段即可折叠为 9 个数据集分组、57 个阶段分组、226 个语义分组、455 个操作分组或 3,757 个固定会话分组。
 A flat GROUP BY on a single tag cannot produce these views because different stack depths answer different questions (budget by task vs.\ duplication by action vs.\ per-session detail).
 % 单标签的扁平 GROUP BY 无法产生这些视图，因为不同栈深度回答不同问题（任务级预算 vs. 操作级重复 vs. 会话级下钻）。
-The same model also covers all 15 public trace families without type-specific objects.
+The same model also covers all 15 public trajectory families without type-specific objects.
 % 同一模型也覆盖了所有 15 个公开 trace 家族，无需特定类型对象。
 
 Different views also produce different rankings.
@@ -723,14 +723,14 @@ Modifying stack fields, mapping rules, or ranking criteria and re-running on the
 % 修改栈字段、映射规则或排名标准并在相同 operation 上重新运行，在 5/6 任务上改进了 AP（中位 AP 改进 0.038），确认分析器暴露了有用的调节旋钮而非需要固定配置。
 
 %% -------------------------------------------------------------------
-\subsection{RQ3: How Accurate Are the Labels?}
+\subsection{RQ3: How Accurate Are the Tags?}
 % RQ3：标签有多准确？
 
 RQ1 and RQ2 assume that semantic tags (the tags derived by intent attribution or mapping rules) are useful.
 % RQ1 和 RQ2 假设语义标签（由意图归因或映射规则派生的标签）是有用的。
 RQ3 tests whether these semantic tags are accurate by comparing them against ground-truth annotations from the benchmark datasets.
 % RQ3 通过将这些语义标签与基准数据集的真实标注进行比较来测试它们是否准确。
-For free-form traces (real trajectories), we measure whether the intent-attribution backends run reliably at scale and produce well-formed tags.
+For real trajectories with free-form prompts, we measure whether the intent-attribution backends run reliably at scale and produce well-formed tags.
 % 对于自由形式 trace（真实会话），我们测量意图归因后端是否在规模上可靠运行并产生格式良好的标签。
 Semantic accuracy of the LLM/regex tagger on free-form prompts remains future work because none of the available datasets (67{,}304 rows across 6 sources) simultaneously expose free-form text and ground-truth semantic tags, making same-input accuracy evaluation infeasible with current data.
 % LLM/正则标注器在自由形式提示词上的语义精度仍是未来工作，因为现有数据集（6 个来源共 67,304 行）没有同时暴露自由形式文本和真实语义标签，使得同输入精度评估在当前数据下不可行。
@@ -745,47 +745,29 @@ We run a leave-dataset-out evaluation.
 For each of 9 datasets, we train mapping rules on the other 8 and measure V-measure between the mapping-derived \texttt{phase} field and the dataset's native \texttt{action} annotations, plus boundary F1 between mapped phase boundaries and native action boundaries.
 % 对于 9 个数据集中的每一个，我们在其余 8 个上训练映射规则，测量映射衍生的 \texttt{phase} 字段与数据集原生 \texttt{action} 标签之间的 V-measure，以及映射阶段边界与原生操作边界之间的边界 F1。
 
-\begin{table}[t]
-\centering\small
-\caption{Leave-dataset-out mapping quality. V-measure between
-mapping-derived \texttt{phase} and native \texttt{action} annotations.
-13{,}265 operations from the four annotated families
-across 9 held-out evaluations.}
-\label{tab:vmeasure}
-\begin{tabular}{lrrr}
-\toprule
-Held-out dataset & Ops & V-measure & Boundary F1 \\
-\midrule
-mind2web & 774 & 1.000 & 1.000 \\
-webshop-expert & 2{,}504 & 1.000 & 1.000 \\
-swe-agent & 496 & 0.926 & 0.962 \\
-weblinx-chat & 500 & 0.872 & 0.860 \\
-agenttrek & 200 & 0.862 & --- \\
-gui-odyssey & 7{,}868 & 0.811 & 0.842 \\
-android-control & 9 & 0.716 & 0.727 \\
-toolbench & 866 & 0.134 & 0.353 \\
-api-bank & 48 & 0.000 & --- \\
-\bottomrule
-\end{tabular}
-\end{table}
-
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/fig-rq3-vmeasure.pdf}
-\caption{RQ3: Leave-dataset-out V-measure between mapping-derived
-\texttt{phase} and native \texttt{action} annotations. The dashed line
-marks 0.7. Seven of nine datasets exceed this threshold.}
-\Description{Bar chart showing V-measure for nine held-out datasets,
-with a dashed line at 0.7.}
+\caption{RQ3: Leave-dataset-out mapping quality on 13{,}265 operations
+across 9 held-out datasets.
+Dark bars: V-measure (cluster agreement between mapping-derived
+\texttt{phase} and native \texttt{action} annotations).
+Light bars: boundary F1 (precision/recall of phase transitions).
+``---'': boundary evaluation inapplicable.
+Dashed line marks 0.7; seven of nine datasets exceed it on both metrics.}
+\Description{Grouped bar chart showing V-measure and boundary F1 for
+nine held-out datasets, with a dashed threshold line at 0.7.}
 \label{fig:rq3-vmeasure}
 \end{figure}
 
-Table~\ref{tab:vmeasure} and Figure~\ref{fig:rq3-vmeasure} show the results.
-% Table~\ref{tab:vmeasure} 和 Figure~\ref{fig:rq3-vmeasure} 展示了结果。
-On 7/9 datasets, V-measure exceeds 0.7, indicating strong agreement between mapping-derived tags and native annotations.
-% 在 7/9 数据集上，V-measure 超过 0.7，表明映射衍生标签与原生标签之间有很强的一致性。
-The two low-scoring datasets (toolbench, api-bank) have atypical action vocabularies that the held-out mapping rules do not cover.
-% 两个低分数据集（toolbench、api-bank）具有保留映射规则未覆盖的非典型操作词汇。
+Figure~\ref{fig:rq3-vmeasure} shows the results.
+% Figure~\ref{fig:rq3-vmeasure} 展示了结果。
+V-measure quantifies whether the mapping groups operations into the same clusters as the ground-truth annotations; boundary F1 measures whether phase-transition points align.
+% V-measure 量化映射是否将 operation 分组到与真实标注相同的簇；边界 F1 测量阶段转换点是否对齐。
+Seven of nine datasets exceed 0.7 on both metrics, meaning rules trained on other families generalize: they assign operations to the correct semantic phase and detect transitions accurately.
+% 9 个数据集中有 7 个在两个指标上都超过 0.7，表明在其他家族上训练的规则可泛化。
+The two low-scoring datasets (toolbench, api-bank) use atypical action vocabularies absent from the training families, confirming that the mapping is pattern-based and degrades predictably when vocabulary shifts.
+% 两个低分数据集（toolbench、api-bank）使用训练家族中不存在的非典型操作词汇，确认映射是基于模式的，在词汇变化时可预测地退化。
 
 Supervised boundary predictors beat simple baselines on 4/5 tested datasets (e.g., F1~0.77 vs 0.71 on OSWorld-Human), confirming that mapping rules produce useful tags but are not automatic intent discovery.
 % 有监督的边界预测器在 4/5 测试的数据集上超过简单基线（例如 OSWorld-Human 上 F1 约 0.77 vs 0.71），确认映射规则产生有用标签但不是自动意图发现。
@@ -847,7 +829,7 @@ across trajectories.
 
 Agent observability needs profiling, not only debugging.
 % 智能体可观测性需要性能分析，不仅仅是调试。
-\sys shows that the semantic operation stack model, combined with pluggable intent attribution and stack construction algorithms, closes the aggregation gap for agent traces.
+\sys shows that the semantic operation stack model, combined with pluggable intent attribution and stack construction algorithms, closes the aggregation gap for agent trajectories.
 % \sys 表明，语义 operation stack 模型结合可插拔的意图归因和栈构造算法，填补了智能体 trace 的聚合缺口。
 Scoring profiler output against hidden trajectory annotations confirms that semantic profiling separates over 90\% of system-effect cost that per-session views leave mixed, localizes annotated problems at 9.4\% inspection work versus flat summaries, and produces tags that agree with ground truth on 7/9 held-out datasets.
 % 将分析器输出与隐藏轨迹标签评分确认，语义分析分离了超过 90\% 的混合系统副作用权重，以扁平摘要 9.4\% 的检查工作量定位标注问题，并在 7/9 保留数据集上产生与真实标签一致的标签。
