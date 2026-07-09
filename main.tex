@@ -318,101 +318,117 @@ recognition to folded-stack flame graphs.}
 \end{figure}
 
 \subsection{Intent Recognition (R3: Deterministic Labels)}
+% 意图识别（R3：确定性标签）
 \label{sec:intent}
 
-Operations and stacks handle heterogeneity and flexible aggregation, but
-folding still requires deterministic frame labels, the precondition
-that agent prompts violate (\S\ref{sec:background}). \sys solves
-this by mapping free-form prompts to
-short, stable labels before stack construction.
+Operations and stacks handle heterogeneity and flexible aggregation, but folding still requires deterministic frame labels, the precondition that agent prompts violate (\S\ref{sec:background}).
+% Operation 和 stack 处理了异构性和灵活聚合，但折叠仍需要确定性帧标签，而这正是智能体提示词所违反的前提（\S\ref{sec:background}）。
+\sys solves this by mapping free-form prompts to short, stable labels before stack construction.
+% \sys 通过在栈构建之前将自由形式的提示词映射为短小、稳定的标签来解决此问题。
 
 The design uses a pluggable tagger framework with three backends.
-First, \emph{regex rules} are the production default. Rules have the
-form \texttt{KIND:TAG=REGEX}, where \texttt{KIND} is \texttt{prompt},
-\texttt{llm}, or \texttt{all}, \texttt{TAG} is a short lowercase label,
-and \texttt{REGEX} is a pattern. Rules are evaluated in order; the first
-match wins. The workflow is human--agent collaborative. The developer
-runs \sys, observes the unmatched rate and sample prompts, adds
-rules, re-runs, and iterates until unmatched drops below 5\%. This
-typically takes 5--10 rounds. The resulting rule set is deterministic,
-reproducible, and version-controllable.
-Second, a \emph{local LLM tagger} handles exploration or complex
-multilingual prompts. A local model (e.g., a 3B-parameter GGUF via
-llama.cpp) generates a single-word label per prompt.
-Grammar-constrained decoding ensures output validity. Labels are
-cached, so re-runs with unchanged prompts incur zero LLM calls.
-Third, \emph{unsupervised clustering} via TF-IDF vectorization and
-K-Means discovers natural prompt groups without predefined rules,
-feeding rule authoring.
+% 设计采用可插拔的标注器框架，有三种后端。
+First, \emph{regex rules} are the production default.
+% 第一，正则规则是生产环境的默认选项。
+Rules have the form \texttt{KIND:TAG=REGEX}, where \texttt{KIND} is \texttt{prompt}, \texttt{llm}, or \texttt{all}, \texttt{TAG} is a short lowercase label, and \texttt{REGEX} is a pattern.
+% 规则格式为 \texttt{KIND:TAG=REGEX}，其中 \texttt{KIND} 为 \texttt{prompt}、\texttt{llm} 或 \texttt{all}，\texttt{TAG} 是短小写标签，\texttt{REGEX} 是模式。
+Rules are evaluated in order; the first match wins.
+% 规则按顺序求值，首个匹配胜出。
+The workflow is human--agent collaborative.
+% 工作流是人-智能体协作的。
+The developer runs \sys, observes the unmatched rate and sample prompts, adds rules, re-runs, and iterates until unmatched drops below 5\%.
+% 开发者运行 \sys，观察未匹配率和样本提示词，添加规则，重新运行，迭代直到未匹配率降至 5\% 以下。
+This typically takes 5--10 rounds.
+% 这通常需要 5--10 轮。
+The resulting rule set is deterministic, reproducible, and version-controllable.
+% 最终的规则集是确定性的、可重现的、可版本控制的。
+Second, a \emph{local LLM tagger} handles exploration or complex multilingual prompts.
+% 第二，本地 LLM 标注器处理探索性或复杂多语言提示词。
+A local model (e.g., a 3B-parameter GGUF via llama.cpp) generates a single-word label per prompt.
+% 本地模型（如通过 llama.cpp 运行的 3B 参数 GGUF）为每个提示词生成单词标签。
+Grammar-constrained decoding ensures output validity.
+% 语法约束解码确保输出有效性。
+Labels are cached, so re-runs with unchanged prompts incur zero LLM calls.
+% 标签被缓存，因此对未变更提示词的重新运行不产生 LLM 调用。
+Third, \emph{unsupervised clustering} via TF-IDF vectorization and K-Means discovers natural prompt groups without predefined rules, feeding rule authoring.
+% 第三，通过 TF-IDF 向量化和 K-Means 的无监督聚类在没有预定义规则的情况下发现自然提示词分组，为规则编写提供输入。
 
-The one-word label design is deliberate. Flame-graph frames must be
-short because long summaries make charts unreadable. Labels serve navigation
-and aggregation, not correctness verdicts.
+The one-word label design is deliberate.
+% 单词标签设计是有意为之的。
+Flame-graph frames must be short because long summaries make charts unreadable.
+% 火焰图帧必须短小，因为长摘要会使图表不可读。
+Labels serve navigation and aggregation, not correctness verdicts.
+% 标签服务于导航和聚合，而非正确性判定。
 
-For structured traces such as public benchmark datasets, where action
-types, tool names, and quality annotations are explicit fields, intent
-recognition is unnecessary. \sys supports deterministic
-\emph{mapping rules} that derive new operation fields from existing
-ones before stack construction. For example, the rule
-\texttt{phase:navigate=type:(click|scroll|key)} maps raw action types
-to a coarser \texttt{phase} field, enabling cross-dataset aggregation
-without modifying the input.
+For structured traces such as public benchmark datasets, where action types, tool names, and quality annotations are explicit fields, intent recognition is unnecessary.
+% 对于公开基准数据集等结构化 trace，其中操作类型、工具名和质量标注是显式字段，意图识别是不必要的。
+\sys supports deterministic \emph{mapping rules} that derive new operation fields from existing ones before stack construction.
+% \sys 支持确定性映射规则，在栈构建之前从现有字段派生新的 operation 字段。
+For example, the rule \texttt{phase:navigate=type:(click|scroll|key)} maps raw action types to a coarser \texttt{phase} field, enabling cross-dataset aggregation without modifying the input.
+% 例如，规则 \texttt{phase:navigate=type:(click|scroll|key)} 将原始操作类型映射到更粗粒度的 \texttt{phase} 字段，无需修改输入即可实现跨数据集聚合。
 
-The intent-recognition and mapping-rule paths are both pluggable. New
-backends (e.g., embedding-based classifiers, external LLM APIs, or
-domain-specific heuristics) can be added without changing the
-operation or stack abstractions. A \emph{profile spec} records the
-complete analysis configuration (data sources, backend choice, mappings,
-predicates, stack fields, and outputs) for deterministic replay. Both
-paths produce operations with fields, and the stack query works
-identically on both.
+The intent-recognition and mapping-rule paths are both pluggable.
+% 意图识别和映射规则路径都是可插拔的。
+New backends (e.g., embedding-based classifiers, external LLM APIs, or domain-specific heuristics) can be added without changing the operation or stack abstractions.
+% 新后端（如基于 embedding 的分类器、外部 LLM API 或领域特定启发式）可以在不改变 operation 或 stack 抽象的情况下添加。
+A \emph{profile spec} records the complete analysis configuration (data sources, backend choice, mappings, predicates, stack fields, and outputs) for deterministic replay.
+% Profile spec 记录完整的分析配置（数据源、后端选择、映射、谓词、栈字段和输出）以实现确定性重放。
+Both paths produce operations with fields, and the stack query works identically on both.
+% 两条路径都产生带字段的 operation，栈查询在两者上的工作方式完全相同。
 
 %% ===================================================================
 \section{Implementation}
+% 实现
 \label{sec:impl}
 
-\sys is an offline, post-hoc profiler implemented as a Rust CLI
-(Figure~\ref{fig:architecture}). It reads recorded traces, not live
-events. The \texttt{agent-session} crate reads Codex and Claude Code local JSONL
-history files and reconstructs prompts, LLM calls, tool invocations, and
-their triggered file and network effects. Each prompt opens a span. LLM
-calls, tool calls, and system effects within that span inherit its
-semantic label, connecting intent to system behavior without runtime
-instrumentation. Public benchmark datasets enter as operation JSONL with
-mapping rules deriving fields before stack construction. Standard Chrome
-Trace Event format can also be imported, with non-\sys protocol
-fields preserved as operation fields.
+\sys is an offline, post-hoc profiler implemented as a Rust CLI (Figure~\ref{fig:architecture}).
+% \sys 是一个离线、事后分析器，实现为 Rust CLI（Figure~\ref{fig:architecture}）。
+It reads recorded traces, not live events.
+% 它读取记录的 trace，而非实时事件。
+The \texttt{agent-session} crate reads Codex and Claude Code local JSONL history files and reconstructs prompts, LLM calls, tool invocations, and their triggered file and network effects.
+% \texttt{agent-session} crate 读取 Codex 和 Claude Code 本地 JSONL 历史文件，重建提示词、LLM 调用、工具调用及其触发的文件和网络副作用。
+Each prompt opens a span.
+% 每个提示词打开一个 span。
+LLM calls, tool calls, and system effects within that span inherit its semantic label, connecting intent to system behavior without runtime instrumentation.
+% 该 span 内的 LLM 调用、工具调用和系统副作用继承其语义标签，无需运行时插桩即可连接意图与系统行为。
+Public benchmark datasets enter as operation JSONL with mapping rules deriving fields before stack construction.
+% 公开基准数据集以 operation JSONL 形式进入，映射规则在栈构建之前派生字段。
+Standard Chrome Trace Event format can also be imported, with non-\sys protocol fields preserved as operation fields.
+% 标准 Chrome Trace Event 格式也可导入，非 \sys 协议字段作为 operation 字段保留。
 
-Output formats include pprof protobuf (compatible with
-\texttt{go tool pprof -http}), folded-stack text (compatible with
-\texttt{flamegraph.pl}), standalone SVG flame graphs, and JSON summaries.
+Output formats include pprof protobuf (compatible with \texttt{go tool pprof -http}), folded-stack text (compatible with \texttt{flamegraph.pl}), standalone SVG flame graphs, and JSON summaries.
+% 输出格式包括 pprof protobuf（兼容 \texttt{go tool pprof -http}）、折叠栈文本（兼容 \texttt{flamegraph.pl}）、独立 SVG 火焰图和 JSON 摘要。
 All outputs are deterministic given the same input and profile spec.
+% 在相同输入和 profile spec 下，所有输出都是确定性的。
 
-\sys is the offline profiling component of the
-AgentSight~\cite{agentsight} observability framework. AgentSight provides real-time eBPF-based
-capture of SSL traffic, process events, and file/network effects.
-\sys aggregates the recorded traces into semantic profiles. The two
-are complementary. AgentSight answers ``what happened during this run''
-(debugging), \sys answers ``where did the budget go across runs''
-(profiling).
+\sys is the offline profiling component of the AgentSight~\cite{agentsight} observability framework.
+% \sys 是 AgentSight~\cite{agentsight} 可观测性框架的离线分析组件。
+AgentSight provides real-time eBPF-based capture of SSL traffic, process events, and file/network effects.
+% AgentSight 提供基于 eBPF 的实时 SSL 流量、进程事件和文件/网络副作用捕获。
+\sys aggregates the recorded traces into semantic profiles.
+% \sys 将记录的 trace 聚合为语义概要。
+The two are complementary.
+% 两者互补。
+AgentSight answers ``what happened during this run'' (debugging), \sys answers ``where did the budget go across runs'' (profiling).
+% AgentSight 回答"这次运行发生了什么"（调试），\sys 回答"预算跨运行花在了哪里"（分析）。
 
 %% ===================================================================
 \section{Evaluation}
+% 评估
 \label{sec:eval}
 
-We use two classes of data. \emph{Real agent sessions}: 325 readable
-local sessions (198~Codex, 50~Claude, 77~Claude subagent) from a
-multi-month development project, containing 183{,}714 system
-observations. \emph{Public labeled traces}: 15 families covering web,
-mobile, desktop, software, API, and dialogue agents
-(Table~\ref{tab:datasets}), totaling 47{,}590 operations through
-mapping rules. All public traces are real agent or human executions
-collected and labeled by their respective benchmark projects. Four
-oracle-rich families (AgentRewardBench, SATraj-OS, AgentNet,
-OSWorld-Human) provide hidden ground-truth labels for RQ2.
-We measure semantic separation (mixed-weight percentage), localization
-quality (AP, recall, work-to-first-positive), and label agreement
-(V-measure, boundary F1).
+We use two classes of data.
+% 我们使用两类数据。
+\emph{Real agent sessions}: 325 readable local sessions (198~Codex, 50~Claude, 77~Claude subagent) from a multi-month development project, containing 183{,}714 system observations.
+% 真实智能体会话：来自一个多月开发项目的 325 个可读本地会话（198 个 Codex、50 个 Claude、77 个 Claude 子智能体），包含 183,714 个系统观测。
+\emph{Public labeled traces}: 15 families covering web, mobile, desktop, software, API, and dialogue agents (Table~\ref{tab:datasets}), totaling 47{,}590 operations through mapping rules.
+% 公开标注 trace：15 个家族，涵盖 web、移动、桌面、软件、API 和对话智能体（Table~\ref{tab:datasets}），通过映射规则共计 47,590 个 operation。
+All public traces are real agent or human executions collected and labeled by their respective benchmark projects.
+% 所有公开 trace 都是由各自基准项目收集和标注的真实智能体或人类执行。
+Four oracle-rich families (AgentRewardBench, SATraj-OS, AgentNet, OSWorld-Human) provide hidden ground-truth labels for RQ2.
+% 四个 oracle 丰富的家族（AgentRewardBench、SATraj-OS、AgentNet、OSWorld-Human）为 RQ2 提供隐藏的真实标签。
+We measure semantic separation (mixed-weight percentage), localization quality (AP, recall, work-to-first-positive), and label agreement (V-measure, boundary F1).
+% 我们测量语义分离度（混合权重百分比）、定位质量（AP、召回率、首个正例工作量）和标签一致性（V-measure、边界 F1）。
 
 \begin{table*}[t]
 \centering\small
@@ -438,13 +454,12 @@ AgentNet~\cite{agentnet} & Step correctness, redundancy & HF JSONL & Real deskto
 
 %% -------------------------------------------------------------------
 \subsection{RQ1: Does Semantic Profiling Separate What Flat Views Mix?}
+% RQ1：语义分析能否分离扁平视图所混合的内容？
 
-The strongest argument against semantic profiling (aggregation
-by intent-derived labels) is that traditional
-tools ``can already see the same information.'' RQ1 tests this claim
-directly by measuring how much system-effect weight falls into
-\emph{mixed-intent} buckets (those containing observations from
-multiple semantic regions) under different projection choices.
+The strongest argument against semantic profiling (aggregation by intent-derived labels) is that traditional tools ``can already see the same information.''
+% 反对语义分析（按意图衍生标签聚合）的最强论点是传统工具"已经能看到相同信息"。
+RQ1 tests this claim directly by measuring how much system-effect weight falls into \emph{mixed-intent} buckets (those containing observations from multiple semantic regions) under different projection choices.
+% RQ1 通过测量在不同投影选择下有多少系统副作用权重落入混合意图桶（包含来自多个语义区域观测的桶）来直接检验此声称。
 
 \begin{table}[t]
 \centering\small
@@ -463,40 +478,42 @@ Session + prompt & 26{,}829 & 0.0 & 0.0 \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:mixing} shows the result on 325 real Codex/Claude
-sessions. Without semantic labels, 90.4\% of system-effect weight falls
-into mixed buckets. A flat \texttt{cargo~test} counter shows 2{,}903
-executions but cannot distinguish whether they came from
-\texttt{review}, \texttt{debug}, \texttt{refactor}, or \texttt{test}
-prompts. Adding only the prompt label reduces mixed weight to 36.7\% and
-residual to 7.5\%. The session label alone barely helps (84.4\%), because
-sessions typically contain multiple intent phases.
+Table~\ref{tab:mixing} shows the result on 325 real Codex/Claude sessions.
+% Table~\ref{tab:mixing} 展示了 325 个真实 Codex/Claude 会话上的结果。
+Without semantic labels, 90.4\% of system-effect weight falls into mixed buckets.
+% 没有语义标签时，90.4\% 的系统副作用权重落入混合桶。
+A flat \texttt{cargo~test} counter shows 2{,}903 executions but cannot distinguish whether they came from \texttt{review}, \texttt{debug}, \texttt{refactor}, or \texttt{test} prompts.
+% 扁平的 \texttt{cargo test} 计数器显示 2,903 次执行，但无法区分它们来自 \texttt{review}、\texttt{debug}、\texttt{refactor} 还是 \texttt{test} 提示词。
+Adding only the prompt label reduces mixed weight to 36.7\% and residual to 7.5\%.
+% 仅添加提示词标签就将混合权重降至 36.7\%，残余降至 7.5\%。
+The session label alone barely helps (84.4\%), because sessions typically contain multiple intent phases.
+% 仅会话标签几乎没有帮助（84.4\%），因为会话通常包含多个意图阶段。
 
-A label-permutation test (1{,}000 shuffles, $p = 0.001$) confirms the
-separation is not random. Label quality is validated in RQ3.
+A label-permutation test (1{,}000 shuffles, $p = 0.001$) confirms the separation is not random.
+% 标签置换测试（1,000 次洗牌，$p = 0.001$）确认分离不是随机的。
+Label quality is validated in RQ3.
+% 标签质量在 RQ3 中验证。
 
-RQ1 also tests whether query-time stack selection (R2) adds value
-beyond flat label grouping. The same two-abstraction model covers all 15
-public trace families (Table~\ref{tab:datasets}) without type-specific
-objects, validating R1. On the four oracle-rich families, the same 13{,}265 operations
-fold from 9~dataset stacks to 57~phase stacks, 226~semantic stacks,
-455~action stacks, or 3{,}757~fixed-session stacks by changing only the
-stack fields. A flat GROUP BY on a single label cannot produce these views because
-different stack depths answer different questions (task-level
-budget vs.\ action-level duplication vs.\ session-level drilldown), and
-the profiler produces all of them from the same operations.
+RQ1 also tests whether query-time stack selection (R2) adds value beyond flat label grouping.
+% RQ1 还测试查询时栈选择（R2）是否在扁平标签分组之外增加价值。
+The same two-abstraction model covers all 15 public trace families (Table~\ref{tab:datasets}) without type-specific objects, validating R1.
+% 同一双抽象模型覆盖了所有 15 个公开 trace 家族（Table~\ref{tab:datasets}），无需特定类型对象，验证了 R1。
+On the four oracle-rich families, the same 13{,}265 operations fold from 9~dataset stacks to 57~phase stacks, 226~semantic stacks, 455~action stacks, or 3{,}757~fixed-session stacks by changing only the stack fields.
+% 在四个 oracle 丰富的家族上，同样的 13,265 个 operation 仅通过改变栈字段即可从 9 个数据集栈折叠为 57 个阶段栈、226 个语义栈、455 个操作栈或 3,757 个固定会话栈。
+A flat GROUP BY on a single label cannot produce these views because different stack depths answer different questions (task-level budget vs.\ action-level duplication vs.\ session-level drilldown), and the profiler produces all of them from the same operations.
+% 单标签的扁平 GROUP BY 无法产生这些视图，因为不同栈深度回答不同问题（任务级预算 vs. 操作级重复 vs. 会话级下钻），而分析器从同一组 operation 生成所有这些视图。
 
-The multi-view design is further validated by metric divergence. The
-\texttt{time} and \texttt{tokens} views of the same sessions share
-only 7/10 top prompt categories (Spearman $\rho = 0.623$).
-\texttt{network}-tagged prompts rank 8th by time (I/O wait) but 93rd by
-tokens.
+The multi-view design is further validated by metric divergence.
+% 多视图设计通过指标差异进一步验证。
+The \texttt{time} and \texttt{tokens} views of the same sessions share only 7/10 top prompt categories (Spearman $\rho = 0.623$).
+% 同一会话的 \texttt{time} 和 \texttt{tokens} 视图仅共享 7/10 的顶级提示词类别（Spearman $\rho = 0.623$）。
+\texttt{network}-tagged prompts rank 8th by time (I/O wait) but 93rd by tokens.
+% \texttt{network} 标记的提示词按时间排第 8（I/O 等待）但按 token 排第 93。
 
 Figure~\ref{fig:rq1-separation} visualizes the ablation.
-Figures~\ref{fig:flamegraph} and~\ref{fig:flamegraph-files} show
-the resulting flame graphs for the \texttt{tokens} and \texttt{files}
-views respectively, showing that changing only the stack fields and weight function
-produces different aggregates from the same operations.
+% Figure~\ref{fig:rq1-separation} 可视化了消融实验。
+Figures~\ref{fig:flamegraph} and~\ref{fig:flamegraph-files} show the resulting flame graphs for the \texttt{tokens} and \texttt{files} views respectively, showing that changing only the stack fields and weight function produces different aggregates from the same operations.
+% Figures~\ref{fig:flamegraph} 和~\ref{fig:flamegraph-files} 分别展示了 \texttt{tokens} 和 \texttt{files} 视图的火焰图，表明仅改变栈字段和权重函数即可从同一组 operation 产生不同聚合。
 
 \begin{figure}[t]
 \centering
@@ -539,23 +556,19 @@ sessions and prompt categories.}
 
 %% -------------------------------------------------------------------
 \subsection{RQ2: Can Profiler Groups Localize Hidden Labeled Problems?}
+% RQ2：分析器分组能否定位隐藏标签问题？
 
-RQ2 asks whether the profiler's top groups correspond to real labeled
-problems, specifically whether categories that concentrate failures, safety
-violations, or wasted effort surface at the top of ranked output. The
-methodology is analogous to injecting known
-bottlenecks in a CPU profiler evaluation. Public benchmark datasets
-provide ground-truth labels (failure, safety violation, redundant step,
-human-task boundary); we hide these labels, run the profiler, rank the
-resulting groups, and check whether the top groups contain the hidden
-positives.
+RQ2 asks whether the profiler's top groups correspond to real labeled problems, specifically whether categories that concentrate failures, safety violations, or wasted effort surface at the top of ranked output.
+% RQ2 询问分析器的顶级分组是否对应真实的标注问题，具体来说，集中故障、安全违规或浪费算力的类别是否出现在排序输出的顶部。
+The methodology is analogous to injecting known bottlenecks in a CPU profiler evaluation.
+% 该方法类似于在 CPU 分析器评估中注入已知瓶颈。
+Public benchmark datasets provide ground-truth labels (failure, safety violation, redundant step, human-task boundary); we hide these labels, run the profiler, rank the resulting groups, and check whether the top groups contain the hidden positives.
+% 公开基准数据集提供真实标签（故障、安全违规、冗余步骤、人工任务边界）；我们隐藏这些标签，运行分析器，排序结果分组，检查顶级分组是否包含隐藏的正例。
 
-The benchmark uses six tasks across four datasets (AgentRewardBench
-looping and side-effect, SATraj-OS unsafe operation, AgentNet incorrect
-and redundant step, and OSWorld-Human group start), totaling 34{,}539 operations and
-3{,}699 positives. Six views (flat, fixed-session, dataset-native,
-raw-action, operation-stack, label-drilldown) and four rankers (width,
-visible-risk, query-aware, oracle).
+The benchmark uses six tasks across four datasets (AgentRewardBench looping and side-effect, SATraj-OS unsafe operation, AgentNet incorrect and redundant step, and OSWorld-Human group start), totaling 34{,}539 operations and 3{,}699 positives.
+% 基准使用四个数据集的六个任务（AgentRewardBench 循环和副作用、SATraj-OS 不安全操作、AgentNet 不正确和冗余步骤、OSWorld-Human 组起始），共计 34,539 个 operation 和 3,699 个正例。
+Six views (flat, fixed-session, dataset-native, raw-action, operation-stack, label-drilldown) and four rankers (width, visible-risk, query-aware, oracle).
+% 六种视图（扁平、固定会话、数据集原生、原始操作、operation stack、标签下钻）和四种排序器（宽度、可见风险、查询感知、oracle）。
 
 \begin{table*}[t]
 \centering\small
@@ -578,26 +591,27 @@ label-drilldown:oracle & 1 & 1.000 & 0.670 & 0.797 & 0.115 & 1.000 & 0.038 & ---
 \end{tabular}
 \end{table*}
 
-Table~\ref{tab:localization} summarizes the results. Flat summaries
-recover all positives but require inspecting everything
-(Work@5\,=\,1.0). Fixed-session drilldown finds a first positive quickly
-(WTFP\,=\,0.004) but fragments the workload into 285 groups with only
-2.3\% top-five recall. Operation-stack query-aware profiling inspects
-9.4\% of the work in the top five groups, achieves 39.0\% budget-30
-recall, and reduces groups to 157.5.
+Table~\ref{tab:localization} summarizes the results.
+% Table~\ref{tab:localization} 总结了结果。
+Flat summaries recover all positives but require inspecting everything (Work@5\,=\,1.0).
+% 扁平摘要恢复所有正例但需要检查全部内容（Work@5 = 1.0）。
+Fixed-session drilldown finds a first positive quickly (WTFP\,=\,0.004) but fragments the workload into 285 groups with only 2.3\% top-five recall.
+% 固定会话下钻快速找到首个正例（WTFP = 0.004），但将工作量碎片化为 285 个组，前五召回率仅 2.3\%。
+Operation-stack query-aware profiling inspects 9.4\% of the work in the top five groups, achieves 39.0\% budget-30 recall, and reduces groups to 157.5.
+% Operation stack 查询感知分析在前五组中检查 9.4\% 的工作量，达到 39.0\% 的 budget-30 召回率，并将组数减少到 157.5。
 
-Figure~\ref{fig:rq2-tradeoff} visualizes this tradeoff: op-stack
-query-aware sits in the low-work, moderate-recall region. The comparison also
-serves as evidence for the two-abstraction model (\S\ref{sec:design}). Fixed-session
-drilldown and dataset-native hierarchy are alternative abstractions that
-fix the hierarchy at session or dataset boundaries. Operation stacks
-subsume both as special cases (include \texttt{session} in the stack
-to recover fixed-session; include \texttt{dataset} to recover
-dataset-native). On localization, operation stacks improve top-five
-recall over fixed-session on 5/6 tasks, reduce median group count by
-45\%, and save 90\% of inspection work versus flat summaries.
-Fixed-session drilldown retains lower work-to-first-positive on 4/6
-tasks, confirming that profilers and debuggers are complementary.
+Figure~\ref{fig:rq2-tradeoff} visualizes this tradeoff: op-stack query-aware sits in the low-work, moderate-recall region.
+% Figure~\ref{fig:rq2-tradeoff} 可视化了这一权衡：op-stack query-aware 位于低工作量、中等召回率区域。
+The comparison also serves as evidence for the two-abstraction model (\S\ref{sec:design}).
+% 该比较也作为双抽象模型（\S\ref{sec:design}）的证据。
+Fixed-session drilldown and dataset-native hierarchy are alternative abstractions that fix the hierarchy at session or dataset boundaries.
+% 固定会话下钻和数据集原生层次是在会话或数据集边界固定层次的替代抽象。
+Operation stacks subsume both as special cases (include \texttt{session} in the stack to recover fixed-session; include \texttt{dataset} to recover dataset-native).
+% Operation stack 将两者作为特例包含（栈中包含 \texttt{session} 恢复固定会话；包含 \texttt{dataset} 恢复数据集原生）。
+On localization, operation stacks improve top-five recall over fixed-session on 5/6 tasks, reduce median group count by 45\%, and save 90\% of inspection work versus flat summaries.
+% 在定位方面，operation stack 在 5/6 任务上改进了相对固定会话的前五召回率，中位组数减少 45\%，比扁平摘要节省 90\% 的检查工作量。
+Fixed-session drilldown retains lower work-to-first-positive on 4/6 tasks, confirming that profilers and debuggers are complementary.
+% 固定会话下钻在 4/6 任务上保持更低的首个正例工作量，确认分析器和调试器是互补的。
 
 \begin{figure}[t]
 \centering
@@ -611,51 +625,53 @@ for eight profiling policies.}
 \label{fig:rq2-tradeoff}
 \end{figure}
 
-Statistical validation supports these comparisons. Bootstrap
-(10{,}000 resamples) and label-permutation (2{,}000 trials) confirm
-stable AP deltas exceeding the 95\% prevalence/group-size null on all
-six tasks.
+Statistical validation supports these comparisons.
+% 统计验证支持这些比较。
+Bootstrap (10{,}000 resamples) and label-permutation (2{,}000 trials) confirm stable AP deltas exceeding the 95\% prevalence/group-size null on all six tasks.
+% Bootstrap（10,000 次重采样）和标签置换（2,000 次试验）确认所有六个任务上稳定的 AP 增量超过 95\% 普遍率/组大小零假设。
 
-Beyond localization, we test whether profiler output suggests concrete
-configuration improvements. Executable profile-spec patches modify
-stack fields, mapping rules, or rankers, then re-run over the same
-visible operations. Five of six
-patches improve AP, top-five lift, and first-positive work (median AP
-delta 0.038, median top-five lift delta 0.575). Three reusable patterns
-emerge: (1)~safety/side-effect tasks benefit from field and ranker
-changes; (2)~step-quality tasks benefit from stack-based
-localization followed by fixed-session drilldown for examples;
-(3)~human-boundary tasks require boundary-derived fields. The rejected
-OSWorld-Human patch shows that visible rank features alone are
-insufficient for boundary objectives. Folding held-out boundary-derived
-fields improves AP from 0.240 to 0.258 and reduces groups from 108 to
-74, with an explicit work tradeoff.
+Beyond localization, we test whether profiler output suggests concrete configuration improvements.
+% 除定位外，我们还测试分析器输出是否建议具体的配置改进。
+Executable profile-spec patches modify stack fields, mapping rules, or rankers, then re-run over the same visible operations.
+% 可执行的 profile-spec 补丁修改栈字段、映射规则或排序器，然后在相同可见 operation 上重新运行。
+Five of six patches improve AP, top-five lift, and first-positive work (median AP delta 0.038, median top-five lift delta 0.575).
+% 六个补丁中有五个改进了 AP、前五提升和首个正例工作量（中位 AP 增量 0.038，中位前五提升增量 0.575）。
+Three reusable patterns emerge: (1)~safety/side-effect tasks benefit from field and ranker changes; (2)~step-quality tasks benefit from stack-based localization followed by fixed-session drilldown for examples; (3)~human-boundary tasks require boundary-derived fields.
+% 三种可复用模式浮现：(1) 安全/副作用任务受益于字段和排序器变更；(2) 步骤质量任务受益于基于栈的定位后跟固定会话下钻获取示例；(3) 人工边界任务需要边界衍生字段。
+The rejected OSWorld-Human patch shows that visible rank features alone are insufficient for boundary objectives.
+% 被拒绝的 OSWorld-Human 补丁表明仅可见排名特征不足以实现边界目标。
+Folding held-out boundary-derived fields improves AP from 0.240 to 0.258 and reduces groups from 108 to 74, with an explicit work tradeoff.
+% 折叠保留的边界衍生字段将 AP 从 0.240 提高到 0.258，组数从 108 减少到 74，存在明确的工作量权衡。
 
-Rank-feature ablations identify 7 critical feature rows
-(\texttt{repeat\_signal}, write-action, \texttt{status=success}) and 3
-misleading rows. Guided repairs improve AP on 2/3 misleading cases but
-use offline scored feedback, not an automatic learned ranker.
+Rank-feature ablations identify 7 critical feature rows (\texttt{repeat\_signal}, write-action, \texttt{status=success}) and 3 misleading rows.
+% 排名特征消融识别出 7 个关键特征行（\texttt{repeat\_signal}、write-action、\texttt{status=success}）和 3 个误导行。
+Guided repairs improve AP on 2/3 misleading cases but use offline scored feedback, not an automatic learned ranker.
+% 引导修复在 2/3 的误导案例上改进了 AP，但使用离线评分反馈，而非自动学习排序器。
 
 %% -------------------------------------------------------------------
 \subsection{RQ3: How Reliable Are the Derived Labels?}
+% RQ3：衍生标签的可靠性如何？
 
-RQ1 and RQ2 assume that semantic labels are useful. RQ3 tests the
-label-derivation pipeline itself. For structured traces (public
-datasets), we evaluate the \emph{mapping} path against ground-truth
-annotations. For free-form traces (real sessions), we evaluate the
-\emph{intent-recognition} path at the scale and syntax level. Quality
-assessment of the LLM/regex tagger against free-form ground truth
-remains future work.
+RQ1 and RQ2 assume that semantic labels are useful.
+% RQ1 和 RQ2 假设语义标签是有用的。
+RQ3 tests the label-derivation pipeline itself.
+% RQ3 测试标签衍生管线本身。
+For structured traces (public datasets), we evaluate the \emph{mapping} path against ground-truth annotations.
+% 对于结构化 trace（公开数据集），我们针对真实标注评估映射路径。
+For free-form traces (real sessions), we evaluate the \emph{intent-recognition} path at the scale and syntax level.
+% 对于自由形式 trace（真实会话），我们在规模和语法层面评估意图识别路径。
+Quality assessment of the LLM/regex tagger against free-form ground truth remains future work.
+% LLM/正则标注器相对自由形式真实标签的质量评估仍是未来工作。
 
-On 325 real sessions, the LLM tagger processes 118{,}021 tag requests
-with zero failures and p95 latency of 31\,ms per label.
+On 325 real sessions, the LLM tagger processes 118{,}021 tag requests with zero failures and p95 latency of 31\,ms per label.
+% 在 325 个真实会话上，LLM 标注器处理了 118,021 个标注请求，零失败，p95 延迟为每标签 31 ms。
 
-Public benchmark datasets provide native action labels that serve as
-ground truth for mapping quality. We run a leave-dataset-out evaluation.
-For each of 9 datasets, we train mapping rules on the other 8 and
-measure V-measure between the mapping-derived \texttt{phase} field and
-the dataset's native \texttt{action} labels, plus boundary F1 between
-mapped phase boundaries and native action boundaries.
+Public benchmark datasets provide native action labels that serve as ground truth for mapping quality.
+% 公开基准数据集提供原生操作标签作为映射质量的真实标准。
+We run a leave-dataset-out evaluation.
+% 我们运行留一数据集评估。
+For each of 9 datasets, we train mapping rules on the other 8 and measure V-measure between the mapping-derived \texttt{phase} field and the dataset's native \texttt{action} labels, plus boundary F1 between mapped phase boundaries and native action boundaries.
+% 对于 9 个数据集中的每一个，我们在其余 8 个上训练映射规则，测量映射衍生的 \texttt{phase} 字段与数据集原生 \texttt{action} 标签之间的 V-measure，以及映射阶段边界与原生操作边界之间的边界 F1。
 
 \begin{table}[t]
 \centering\small
@@ -692,90 +708,96 @@ with a dashed line at 0.7.}
 \label{fig:rq3-vmeasure}
 \end{figure}
 
-Table~\ref{tab:vmeasure} and Figure~\ref{fig:rq3-vmeasure} show the
-results. On 7/9 datasets, V-measure exceeds 0.7, indicating strong
-agreement between mapping-derived and native labels. The two
-low-scoring datasets (toolbench, api-bank) have atypical action
-vocabularies that the held-out mapping rules do not cover.
+Table~\ref{tab:vmeasure} and Figure~\ref{fig:rq3-vmeasure} show the results.
+% Table~\ref{tab:vmeasure} 和 Figure~\ref{fig:rq3-vmeasure} 展示了结果。
+On 7/9 datasets, V-measure exceeds 0.7, indicating strong agreement between mapping-derived and native labels.
+% 在 7/9 数据集上，V-measure 超过 0.7，表明映射衍生标签与原生标签之间有很强的一致性。
+The two low-scoring datasets (toolbench, api-bank) have atypical action vocabularies that the held-out mapping rules do not cover.
+% 两个低分数据集（toolbench、api-bank）具有保留映射规则未覆盖的非典型操作词汇。
 
-A supervised boundary-derivation backend further validates the field
-pipeline. On OSWorld-Human held-out adjacent pairs, a learned boundary
-predictor achieves F1~0.77, beating the best simple baseline
-(\texttt{always\_boundary}, F1~0.71). Learned backends beat simple
-baselines on 4/5 tested boundary families, while AgentRewardBench
-looping is fully explained by \texttt{repeat\_signal\_change} (baseline
-F1~1.0). These baseline comparisons support field derivation as a guarded configuration
-step, not automatic intent discovery.
+A supervised boundary-derivation backend further validates the field pipeline.
+% 有监督的边界衍生后端进一步验证了字段管线。
+On OSWorld-Human held-out adjacent pairs, a learned boundary predictor achieves F1~0.77, beating the best simple baseline (\texttt{always\_boundary}, F1~0.71).
+% 在 OSWorld-Human 保留相邻对上，学习的边界预测器达到 F1 约 0.77，超过最佳简单基线（\texttt{always\_boundary}，F1 约 0.71）。
+Learned backends beat simple baselines on 4/5 tested boundary families, while AgentRewardBench looping is fully explained by \texttt{repeat\_signal\_change} (baseline F1~1.0).
+% 学习后端在 4/5 测试的边界家族上超过简单基线，而 AgentRewardBench 循环完全由 \texttt{repeat\_signal\_change} 解释（基线 F1 约 1.0）。
+These baseline comparisons support field derivation as a guarded configuration step, not automatic intent discovery.
+% 这些基线比较支持字段衍生作为受保护的配置步骤，而非自动意图发现。
 
-All results are backed by profile specs for deterministic replay. We
-re-execute 76 tracked specs twice (152 invocations), and all produce
-identical output with median runtime 1.6\,s per spec.
+All results are backed by profile specs for deterministic replay.
+% 所有结果都有 profile spec 支持确定性重放。
+We re-execute 76 tracked specs twice (152 invocations), and all produce identical output with median runtime 1.6\,s per spec.
+% 我们重新执行 76 个跟踪的 spec 两次（152 次调用），全部产生相同输出，中位运行时间每 spec 1.6 秒。
 
 %% ===================================================================
 \section{Related Work}
+% 相关工作
 
-Flame graphs~\cite{flamegraphs} and pprof~\cite{pprof} establish the
-folded-stack lineage. Profiles are weighted samples with location
-hierarchies. Pprof supports sample labels and can visualize them as
-pseudo stack frames through tag-root/tag-leaf options. Perfetto
-generalizes trace ingestion with SQL-based analysis and derived
-events~\cite{perfetto}. These systems support query-time aggregation, so
-\sys does not claim novelty for flexible aggregation alone. The
-difference is structural. Pprof's tagroot adds label-derived frames to
-an existing execution call stack. Agent traces have no execution stack,
-so the entire profiling structure must be constructed from semantic
-fields. The evaluation also differs: \sys scores profiler output
-against hidden agent-trajectory labels, a methodology with no analogue
-in CPU profiling.
+Flame graphs~\cite{flamegraphs} and pprof~\cite{pprof} establish the folded-stack lineage.
+% 火焰图~\cite{flamegraphs}和 pprof~\cite{pprof} 建立了折叠栈的谱系。
+Profiles are weighted samples with location hierarchies.
+% 概要是带有位置层次的加权样本。
+Pprof supports sample labels and can visualize them as pseudo stack frames through tag-root/tag-leaf options.
+% Pprof 支持样本标签，并可通过 tag-root/tag-leaf 选项将其可视化为伪栈帧。
+Perfetto generalizes trace ingestion with SQL-based analysis and derived events~\cite{perfetto}.
+% Perfetto 通过基于 SQL 的分析和衍生事件~\cite{perfetto}泛化了 trace 摄取。
+These systems support query-time aggregation, so \sys does not claim novelty for flexible aggregation alone.
+% 这些系统支持查询时聚合，因此 \sys 不单独声称灵活聚合的新颖性。
+The difference is structural.
+% 差异是结构性的。
+Pprof's tagroot adds label-derived frames to an existing execution call stack.
+% Pprof 的 tagroot 在已有执行调用栈上添加标签衍生帧。
+Agent traces have no execution stack, so the entire profiling structure must be constructed from semantic fields.
+% 智能体 trace 没有执行栈，因此整个分析结构必须从语义字段构建。
+The evaluation also differs: \sys scores profiler output against hidden agent-trajectory labels, a methodology with no analogue in CPU profiling.
+% 评估也不同：\sys 将分析器输出与隐藏的智能体轨迹标签进行评分，这一方法在 CPU 分析中没有对应物。
 
-OpenTelemetry GenAI and OpenInference standardize GenAI
-spans~\cite{otel, openinference}. LangSmith~\cite{langsmith},
-Langfuse~\cite{langfuse}, and Phoenix~\cite{phoenix} provide trace
-visualization, session management, evaluations, and dashboards.
-AgentOps~\cite{agentops} argues for structured agent observability
-covering goals, plans, tools, and artifacts.
-AgentTelemetry~\cite{agenttelemetry} defines 14 fault types over 9
-agent-specific span kinds that extend OpenTelemetry for agent
-orchestration phases. Wang et al.~\cite{agenttraces-trust} survey
-evidence tracing and execution provenance as foundations for agent
-accountability. These systems excel at single-execution debugging or
-fault detection. \sys complements them with cross-session aggregate
-profiling. Datadog LLM Observability~\cite{datadog-llmobs} and Laminar
-Signals~\cite{laminar-signals} take steps toward semantic aggregation by
-clustering user messages or extracting structured events, but they
-characterize \emph{input distributions}, not \emph{resource
-attribution}.
+OpenTelemetry GenAI and OpenInference standardize GenAI spans~\cite{otel, openinference}.
+% OpenTelemetry GenAI 和 OpenInference 标准化了 GenAI span~\cite{otel, openinference}。
+LangSmith~\cite{langsmith}, Langfuse~\cite{langfuse}, and Phoenix~\cite{phoenix} provide trace visualization, session management, evaluations, and dashboards.
+% LangSmith~\cite{langsmith}、Langfuse~\cite{langfuse} 和 Phoenix~\cite{phoenix} 提供 trace 可视化、会话管理、评估和仪表盘。
+AgentOps~\cite{agentops} argues for structured agent observability covering goals, plans, tools, and artifacts.
+% AgentOps~\cite{agentops} 主张涵盖目标、计划、工具和制品的结构化智能体可观测性。
+AgentTelemetry~\cite{agenttelemetry} defines 14 fault types over 9 agent-specific span kinds that extend OpenTelemetry for agent orchestration phases.
+% AgentTelemetry~\cite{agenttelemetry} 定义了 9 种智能体特定 span 类型上的 14 种故障类型，扩展了 OpenTelemetry 以覆盖智能体编排阶段。
+Wang et al.~\cite{agenttraces-trust} survey evidence tracing and execution provenance as foundations for agent accountability.
+% Wang et al.~\cite{agenttraces-trust} 综述了证据追踪和执行溯源作为智能体问责的基础。
+These systems excel at single-execution debugging or fault detection.
+% 这些系统擅长单次执行调试或故障检测。
+\sys complements them with cross-session aggregate profiling.
+% \sys 以跨会话聚合分析作为补充。
+Datadog LLM Observability~\cite{datadog-llmobs} and Laminar Signals~\cite{laminar-signals} take steps toward semantic aggregation by clustering user messages or extracting structured events, but they characterize \emph{input distributions}, not \emph{resource attribution}.
+% Datadog LLM Observability~\cite{datadog-llmobs} 和 Laminar Signals~\cite{laminar-signals} 通过聚类用户消息或提取结构化事件向语义聚合迈进，但它们刻画的是输入分布而非资源归因。
 
-AgentRx~\cite{agentrx} releases annotated failure trajectories and uses
-constraint checking plus an LLM judge for root-cause localization.
-TELBench~\cite{telbench} builds span-localization benchmarks from
-semantic error annotations. AgentAtlas~\cite{agentatlas} argues that
-outcome leaderboards miss trajectory-level quality.
-TrajAD~\cite{trajad} and AgentFixer~\cite{agentfixer} detect trajectory
-anomalies and recommend fixes. These systems perform \emph{span-level}
-or \emph{step-level} fault localization within a single execution.
-\sys performs \emph{category-level} aggregate profiling, identifying
-which categories of work produce the most failures, consume the most
-budget, or generate repeated system effects across sessions.
+AgentRx~\cite{agentrx} releases annotated failure trajectories and uses constraint checking plus an LLM judge for root-cause localization.
+% AgentRx~\cite{agentrx} 发布标注的失败轨迹，使用约束检查加 LLM 评判进行根因定位。
+TELBench~\cite{telbench} builds span-localization benchmarks from semantic error annotations.
+% TELBench~\cite{telbench} 从语义错误标注构建 span 定位基准。
+AgentAtlas~\cite{agentatlas} argues that outcome leaderboards miss trajectory-level quality.
+% AgentAtlas~\cite{agentatlas} 认为结果排行榜忽略了轨迹级质量。
+TrajAD~\cite{trajad} and AgentFixer~\cite{agentfixer} detect trajectory anomalies and recommend fixes.
+% TrajAD~\cite{trajad} 和 AgentFixer~\cite{agentfixer} 检测轨迹异常并推荐修复。
+These systems perform \emph{span-level} or \emph{step-level} fault localization within a single execution.
+% 这些系统在单次执行内执行 span 级或步骤级故障定位。
+\sys performs \emph{category-level} aggregate profiling, identifying which categories of work produce the most failures, consume the most budget, or generate repeated system effects across sessions.
+% \sys 执行类别级聚合分析，识别哪些工作类别产生最多故障、消耗最多预算或跨会话产生重复系统副作用。
 
 %% ===================================================================
 \section{Conclusion}
+% 结论
 
-
-Agent observability needs profiling, not only debugging. \sys
-shows that two abstractions, operations and operation stacks, close the
-aggregation problem once intent recognition restores deterministic labels.
-Scoring profiler output against hidden trajectory labels confirms that
-semantic profiling separates over 90\% of mixed system-effect weight,
-localizes labeled problems at 9.4\% inspection cost versus flat
-summaries, and produces labels that agree with ground truth on 7/9
-held-out datasets. Fixed-session drilldown remains faster to a first
-positive on 4/6 tasks, confirming that profilers and debuggers are
-complementary, and \sys supports both by including or excluding
-session fields in the stack query. The main limitations are
-single-project real-session data and placeholder intent-recognition
-quality on free-form prompts. Multi-project evaluation and
-trace-ecosystem integration are the most impactful next steps.
+Agent observability needs profiling, not only debugging.
+% 智能体可观测性需要性能分析，不仅仅是调试。
+\sys shows that two abstractions, operations and operation stacks, close the aggregation problem once intent recognition restores deterministic labels.
+% \sys 表明，一旦意图识别恢复了确定性标签，operation 和 operation stack 这两个抽象即可解决聚合问题。
+Scoring profiler output against hidden trajectory labels confirms that semantic profiling separates over 90\% of mixed system-effect weight, localizes labeled problems at 9.4\% inspection cost versus flat summaries, and produces labels that agree with ground truth on 7/9 held-out datasets.
+% 将分析器输出与隐藏轨迹标签评分确认，语义分析分离了超过 90\% 的混合系统副作用权重，以扁平摘要 9.4\% 的检查成本定位标注问题，并在 7/9 保留数据集上产生与真实标签一致的标签。
+Fixed-session drilldown remains faster to a first positive on 4/6 tasks, confirming that profilers and debuggers are complementary, and \sys supports both by including or excluding session fields in the stack query.
+% 固定会话下钻在 4/6 任务上更快找到首个正例，确认分析器和调试器是互补的，\sys 通过在栈查询中包含或排除会话字段同时支持两者。
+The main limitations are single-project real-session data and placeholder intent-recognition quality on free-form prompts.
+% 主要局限是单项目真实会话数据和自由形式提示词上的占位符意图识别质量。
+Multi-project evaluation and trace-ecosystem integration are the most impactful next steps.
+% 多项目评估和 trace 生态系统集成是最有影响力的下一步。
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
