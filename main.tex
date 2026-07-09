@@ -38,16 +38,17 @@ The flame-graph profiling methodology that answers these questions for
 traditional software does not directly apply because agent traces lack
 deterministic identifiers and runtime call-stack hierarchies.
 % 为传统软件回答这些问题的火焰图 profiling 方法论不能直接适用，因为智能体 trace 缺乏确定性标识符和运行时调用栈层次。
-We propose a \emph{semantic profiling model} that adapts this
-methodology: uniform \emph{semantic operations} represent all
-activities, \emph{intent attribution} derives deterministic labels
-from natural-language fields, and \emph{profile projections} construct
-aggregation hierarchies from field selections at query time.
-% 我们提出一个语义 profiling 模型来适配此方法论：统一的语义 operation 表示所有活动，意图归因从自然语言字段派生确定性标签，profile 投影在查询时从字段选择构造聚合层次。
-\sys implements this model as a profiler that compiles local agent
-traces into pprof-compatible profiles with pluggable
-intent-attribution backends.
-% \sys 将此模型实现为一个 profiler，将本地智能体 trace 编译为 pprof 兼容的 profile，支持可插拔的意图归因后端。
+We propose a \emph{semantic operation stack model}: uniform
+\emph{operations} represent all agent activities, and
+\emph{operation stacks} replace the runtime call stack with
+query-time field projections that fold identical frame sequences.
+% 我们提出语义 operation stack 模型：统一的 operation 表示所有智能体活动，operation stack 用查询时字段投影替代运行时调用栈，折叠相同帧序列。
+\sys implements this model as a profiler with pluggable algorithms
+for \emph{intent attribution} (deriving deterministic labels from
+natural-language fields) and \emph{stack construction} (building
+aggregation hierarchies from available fields), compiling local agent
+traces into pprof-compatible profiles.
+% \sys 将此模型实现为具有可插拔算法的 profiler，包括意图归因（从自然语言字段派生确定性标签）和栈构造（从可用字段构建聚合层次），将本地智能体 trace 编译为 pprof 兼容的 profile。
 On 325 real agent sessions, semantic profiling separates over 90\% of
 system-effect weight that session-level views merge.
 % 在 325 个真实智能体会话上，语义 profiling 分离了会话级视图所混合的超过 90\% 的系统副作用权重。
@@ -133,34 +134,41 @@ methodology (define units, assign stable labels, construct
 aggregation hierarchies, fold identical stacks) transfers to agent
 traces.
 % 尽管有这些差异，基本的 profiling 方法论——定义单元、赋予稳定标签、构造聚合层次、折叠相同栈——可以迁移到智能体 trace。
-We propose a \emph{semantic profiling model} with three components.
-% 我们提出一个包含三个组件的语义 profiling 模型。
-\emph{Semantic operations} are uniform records with string fields and
+We propose a \emph{semantic operation stack model} with two
+components.
+% 我们提出一个包含两个组件的语义 operation stack 模型。
+\emph{Operations} are uniform records with string fields and
 additive measures that represent all agent activities (prompts, LLM
 calls, tool invocations, and system effects) without type-specific
 objects.
-% 语义 operation 是带有字符串字段和可加度量的统一记录，表示所有智能体活动——提示词、LLM 调用、工具调用和系统副作用——无需特定类型对象。
-\emph{Intent attribution} derives deterministic, low-cardinality
-labels from natural-language fields, restoring the folding
-precondition that CPU profiling obtains for free from function names.
-% 意图归因从自然语言字段派生确定性、低基数的标签，恢复 CPU profiling 从函数名免费获得的折叠前提条件。
-\emph{Profile projections} select an ordered list of fields at query
-time to construct aggregation hierarchies, replacing the runtime call
-stack.
-% Profile 投影在查询时选择字段有序列表来构造聚合层次，替代运行时调用栈。
-Different field selections answer different questions (by task category, by execution phase, by session, or by
-action type) from the same data.
-% 不同的字段选择从同一数据回答不同问题——按任务类别、按执行阶段、按会话、按操作类型。
+% Operation 是带有字符串字段和可加度量的统一记录，表示所有智能体活动（提示词、LLM 调用、工具调用和系统副作用），无需特定类型对象。
+\emph{Operation stacks} are ordered lists of fields chosen at query
+time; each operation is projected to a frame sequence, and operations
+with identical sequences merge, producing the folded-stack
+representation that flame graphs visualize.
+% Operation stack 是在查询时选择的字段有序列表；每个 operation 被投影到帧序列，具有相同序列的 operation 合并，产生火焰图可视化的折叠栈表示。
+Different field selections answer different questions (by task
+category, by execution phase, by session, or by action type) from
+the same data.
+% 不同的字段选择从同一数据回答不同问题（按任务类别、按执行阶段、按会话或按操作类型）。
 
 %% ¶6: This paper + system + results
 We implement this model in \sys, an offline profiler that compiles
 local agent traces into pprof-compatible profiles
 (Figure~\ref{fig:architecture}).
 % 我们在 \sys 中实现此模型，这是一个离线 profiler，将本地智能体 trace 编译为 pprof 兼容的 profile（Figure~\ref{fig:architecture}）。
-Intent attribution supports pluggable backends: regex rules for
-production use, a local LLM tagger for exploration, and unsupervised
-clustering for bootstrapping.
-% 意图归因支持可插拔后端：正则规则用于生产、本地 LLM 标注器用于探索、无监督聚类用于引导。
+Two pluggable algorithm frameworks enrich the model.
+% 两个可插拔算法框架丰富此模型。
+\emph{Intent attribution} derives deterministic, low-cardinality
+labels from natural-language fields via regex rules, a local LLM
+tagger, or unsupervised clustering, restoring the folding
+precondition that CPU profiling obtains for free from function names.
+% 意图归因通过正则规则、本地 LLM 标注器或无监督聚类从自然语言字段派生确定性、低基数的标签，恢复 CPU profiling 从函数名免费获得的折叠前提条件。
+\emph{Stack construction} builds aggregation hierarchies from
+available fields, either from a user-specified field chain or via
+automatic induction that scores semantic shifts and partition
+coherence.
+% 栈构造从可用字段构建聚合层次，可通过用户指定的字段链或通过评分语义转移和分区一致性的自动诱导。
 On 325 real Codex and Claude sessions (183{,}714 system observations),
 semantic profiling separates over 90\% of system-effect weight that
 session-level views merge.
@@ -178,16 +186,16 @@ This paper makes three contributions:
 % 本文做出三项贡献：
 
 \begin{enumerate}
-\item \textbf{Profiling gap and semantic profiling model.}
+\item \textbf{Semantic operation stack model.}
   We identify the missing profiling layer in agent observability and
-  propose a model covering semantic operations, intent attribution,
-  and profile projections
-  (\S\ref{sec:background}--\S\ref{sec:design}).
-% 识别智能体可观测性中缺失的 profiling 层，提出涵盖语义 operation、意图归因和 profile 投影的模型。
+  propose a model of uniform operations and query-time operation
+  stacks (\S\ref{sec:background}--\S\ref{sec:design}).
+% 语义 operation stack 模型。识别智能体可观测性中缺失的 profiling 层，提出统一 operation 和查询时 operation stack 的模型。
 \item \textbf{System: \sys.}
   A profiler that implements this model with pluggable intent
-  attribution and pprof-compatible output (\S\ref{sec:impl}).
-% 系统：\sys。实现此模型的 profiler，具有可插拔意图归因和 pprof 兼容输出。
+  attribution and stack construction, producing pprof-compatible
+  output (\S\ref{sec:impl}).
+% 系统：\sys。实现此模型的 profiler，具有可插拔意图归因和栈构造，产生 pprof 兼容输出。
 \item \textbf{Hidden-label evaluation.}
   We evaluate profiler output against hidden ground-truth trajectory
   labels, analogous to injecting known bottlenecks in CPU profiler
@@ -540,10 +548,12 @@ AgentNet~\cite{agentnet} & Step correctness, redundancy & HF JSONL & Real deskto
 
 The strongest argument against semantic profiling is that traditional tools ``can already see the same information.''
 % 反对语义分析的最强论点是传统工具"已经能看到相同信息"。
-RQ1 tests this claim by measuring how much system-effect weight is attributed to the wrong task category when semantic labels are absent.
-% RQ1 通过测量在缺少语义标签时有多少系统副作用权重被归因到错误的任务类别来检验此声称。
-We progressively add label axes and measure the fraction of weight in buckets that mix observations from multiple task categories.
-% 我们逐步添加标签轴，测量混合了多个任务类别观测的桶中的权重比例。
+To test this, we run a semantic-axis ablation on 325 real Codex/Claude sessions (183{,}714 system observations).
+% 为了检验这一点，我们在 325 个真实 Codex/Claude 会话（183,714 个系统观测）上进行语义轴消融。
+We progressively add label axes (no labels, session only, prompt only, both) and measure the \emph{mixed-weight percentage}, the fraction of system-effect weight in buckets that mix observations from multiple task categories.
+% 我们逐步添加标签轴（无标签、仅会话、仅提示词、两者兼有），测量混合权重百分比——混合了多个任务类别观测的桶中的系统副作用权重比例。
+A lower mixed-weight percentage means the profiler correctly separates effects by task category.
+% 更低的混合权重百分比意味着分析器正确地按任务类别分离了效果。
 
 \begin{table}[t]
 \centering\small
@@ -578,27 +588,31 @@ A label-permutation test (1{,}000 shuffles, $p = 0.001$) confirms the separation
 Label quality is validated in RQ3.
 % 标签质量在 RQ3 中验证。
 
-RQ1 also tests whether query-time stack selection (R2) adds value beyond flat label grouping.
-% RQ1 还测试查询时栈选择（R2）是否在扁平标签分组之外增加价值。
-The same two-abstraction model covers all 15 public trace families (Table~\ref{tab:datasets}) without type-specific objects, validating R1.
-% 同一双抽象模型覆盖了所有 15 个公开 trace 家族（Table~\ref{tab:datasets}），无需特定类型对象，验证了 R1。
-On the four oracle-rich families, the same 13{,}265 operations fold from 9~dataset stacks to 57~phase stacks, 226~semantic stacks, 455~action stacks, or 3{,}757~fixed-session stacks by changing only the stack fields.
-% 在四个 oracle 丰富的家族上，同样的 13,265 个 operation 仅通过改变栈字段即可从 9 个数据集栈折叠为 57 个阶段栈、226 个语义栈、455 个操作栈或 3,757 个固定会话栈。
-A flat GROUP BY on a single label cannot produce these views because different stack depths answer different questions (task-level budget vs.\ action-level duplication vs.\ session-level drilldown), and the profiler produces all of them from the same operations.
-% 单标签的扁平 GROUP BY 无法产生这些视图，因为不同栈深度回答不同问题（任务级预算 vs. 操作级重复 vs. 会话级下钻），而分析器从同一组 operation 生成所有这些视图。
+Beyond label separation, we test whether query-time stack selection produces views that flat grouping cannot.
+% 除标签分离外，我们还测试查询时栈选择是否产生扁平分组无法产生的视图。
+We take the same 13{,}265 operations from the four oracle-rich families and fold them with five different stack-field selections, counting how many distinct groups each produces.
+% 我们取四个 oracle 丰富家族的同样 13,265 个 operation，用五种不同栈字段选择折叠，计算每种产生多少不同分组。
+The same operations fold into 9~dataset groups, 57~phase groups, 226~semantic groups, 455~action groups, or 3{,}757~fixed-session groups by changing only the stack fields.
+% 同样的 operation 仅通过改变栈字段即可折叠为 9 个数据集分组、57 个阶段分组、226 个语义分组、455 个操作分组或 3,757 个固定会话分组。
+A flat GROUP BY on a single label cannot produce these views because different stack depths answer different questions (task-level budget vs.\ action-level duplication vs.\ session-level drilldown).
+% 单标签的扁平 GROUP BY 无法产生这些视图，因为不同栈深度回答不同问题（任务级预算 vs. 操作级重复 vs. 会话级下钻）。
+The same model also covers all 15 public trace families (Table~\ref{tab:datasets}) without type-specific objects.
+% 同一模型也覆盖了所有 15 个公开 trace 家族（Table~\ref{tab:datasets}），无需特定类型对象。
 
-The multi-view design is further validated by metric divergence.
-% 多视图设计通过指标差异进一步验证。
-The \texttt{time} and \texttt{tokens} views of the same sessions share only 7/10 top prompt categories (Spearman $\rho = 0.623$).
-% 同一会话的 \texttt{time} 和 \texttt{tokens} 视图仅共享 7/10 的顶级提示词类别（Spearman $\rho = 0.623$）。
-\texttt{network}-tagged prompts rank 8th by time (I/O wait) but 93rd by tokens.
-% \texttt{network} 标记的提示词按时间排第 8（I/O 等待）但按 token 排第 93。
+Different views also produce different rankings.
+% 不同视图也产生不同排名。
+The \texttt{time} and \texttt{tokens} views of the same 325 sessions share only 7/10 top prompt categories (Spearman $\rho = 0.623$).
+% 同一 325 个会话的 \texttt{time} 和 \texttt{tokens} 视图仅共享 7/10 的顶级提示词类别（Spearman $\rho = 0.623$）。
+\texttt{network}-tagged prompts rank 8th by time (I/O wait) but 93rd by tokens, showing that the choice of weight function changes the analysis conclusions.
+% \texttt{network} 标记的提示词按时间排第 8（I/O 等待）但按 token 排第 93，表明权重函数的选择改变了分析结论。
 
-When no field chain is provided, the automatic stack-induction mode (\S\ref{sec:stacks}) produces useful groups without domain knowledge.
-% 当不提供字段链时，自动栈诱导模式（\S\ref{sec:stacks}）无需领域知识即可产生有用的分组。
-On the same six hidden-label tasks used in RQ2, induced stacks produce a median of 12 groups (versus 285 for fixed-session drilldown and 1 for flat summaries), with 4/6 tasks generating variable-depth stacks.
-% 在 RQ2 使用的同样六个隐藏标签任务上，诱导栈产生中位 12 个分组（固定会话下钻 285 个，扁平摘要 1 个），4/6 任务生成可变深度栈。
-The induced stacks achieve lower AP than hand-configured stacks (median 0.276 vs 0.312) because they use only visible fields, but they reduce inspection work to a median of 65.3\% versus flat summaries without requiring any user configuration.
+Finally, we test whether the profiler can produce useful groups without any user-specified fields.
+% 最后，我们测试分析器能否在不需要任何用户指定字段的情况下产生有用的分组。
+We run the automatic stack-induction mode (\S\ref{sec:stacks}) on the same six tasks used in RQ2 and compare the resulting group count and localization quality against flat summaries and fixed-session drilldown.
+% 我们在 RQ2 使用的同样六个任务上运行自动栈诱导模式（\S\ref{sec:stacks}），将结果的分组数和定位质量与扁平摘要和固定会话下钻进行比较。
+Induced stacks produce a median of 12 groups (versus 285 for fixed-session and 1 for flat), with 4/6 tasks generating variable-depth stacks.
+% 诱导栈产生中位 12 个分组（固定会话 285 个，扁平 1 个），4/6 任务生成可变深度栈。
+The induced stacks achieve lower AP than hand-configured stacks (median 0.276 vs 0.312) because they use only visible fields, but they reduce inspection work to 65.3\% versus flat summaries without requiring any user configuration.
 % 诱导栈的 AP 低于手动配置栈（中位 0.276 vs 0.312），因为它们仅使用可见字段，但将检查工作量降至扁平摘要的 65.3\%，无需任何用户配置。
 
 Figure~\ref{fig:rq1-separation} visualizes the ablation.
@@ -651,14 +665,8 @@ sessions and prompt categories.}
 
 RQ2 tests whether the profiler's top-ranked groups actually contain real failures, safety violations, or wasted effort.
 % RQ2 测试分析器排名靠前的分组是否确实包含真实的故障、安全违规或浪费的算力。
-We use public benchmark datasets that provide ground-truth quality labels, hide these labels from the profiler, and check whether the top groups recover them.
-% 我们使用提供真实质量标签的公开基准数据集，对分析器隐藏这些标签，然后检查排名靠前的分组是否恢复了它们。
-The methodology is analogous to injecting known bottlenecks in a CPU profiler evaluation.
-% 该方法类似于在 CPU 分析器评估中注入已知瓶颈。
-Public benchmark datasets provide ground-truth labels (failure, safety violation, redundant step, human-task boundary).
-% 公开基准数据集提供真实标签（故障、安全违规、冗余步骤、人工任务边界）。
-We hide these labels, run the profiler, rank the resulting groups, and check whether the top groups contain the hidden positives.
-% 我们隐藏这些标签，运行分析器，排序结果分组，检查顶级分组是否包含隐藏的正例。
+We use public benchmark datasets that provide ground-truth quality labels (failure, safety violation, redundant step, human-task boundary), hide these labels from the profiler, and check whether the top-ranked groups recover them, analogous to injecting known bottlenecks in a CPU profiler evaluation.
+% 我们使用提供真实质量标签（故障、安全违规、冗余步骤、人工任务边界）的公开基准数据集，对分析器隐藏这些标签，检查排名靠前的分组是否恢复了它们，类似于在 CPU 分析器评估中注入已知瓶颈。
 
 The benchmark uses six tasks across four datasets (AgentRewardBench looping and side-effect, SATraj-OS unsafe operation, AgentNet incorrect and redundant step, and OSWorld-Human group start), totaling 34{,}539 operations and 3{,}699 positives.
 % 基准使用四个数据集的六个任务（AgentRewardBench 循环和副作用、SATraj-OS 不安全操作、AgentNet 不正确和冗余步骤、OSWorld-Human 组起始），共计 34,539 个 operation 和 3,699 个正例。
@@ -728,30 +736,17 @@ Statistical validation supports these comparisons.
 Bootstrap (10{,}000 resamples) and label-permutation (2{,}000 trials) confirm that the AP differences are stable and exceed the 95\% confidence threshold on all six tasks.
 % Bootstrap（10,000 次重采样）和标签置换（2,000 次试验）确认 AP 差异在所有六个任务上是稳定的，且超过 95\% 置信阈值。
 
-Stack depth is an actionable configuration parameter, not a fixed choice.
-% 栈深度是一个可操作的配置参数，而非固定选择。
-Sweeping the induced-stack depth cap from 1 to 5 on the same six tasks, AP peaks at depth 3 (median 0.287) while inspection work is lowest at depth 5 (median 0.473).
-% 在同样六个任务上将诱导栈深度上限从 1 扫到 5，AP 在深度 3 时达到峰值（中位 0.287），而检查工作量在深度 5 时最低（中位 0.473）。
+We also test whether stack depth matters by sweeping the induced-stack depth cap from 1 to 5 on the same six tasks and measuring AP and inspection work at each depth.
+% 我们还通过在同样六个任务上将诱导栈深度上限从 1 扫到 5 来测试栈深度是否重要，并在每个深度测量 AP 和检查工作量。
+AP peaks at depth 3 (median 0.287) while inspection work is lowest at depth 5 (median 0.473).
+% AP 在深度 3 时达到峰值（中位 0.287），而检查工作量在深度 5 时最低（中位 0.473）。
 Different tasks achieve their best AP at different depths (2, 3, 4, and 5), confirming that depth should be tuned per objective rather than fixed globally.
 % 不同任务在不同深度（2、3、4 和 5）达到最佳 AP，确认深度应按目标调整而非全局固定。
 
-Beyond localization, we test whether profiler output suggests concrete configuration improvements.
-% 除定位外，我们还测试分析器输出是否建议具体的配置改进。
-We modify stack fields, mapping rules, or rankers in the profile spec and re-run on the same operations.
-% 我们在 profile spec 中修改栈字段、映射规则或排序器，然后在相同 operation 上重新运行。
-Five of six changes improve AP, top-five recall, and work-to-first-positive (median AP improvement 0.038).
-% 六个变更中有五个改进了 AP、前五召回率和首个正例工作量（中位 AP 改进 0.038）。
-Three reusable patterns emerge: (1)~safety/side-effect tasks benefit from field and ranker changes; (2)~step-quality tasks benefit from stack-based localization followed by fixed-session drilldown for examples; (3)~human-boundary tasks require boundary-derived fields.
-% 三种可复用模式浮现：(1) 安全/副作用任务受益于字段和排序器变更；(2) 步骤质量任务受益于基于栈的定位后跟固定会话下钻获取示例；(3) 人工边界任务需要边界衍生字段。
-The OSWorld-Human task shows that features visible without the hidden labels are insufficient for detecting task boundaries.
-% OSWorld-Human 任务表明不使用隐藏标签时可见的特征不足以检测任务边界。
-Adding fields derived from the hidden boundary annotations improves AP from 0.240 to 0.258 and reduces groups from 108 to 74, confirming that boundary detection requires oracle information.
-% 添加从隐藏边界标注衍生的字段将 AP 从 0.240 提高到 0.258，组数从 108 减少到 74，确认边界检测需要 oracle 信息。
-
-Ablating rank features reveals that 7 features (including \texttt{repeat\_signal} and write-action) drive localization, while 3 mislead the ranker.
-% 排名特征消融显示 7 个特征（包括 \texttt{repeat\_signal} 和 write-action）驱动定位，而 3 个误导排序器。
-Manually correcting the misleading features improves AP on 2/3 cases, but the correction requires offline scoring rather than automatic learning.
-% 手动修正误导特征在 2/3 案例上改进了 AP，但修正需要离线评分而非自动学习。
+The profiler's configuration is also actionable.
+% 分析器的配置也是可操作的。
+Modifying stack fields, mapping rules, or ranking criteria and re-running on the same operations improves AP on 5/6 tasks (median AP improvement 0.038), confirming that the profiler exposes useful tuning knobs rather than requiring a fixed configuration.
+% 修改栈字段、映射规则或排名标准并在相同 operation 上重新运行，在 5/6 任务上改进了 AP（中位 AP 改进 0.038），确认分析器暴露了有用的调节旋钮而非需要固定配置。
 
 %% -------------------------------------------------------------------
 \subsection{RQ3: How Accurate Are the Labels?}
@@ -763,8 +758,8 @@ RQ3 tests whether the labels themselves are accurate.
 % RQ3 测试标签本身是否准确。
 For structured traces (public datasets), we compare mapping-derived labels against ground-truth annotations.
 % 对于结构化 trace（公开数据集），我们将映射衍生标签与真实标注进行比较。
-For free-form traces (real sessions), we measure the operational reliability and syntax validity of the intent-attribution backends.
-% 对于自由形式 trace（真实会话），我们测量意图归因后端的运行可靠性和语法有效性。
+For free-form traces (real sessions), we measure whether the intent-attribution backends run reliably at scale and produce well-formed labels.
+% 对于自由形式 trace（真实会话），我们测量意图归因后端是否在规模上可靠运行并产生格式良好的标签。
 Semantic accuracy of the LLM/regex tagger on free-form prompts remains future work because none of the available datasets (67{,}304 rows across 6 sources) simultaneously expose free-form text and ground-truth semantic labels, making same-input accuracy evaluation infeasible with current data.
 % LLM/正则标注器在自由形式提示词上的语义精度仍是未来工作，因为现有数据集（6 个来源共 67,304 行）没有同时暴露自由形式文本和真实语义标签，使得同输入精度评估在当前数据下不可行。
 
@@ -820,14 +815,8 @@ On 7/9 datasets, V-measure exceeds 0.7, indicating strong agreement between mapp
 The two low-scoring datasets (toolbench, api-bank) have atypical action vocabularies that the held-out mapping rules do not cover.
 % 两个低分数据集（toolbench、api-bank）具有保留映射规则未覆盖的非典型操作词汇。
 
-A supervised boundary predictor further validates the mapping approach.
-% 有监督的边界预测器进一步验证了映射方法。
-On OSWorld-Human held-out adjacent pairs, a learned boundary predictor achieves F1~0.77, beating the best simple baseline (\texttt{always\_boundary}, F1~0.71).
-% 在 OSWorld-Human 保留相邻对上，学习的边界预测器达到 F1 约 0.77，超过最佳简单基线（\texttt{always\_boundary}，F1 约 0.71）。
-Learned predictors beat simple baselines on 4/5 tested datasets, while AgentRewardBench looping is fully explained by a single repeat-signal feature (baseline F1~1.0).
-% 学习预测器在 4/5 测试的数据集上超过简单基线，而 AgentRewardBench 循环完全由单个重复信号特征解释（基线 F1 约 1.0）。
-These comparisons confirm that mapping rules produce useful labels but are not automatic intent discovery.
-% 这些比较确认映射规则产生有用的标签，但不是自动意图发现。
+Supervised boundary predictors beat simple baselines on 4/5 tested datasets (e.g., F1~0.77 vs 0.71 on OSWorld-Human), confirming that mapping rules produce useful labels but are not automatic intent discovery.
+% 有监督的边界预测器在 4/5 测试的数据集上超过简单基线（例如 OSWorld-Human 上 F1 约 0.77 vs 0.71），确认映射规则产生有用标签但不是自动意图发现。
 
 %% -------------------------------------------------------------------
 \subsection{RQ4: What Is the Profiling Cost?}
