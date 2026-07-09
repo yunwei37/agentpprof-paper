@@ -40,9 +40,9 @@ paths, by aggregation, rather than single-execution debugging or
 tracing.
 % 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责实体（如代码路径），而非单次执行调试或 tracing。
 %% S4: Gap (→¶2+¶3)
-Yet existing agent tools support debugging and tracing but not
-profiling.
-% 然而现有智能体工具支持调试和 tracing，但不支持 profiling。
+Yet existing agent observability tools are mainly for debugging and
+tracing instead of profiling.
+% 然而现有智能体可观测性工具主要用于调试和 tracing，而非 profiling。
 %% S5: Agent challenge (→¶4)
 Agent behavior differs fundamentally from code execution.
 The responsible entities are semantic categories such as task intent
@@ -118,9 +118,9 @@ to downstream tool calls and system effects.
 % Datadog LLM Observability~\cite{datadog-llmobs} 按主题聚类用户消息，Laminar~\cite{laminar-signals} 从 trace 中提取结构化信号，但两者都刻画输入分布（"30\% 的用户提问代码问题"）而非资源归因（"review 任务消耗了 40\% 的 token 预算"），因为请求级的标签不会传播到下游工具调用和系统副作用。
 
 %% ¶4: Challenge — why traditional profiling doesn't transfer directly
-Adapting profiling to agent traces requires addressing two
-fundamental differences (\S\ref{sec:background}).
-% 将 profiling 适配到智能体 trace 需要解决两个根本差异（\S\ref{sec:background}）。
+Adapting profiling to agent traces is challenging
+(\S\ref{sec:background}).
+% 将 profiling 适配到智能体 trace 具有挑战性（\S\ref{sec:background}）。
 In traditional software, the responsible entities are code paths.
 Profiling is straightforward because function names are
 deterministic and runtime call nesting provides the aggregation
