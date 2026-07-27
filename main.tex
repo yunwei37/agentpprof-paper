@@ -650,13 +650,13 @@ the CLI validates that marks are nested, noncrossing, and cover every
 source node, then emits one standard pprof protobuf profile that existing
 tools such as \texttt{go tool pprof} read directly.
 % backend 工作在三文件标注工作区（\texttt{trace.jsonl}、\texttt{annotation.json}、\texttt{stacks.folded}）中；CLI 校验标记嵌套、不交叉并覆盖每个 source node，然后输出一个标准 pprof protobuf profile，供 \texttt{go tool pprof} 等现有工具直接读取。
-Stack emission is deterministic: each source node contributes the agent,
+Projection is deterministic: each source node contributes the agent,
 its covering semantic operation path, and its retained LLM-call and
 tool-call evidence, with raw session and prompt identities kept as pprof
 labels rather than visible frames, so equal semantic prefixes fold across
 sessions; switching the additive measure replays the same annotation and
 changes only stack widths.
-% 栈输出是确定性的：每个 source node 依次给出 agent、覆盖它的语义 operation 路径与保留的 LLM call、tool call 证据，raw session 与 prompt 身份作为 pprof label 保留而非可见 frame，因此相同语义前缀可跨 session 折叠；切换可加度量只重放同一标注、只改变栈宽度。
+% 投影是确定性的：每个 source node 依次给出 agent、覆盖它的语义 operation 路径与保留的 LLM call、tool call 证据，raw session 与 prompt 身份作为 pprof label 保留而非可见 frame，因此相同语义前缀可跨 session 折叠；切换可加度量只重放同一标注、只改变栈宽度。
 
 %% ===================================================================
 \section{Evaluation}
