@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate RQ1 and RQ3 figures for the AgentPProf paper."""
+"""Generate the result figures for the AgentProf paper."""
 
 import matplotlib
 matplotlib.use('Agg')
@@ -25,88 +25,51 @@ RED = '#E57373'
 GRAY = '#9E9E9E'
 
 
-def make_rq1_separation():
-    labels = ['No semantic\ntags', 'Session\ntag only', 'Prompt\ntag only', 'Session\n+ Prompt']
-    mixed = [90.4, 84.4, 36.7, 0.0]
-    residual = [44.7, 33.4, 7.5, 0.0]
-    stacks = [11967, 15027, 24703, 26829]
+def make_rq2_deltas():
+    """Paired MAP deltas with bootstrap intervals over the complete RQ2 populations."""
+    workloads = ['AgentProcess-\nBench', 'HINTBench', 'TraceElephant']
 
-    x = np.arange(len(labels))
-    width = 0.28
+    # Direct+AgentProf minus the benchmark's own judge/localizer.
+    over_direct = [0.031, 0.107, 0.117]
+    over_direct_lo = [0.024, 0.093, 0.088]
+    over_direct_hi = [0.039, 0.120, 0.148]
 
-    fig, ax1 = plt.subplots(figsize=(3.33, 2.3))
+    # Direct+AgentProf minus the information-matched raw-action control.
+    over_matched = [0.0013, -0.0007, 0.0017]
+    over_matched_lo = [-0.0003, -0.0116, -0.0247]
+    over_matched_hi = [0.0029, 0.0103, 0.0280]
 
-    ax1.bar(x - width/2, mixed, width, label='Mixed weight %',
-            color=RED, alpha=0.85, edgecolor='white')
-    ax1.bar(x + width/2, residual, width, label='Residual %',
-            color='#FFAB91', alpha=0.85, edgecolor='white')
+    def err(point, lo, hi):
+        return np.array([[p - l for p, l in zip(point, lo)],
+                         [h - p for p, h in zip(point, hi)]])
 
-    ax1.set_ylabel('Percentage (%)')
-    ax1.set_xticks(x)
-    ax1.set_xticklabels(labels)
-    ax1.set_ylim(0, 110)
-    ax1.spines['top'].set_visible(False)
+    x = np.arange(len(workloads))
+    width = 0.36
+    fig, ax = plt.subplots(figsize=(3.33, 2.25))
 
-    ax2 = ax1.twinx()
-    ax2.plot(x, [s/1000 for s in stacks], 's-', color=BLUE, linewidth=1.5,
-             markersize=5, label='Unique stacks (k)', zorder=5)
-    ax2.set_ylabel('Unique stacks (k)')
-    ax2.set_ylim(0, 35)
-    ax2.spines['top'].set_visible(False)
+    ax.bar(x - width / 2, over_direct, width, color=BLUE, alpha=0.9,
+           edgecolor='white', label='vs.\ benchmark judge')
+    ax.errorbar(x - width / 2, over_direct, yerr=err(over_direct, over_direct_lo, over_direct_hi),
+                fmt='none', ecolor='#37474F', elinewidth=0.9, capsize=2.5)
 
-    h1, l1 = ax1.get_legend_handles_labels()
-    h2, l2 = ax2.get_legend_handles_labels()
-    fig.legend(h1 + h2, l1 + l2, fontsize=7,
-               loc='upper center', bbox_to_anchor=(0.5, 1.02),
-               ncol=3, framealpha=0.9, columnspacing=0.8)
+    ax.bar(x + width / 2, over_matched, width, color=GRAY, alpha=0.9,
+           edgecolor='white', hatch='//', label='vs.\ raw-action control')
+    ax.errorbar(x + width / 2, over_matched, yerr=err(over_matched, over_matched_lo, over_matched_hi),
+                fmt='none', ecolor='#37474F', elinewidth=0.9, capsize=2.5)
 
-    plt.tight_layout()
-    plt.savefig('fig-rq1-separation.pdf', bbox_inches='tight', dpi=300)
-    plt.savefig('fig-rq1-separation.png', bbox_inches='tight', dpi=300)
-    print('Wrote fig-rq1-separation.pdf/png')
-
-
-def make_rq3_vmeasure():
-    datasets = ['mind2web', 'webshop', 'swe-agent', 'weblinx',
-                'agenttrek', 'gui-odyssey', 'android', 'toolbench', 'api-bank']
-    vmeasure =    [1.000, 1.000, 0.926, 0.872, 0.862, 0.811, 0.716, 0.134, 0.000]
-    boundary_f1 = [1.000, 1.000, 0.962, 0.860, None,  0.842, 0.727, 0.353, None]
-
-    x = np.arange(len(datasets))
-    width = 0.35
-
-    fig, ax = plt.subplots(figsize=(3.33, 2.3))
-
-    vm_colors = [BLUE if v >= 0.7 else GRAY for v in vmeasure]
-    bf_colors = ['#81D4FA' if (b is not None and b >= 0.7) else '#BDBDBD'
-                 for b in boundary_f1]
-
-    ax.bar(x - width/2, vmeasure, width, color=vm_colors, alpha=0.85,
-           edgecolor='white', label='V-measure')
-
-    bf_vals = [b if b is not None else 0 for b in boundary_f1]
-    ax.bar(x + width/2, bf_vals, width, color=bf_colors, alpha=0.85,
-           edgecolor='white', label='Boundary F1')
-    for i, b in enumerate(boundary_f1):
-        if b is None:
-            ax.text(i + width/2, 0.02, '---', ha='center', va='bottom',
-                    fontsize=7, color=GRAY)
-
-    ax.axhline(y=0.7, color=RED, linestyle='--', linewidth=1.0, label='Threshold (0.7)')
-    ax.set_ylabel('Score')
+    ax.axhline(0, color='#37474F', linewidth=0.8)
+    ax.set_ylabel('MAP difference')
     ax.set_xticks(x)
-    ax.set_xticklabels(datasets, rotation=40, ha='right')
-    ax.set_ylim(0, 1.15)
-    ax.legend(fontsize=7, loc='upper right', framealpha=0.9, ncol=1)
-
+    ax.set_xticklabels(workloads, fontsize=7)
+    ax.set_ylim(-0.05, 0.175)
+    ax.legend(fontsize=7, loc='upper left', framealpha=0.9)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     plt.tight_layout()
-    plt.savefig('fig-rq3-vmeasure.pdf', bbox_inches='tight', dpi=300)
-    plt.savefig('fig-rq3-vmeasure.png', bbox_inches='tight', dpi=300)
-    print('Wrote fig-rq3-vmeasure.pdf/png')
+    plt.savefig('fig-rq2-deltas.pdf', bbox_inches='tight', dpi=300)
+    plt.savefig('fig-rq2-deltas.png', bbox_inches='tight', dpi=300)
+    print('Wrote fig-rq2-deltas.pdf/png')
 
 
 if __name__ == '__main__':
-    make_rq1_separation()
-    make_rq3_vmeasure()
+    make_rq2_deltas()
