@@ -43,15 +43,15 @@ and which task categories consume the most budget.
 %% S3: Traditional profiling (→¶2+¶4)
 To answer similar questions in traditional systems software, profiling
 attributes resource consumption to responsible entities, such as code
-paths, by aggregation, rather than single-execution debugging or
-tracing.
+paths, by aggregation.
 % 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责实体（如代码路径），而非单次执行调试或 tracing。
 %% S4: Gap (→¶2+¶3)
 % unlike traditional software where code paths provide a natural hierarchy for profiling, 
 % agent behaviors are driven by unstructured natural language prompts 
 % and lack deterministic execution stacks. 
-Yet existing agent observability tools are mainly for debugging and
-tracing instead of profiling.
+Yet existing agent observability tools are mainly for single-execution debugging or
+tracing instead of profiling, which makes it difficult to answer the above questions
+when the trajectories are becoming long and complex.
 % 然而现有智能体可观测性工具主要用于调试和 tracing，而非 profiling。
 %% S5: Agent challenge (→¶4)
 Agent behavior differs from code execution, creating two challenges for profiling:
