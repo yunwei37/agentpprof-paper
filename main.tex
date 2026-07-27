@@ -462,55 +462,61 @@ intent attribution, and stack construction to folded-stack output.}
 \label{fig:architecture}
 \end{figure}
 
-\subsection{Algorithms}
-% 算法
+\subsection{Recursive Operation Segmentation}
+% 递归 Operation 切分
 \label{sec:intent}
 
-\paragraph{Intent attribution.}
-% 意图归因。
-Intent attribution maps natural-language prompts to short, stable,
-repeatable tags, giving agent trajectories the stable identifiers that traditional
-profiling gets for free from function names
-(\S\ref{sec:background}).
-% 意图归因将自然语言的提示词映射为短小、稳定、可重复的标签，为智能体轨迹提供传统 profiling 从函数名免费获得的稳定标识符（\S\ref{sec:background}）。
-The framework supports three pluggable backends.
-% 该框架支持三种可插拔后端。
-Regex rules are the production default: rules have the form
-\texttt{KIND:TAG=REGEX}, are evaluated in order (first match wins),
-and an AI Agent can iterates the regex with \sys until the unmatched rate drops
-below 5\%, typically in 5--10 rounds.
-% 正则规则是生产环境默认：规则格式为 \texttt{KIND:TAG=REGEX}，按顺序求值（首个匹配胜出），AI Agent 可以与 \sys 迭代直到未匹配率降至 5\% 以下，通常需要 5--10 轮。
-A local LLM tagger (e.g., a quantized 3B-parameter model via llama.cpp)
-generates a single-word tag per prompt with grammar-constrained
-decoding (forcing output to match a predefined token grammar) and caching, so AI
-Agent can help iterate the prompt as part of the configuration.
-% 本地 LLM 标注器（如通过 llama.cpp 运行的量化 3B 参数模型）通过语法约束解码（强制输出匹配预定义 token 语法）和缓存为每个提示词生成单词标签。
-Unsupervised clustering via TF-IDF and K-Means discovers
-natural prompt groups without predefined rules, feeding rule
-authoring.
-% 通过 TF-IDF 和 K-Means 的无监督聚类在没有预定义规则的情况下发现自然提示词分组，为规则编写提供输入。
-For structured trajectories where action types and quality annotations are
-explicit fields, mapping rules derive new fields from existing
-ones (e.g., \texttt{phase:navigate=type:(click|scroll|key)}).
-% 对于操作类型和质量标注是显式字段的结构化轨迹，映射规则从现有字段派生新字段（如 \texttt{phase:navigate=type:(click|scroll|key)}）。
+The algorithm rests on one structural intuition: an agent's task occupies
+a contiguous span of the trajectory, and it decomposes into smaller
+contiguous subtasks.
+% 该算法建立在一个结构直觉上：智能体的任务在轨迹上占据一段连续区间，并且可以分解为更小的连续子任务。
+Task structure is therefore exactly a set of nested named intervals, and
+recovering it only requires finding the transition points between them.
+% 因此任务结构恰好就是一组嵌套的命名区间，恢复它只需要找到区间之间的转换点。
 
-\paragraph{Stack construction.}
-% 栈构造。
-Stack construction builds attribution hierarchies from
-available fields.
-% 栈构造从可用字段构建归因层次。
-When users supply an ordered list of fields, the projection is direct.
-% 当用户提供有序字段列表时，投影是直接的。
-When no field list is supplied, \sys induces operation stacks automatically.
-It scores each pair of adjacent operations for shifts in prompt content (via TF-IDF cosine similarity), changes in structured field values, and consistency of the resulting groups, then places boundaries where the combined score is highest.
-% 当不提供有序字段列表时，\sys 自动诱导 operation stack。它对每对相邻 operation 评分提示词内容变化（通过 TF-IDF 余弦相似度）、结构化字段值变化和结果分组的一致性，然后在综合得分最高处放置边界。
-The induced stacks have variable depth, and a configurable depth cap
-controls the granularity.
-% 诱导的栈具有可变深度，可配置的深度上限控制粒度。
-This mode produces coarser groups than hand-specified stacks but
-requires no domain knowledge, making it useful for initial
-exploration (\S\ref{sec:eval}).
-% 此模式产生比手动指定栈更粗的分组，但不需要领域知识，适用于初始探索（\S\ref{sec:eval}）。
+The core algorithm is segmentation, not labeling: instead of assigning
+each step a class from a predefined taxonomy, the backend reads a
+trajectory and finds the transition points where the agent's current
+responsibility changes.
+% 核心算法是切分而不是标注：backend 不为每一步从预定义分类中指派类别，而是通读轨迹，找出智能体当前责任发生变化的转换点。
+At each transition it cuts the trajectory and names the intervals on both
+sides; it then recurses into each interval, cutting again wherever a
+finer responsibility change remains, and stops when an interval reads as
+one coherent piece of work.
+% 在每个转换点它切开轨迹并为两侧的区间命名；随后对每个区间递归，在仍存在更细责任变化处继续切分，直到一个区间读起来是一件连贯的工作为止。
+Formally, a trajectory is an ordered turn sequence $T=(t_1,\dots,t_n)$,
+and a segmentation is a set $S$ of named intervals over $T$ that is
+nested (any two intervals are disjoint or one contains the other),
+covers every turn, and contains the whole-session interval as its root.
+% 形式化地，轨迹是有序 turn 序列 $T=(t_1,\dots,t_n)$；切分是 $T$ 上的命名区间集合 $S$：区间两两要么不相交、要么一个包含另一个（嵌套），共同覆盖每个 turn，且以整个 session 区间为根。
+The backend computes $S$ by one recursive rule: $\textsc{Segment}(I)$
+selects zero or more transition points inside interval $I$, which
+partition $I$ into consecutive child intervals; each child receives a
+short action-first name and is segmented recursively; selecting no
+transition terminates the branch and declares $I$ one operation.
+% backend 用一条递归规则计算 $S$：$\textsc{Segment}(I)$ 在区间 $I$ 内选择零个或多个转换点，将 $I$ 划分为连续的子区间；每个子区间获得一个动词优先的短名称并被递归切分；不再选择转换点即终止该分支，并宣布 $I$ 为一个 operation。
+A turn's operation path is the name chain of the intervals containing
+it, from the session root to its innermost interval; equal paths fold
+across sessions.
+% 一个 turn 的 operation 路径是包含它的区间自 session 根到最内层的名称链；相同路径跨 session 折叠。
+Segmentation is the right primitive for three reasons.
+% 切分是正确的基本操作，原因有三。
+First, transitions are what a trajectory actually exhibits: agent work
+has no predefined taxonomy, but a shift in what the agent is trying to
+do is visible in the source content itself.
+% 其一，转换点是轨迹真实呈现的东西：智能体工作没有预定义分类法，但"智能体正在做的事发生了变化"在源内容中是可见的。
+Second, cuts compose: nested intervals form a hierarchy whose depth
+emerges per branch from the content rather than from a prescribed
+schema.
+% 其二，切口可组合：嵌套区间构成层次，其深度按分支从内容中涌现，而非来自规定的 schema。
+Third, naming intervals rather than steps yields identifiers at the
+granularity where recurrence lives, so the same short action-first name
+(one to three words) reappears across sessions and folds.
+% 其三，为区间而非单步命名，得到与"重复出现"粒度一致的标识符——同一个动词优先的短名称（一到三个词）在不同 session 中再次出现并得以折叠。
+Any backend able to find transitions and name intervals---an agent, a
+plain language model, or a statistical rule---implements the same
+contract.
+% 任何能找到转换点并为区间命名的 backend——agent、普通语言模型或统计规则——都实现同一契约。
 
 %% ===================================================================
 \section{Implementation}
@@ -521,259 +527,205 @@ exploration (\S\ref{sec:eval}).
 % \sys 是一个离线、事后分析器，实现为 Rust CLI（约 9.8K 行代码，Figure~\ref{fig:architecture}）。
 It reads Codex and Claude Code local JSONL history files and AgentSight~\cite{agentsight} recordings for system effects, and reconstructs prompts, LLM calls, tool invocations, and their triggered file and network effects.
 % 它读取 Codex 和 Claude Code 本地 JSONL 历史文件以及 AgentSight~\cite{agentsight} 的系统副作用记录，重建提示词、LLM 调用、工具调用及其触发的文件和网络副作用。
-Output formats include pprof protobuf (compatible with \texttt{go tool pprof -http}), folded-stack text (compatible with \texttt{flamegraph.pl}), standalone SVG flame graphs, and JSON summaries.
-% 输出格式包括 pprof protobuf（兼容 \texttt{go tool pprof -http}）、折叠栈文本（兼容 \texttt{flamegraph.pl}）、独立 SVG 火焰图和 JSON 摘要。
+The backend works in a three-file annotation workspace
+(\texttt{trace.jsonl}, \texttt{annotation.json}, \texttt{stacks.folded});
+the CLI validates that marks are nested, noncrossing, and cover every
+source node, then emits one standard pprof protobuf profile that existing
+tools such as \texttt{go tool pprof} read directly.
+% backend 工作在三文件标注工作区（\texttt{trace.jsonl}、\texttt{annotation.json}、\texttt{stacks.folded}）中；CLI 校验标记嵌套、不交叉并覆盖每个 source node，然后输出一个标准 pprof protobuf profile，供 \texttt{go tool pprof} 等现有工具直接读取。
+Stack emission is deterministic: each source node contributes the agent,
+its covering semantic operation path, and its retained LLM-call and
+tool-call evidence, with raw session and prompt identities kept as pprof
+labels rather than visible frames, so equal semantic prefixes fold across
+sessions; switching the additive measure replays the same annotation and
+changes only stack widths.
+% 栈输出是确定性的：每个 source node 依次给出 agent、覆盖它的语义 operation 路径与保留的 LLM call、tool call 证据，raw session 与 prompt 身份作为 pprof label 保留而非可见 frame，因此相同语义前缀可跨 session 折叠；切换可加度量只重放同一标注、只改变栈宽度。
 
 %% ===================================================================
 \section{Evaluation}
 % 评估
 \label{sec:eval}
 
-We use two classes of data.
-% 我们使用两类数据。
-\emph{Real agent trajectories}: 325 readable local trajectories (198~Codex, 50~Claude, 77~Claude subagent) from a multi-month development project, containing 183{,}714 system observations.
-% 真实智能体会话：来自一个多月开发项目的 325 个可读本地会话（198 个 Codex、50 个 Claude、77 个 Claude 子智能体），包含 183,714 个系统观测。
-\emph{Public annotated trajectories}: 15 families of real agent or human executions, totaling 47{,}590 operations through mapping rules.
-% 公开标注轨迹：15 个真实智能体或人类执行的家族，通过映射规则共计 47,590 个 operation。
-These cover web agents (WebLINX~\cite{weblinx}, Mind2Web~\cite{mind2web}, AgentTrek~\cite{agenttrek}, WebShop~\cite{webshop}), API agents (API-Bank~\cite{apibank}, ToolBench~\cite{toolbench}, tau-bench~\cite{taubench}), coding agents (SWE-agent~\cite{sweagent}), and mobile/GUI agents (AndroidCtrl~\cite{androidcontrol}, GUI-Odyssey~\cite{guiodyssey}, ScaleCUA~\cite{scalecua}).
-% 涵盖 web 智能体（WebLINX、Mind2Web、AgentTrek、WebShop）、API 智能体（API-Bank、ToolBench、tau-bench）、编码智能体（SWE-agent）和移动/GUI 智能体（AndroidCtrl、GUI-Odyssey、ScaleCUA）。
-Four families with ground-truth quality annotations (AgentRewardBench~\cite{agentrewardbench}, SATraj-OS~\cite{safactory}, AgentNet~\cite{agentnet}, OSWorld-Human~\cite{osworldhuman}) provide hidden annotations for RQ2.
-% 四个具有真实质量标注的家族（AgentRewardBench、SATraj-OS、AgentNet、OSWorld-Human）为 RQ2 提供隐藏标注。
+We evaluate three data classes.
+% 我们评估三类数据。
+\emph{Real inputs}: 41 long-horizon coding-agent sessions, 440
+mixed-outcome web-agent trajectories~\cite{agentrewardbench}, and 42
+development sessions from the authors' workstation.
+% 真实输入：41 条 long-horizon coding-agent session、440 条 mixed-outcome web-agent 轨迹，以及作者工作站上的 42 条开发 session。
+\emph{Annotated trajectories}: 405 CodeTraceBench trajectories with
+20{,}866 operations and 2{,}948 human-verified
+stages~\cite{li2026codetracer}, 287 OSWorld-Human
+sessions~\cite{osworldhuman}, 1{,}012 AgentBoard goals~\cite{agentboard},
+and 2{,}737 published action
+labels~\cite{bouzenia-pradel-2025-trajectories}.
+% 标注轨迹：405 条 CodeTraceBench 轨迹（20,866 个 operation、2,948 个人工核验 stage）、287 个 OSWorld-Human session、1,012 个 AgentBoard goal 与 2,737 个公开 action 标签。
+\emph{Problem-localization benchmarks}: the complete AgentProcessBench,
+HINTBench, and TraceElephant workloads with independent targets over
+27{,}346 operations~\cite{agentprocessbench,hintbench,traceelephant}.
+% 问题定位 benchmark：完整的 AgentProcessBench、HINTBench 与 TraceElephant workload，在 27,346 个 operation 上提供独立 target。
 
 %% -------------------------------------------------------------------
 \subsection{RQ1: Does Semantic Profiling Improve Resource Attribution?}
-% RQ1：语义分析能否改善资源归因？
+% RQ1：语义 profiling 是否改善资源归因？
 
-We test whether semantic tags improve resource attribution beyond what traditional tag-free tools provide.
-% 我们测试语义标签是否能超越传统无标签工具改善资源归因。
-We run a semantic-axis ablation on 325 real Codex/Claude trajectories (183{,}714 system observations).
-% 我们在 325 个真实 Codex/Claude 轨迹（183,714 个系统观测）上进行语义轴消融。
-We progressively add tag axes (no tags, session only, prompt only, both) and measure the mixed-weight percentage, the fraction of system-effect cost in groups that mix observations from multiple task categories.
-% 我们逐步添加标签轴（无标签、仅会话、仅提示词、两者兼有），测量混合权重百分比——混合了多个任务类别观测的桶中的系统副作用权重比例。
-A lower mixed-weight percentage means the profiler correctly separates effects by task category.
-% 更低的混合权重百分比意味着分析器正确地按任务类别分离了效果。
-The residual percentage measures weight in groups where the majority category accounts for less than 90\% of the group, capturing partial mixing.
-% 残余百分比测量多数类别占桶内不到 90\% 的权重，捕获部分混合。
+The automatic backend assigns 96 recursive annotations to the 735 source
+nodes of three independent executions of one real Git-deployment task
+(489 operations, 4{,}558{,}192 provider-reported tokens, semantic depth
+five with no fixed limit; Figure~\ref{fig:rq1-flamegraph}).
+% 自动 backend 为一个真实 Git 部署任务的三次独立执行（489 个 operation、4,558,192 个 provider-reported token）的 735 个 source node 生成 96 个递归 annotation，语义深度在无固定上限下达到五层（Figure~\ref{fig:rq1-flamegraph}）。
+By operation count the repeated \texttt{diagnose authentication} subtree
+is 21.47\% of the task; by tokens it is 46.15\%, and source drilldown
+shows all three executions verifying substitute transport paths without
+establishing the requested password-authenticated endpoint.
+% 按 operation 数，重复的 \texttt{diagnose authentication} 子树占任务的 21.47\%；按 token 占 46.15\%；source 下钻显示三次执行都验证了替代传输路径，但都没有建立所要求的密码认证端点。
+A same-input organization control replays the same 489 operations and
+weights through native, coarse-action, and semantic middle organizations:
+the SSH responsibility scatters across 105 native calls and six coarse
+action kinds (largest branch 39.42\% of its tokens), while only the
+semantic organization yields one focusable cross-run responsibility.
+% 同输入组织对照用 native、coarse-action 与 semantic 三种中间组织重放相同的 489 个 operation 与权重：SSH 责任在 native 中散落于 105 个 call、在 coarse 中跨六个 action kind（最大分支仅含其 token 的 39.42\%），只有语义组织给出单一可聚焦的跨运行责任。
+At population scale, replaying the frozen 440-session hierarchy
+(7{,}229 operations and 51{,}904{,}621 tokens, both conserved exactly)
+ranks the same operations once by count and once by tokens: mean
+per-task Kendall's tau-b~\cite{kendall1938} is 0.886 (95\% task-cluster
+interval [0.857, 0.915]) with Spearman's rho~\cite{spearman1904} 0.935,
+and 10 of 77 rankable tasks fall below 0.7---dominant responsibilities
+are stable for most web-scale tasks, and the regimes where the measure
+changes the decision are exactly where multi-measure replay pays.
+% 在 population 尺度上，重放冻结的 440-session 层次（7,229 个 operation 与 51,904,621 个 token，均精确守恒），对相同 operation 分别按次数与 token 排序：每任务平均 Kendall tau-b 为 0.886（95\% task-cluster 区间 [0.857, 0.915]），Spearman rho 为 0.935；77 个可排序任务中有 10 个低于 0.7——多数 web 规模任务的主导责任稳定，而度量选择改变决策的情形正是多度量重放的价值所在。
+Profiling the authors' own 42 development sessions---the agents that
+built \sys{}---materializes 10{,}423 source nodes carrying
+1{,}380{,}863{,}014 token components; one fixed-instruction pass yields
+1{,}737 annotations with zero backend failures, the largest token path
+holds only 1.735\% of mass, and the three longest sessions carry
+distinct dominant responsibilities.
+% 对作者自己的 42 条开发 session——构建 \sys{} 的智能体——进行 profiling，物化出 10,423 个 source node、携带 1,380,863,014 个 token 分量；一次固定指令 pass 产生 1,737 个 annotation 且零 backend 失败；最大 token 路径仅占总量的 1.735\%，三条最长 session 的主导责任各不相同。
 
-Figure~\ref{fig:rq1-separation} shows the result.
-% Figure~\ref{fig:rq1-separation} 展示了结果。
-Without semantic tags, nearly all system-effect cost falls into mixed groups: a flat \texttt{cargo~test} counter shows 2{,}903 executions but cannot distinguish whether they came from \texttt{review}, \texttt{debug}, \texttt{refactor}, or \texttt{test} prompts.
-% 没有语义标签时，几乎所有系统副作用权重落入混合桶：扁平的 \texttt{cargo test} 计数器显示 2,903 次执行，但无法区分来源。
-The prompt tag is the decisive axis: it drops both mixed weight and residual by more than half and nearly doubles the number of unique stacks, because it separates observations that share the same system call but originate from different task intents.
-% 提示词标签是决定性轴：它将混合权重和残余都降低一半以上，唯一栈数量几乎翻倍，因为它分离了共享相同系统调用但来自不同任务意图的观测。
-The session tag alone barely helps because trajectories typically contain multiple intent phases.
-% 仅会话标签几乎没有帮助，因为会话通常包含多个意图阶段。
-
-A tag-permutation test (1{,}000 shuffles, $p = 0.001$) confirms the separation is not random.
-% 标签置换测试（1,000 次洗牌，$p = 0.001$）确认分离不是随机的。
-Semantic-tag quality is validated in RQ3.
-% 语义标签质量在 RQ3 中验证。
-This confirms that traditional tag-free tools cannot separate system effects by task intent; the prompt-level semantic tag is necessary for meaningful resource attribution.
-% 这确认了传统无标签工具无法按任务意图分离系统副作用；提示词级语义标签对于有意义的资源归因是必要的。
-
-Beyond tag separation, we test whether choosing different field selections for the operation stack produces views that flat grouping cannot.
-% 除标签分离外，我们还测试为 operation stack 选择不同字段是否产生扁平分组无法产生的视图。
-We take the same 13{,}265 operations from the four families with ground-truth annotations and fold them with five different field selections, counting how many distinct groups each produces.
-% 我们取四个有真实标注的家族的同样 13,265 个 operation，用五种不同字段选择折叠，计算每种产生多少不同分组。
-The same operations fold into 9~dataset groups, 57~phase groups, 226~semantic groups, 455~action groups, or 3{,}757~per-session groups by changing only the stack fields.
-% 同样的 operation 仅通过改变栈字段即可折叠为 9 个数据集分组、57 个阶段分组、226 个语义分组、455 个操作分组或 3,757 个固定会话分组。
-A flat GROUP BY on a single tag cannot produce these views because different stack depths answer different questions (budget by task vs.\ duplication by action vs.\ per-session detail).
-% 单标签的扁平 GROUP BY 无法产生这些视图，因为不同栈深度回答不同问题（任务级预算 vs. 操作级重复 vs. 会话级下钻）。
-The same model also covers all 15 public trajectory families without type-specific objects.
-% 同一模型也覆盖了所有 15 个公开轨迹家族，无需特定类型对象。
-This shows that operation stacks provide a multi-resolution view that flat grouping cannot: one model answers questions at dataset, phase, action, and session granularity by changing only the field selection.
-% 这表明 operation stack 提供了扁平分组无法实现的多分辨率视图：一个模型仅通过改变字段选择就能在数据集、阶段、操作和会话粒度上回答问题。
-
-A profiler that supports only one weight function (e.g., token count) might miss bottlenecks visible under a different metric. We test whether different weight functions produce redundant or distinct rankings on the same trajectories.
-% 只支持一种权重函数（如 token 数）的分析器可能遗漏在另一指标下可见的瓶颈。我们测试不同权重函数在相同会话上产生冗余还是不同的排名。
-The \texttt{time} and \texttt{tokens} views of the same 325 trajectories share only 7/10 top prompt categories (Spearman $\rho = 0.623$).
-% 同一 325 个会话的 \texttt{time} 和 \texttt{tokens} 视图仅共享 7/10 的顶级提示词类别（Spearman $\rho = 0.623$）。
-\texttt{network}-tagged prompts rank 8th by time (I/O wait) but 93rd by tokens.
-% \texttt{network} 标记的提示词按时间排第 8（I/O 等待）但按 token 排第 93。
-The rankings are not redundant: a single weight function would miss bottlenecks that are prominent under a different metric, confirming that multi-view profiling is necessary.
-% 排名不是冗余的：单一权重函数会遗漏在另一指标下突出的瓶颈，确认多视图 profiling 是必要的。
-
-Finally, we test whether the profiler can produce useful groups without any user-specified fields.
-% 最后，我们测试分析器能否在不需要任何用户指定字段的情况下产生有用的分组。
-We run the automatic stack-induction mode (\S\ref{sec:stacks}) on the same six tasks used in RQ2 and compare the resulting group count and localization quality against flat summaries and per-session grouping.
-% 我们在 RQ2 使用的同样六个任务上运行自动栈诱导模式（\S\ref{sec:stacks}），将结果的分组数和定位质量与扁平摘要和固定会话下钻进行比较。
-Induced stacks produce a median of 12 groups (versus 285 for per-session and 1 for flat), with 4/6 tasks generating variable-depth stacks.
-% 诱导栈产生中位 12 个分组（固定会话 285 个，扁平 1 个），4/6 任务生成可变深度栈。
-The induced stacks achieve lower average precision (AP, the area under the precision-recall curve when groups are ranked by problem density) than hand-specified stacks (median 0.276 vs 0.312) because they use only visible fields, but they reduce inspection work to 65.3\% versus flat summaries without requiring any user configuration.
-% 诱导栈的平均精度（AP，按问题密度排名分组时的精确率-召回率曲线下面积）低于手动配置栈（中位 0.276 vs 0.312），因为它们仅使用可见字段，但将检查工作量降至扁平摘要的 65.3\%，无需任何用户配置。
-Automatic induction therefore provides a useful zero-configuration baseline: it loses some precision versus hand-specified stacks but still substantially outperforms flat summaries.
-% 因此自动诱导提供了有用的零配置基线：它相比手动配置栈损失了一些精度，但仍然大幅优于扁平摘要。
-
-Figure~\ref{fig:flamegraph} shows the resulting flame graphs for the \texttt{tokens} and \texttt{files} views, illustrating that changing only the stack fields and weight function produces different aggregates from the same operations.
-% Figure~\ref{fig:flamegraph} 展示了 \texttt{tokens} 和 \texttt{files} 视图的火焰图，说明仅改变栈字段和权重函数即可从同一组 operation 产生不同聚合。
-
-
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{figures/fig-rq1-separation.pdf}
-\caption{RQ1: Semantic-axis ablation on 183{,}714 system observations
-from 325 real trajectories.
-Bars show mixed weight and residual percentages (left axis);
-the line shows unique stacks (right axis).
-Adding prompt tags reduces mixed weight from 90.4\% to 36.7\%
-while increasing unique stacks from 12k to 25k.
-Session tags alone barely help (84.4\%).}
-\Description{Grouped bar chart with dual y-axis showing mixed weight
-percentage, residual percentage, and unique stack count under four
-semantic-tag projection choices.}
-\label{fig:rq1-separation}
-\end{figure}
-
-%% flamegraph figure moved to intro (between ¶4 and ¶5)
+\includegraphics[width=.70\linewidth]{../visexp/out/r221-pprof-renderer-v1/git-multibranch.operations.png}\\[1pt]
+\includegraphics[width=.70\linewidth]{../visexp/out/r221-pprof-renderer-v1/git-multibranch.tokens.png}\\[1pt]
+\includegraphics[width=.70\linewidth]{../visexp/out/r221-pprof-renderer-v1/git-authentication.tokens.png}
+\caption{All three real \texttt{git-multibranch} executions under one
+fixed operation hierarchy. Width is operation count (top) or
+provider-reported tokens (middle); the bottom panel focuses the shared
+\texttt{diagnose authentication} operation. \sys{} emits only standard
+pprof; the renderings read the same \texttt{.pb.gz} through
+\texttt{go tool pprof}.}
+\Description{Three operation flame graphs over the same Git-deployment
+traces, with count and token widths and a focused authentication panel.}
+\label{fig:rq1-flamegraph}
+\end{figure*}
 
 %% -------------------------------------------------------------------
 \subsection{RQ2: Does Profiler Output Correspond to Real Problems?}
 % RQ2：分析器输出是否对应真实问题？
 
-RQ2 tests whether the profiler's top-ranked groups actually contain real failures, safety violations, or wasted effort.
-% RQ2 测试分析器排名靠前的分组是否确实包含真实的故障、安全违规或浪费的算力。
-We use public benchmark datasets that provide ground-truth quality annotations (failure, safety violation, redundant step, human-task boundary), hide these annotations from the profiler, and check whether the top-ranked groups recover them, analogous to injecting known bottlenecks in a CPU profiler evaluation.
-% 我们使用提供真实质量标注（故障、安全违规、冗余步骤、人工任务边界）的公开基准数据集，对分析器隐藏这些标注，检查排名靠前的分组是否恢复了它们，类似于在 CPU 分析器评估中注入已知瓶颈。
+On the three complete localization workloads (614, 400, and 220
+target-bearing queries), operations are ranked lexicographically by the
+benchmark-native direct diagnostic and a target-blind Agent+Evidence
+group score; we report non-interpolated per-query AP averaged as
+MAP~\cite{robertson2008ap} (Table~\ref{tab:rq2-localization}).
+% 在三个完整定位 workload（分别 614、400、220 个含 target 的 query）上，operation 按 benchmark 自带 direct diagnostic 与 target-blind 的 Agent+Evidence 组分数做字典序排序；我们报告标准的非插值 per-query AP 与其平均 MAP（Table~\ref{tab:rq2-localization}）。
 
-The benchmark uses six tasks across four datasets (AgentRewardBench looping and side-effect, SATraj-OS unsafe operation, AgentNet incorrect and redundant step, and OSWorld-Human group start), totaling 34{,}539 operations and 3{,}699 positives.
-% 基准使用四个数据集的六个任务（AgentRewardBench 循环和副作用、SATraj-OS 不安全操作、AgentNet 不正确和冗余步骤、OSWorld-Human 组起始），共计 34,539 个 operation 和 3,699 个正例。
-We compare seven grouping methods and rank groups by the fraction of hidden positives they contain.
-Flat summary places all operations in one group.
-Per-session grouping groups by session boundary.
-Native hierarchy uses the dataset's own structure (e.g., episode and step levels).
-Raw-action grouping groups by the unprocessed action-type field.
-Operation-stack profiling applies the model from \S\ref{sec:design}.
-Two oracle baselines add the hidden annotation fields as upper bounds.
-% 我们比较七种分组策略，按组包含的隐藏正例比例排序。扁平摘要将所有 operation 放入一个组。固定会话分组按会话边界分组。原生层次使用数据集自身结构（如 episode 和 step 层级）。原始操作分组按未处理的操作类型字段分组。Operation stack 分析应用 \S\ref{sec:design} 的模型。两个 oracle 基线将隐藏标注字段作为上界加入。
-
-\begin{table*}[t]
+\begin{table}[tb]
 \centering\small
-\caption{RQ2 hidden-annotation localization (medians across six tasks).
-AP = average precision. R@5 = recall in top 5 groups. F1@5 = F1 score
-in top 5 groups. Work@5 = fraction
-of total work in top 5 groups. R@30\% = recall at 30\% inspection budget.
-WTFP = work-to-first-positive (fraction inspected before finding one positive).
-Hidden = 1 means the method uses hidden annotations (upper bound).
-``---'' = group count varies by task.}
-\label{tab:localization}
-\begin{tabular}{lrrrrrrrr}
+\setlength{\tabcolsep}{1.8pt}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
-Method & Hidden & AP & R@5 & F1@5 & Work@5 & R@30\% & WTFP & Groups \\
+Workload & \shortstack{Direct+\\AgentProf} & \shortstack{Direct+Raw\\+Evidence} & \shortstack{Direct\\only} & \shortstack{AgentProf\\only} \\
 \midrule
-Flat (all-in-one) & 0 & 0.168 & 1.000 & 0.287 & 1.000 & 0.000 & 1.000 & 1.0 \\
-Per-session grouping & 0 & 0.348 & 0.023 & 0.043 & 0.016 & 0.356 & 0.004 & 285.0 \\
-Native hierarchy & 0 & 0.357 & 0.867 & 0.282 & 0.854 & 0.338 & 0.058 & --- \\
-Raw-action grouping & 0 & 0.274 & 0.244 & 0.220 & 0.151 & 0.333 & 0.037 & --- \\
-Operation-stack profiling & 0 & 0.312 & 0.188 & 0.198 & 0.094 & 0.390 & 0.038 & 157.5 \\
-Op-stack + oracle fields & 1 & 0.599 & 0.300 & 0.403 & 0.044 & 0.564 & 0.012 & --- \\
-Oracle (hidden annotations) & 1 & 1.000 & 0.670 & 0.797 & 0.115 & 1.000 & 0.038 & --- \\
+AgentProcessBench & \textbf{.894} & .893 & .863 & .791 \\
+HINTBench & .517 & \textbf{.518} & .411 & .432 \\
+TraceElephant & \textbf{.326} & .324 & .209 & .259 \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\caption{Standard per-query AP averaged as MAP over the complete RQ2
+populations. Higher is better.}
+\label{tab:rq2-localization}
+\end{table}
 
-Table~\ref{tab:localization} summarizes the results.
-% Table~\ref{tab:localization} 总结了结果。
-Flat summaries recover all positives but require inspecting everything (Work@5\,=\,1.0).
-% 扁平摘要恢复所有正例但需要检查全部内容（Work@5 = 1.0）。
-Per-session grouping finds a first positive quickly (WTFP\,=\,0.004) but fragments the workload into 285 groups with only 2.3\% top-five recall.
-% 固定会话下钻快速找到首个正例（WTFP = 0.004），但将工作量碎片化为 285 个组，前五召回率仅 2.3\%。
-Operation-stack profiling inspects 9.4\% of the work in the top five groups, recovers 39.0\% of positives within 30\% of the inspection budget, and reduces groups to 157.5.
-% Operation stack 分析在前五组中检查 9.4\% 的工作量，在 30\% 检查预算内恢复 39.0\% 的正例，并将组数减少到 157.5。
-
-These three methods (which do not use hidden annotations) illustrate a tradeoff between inspection effort and coverage.
-Flat summaries require full inspection but trivially find everything.
-Per-session grouping minimizes the work to find a first positive but scatters the remaining positives across hundreds of groups.
-Operation-stack profiling balances the two: it concentrates positives into fewer, higher-quality groups, trading the fast-first-hit property for broader coverage at lower total effort.
-% 三种不使用隐藏标注的分组方法体现了检查工作量与覆盖率之间的权衡。扁平摘要需要检查全部但能找到一切。固定会话分组最小化找到首个正例的工作量，但将其余正例分散到数百个组中。Operation stack 分析平衡两者：它将正例集中到更少、更高质量的组中，以牺牲快速首次命中换取更低总工作量下的更广覆盖。
-The comparison also serves as evidence for the semantic operation stack model (\S\ref{sec:design}).
-% 该比较也作为语义 operation stack 模型（\S\ref{sec:design}）的证据。
-Per-session grouping and native hierarchy are alternative abstractions that fix the hierarchy at session or dataset boundaries.
-% 固定会话下钻和原生层次是在会话或数据集边界固定层次的替代抽象。
-Operation stacks subsume both as special cases (include \texttt{session} in the stack to reproduce per-session grouping; include \texttt{dataset} to reproduce the native hierarchy).
-% Operation stack 将两者作为特例包含（栈中包含 \texttt{session} 重现固定会话分组；包含 \texttt{dataset} 重现原生层次）。
-On localization, operation stacks improve top-five recall over per-session on 5/6 tasks, reduce median group count by 45\%, and save 90\% of inspection work versus flat summaries.
-% 在定位方面，operation stack 在 5/6 任务上改进了相对固定会话的前五召回率，中位组数减少 45\%，比扁平摘要节省 90\% 的检查工作量。
-Per-session grouping retains lower work-to-first-positive on 4/6 tasks, confirming that profilers and debuggers are complementary.
-% 固定会话下钻在 4/6 任务上保持更低的首个正例工作量，确认分析器和调试器是互补的。
-
-Statistical validation supports these comparisons.
-% 统计验证支持这些比较。
-Bootstrap (10{,}000 resamples) and tag-permutation (2{,}000 trials) confirm that the AP differences are stable and exceed the 95\% confidence threshold on all six tasks.
-% Bootstrap（10,000 次重采样）和标签置换（2,000 次试验）确认 AP 差异在所有六个任务上是稳定的，且超过 95\% 置信阈值。
-
-Stack depth affects localization quality.
-Sweeping the induced-stack depth cap from 1 to 5 shows that AP peaks at depth 3 (median 0.287), while different tasks achieve their best at different depths (2--5), so depth should be tuned per objective.
-% 栈深度影响定位质量。将诱导栈深度上限从 1 扫到 5 显示 AP 在深度 3 达到峰值（中位 0.287），不同任务在不同深度（2--5）达到最佳，因此深度应按目标调整。
-Modifying stack fields, mapping rules, or ranking criteria and re-running on the same operations improves AP on 5/6 tasks (median improvement 0.038), confirming that the profiler exposes useful tuning axes.
-% 修改栈字段、映射规则或排名标准并在相同 operation 上重新运行，在 5/6 任务上改进 AP（中位改进 0.038），确认分析器暴露了有用的调节轴。
+Direct+AgentProf raises MAP over Direct-only by .031 [.024, .039], .107
+[.093, .120], and .117 [.088, .148] under 10{,}000 paired
+trajectory-cluster resamples; an information-matched raw-action
+refinement ties, and the tie follows from the mechanism: per-operation
+anomaly signal resides in the retained source evidence that both views
+share.
+% Direct+AgentProf 相对 Direct-only 将 MAP 分别提高 .031 [.024,.039]、.107 [.093,.120]、.117 [.088,.148]（10,000 次配对轨迹簇重抽样）；信息量匹配的 raw-action refinement 与之持平，而这一持平源于机制本身：per-operation 异常信号位于两种视图共享的 source evidence 中。
+Used as a reading index on TraceElephant, the semantic skeleton guides a
+strong external reader to ranking quality statistically equal to an
+information-matched raw-action skeleton while opening 53.0\% versus
+65.0\% of the source evidence (paired delta +.120 [+.103, +.137]);
+full-trace reading reaches MAP .502 versus .209 and .326 at 12{,}615
+input tokens per query, but is bounded by the context window, which
+populations like the 4{,}558{,}192-token Git task exceed.
+% 作为 TraceElephant 上的阅读索引，语义骨架引导强外部 reader 达到与信息量匹配的 raw-action 骨架统计持平的排序质量，同时只打开 53.0\%（对 65.0\%）的 source evidence（配对差 +.120 [+.103,+.137]）；全轨迹阅读以每 query 12,615 输入 token 达到 MAP .502（对 .209 与 .326），但受上下文窗口约束——诸如 4,558,192-token 的 Git 任务群超出该界限。
+Across all 338 bad--good pairs of the mixed-outcome AgentRewardBench
+population, a target-blind signed profile places recovery at 44.6\% of
+failed-side versus 12.0\% of successful-side occurrences (completion
+1.8\% versus 5.1\%), and per-trajectory recovery exposure predicts
+independent expert looping labels at AP .634 against prevalence .398
+(interval [.181, .293]).
+% 在 mixed-outcome AgentRewardBench population 的全部 338 个坏--好配对上，target-blind 的带符号 profile 显示 recovery 占失败侧 44.6\%、成功侧 12.0\%（completion 分别为 1.8\% 与 5.1\%）；每轨迹 recovery 暴露度以 AP .634（prevalence .398，区间 [.181,.293]）预测独立的专家 looping 标注。
 
 %% -------------------------------------------------------------------
 \subsection{RQ3: How Accurate Are the Tags?}
 % RQ3：标签有多准确？
 
-RQ1 and RQ2 assume that semantic tags (the tags derived by intent attribution or mapping rules) are useful.
-% RQ1 和 RQ2 假设语义标签（由意图归因或映射规则派生的标签）是有用的。
-RQ3 tests whether these semantic tags are accurate by comparing them against ground-truth annotations from the benchmark datasets.
-% RQ3 通过将这些语义标签与基准数据集的真实标注进行比较来测试它们是否准确。
+Direct Agent annotation on all 405 CodeTraceBench trajectories reaches
+0.764 ordinary B$^3$ F1~\cite{bagga-baldwin-1998-entity-based} and 0.480
+exact adjacent-boundary F1~\cite{ruokolainen2016segmentation} against the
+2{,}948 human stages, versus 0.663 and 0.266 for multi-resolution
+recurrence (paired deltas +0.101 [0.087, 0.116] and +0.214
+[0.193, 0.235]) and 0.541 B$^3$ F1 for raw-action grouping
+(Table~\ref{tab:rq3-codetrace}); the marks conserve exactly 20{,}866
+operations and 494{,}862{,}929 provider-reported tokens.
+% 直接 Agent 标注在全部 405 条 CodeTraceBench 轨迹上、相对 2,948 个人工 stage 达到 0.764 的普通 B$^3$ F1 与 0.480 的精确相邻边界 F1，recurrence 为 0.663 与 0.266（配对差 +0.101 [0.087,0.116] 与 +0.214 [0.193,0.235]），raw-action 分组的 B$^3$ F1 为 0.541（Table~\ref{tab:rq3-codetrace}）；标记精确守恒 20,866 个 operation 与 494,862,929 个 provider-reported token。
 
-Public benchmark datasets provide native action annotations that serve as ground truth for mapping quality.
-% 公开基准数据集提供原生操作标注作为映射质量的真实标准。
-We run a leave-dataset-out evaluation.
-% 我们运行留一数据集评估。
-For each of 9 datasets, we train mapping rules on the other 8 and measure V-measure (a clustering-agreement score ranging from 0 to 1) between the mapping-derived \texttt{phase} field and the dataset's native \texttt{action} annotations, plus boundary F1 (precision and recall of phase-transition points) between mapped phase boundaries and native action boundaries.
-% 对于 9 个数据集中的每一个，我们在其余 8 个上训练映射规则，测量映射衍生的 \texttt{phase} 字段与数据集原生 \texttt{action} 标注之间的 V-measure（聚类一致性分数，范围 0 到 1），以及映射阶段边界与原生操作边界之间的边界 F1（阶段转换点的精确率和召回率）。
+\begin{table}[tb]
+\centering\small
+\setlength{\tabcolsep}{2.0pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Method & B$^3$ P & B$^3$ R & B$^3$ F1 & Bound. F1 \\
+\midrule
+Direct Agent annotation & 0.793 & 0.736 & \textbf{0.764} & \textbf{0.480} \\
+Multi-resolution recurrence & 0.782 & 0.575 & 0.663 & 0.266 \\
+Native source tree & 0.975 & 0.249 & 0.397 & 0.259 \\
+Raw-action grouping & 0.891 & 0.388 & 0.541 & --- \\
+\bottomrule
+\end{tabular}
+\caption{Automatic operation-structure agreement on all 405
+CodeTraceBench trajectories.}
+\label{tab:rq3-codetrace}
+\end{table}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/fig-rq3-vmeasure.pdf}
-\caption{RQ3: Leave-dataset-out mapping quality on 13{,}265 operations
-across 9 held-out datasets.
-Dark bars: V-measure (cluster agreement between mapping-derived
-\texttt{phase} and native \texttt{action} annotations).
-Light bars: boundary F1 (precision/recall of phase transitions).
-``---'': boundary evaluation inapplicable.
-Dashed line marks 0.7; seven of nine datasets exceed it on both metrics.}
-\Description{Grouped bar chart showing V-measure and boundary F1 for
-nine held-out datasets, with a dashed threshold line at 0.7.}
-\label{fig:rq3-vmeasure}
-\end{figure}
-
-Figure~\ref{fig:rq3-vmeasure} shows the results.
-% Figure~\ref{fig:rq3-vmeasure} 展示了结果。
-V-measure quantifies whether the mapping groups operations into the same clusters as the ground-truth annotations; boundary F1 measures whether phase-transition points align.
-% V-measure 量化映射是否将 operation 分组到与真实标注相同的簇；边界 F1 测量阶段转换点是否对齐。
-Seven of nine datasets exceed 0.7 on both metrics, meaning rules trained on other families generalize: they assign operations to the correct semantic phase and detect transitions accurately.
-% 9 个数据集中有 7 个在两个指标上都超过 0.7，表明在其他家族上训练的规则可泛化。
-The two low-scoring datasets (toolbench, api-bank) use atypical action vocabularies absent from the training families, confirming that the mapping is pattern-based and degrades predictably when vocabulary shifts.
-% 两个低分数据集（toolbench、api-bank）使用训练家族中不存在的非典型操作词汇，确认映射是基于模式的，在词汇变化时可预测地退化。
-
-As an upper-bound comparison, supervised boundary predictors trained on ground-truth phase transitions beat the rule-based mapping on 4/5 tested datasets (e.g., F1~0.77 vs 0.71 on OSWorld-Human), confirming that mapping rules produce useful tags but leave room for learned intent discovery.
-% 作为上界对比，在真实阶段转换上训练的有监督边界预测器在 4/5 测试数据集上超过基于规则的映射（例如 OSWorld-Human 上 F1 约 0.77 vs 0.71），确认映射规则产生有用标签但仍有提升空间。
+On 287 OSWorld-Human sessions, a supervised boundary
+predictor~\cite{mccallum-nigam-1998} reaches 0.739 boundary F1 and 0.816
+B$^3$ F1 and label-free recurrence reaches 0.680 and 0.786, versus 0.645
+and 0.678 for the strongest control; closed-label task-family and action
+backends reach 0.695 and 0.498
+macro-F1~\cite{lewis2004rcv1,agentboard,bouzenia-pradel-2025-trajectories}
+against majority baselines of 0.044 and 0.061.
+% 在 287 个 OSWorld-Human session 上，监督边界预测器达到 0.739 boundary F1 与 0.816 B$^3$ F1，无标签 recurrence 达到 0.680 与 0.786，最强对照为 0.645 与 0.678；closed-label 的 task-family 与 action backend 分别达到 0.695 与 0.498 macro-F1，majority 基线为 0.044 与 0.061。
 
 %% -------------------------------------------------------------------
 \subsection{RQ4: What Is the Profiling Cost?}
 % RQ4：分析开销是多少？
 
-\sys is an offline, post-hoc profiler, so it adds zero overhead to the agent's runtime.
-% \sys 是离线事后分析器，对智能体运行时不增加任何开销。
-The profiling cost is the time and resources spent after the session ends.
-% 分析开销是会话结束后花费的时间和资源。
-Each profiling run chooses a stack-field list, a predicate, a weight function, and ranking criteria, then executes the full pipeline (parse, enrich, construct stacks, fold) on the input operations.
-% 每次 profiling 运行选择栈字段列表、谓词、权重函数和排名标准，然后在输入 operation 上执行完整管线（解析、丰富、构造栈、折叠）。
-Across 76 configurations, median end-to-end time is 1.6\,s (p95 2.8\,s, max 4.3\,s).
-% 中位端到端时间为每次运行 1.6 秒（p95 2.8 秒，最大 4.3 秒）。
-The slowest runs process views with over 600 unique stacks, while runs that vary only ranking criteria or stack depth all complete within 1.6\,s.
-% 最慢的运行处理超过 600 个唯一栈的视图，而仅改变排名标准或栈深度的运行全部在 1.6 秒内完成。
-
-Intent attribution adds a one-time cost for new prompts.
-% 意图归因对新提示词增加一次性开销。
-Of 118{,}021 tag requests on 325 real trajectories, 70\% are cache hits (zero cost), and the remaining 35{,}136 new calls complete at p95 latency of 31\,ms per tag using a local 3B-parameter model.
-% 在 325 个真实会话的 118,021 个标注请求中，70\% 为缓存命中（零开销），其余 35,136 个新调用使用本地 3B 参数模型以 p95 延迟 31 毫秒/标签完成。
-Grammar-constrained decoding ensures 100\% syntax validity (2{,}700/2{,}700 test tags).
-% 语法约束解码确保 100\% 语法有效性（2,700/2,700 测试标签）。
-Because tags are cached, re-profiling the same trajectories with different stack fields or predicates incurs no additional LLM calls.
-% 因为标签被缓存，用不同栈字段或谓词重新分析相同会话不产生额外 LLM 调用。
-
+With marks fixed, the current binary constructs a 27{,}765-operation
+union profile in 1.16\,s at 465.2\,MiB peak RSS (0.0418\,ms per
+operation, $R^2 = 0.9997$), 19.6\% more time than raw-action grouping.
+% 固定 mark 后，当前 binary 在 1.16 秒内以 465.2 MiB 峰值 RSS 构建 27,765-operation 的并集 profile（每 operation 0.0418 毫秒，$R^2=0.9997$），比 raw-action 分组多 19.6\% 时间。
+Direct annotation of all 405 CodeTraceBench trajectories consumes
+12{,}050{,}384 input and 231{,}886 output tokens in 2{,}215.9\,s of
+active backend wall time, and the full deterministic downstream pipeline
+takes 11.5\,s; annotating the complete 440-session AgentRewardBench
+population takes 58.7 minutes and 12{,}039{,}417 input tokens (90.8\%
+cached), while materialization stays sub-second, so construction cost is
+dominated by the one-time automatic backend and every later measure
+switch is a cheap replay.
+% 直接标注全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token、2,215.9 秒活跃 backend wall time，完整确定性下游管线为 11.5 秒；标注完整 440-session AgentRewardBench population 需 58.7 分钟与 12,039,417 输入 token（90.8\% 命中缓存），而物化保持亚秒级——构建成本由一次性的自动 backend 主导，之后每次度量切换都是廉价重放。
 
 %% ===================================================================
 \section{Related Work}
