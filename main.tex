@@ -1,29 +1,39 @@
-\documentclass[sigconf]{acmart}
+\documentclass[letterpaper]{article}
+\usepackage[submission]{aaai2027}
 
-\setcopyright{none}
-\settopmatter{printacmref=false}
-\renewcommand\footnotetextcopyrightpermission[1]{}
-\pagestyle{plain}
-
+\usepackage[hyphens]{url}
+\urlstyle{rm}
+\def\UrlFont{\rm}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{caption}
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{xspace}
-\usepackage{url}
-\usepackage{graphicx}
+\usepackage{xcolor}
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 \usetikzlibrary{arrows.meta,positioning}
+\frenchspacing
+\pdfinfo{
+/TemplateVersion (2027.1)
+}
 
 \newcommand{\sys}{\textsc{AgentProf}\xspace}
 \newcommand{\operation}{\texttt{operation}\xspace}
 \newcommand{\opstack}{\texttt{operation stack}\xspace}
+\providecommand{\Description}[1]{}
 
 \newcommand{\ckupdate}[1]{\textcolor{blue}{#1}}
 
 \begin{document}
 
 \title{AgentProf: Semantic Profiling for AI Agents}
+\author{Anonymous Submission}
+\affiliations{}
+
+\maketitle
 
 \begin{abstract}
 %% S1: Context (→¶1)
@@ -108,9 +118,7 @@ across agent trajectories.
 
 % We implement this model in AgentProf, an offline profiler 
 % with pluggable algorithms for intent attribution and stack construction, 
-% compiling local agent trajectories into standard, pprof-compatible profiles. 
-
-\maketitle
+% compiling local agent trajectories into standard, pprof-compatible profiles.
 
 %% ===================================================================
 \section{Introduction}
@@ -803,7 +811,6 @@ Per-session grouping remains faster to a first positive on 4/6 tasks, confirming
 Multi-project evaluation and tracing-ecosystem integration are the most impactful next steps.
 % 多项目评估和 tracing 生态系统集成是最有影响力的下一步。
 
-\bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
 
 \end{document}
