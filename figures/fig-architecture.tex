@@ -17,14 +17,14 @@
 
 % Node 1: Intent Attribution
 \node[box, right=0.8cm of traj, fill=orange!15] (intent) {Intent\\Attribution};
-\node[font=\footnotesize, below=0.05cm of intent, text=gray] (backends) {regex / LLM / clustering};
+\node[font=\footnotesize, below=0.05cm of intent, text=gray] (backends) {recursive segmentation};
 
 % Node 3: Stack Construction
 \node[box, right=0.8cm of intent] (stack) {Stack\\Construction};
 
 % Node 4: Output
 \node[box, right=0.8cm of stack, fill=green!12] (out) {Output};
-\node[font=\footnotesize, below=0.05cm of out, text=gray] {pprof / SVG / JSON};
+\node[font=\footnotesize, below=0.05cm of out, text=gray] {pprof};
 
 % Arrows
 \draw[arr] (traj) -- (intent);

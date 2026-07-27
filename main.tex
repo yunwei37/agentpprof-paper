@@ -12,8 +12,6 @@
 \usepackage{xspace}
 \usepackage{xcolor}
 \usepackage{tikz}
-\usepackage{pgfplots}
-\pgfplotsset{compat=1.18}
 \usetikzlibrary{arrows.meta,positioning}
 \frenchspacing
 \pdfinfo{
@@ -149,8 +147,8 @@ aggregation, as distinct from single-execution debugging and tracing.
 
 %% ¶3: Existing solutions
 Yet existing agent tools support debugging and tracing but not
-profiling (\S\ref{sec:background}).
-% 然而现有智能体工具支持调试和 tracing，但不支持 profiling（\S\ref{sec:background}）。
+profiling (Background).
+% 然而现有智能体工具支持调试和 tracing，但不支持 profiling（Background）。
 Some~\cite{langsmith,langfuse,phoenix,otel} organize events into
 per-execution span trees, effective for diagnosing a single run but
 unable to aggregate by semantic category.
@@ -165,12 +163,12 @@ to downstream tool calls and system effects.
 
 %% ¶4: Challenge — why traditional profiling doesn't transfer directly
 Adapting profiling to agent trajectories is challenging
-(\S\ref{sec:background}).
-% 将 profiling 适配到智能体轨迹具有挑战性（\S\ref{sec:background}）。
+(Background).
+% 将 profiling 适配到智能体轨迹具有挑战性（Background）。
 In traditional software, the responsible entities are code paths.
 Profiling is straightforward because function names are
 stable and runtime call nesting provides the attribution
-hierarchy (\S\ref{sec:background}).
+hierarchy (Background).
 % 在传统软件中，负责实体是代码路径。Profiling 是直接的，因为函数名是稳定的，运行时调用嵌套提供归因层次。
 Agent behavior differs fundamentally.
 To answer the questions above, the responsible entities need to be
@@ -191,8 +189,8 @@ function calls produce stack frames: a sequence of prompts can be a task or mult
 \includegraphics[width=\linewidth]{figures/flamegraph-tokens.png}\\[2pt]
 \includegraphics[width=\linewidth]{figures/flamegraph-time.png}\\[2pt]
 \includegraphics[width=\linewidth]{figures/flamegraph-files.png}
-\caption{Semantic flame graphs of 325 real agent trajectories under
-three views. \emph{Top (tokens):} width represents token count.
+\caption{Semantic flame graphs of real agent trajectories from one
+multi-month development project, under three views. \emph{Top (tokens):} width represents token count.
 \emph{Middle (time):} width represents wall-clock duration.
 \emph{Bottom (files):} width represents file-operation count.
 All three are produced from the same operations by changing only the
@@ -225,27 +223,29 @@ We implement this model in \sys, an offline profiler that compiles
 local agent trajectories into pprof-compatible profiles
 (Figure~\ref{fig:architecture}).
 % 我们在 \sys 中实现此模型，这是一个离线 profiler，将本地智能体轨迹编译为 pprof 兼容的 profile（Figure~\ref{fig:architecture}）。
-Two pluggable algorithm frameworks enrich the model.
-% 两个可插拔算法框架丰富此模型。
-\emph{Intent attribution} derives stable, low-cardinality tags from natural-language fields via regex rules, a local LLM tagger, or unsupervised clustering.
-% 意图归因通过正则规则、本地 LLM 标注器或无监督聚类从自然语言字段派生稳定、低基数的标签。
-This gives agents the stable tags that traditional profiling gets
-for free from function names.
-% 这为智能体提供了传统 profiling 从函数名免费获得的稳定标签。
-\emph{Stack construction} builds the attribution hierarchy, either from a user-specified field list or by automatically detecting boundaries between distinct work phases.
-% 栈构造构建归因层次，可通过用户指定的字段列表或自动检测不同工作阶段之间的边界。
-On 325 real Codex and Claude trajectories (183{,}714 system
-observations), semantic profiling separates over 90\% of
-system-effect cost that per-session views cannot attribute to task
-categories.
-% 在 325 个真实 Codex 和 Claude 轨迹（183,714 个系统观测）上，语义 profiling 分离了按会话视图无法归因到任务类别的超过 90\% 的系统副作用开销。
-On four public datasets (34{,}539 operations) where the correct
-annotations are known but hidden from the profiler, ranked groups locate
-real problems at 9.4\% inspection work, with 45\% fewer groups than
-per-session grouping.
-% 在四个公开数据集（34,539 个操作）上，正确标注已知但对 profiler 隐藏，排序的分组以 9.4\% 的检查成本定位真实问题，比按会话分组减少 45\% 的分组数。
-Derived tags agree with ground truth on 7 of 9 held-out datasets.
-% 派生标签在 9 个保留数据集中的 7 个上与真实标注一致。
+One algorithm powers the model: \emph{recursive operation
+segmentation} reads a trajectory, cuts it at the points where the
+agent's responsibility changes, names the intervals on both sides, and
+recurses, so short action-first names give agents the stable identifiers
+that traditional profiling gets for free from function names.
+% 一个算法驱动此模型：递归 operation 切分通读轨迹，在智能体责任变化处切开，为两侧区间命名并递归；动词优先的短名称为智能体提供了传统 profiling 从函数名免费获得的稳定标识符。
+The segmentation contract is backend-neutral: an agent, a plain language
+model, or a statistical rule can produce the same marks.
+% 切分契约与 backend 无关：agent、普通语言模型或统计规则都能产出相同的标记。
+Across all 405 released CodeTraceBench trajectories, recursive
+segmentation agrees with human stage annotations at 0.764 ordinary
+B$^3$ F1, versus 0.663 for a statistical baseline and 0.541 for raw
+actions.
+% 在全部 405 条已发布的 CodeTraceBench 轨迹上，递归切分与人工 stage 标注的普通 B$^3$ F1 一致性为 0.764，统计基线为 0.663，raw action 为 0.541。
+On three complete localization benchmarks, the profile raises MAP over
+each benchmark's own diagnostic by .031, .107, and .117, and as a
+reading index it guides a strong reader to equal ranking quality while
+opening 53.0\% instead of 65.0\% of the source evidence.
+% 在三个完整定位 benchmark 上，profile 相对各 benchmark 自带诊断将 MAP 分别提高 .031、.107 与 .117；作为阅读索引，它引导强 reader 在只打开 53.0\%（对 65.0\%）source evidence 的情况下达到同等排序质量。
+One fixed hierarchy replays under operation-count and token measures
+with exact conservation, exposing bottlenecks that a count view
+understates by more than a factor of two.
+% 同一固定层次在 operation 数与 token 两种度量下精确守恒地重放，暴露出 count 视图低估两倍以上的瓶颈。
 
 %% ¶7: Contributions
 This paper makes three contributions:
@@ -255,19 +255,19 @@ This paper makes three contributions:
 \item \textbf{Semantic operation stack model.}
   We identify the missing profiling layer in agent observability and
   propose a model of uniform operations and query-time operation
-  stacks (\S\ref{sec:background}--\S\ref{sec:design}).
+  stacks (Background and Design).
 % 语义 operation stack 模型。识别智能体可观测性中缺失的 profiling 层，提出统一 operation 和查询时 operation stack 的模型。
 \item \textbf{System: \sys.}
-  A profiler that implements this model with pluggable intent
-  attribution and stack construction, producing pprof-compatible
-  output (\S\ref{sec:impl}).
-% 系统：\sys。实现此模型的 profiler，具有可插拔意图归因和栈构造，产生 pprof 兼容输出。
+  A profiler that implements this model through a backend-neutral
+  recursive-segmentation contract, producing pprof-compatible output
+  (Implementation).
+% 系统：\sys。通过与 backend 无关的递归切分契约实现此模型的 profiler，产生 pprof 兼容输出。
 \item \textbf{Evaluation.}
-  We evaluate profiler output against hidden ground-truth trajectory
-  annotations, analogous to injecting known bottlenecks in CPU profiler
-  evaluation, on 325 real trajectories and 4 public datasets
-  (\S\ref{sec:eval}).
-% 隐藏标注评估。将 profiler 输出与隐藏的真实轨迹标注评分，类似于在 CPU profiler 评估中注入已知瓶颈，在 325 个真实会话和 4 个公开数据集上验证。
+  We evaluate profiler output against independent ground-truth
+  annotations that stay hidden from the profiler, on eight public
+  benchmarks and three real trajectory populations
+  (Evaluation).
+% 评估。将 profiler 输出与对 profiler 隐藏的独立真实标注评分，在八个公开 benchmark 与三个真实轨迹 population 上验证。
 \end{enumerate}
 
 %% ===================================================================
@@ -346,8 +346,8 @@ In CPU profiling, the call stack determines attribution at every level: \texttt{
 % 在 CPU 分析中，调用栈决定了每个层级的归因：\texttt{malloc} 的开销同时属于 \texttt{parse}、\texttt{process} 和 \texttt{main}。
 A sequence of prompts may constitute one task or several, and a task may be part of a larger workflow, but no runtime mechanism marks these boundaries or determines at which granularity to attribute cost.
 % 一串提示词可能构成一个任务也可能是多个任务，一个任务可能是更大工作流的一部分，但没有运行时机制标记这些边界或决定在哪个粒度归因开销。
-We quantify this in RQ1~(\S\ref{sec:eval}).
-% 我们在 RQ1~(\S\ref{sec:eval}) 中量化了这一点。
+We quantify this in RQ1 (Evaluation).
+% 我们在 RQ1 (Evaluation) 中量化了这一点。
 
 \subsection{Design Requirements for Agent Profiling}
 % 智能体 Profiling 的设计需求
@@ -384,14 +384,14 @@ Agent events are not nested by execution, so the profiler must construct attribu
 
 The three requirements (cross-layer resource projection, stable tags, and hierarchical attribution) drive the design.
 % 三个需求（跨层资源投影、稳定标签和分层归因）驱动了设计。
-Operations (\S\ref{sec:ops}) satisfy R1 by representing intent and system-effect activities in a single record with tag inheritance, so intent-layer tags propagate to the system effects they trigger.
-% Operation（\S\ref{sec:ops}）通过将意图和系统副作用活动表示在带标签继承的单一记录中满足 R1，使意图层标签传播到其触发的系统副作用。
-\emph{Intent attribution} (\S\ref{sec:intent}) satisfies R2 by deriving stable tags from natural-language fields.
-% 意图归因（\S\ref{sec:intent}）通过从自然语言字段派生稳定标签满足 R2。
-\emph{Operation stacks} (\S\ref{sec:stacks}) satisfy R3 by replacing the runtime call stack with query-time field projections that attribute resources at multiple levels of granularity, so the same data supports multiple views without rebuilding the input.
-% Operation stack（\S\ref{sec:stacks}）通过以查询时字段投影替代运行时调用栈，在多个粒度层级归因资源来满足 R3，使同一数据支持多种视图而无需重建输入。
-The profiling pipeline has four stages: (1)~parse raw trajectories into operations, (2)~enrich operations via intent attribution or mapping rules, (3)~project each operation onto a stack frame sequence chosen at query time, and (4)~fold operations with identical stacks, summing their weights.
-% 分析管线有四个阶段：(1) 将原始轨迹解析为 operation，(2) 通过意图归因或映射规则丰富 operation，(3) 将每个 operation 投影到查询时选择的栈帧序列上，(4) 折叠具有相同栈的 operation 并求和权重。
+Operations (Design) satisfy R1 by representing intent and system-effect activities in a single record with tag inheritance, so intent-layer tags propagate to the system effects they trigger.
+% Operation（Design）通过将意图和系统副作用活动表示在带标签继承的单一记录中满足 R1，使意图层标签传播到其触发的系统副作用。
+\emph{Recursive operation segmentation} (Design) satisfies R2 and R3 together: it derives short, stable interval names from trajectory content and nests those intervals into the attribution hierarchy that replaces the runtime call stack.
+% 递归 operation 切分（Design）同时满足 R2 与 R3：它从轨迹内容派生短小稳定的区间名称，并将这些区间嵌套为替代运行时调用栈的归因层次。
+\emph{Operation stacks} (Design) then attribute resources at every level of that hierarchy at query time, so the same data supports multiple views without rebuilding the input.
+% Operation stack（Design）随后在查询时沿该层次的每一层归因资源，使同一数据支持多种视图而无需重建输入。
+The profiling pipeline has four stages: (1)~parse raw trajectories into operations, (2)~segment trajectories into named nested intervals (or apply mapping rules), (3)~project each operation onto a stack frame sequence chosen at query time, and (4)~fold operations with identical stacks, summing their weights.
+% 分析管线有四个阶段：(1) 将原始轨迹解析为 operation，(2) 将轨迹切分为命名嵌套区间（或应用映射规则），(3) 将每个 operation 投影到查询时选择的栈帧序列上，(4) 折叠具有相同栈的 operation 并求和权重。
 
 \subsection{Semantic Operation Stack Model}
 % 语义 Operation Stack 模型
@@ -399,9 +399,9 @@ The profiling pipeline has four stages: (1)~parse raw trajectories into operatio
 
 %% ¶1: Operations
 Because agent activities span both the intent and system-effect
-layers described in \S\ref{sec:background}, a profiler should not
+layers described in Background, a profiler should not
 distinguish between them in the data representation.
-% 由于智能体活动跨越 \S\ref{sec:background} 中描述的意图层和系统副作用层，分析器不应在数据表示层面区分它们。
+% 由于智能体活动跨越 Background 中描述的意图层和系统副作用层，分析器不应在数据表示层面区分它们。
 \sys therefore represents every activity as a single abstraction, the
 \operation, a weighted record with string fields and additive
 measures.
@@ -441,6 +441,11 @@ Sessions and spans are optional operation fields, not fixed hierarchy levels, so
 (include \texttt{session}) and aggregate profiling views (exclude
 it).
 % 会话和 span 是可选的 operation 字段而非固定层次级别，因此同一数据既支持调试视图（包含 \texttt{session}）也支持聚合 profiling 视图（排除它）。
+The frame sequence need not come from fields alone: recursive
+segmentation (Design) supplies each operation's covering
+interval-name chain as a variable-depth frame sequence, and field lists
+and interval paths compose in one stack.
+% 帧序列不必只来自字段：递归切分（Design）为每个 operation 提供其覆盖区间的名称链，作为可变深度的帧序列；字段列表与区间路径可在同一栈中组合。
 A view is a triple $(\varphi, \sigma, w)$: a predicate
 $\varphi$ selects which operations participate, a stack function
 $\sigma = [f_1, \ldots, f_k]$ maps each operation to its frame
@@ -455,7 +460,7 @@ Four built-in views cover common questions: \texttt{tokens} (LLM calls weighted 
 \caption{Data-flow and algorithm pipeline. Local agent histories enter
 through \texttt{agent-session} parsing; public datasets enter as
 operation JSONL. Both paths produce uniform operations. Intent
-attribution, stack construction, and folding are query-time algorithms
+attribution, stack construction, and folding are algorithms (segmentation runs once per trajectory; projection and folding are query-time)
 applied identically to both sources.}
 \Description{Data-flow diagram from agent trajectories through parsing,
 intent attribution, and stack construction to folded-stack output.}
@@ -513,9 +518,20 @@ Third, naming intervals rather than steps yields identifiers at the
 granularity where recurrence lives, so the same short action-first name
 (one to three words) reappears across sessions and folds.
 % 其三，为区间而非单步命名，得到与"重复出现"粒度一致的标识符——同一个动词优先的短名称（一到三个词）在不同 session 中再次出现并得以折叠。
+Concretely, in one Git-deployment execution the backend cuts the
+session into \texttt{build deployment system} and, inside it, cuts
+again where the agent stops writing configuration and starts debugging
+access, yielding \texttt{deploy branches} and \texttt{diagnose
+authentication}; a turn inside the latter carries the path
+\texttt{build deployment system > diagnose authentication}, and because
+the same two names reappear in the other two executions, their costs
+fold together in Figure~\ref{fig:rq1-flamegraph}.
+% 具体地，在一次 Git 部署执行中，backend 先把 session 切为 \texttt{build deployment system}，再在"智能体从编写配置转向调试访问"处继续切分，得到 \texttt{deploy branches} 与 \texttt{diagnose authentication}；后者内部的 turn 携带路径 \texttt{build deployment system > diagnose authentication}。由于同样两个名称在另外两次执行中再次出现，其开销在 Figure~\ref{fig:rq1-flamegraph} 中折叠到一起。
 Any backend able to find transitions and name intervals---an agent, a
 plain language model, or a statistical rule---implements the same
-contract.
+contract; the evaluated backend is a frontier code agent invoked once
+per trajectory with one fixed instruction.
+% 任何能找到转换点并为区间命名的 backend——agent、普通语言模型或统计规则——都实现同一契约；被评测的 backend 是一个前沿代码 agent，每条轨迹以同一固定指令调用一次。
 % 任何能找到转换点并为区间命名的 backend——agent、普通语言模型或统计规则——都实现同一契约。
 
 %% ===================================================================
@@ -548,10 +564,11 @@ changes only stack widths.
 
 We evaluate three data classes.
 % 我们评估三类数据。
-\emph{Real inputs}: 41 long-horizon coding-agent sessions, 440
-mixed-outcome web-agent trajectories~\cite{agentrewardbench}, and 42
-development sessions from the authors' workstation.
-% 真实输入：41 条 long-horizon coding-agent session、440 条 mixed-outcome web-agent 轨迹，以及作者工作站上的 42 条开发 session。
+\emph{Real inputs}: 41 long-horizon coding-agent sessions (three of which
+repeat one Git-deployment task and form the RQ1 case), 440 mixed-outcome
+web-agent trajectories~\cite{agentrewardbench}, and 42 development
+sessions from the authors' workstation.
+% 真实输入：41 条 long-horizon coding-agent session（其中三条重复同一个 Git 部署任务，构成 RQ1 案例）、440 条 mixed-outcome web-agent 轨迹，以及作者工作站上的 42 条开发 session。
 \emph{Annotated trajectories}: 405 CodeTraceBench trajectories with
 20{,}866 operations and 2{,}948 human-verified
 stages~\cite{li2026codetracer}, 287 OSWorld-Human
@@ -560,48 +577,75 @@ and 2{,}737 published action
 labels~\cite{bouzenia-pradel-2025-trajectories}.
 % 标注轨迹：405 条 CodeTraceBench 轨迹（20,866 个 operation、2,948 个人工核验 stage）、287 个 OSWorld-Human session、1,012 个 AgentBoard goal 与 2,737 个公开 action 标签。
 \emph{Problem-localization benchmarks}: the complete AgentProcessBench,
-HINTBench, and TraceElephant workloads with independent targets over
-27{,}346 operations~\cite{agentprocessbench,hintbench,traceelephant}.
-% 问题定位 benchmark：完整的 AgentProcessBench、HINTBench 与 TraceElephant workload，在 27,346 个 operation 上提供独立 target。
+HINTBench, and TraceElephant workloads, where every trajectory carries an
+independently annotated faulty step, over 27{,}346
+operations~\cite{agentprocessbench,hintbench,traceelephant}.
+% 问题定位 benchmark：完整的 AgentProcessBench、HINTBench 与 TraceElephant workload——每条轨迹带有独立标注的出错步骤——共 27,346 个 operation。
+All annotations, outcomes, and scores stay hidden from every backend
+until its output is frozen.
+% 所有标注、结局与分数在每个 backend 的输出冻结之前都对其保持隐藏。
 
 %% -------------------------------------------------------------------
 \subsection{RQ1: Does Semantic Profiling Improve Resource Attribution?}
 % RQ1：语义 profiling 是否改善资源归因？
 
-The automatic backend assigns 96 recursive annotations to the 735 source
-nodes of three independent executions of one real Git-deployment task
+\paragraph{Use case 1: why does the same deployment keep failing?}
+% 用例 1：同一个部署为什么反复失败？
+An engineer has three independent agent attempts at one real
+Git-deployment task, none of which delivered the requested
+password-authenticated endpoint, and asks where the effort went and
+which shared responsibility explains the repeated failure.
+% 一位工程师手上有同一真实 Git 部署任务的三次独立 agent 尝试，均未交付所要求的密码认证端点；他想知道精力花在了哪里、哪个共享责任解释了反复的失败。
+The segmentation backend builds one hierarchy over all three executions
 (489 operations, 4{,}558{,}192 provider-reported tokens, semantic depth
 five with no fixed limit; Figure~\ref{fig:rq1-flamegraph}).
-% 自动 backend 为一个真实 Git 部署任务的三次独立执行（489 个 operation、4,558,192 个 provider-reported token）的 735 个 source node 生成 96 个递归 annotation，语义深度在无固定上限下达到五层（Figure~\ref{fig:rq1-flamegraph}）。
-By operation count the repeated \texttt{diagnose authentication} subtree
-is 21.47\% of the task; by tokens it is 46.15\%, and source drilldown
-shows all three executions verifying substitute transport paths without
-establishing the requested password-authenticated endpoint.
-% 按 operation 数，重复的 \texttt{diagnose authentication} 子树占任务的 21.47\%；按 token 占 46.15\%；source 下钻显示三次执行都验证了替代传输路径，但都没有建立所要求的密码认证端点。
-A same-input organization control replays the same 489 operations and
-weights through native, coarse-action, and semantic middle organizations:
-the SSH responsibility scatters across 105 native calls and six coarse
-action kinds (largest branch 39.42\% of its tokens), while only the
-semantic organization yields one focusable cross-run responsibility.
-% 同输入组织对照用 native、coarse-action 与 semantic 三种中间组织重放相同的 489 个 operation 与权重：SSH 责任在 native 中散落于 105 个 call、在 coarse 中跨六个 action kind（最大分支仅含其 token 的 39.42\%），只有语义组织给出单一可聚焦的跨运行责任。
-At population scale, replaying the frozen 440-session hierarchy
-(7{,}229 operations and 51{,}904{,}621 tokens, both conserved exactly)
-ranks the same operations once by count and once by tokens: mean
-per-task Kendall's tau-b~\cite{kendall1938} is 0.886 (95\% task-cluster
-interval [0.857, 0.915]) with Spearman's rho~\cite{spearman1904} 0.935,
-and 10 of 77 rankable tasks fall below 0.7---dominant responsibilities
-are stable for most web-scale tasks, and the regimes where the measure
-changes the decision are exactly where multi-measure replay pays.
-% 在 population 尺度上，重放冻结的 440-session 层次（7,229 个 operation 与 51,904,621 个 token，均精确守恒），对相同 operation 分别按次数与 token 排序：每任务平均 Kendall tau-b 为 0.886（95\% task-cluster 区间 [0.857, 0.915]），Spearman rho 为 0.935；77 个可排序任务中有 10 个低于 0.7——多数 web 规模任务的主导责任稳定，而度量选择改变决策的情形正是多度量重放的价值所在。
-Profiling the authors' own 42 development sessions---the agents that
-built \sys{}---materializes 10{,}423 source nodes carrying
-1{,}380{,}863{,}014 token components; one fixed-instruction pass yields
-1{,}737 annotations with zero backend failures, the largest token path
-holds only 1.735\% of mass, and the three longest sessions carry
-distinct dominant responsibilities.
-% 对作者自己的 42 条开发 session——构建 \sys{} 的智能体——进行 profiling，物化出 10,423 个 source node、携带 1,380,863,014 个 token 分量；一次固定指令 pass 产生 1,737 个 annotation 且零 backend 失败；最大 token 路径仅占总量的 1.735\%，三条最长 session 的主导责任各不相同。
+% 切分 backend 在三次执行之上构建同一个层次（489 个 operation、4,558,192 个 provider-reported token，语义深度在无固定上限下达到五层；Figure~\ref{fig:rq1-flamegraph}）。
+The profile answers directly: the repeated \texttt{diagnose
+authentication} subtree is 21.47\% of the task by operation count but
+46.15\% by tokens, and drilldown shows all three executions verifying
+substitute transport paths without ever establishing the
+endpoint---nearly half the budget went to one never-successful
+diagnosis that a count view understates by more than half.
+% profile 直接给出答案：重复出现的 \texttt{diagnose authentication} 子树按 operation 数只占任务的 21.47\%，按 token 却占 46.15\%；下钻显示三次执行都在验证替代传输路径、却从未建立目标端点——近一半预算花在一个从未成功的诊断上，而 count 视图把它低估了一半以上。
+A same-input control replays identical operations and weights under
+native, coarse-action, and semantic organizations: the responsibility
+scatters across 105 native calls and six coarse action kinds (largest
+branch 39.42\% of its tokens); only the semantic organization reunites
+it into one focusable cross-run path.
+% 同输入对照在 native、coarse-action 与 semantic 三种组织下重放完全相同的 operation 与权重：该责任在 native 中散落于 105 个 call、在 coarse 中跨六个 action kind（最大分支仅含其 token 的 39.42\%）；只有语义组织将其重聚为一条可聚焦的跨运行路径。
 
-\begin{figure*}[t]
+\paragraph{Use case 2: where did this project's agent budget go?}
+% 用例 2：这个项目的 agent 预算去哪了？
+A developer profiles the 42 sessions their own coding agents produced
+while building \sys{} and this paper, asking what weeks of agent work
+actually spent tokens doing.
+% 一位开发者对自己的 coding agent 在构建 \sys{} 与本文期间产生的 42 条 session 进行 profiling，想知道数周的 agent 工作到底把 token 花在了什么事上。
+One fixed-instruction pass materializes 10{,}423 source nodes carrying
+1{,}380{,}863{,}014 token components and yields 1{,}737 annotations with
+zero backend failures.
+% 一次固定指令 pass 物化出 10,423 个 source node、携带 1,380,863,014 个 token 分量，产生 1,737 个 annotation 且零 backend 失败。
+The answer is a broad profile rather than a single sink: the largest
+token path holds only 1.735\% of mass, and the three longest sessions
+keep distinct dominant responsibilities, so long-session structure is
+preserved rather than averaged away.
+% 答案是一个宽分布的 profile 而非单一大头：最大 token 路径仅占总量的 1.735\%，三条最长 session 各自保有不同的主导责任——长会话的结构被保留而非被平均抹掉。
+
+Beyond single corpora, the two additive measures agree strongly at
+population scale: replaying the frozen 440-session hierarchy (7{,}229
+operations and 51{,}904{,}621 tokens, both conserved exactly) ranks
+every operation once by count and once by tokens, with mean per-task
+Kendall's tau-b~\cite{kendall1938} 0.886 (interval [0.857, 0.915];
+Spearman's rho~\cite{spearman1904} 0.935) and 10 of 77 rankable tasks
+below 0.7.
+% 超出单一语料，两种可加度量在 population 尺度上高度一致：重放冻结的 440-session 层次（7,229 个 operation 与 51,904,621 个 token，均精确守恒），对每个 operation 分别按次数与 token 排序，每任务平均 Kendall tau-b 为 0.886（区间 [0.857,0.915]；Spearman rho 0.935），77 个可排序任务中有 10 个低于 0.7。
+\emph{Takeaway.} One reusable hierarchy attributes multiple resources
+with exact conservation; it is the only tested organization that
+reunites a cross-run responsibility, and the minority of tasks where
+count and token rankings diverge is precisely where choosing the measure
+changes the engineering decision.
+% 要点。同一可复用层次以精确守恒归因多种资源；它是唯一能重聚跨运行责任的被测组织；而 count 与 token 排序分歧的少数任务，恰恰是度量选择会改变工程决策的场合。
+
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=.70\linewidth]{../visexp/out/r221-pprof-renderer-v1/git-multibranch.operations.png}\\[1pt]
 \includegraphics[width=.70\linewidth]{../visexp/out/r221-pprof-renderer-v1/git-multibranch.tokens.png}\\[1pt]
@@ -621,12 +665,18 @@ traces, with count and token widths and a focused authentication panel.}
 \subsection{RQ2: Does Profiler Output Correspond to Real Problems?}
 % RQ2：分析器输出是否对应真实问题？
 
-On the three complete localization workloads (614, 400, and 220
-target-bearing queries), operations are ranked lexicographically by the
-benchmark-native direct diagnostic and a target-blind Agent+Evidence
-group score; we report non-interpolated per-query AP averaged as
-MAP~\cite{robertson2008ap} (Table~\ref{tab:rq2-localization}).
-% 在三个完整定位 workload（分别 614、400、220 个含 target 的 query）上，operation 按 benchmark 自带 direct diagnostic 与 target-blind 的 Agent+Evidence 组分数做字典序排序；我们报告标准的非插值 per-query AP 与其平均 MAP（Table~\ref{tab:rq2-localization}）。
+\emph{Setup.} Each benchmark trajectory has one annotated faulty step;
+a method outputs a ranking of that trajectory's operations, scored by
+average precision (AP approximates the reciprocal rank of the faulty step) and
+averaged as MAP~\cite{robertson2008ap}.
+% 设置。每条 benchmark 轨迹有一个已标注的出错步骤；方法输出对该轨迹 operation 的排序，以 average precision 评分（单目标时 AP 约等于出错步骤排名的倒数），并平均为 MAP。
+\emph{Direct-only} ranks by the benchmark's own judge or localizer
+scores; \emph{Direct+AgentProf} additionally breaks ties with the
+profile's target-blind group score; \emph{Direct+Raw+Evidence} is the
+information-matched control that groups by raw action instead of
+semantic names; \emph{AgentProf-only} drops the benchmark diagnostic
+(Table~\ref{tab:rq2-localization}).
+% Direct-only 按 benchmark 自带 judge/localizer 分数排序；Direct+AgentProf 额外用 profile 的 target-blind 组分数打破并列；Direct+Raw+Evidence 是信息量匹配的对照（按 raw action 而非语义名分组）；AgentProf-only 不使用 benchmark 诊断（Table~\ref{tab:rq2-localization}）。
 
 \begin{table}[tb]
 \centering\small
@@ -640,47 +690,63 @@ HINTBench & .517 & \textbf{.518} & .411 & .432 \\
 TraceElephant & \textbf{.326} & .324 & .209 & .259 \\
 \bottomrule
 \end{tabular}
-\caption{Standard per-query AP averaged as MAP over the complete RQ2
-populations. Higher is better.}
+\caption{MAP over the complete RQ2 populations (614, 400, and 220
+target-bearing queries). Higher is better.}
 \label{tab:rq2-localization}
 \end{table}
 
-Direct+AgentProf raises MAP over Direct-only by .031 [.024, .039], .107
-[.093, .120], and .117 [.088, .148] under 10{,}000 paired
-trajectory-cluster resamples; an information-matched raw-action
-refinement ties, and the tie follows from the mechanism: per-operation
-anomaly signal resides in the retained source evidence that both views
-share.
-% Direct+AgentProf 相对 Direct-only 将 MAP 分别提高 .031 [.024,.039]、.107 [.093,.120]、.117 [.088,.148]（10,000 次配对轨迹簇重抽样）；信息量匹配的 raw-action refinement 与之持平，而这一持平源于机制本身：per-operation 异常信号位于两种视图共享的 source evidence 中。
-Used as a reading index on TraceElephant, the semantic skeleton guides a
-strong external reader to ranking quality statistically equal to an
-information-matched raw-action skeleton while opening 53.0\% versus
-65.0\% of the source evidence (paired delta +.120 [+.103, +.137]);
-full-trace reading reaches MAP .502 versus .209 and .326 at 12{,}615
-input tokens per query, but is bounded by the context window, which
-populations like the 4{,}558{,}192-token Git task exceed.
-% 作为 TraceElephant 上的阅读索引，语义骨架引导强外部 reader 达到与信息量匹配的 raw-action 骨架统计持平的排序质量，同时只打开 53.0\%（对 65.0\%）的 source evidence（配对差 +.120 [+.103,+.137]）；全轨迹阅读以每 query 12,615 输入 token 达到 MAP .502（对 .209 与 .326），但受上下文窗口约束——诸如 4,558,192-token 的 Git 任务群超出该界限。
-Across all 338 bad--good pairs of the mixed-outcome AgentRewardBench
-population, a target-blind signed profile places recovery at 44.6\% of
-failed-side versus 12.0\% of successful-side occurrences (completion
-1.8\% versus 5.1\%), and per-trajectory recovery exposure predicts
-independent expert looping labels at AP .634 against prevalence .398
-(interval [.181, .293]).
-% 在 mixed-outcome AgentRewardBench population 的全部 338 个坏--好配对上，target-blind 的带符号 profile 显示 recovery 占失败侧 44.6\%、成功侧 12.0\%（completion 分别为 1.8\% 与 5.1\%）；每轨迹 recovery 暴露度以 AP .634（prevalence .398，区间 [.181,.293]）预测独立的专家 looping 标注。
+\emph{Results.} Direct+AgentProf beats Direct-only by .031, .107, and
+.117 (all paired 95\% intervals positive; deltas computed from unrounded
+APs over 10{,}000 trajectory-cluster resamples).
+% 结果。Direct+AgentProf 相对 Direct-only 提高 .031、.107 与 .117（配对 95\% 区间全为正；差值由未舍入 AP 经 10,000 次轨迹簇重抽样计算）。
+The information-matched control ties, and the tie follows from the
+mechanism: the per-step anomaly signal lives in the source evidence that
+both views share, so grouping plus evidence---not the names---drives
+this ranking gain.
+% 信息量匹配的对照与之持平——这一持平源于机制：每步的异常信号存在于两种视图共享的 source evidence 中，因此驱动该排序增益的是"分组+证据"而非名称本身。
+The names earn their value elsewhere: used as a reading index on
+TraceElephant, the semantic skeleton lets a strong external reader reach
+the same ranking quality as a raw-action skeleton while opening 53.0\%
+versus 65.0\% of the source evidence (paired delta +.120
+[+.103, +.137]); reading every full trace reaches MAP .502 at 12{,}615
+input tokens per query but is bounded by the context window, which the
+4{,}558{,}192-token Git population already exceeds.
+% 名称的价值体现在别处：作为 TraceElephant 上的阅读索引，语义骨架让强外部 reader 只打开 53.0\%（对 65.0\%）的 source evidence 即达到与 raw-action 骨架相同的排序质量（配对差 +.120 [+.103,+.137]）；逐条全量阅读以每 query 12,615 输入 token 达到 MAP .502，但受上下文窗口约束——4,558,192-token 的 Git population 已超出该界限。
+\paragraph{Use case 3: what do failing runs do differently?}
+% 用例 3：失败的运行到底做了什么不同？
+A team has 440 real web-agent runs over 125 tasks, where every task
+contains both successful and failed attempts, and asks what behavior
+separates the two---without reading 440 transcripts.
+% 一个团队手上有 125 个任务的 440 次真实 web-agent 运行，每个任务都同时有成功与失败的尝试；他们想知道两者的行为差在哪——而不用去读 440 份转录。
+Folding all 338 bad--good pairs into one signed profile answers at a
+glance: recovery work occupies 44.6\% of failed-side versus 12.0\% of
+successful-side occurrences (completion 1.8\% versus 5.1\%), and
+per-trajectory recovery exposure predicts independent expert looping
+labels at AP .634 versus prevalence .398 (AP-minus-prevalence interval
+[.181, .293]).
+% 把全部 338 个坏--好配对折叠进一张带符号 profile，一眼给出答案：recovery 类工作占失败侧 44.6\%、成功侧仅 12.0\%（completion 分别为 1.8\% 与 5.1\%）；每轨迹 recovery 暴露度以 AP .634（prevalence .398；AP 减 prevalence 区间 [.181,.293]）预测独立的专家 looping 标注。
+Failed runs spend nearly half their steps re-trying and re-navigating,
+and the structure the profile surfaces matches what human experts
+independently marked.
+% 失败的运行把近一半步骤花在重试与反复导航上，而 profile 呈现的结构与人类专家的独立标注相符。
+\emph{Takeaway.} Profiles add localization signal on top of existing
+judges; the semantic names buy evidence efficiency rather than ranking
+accuracy; and failure structure surfaced by the profile matches
+independent human labels at collection scale.
+% 要点。profile 在既有 judge 之上补充定位信号；语义名称换来的是证据效率而非排序精度；profile 呈现的失败结构在集合尺度上与独立人工标注一致。
 
 %% -------------------------------------------------------------------
 \subsection{RQ3: How Accurate Are the Tags?}
 % RQ3：标签有多准确？
 
-Direct Agent annotation on all 405 CodeTraceBench trajectories reaches
-0.764 ordinary B$^3$ F1~\cite{bagga-baldwin-1998-entity-based} and 0.480
-exact adjacent-boundary F1~\cite{ruokolainen2016segmentation} against the
-2{,}948 human stages, versus 0.663 and 0.266 for multi-resolution
-recurrence (paired deltas +0.101 [0.087, 0.116] and +0.214
-[0.193, 0.235]) and 0.541 B$^3$ F1 for raw-action grouping
-(Table~\ref{tab:rq3-codetrace}); the marks conserve exactly 20{,}866
-operations and 494{,}862{,}929 provider-reported tokens.
-% 直接 Agent 标注在全部 405 条 CodeTraceBench 轨迹上、相对 2,948 个人工 stage 达到 0.764 的普通 B$^3$ F1 与 0.480 的精确相邻边界 F1，recurrence 为 0.663 与 0.266（配对差 +0.101 [0.087,0.116] 与 +0.214 [0.193,0.235]），raw-action 分组的 B$^3$ F1 为 0.541（Table~\ref{tab:rq3-codetrace}）；标记精确守恒 20,866 个 operation 与 494,862,929 个 provider-reported token。
+\emph{Setup.} Gold structure is the 2{,}948 human-verified stages over
+all 405 CodeTraceBench trajectories. B$^3$
+F1~\cite{bagga-baldwin-1998-entity-based} asks whether operations that
+belong together end up grouped together; exact adjacent-boundary
+F1~\cite{ruokolainen2016segmentation} asks whether cuts land exactly
+where humans cut. Baselines receive identical inputs
+(Table~\ref{tab:rq3-codetrace}).
+% 设置。黄金结构是全部 405 条 CodeTraceBench 轨迹上的 2,948 个人工核验 stage。B$^3$ F1 度量"应当在一起的 operation 是否被分到一起"；精确相邻边界 F1 度量"切点是否恰好落在人工切点处"。基线获得完全相同的输入（Table~\ref{tab:rq3-codetrace}）。
 
 \begin{table}[tb]
 \centering\small
@@ -689,43 +755,56 @@ operations and 494{,}862{,}929 provider-reported tokens.
 \toprule
 Method & B$^3$ P & B$^3$ R & B$^3$ F1 & Bound. F1 \\
 \midrule
-Direct Agent annotation & 0.793 & 0.736 & \textbf{0.764} & \textbf{0.480} \\
+Direct Agent segmentation & 0.793 & 0.736 & \textbf{0.764} & \textbf{0.480} \\
 Multi-resolution recurrence & 0.782 & 0.575 & 0.663 & 0.266 \\
 Native source tree & 0.975 & 0.249 & 0.397 & 0.259 \\
 Raw-action grouping & 0.891 & 0.388 & 0.541 & --- \\
 \bottomrule
 \end{tabular}
-\caption{Automatic operation-structure agreement on all 405
-CodeTraceBench trajectories.}
+\caption{Agreement with human stages on all 405 CodeTraceBench
+trajectories.}
 \label{tab:rq3-codetrace}
 \end{table}
 
-On 287 OSWorld-Human sessions, a supervised boundary
-predictor~\cite{mccallum-nigam-1998} reaches 0.739 boundary F1 and 0.816
-B$^3$ F1 and label-free recurrence reaches 0.680 and 0.786, versus 0.645
-and 0.678 for the strongest control; closed-label task-family and action
-backends reach 0.695 and 0.498
-macro-F1~\cite{lewis2004rcv1,agentboard,bouzenia-pradel-2025-trajectories}
-against majority baselines of 0.044 and 0.061.
-% 在 287 个 OSWorld-Human session 上，监督边界预测器达到 0.739 boundary F1 与 0.816 B$^3$ F1，无标签 recurrence 达到 0.680 与 0.786，最强对照为 0.645 与 0.678；closed-label 的 task-family 与 action backend 分别达到 0.695 与 0.498 macro-F1，majority 基线为 0.044 与 0.061。
+\emph{Results.} Direct segmentation reaches 0.764 B$^3$ F1 and 0.480
+boundary F1, beating the strongest automatic baseline by +0.101
+[0.087, 0.116] and +0.214 [0.193, 0.235] (paired task-cluster
+intervals); the marks conserve exactly 20{,}866 operations and
+494{,}862{,}929 tokens.
+% 结果。直接切分达到 0.764 B$^3$ F1 与 0.480 边界 F1，以 +0.101 [0.087,0.116] 与 +0.214 [0.193,0.235] 的配对任务簇区间超过最强自动基线；标记精确守恒 20,866 个 operation 与 494,862,929 个 token。
+The contract generalizes across backend families: on 287 OSWorld-Human
+sessions a supervised boundary predictor~\cite{mccallum-nigam-1998}
+reaches 0.739 boundary F1 / 0.816 B$^3$ F1 and the no-LLM recurrence
+inducer 0.680 / 0.786 (strongest control: 0.645 / 0.678), and
+closed-label task-family and action backends reach 0.695 and 0.498
+macro-F1~\cite{lewis2004rcv1} against majority baselines of 0.044 and
+0.061.
+% 该契约在不同 backend 家族间泛化：在 287 个 OSWorld-Human session 上，监督边界预测器达到 0.739 边界 F1 / 0.816 B$^3$ F1，无 LLM recurrence 归纳器为 0.680 / 0.786（最强对照 0.645 / 0.678）；closed-label 的 task-family 与 action backend 分别达到 0.695 与 0.498 macro-F1（majority 基线 0.044 与 0.061）。
+\emph{Takeaway.} Recursive segmentation is the most accurate tested
+automatic constructor on both structural axes, and non-LLM backends
+implementing the same contract remain viable when no model is available.
+% 要点。递归切分是两个结构轴上最准确的被测自动构造器；实现同一契约的非 LLM backend 在没有模型可用时依然可行。
 
 %% -------------------------------------------------------------------
 \subsection{RQ4: What Is the Profiling Cost?}
 % RQ4：分析开销是多少？
 
-With marks fixed, the current binary constructs a 27{,}765-operation
-union profile in 1.16\,s at 465.2\,MiB peak RSS (0.0418\,ms per
-operation, $R^2 = 0.9997$), 19.6\% more time than raw-action grouping.
-% 固定 mark 后，当前 binary 在 1.16 秒内以 465.2 MiB 峰值 RSS 构建 27,765-operation 的并集 profile（每 operation 0.0418 毫秒，$R^2=0.9997$），比 raw-action 分组多 19.6\% 时间。
-Direct annotation of all 405 CodeTraceBench trajectories consumes
+\emph{Setup.} Cost separates into a one-time automatic segmentation pass
+per corpus and deterministic construction/replay afterwards.
+% 设置。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放。
+\emph{Results.} Segmenting all 405 CodeTraceBench trajectories consumes
 12{,}050{,}384 input and 231{,}886 output tokens in 2{,}215.9\,s of
-active backend wall time, and the full deterministic downstream pipeline
-takes 11.5\,s; annotating the complete 440-session AgentRewardBench
-population takes 58.7 minutes and 12{,}039{,}417 input tokens (90.8\%
-cached), while materialization stays sub-second, so construction cost is
-dominated by the one-time automatic backend and every later measure
-switch is a cheap replay.
-% 直接标注全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token、2,215.9 秒活跃 backend wall time，完整确定性下游管线为 11.5 秒；标注完整 440-session AgentRewardBench population 需 58.7 分钟与 12,039,417 输入 token（90.8\% 命中缓存），而物化保持亚秒级——构建成本由一次性的自动 backend 主导，之后每次度量切换都是廉价重放。
+active backend time; the 440-session population takes 58.7 minutes with
+90.8\% of input tokens served from cache.
+% 结果。切分全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token、2,215.9 秒活跃 backend 时间；440-session population 需 58.7 分钟，其中 90.8\% 的输入 token 命中缓存。
+With marks fixed, constructing a 27{,}765-operation union profile takes
+1.16\,s at 465.2\,MiB peak memory (0.0418\,ms per operation,
+$R^2=0.9997$), 19.6\% more than raw-action grouping, and switching the
+additive measure is a replay at the same cost.
+% 标记固定后，构建 27,765-operation 的并集 profile 需 1.16 秒、465.2 MiB 峰值内存（每 operation 0.0418 毫秒，$R^2=0.9997$），比 raw-action 分组多 19.6\%；切换可加度量即以同等成本重放。
+\emph{Takeaway.} A corpus pays minutes of model time once; every later
+view, measure switch, and drilldown costs about a second.
+% 要点。一个语料只需支付一次分钟级的模型时间；之后每次视图、度量切换与下钻的成本约为一秒。
 
 %% ===================================================================
 \section{Related Work}
@@ -754,12 +833,20 @@ across trajectories.
 
 Agent observability needs profiling, not only debugging.
 % 智能体可观测性需要性能分析，不仅仅是调试。
-\sys shows that the semantic operation stack model, with pluggable intent attribution and stack construction, brings hierarchical attribution to agent trajectories.
-% \sys 表明，语义 operation stack 模型结合可插拔的意图归因和栈构造，为智能体轨迹带来了分层归因能力。
-Scoring profiler output against hidden trajectory annotations confirms that semantic profiling separates over 90\% of system-effect cost that per-session views leave mixed, localizes annotated problems at 9.4\% inspection work versus flat summaries, and produces tags that agree with ground truth on 7/9 held-out datasets.
-% 将分析器输出与隐藏轨迹标注评分确认，语义分析分离了超过 90\% 的混合系统副作用权重，以扁平摘要 9.4\% 的检查工作量定位标注问题，并在 7/9 保留数据集上产生与真实标注一致的标签。
-Per-session grouping remains faster to a first positive on 4/6 tasks, confirming that profilers and debuggers are complementary, and \sys supports both by including or excluding session fields in the stack query.
-% 固定会话下钻在 4/6 任务上更快找到首个正例，确认分析器和调试器是互补的，\sys 通过在栈查询中包含或排除会话字段同时支持两者。
+\sys shows that the semantic operation stack model, driven by
+recursive operation segmentation, brings hierarchical attribution to
+agent trajectories.
+% \sys 表明，由递归 operation 切分驱动的语义 operation stack 模型为智能体轨迹带来了分层归因能力。
+Against independent annotations, segmentation recovers human stage
+structure at 0.764 B$^3$ F1, profiles add localization signal on three
+complete public benchmarks, and one hierarchy replays across additive
+measures with exact conservation.
+% 相对独立标注，切分以 0.764 的 B$^3$ F1 恢复人工 stage 结构；profile 在三个完整公开 benchmark 上补充定位信号；同一层次跨可加度量精确守恒地重放。
+A strong reader that re-reads a whole trajectory per question remains
+the best single-query localizer, confirming that profilers and
+debuggers are complementary: the profile answers population questions
+and guides the reader to the evidence worth opening.
+% 每次提问都重读整条轨迹的强 reader 仍是单问题定位的最优者，这确认了 profiler 与 debugger 互补：profile 回答群体问题，并引导 reader 只打开值得打开的证据。
 Multi-project evaluation and tracing-ecosystem integration are the most impactful next steps.
 % 多项目评估和 tracing 生态系统集成是最有影响力的下一步。
 
