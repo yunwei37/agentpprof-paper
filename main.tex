@@ -82,10 +82,16 @@ enabling hierarchical attribution at different levels of
 granularity from the same data.
 % 我们提出将 profiling 适配到智能体轨迹的语义 operation stack 模型。统一的 operation 表示所有智能体活动，operation stack 替代运行时调用栈，使同一数据支持不同粒度的分层归因。
 %% S7: System (→¶6)
-\sys implements this model as a profiler with pluggable algorithms
-for \emph{intent attribution} and \emph{stack construction},
-compiling local agent trajectories into pprof-compatible profiles.
-% \sys 将此模型实现为具有可插拔意图归因和栈构造算法的 profiler，将本地智能体轨迹编译为 pprof 兼容的 profile。
+We observe that an agent's task occupies a contiguous span of a trajectory
+and decomposes into contiguous subtasks, so task structure is a set of
+nested named intervals recoverable by finding only the transitions between
+them, and we design \emph{recursive operation segmentation}: it splits a
+trajectory where the agent's responsibility changes, names the intervals on
+both sides, and recurses to supply the missing stack.
+% 我们观察到：智能体的任务占据轨迹上一段连续区间并可分解为连续的子任务，因此任务结构就是一组嵌套的命名区间，只需找出它们之间的转移点即可恢复；据此我们设计了\emph{递归 operation 切分}：在智能体责任变化处切开轨迹，为两侧区间命名并递归，从而提供缺失的栈。
+\sys implements this in a profiler that compiles local agent
+trajectories into pprof-compatible profiles.
+% \sys 将其实现为一个 profiler，把本地智能体轨迹编译为 pprof 兼容的 profile。
 %% S8: Results (→¶6)
 On real trajectories and public datasets, our evaluation shows that
 semantic profiling effectively attributes cost and locates problems
@@ -122,12 +128,12 @@ across agent trajectories.
 \section{Introduction}
 \label{sec:intro}
 
-\begin{figure*}[!t]
+\begin{figure}[!t]
 \centering
-\includegraphics[width=.52\linewidth]{../visexp/out/traditional-cpu-baseline-v1/go-http-cpu.png}\\[1pt]
-\includegraphics[width=.52\linewidth]{../visexp/out/r221-pprof-renderer-v1/git-multibranch.operations.png}\\[1pt]
-\includegraphics[width=.52\linewidth]{../visexp/out/r221-pprof-renderer-v1/git-multibranch.tokens.png}\\[1pt]
-\includegraphics[width=.52\linewidth]{../visexp/out/r221-pprof-renderer-v1/git-authentication.tokens.png}
+\includegraphics[width=\columnwidth]{../visexp/out/traditional-cpu-baseline-v1/go-http-cpu.png}\\[1pt]
+\includegraphics[width=\columnwidth]{../visexp/out/r221-pprof-renderer-v1/git-multibranch.operations.png}\\[1pt]
+\includegraphics[width=\columnwidth]{../visexp/out/r221-pprof-renderer-v1/git-multibranch.tokens.png}\\[1pt]
+\includegraphics[width=\columnwidth]{../visexp/out/r221-pprof-renderer-v1/git-authentication.tokens.png}
 \caption{One renderer, four standard pprof profiles.
 \emph{(a)} CPU time in a Go HTTP service under load, recorded by stock
 \texttt{runtime/pprof} and truncated to twelve frames for display.
@@ -150,7 +156,7 @@ framework and the token view by another together with repeated
 authentication diagnosis. The fourth expands that authentication
 responsibility into account, transport, credential, and retest operations.}
 \label{fig:flamegraph}
-\end{figure*}
+\end{figure}
 
 %% ¶1: Background + context
 AI agents~\cite{sweagent,claudecode,osworld} orchestrate multi-step activities that span two layers, high-level intent (prompts, LLM calls, tool invocations) and low-level system effects (process spawns, file and network I/O).
@@ -237,11 +243,21 @@ We implement this model in \sys, an offline profiler that compiles
 local agent trajectories into pprof-compatible profiles
 (Figure~\ref{fig:architecture}).
 % 我们在 \sys 中实现此模型，这是一个离线 profiler，将本地智能体轨迹编译为 pprof 兼容的 profile（Figure~\ref{fig:architecture}）。
-One algorithm powers the model: \emph{recursive operation
-segmentation} reads a trajectory, cuts it at the points where the
-agent's responsibility changes, names the intervals on both sides, and
-recurses, so short action-first names give agents the stable identifiers
-that traditional profiling gets for free from function names.
+One algorithm supplies the tags the trajectory does not carry, and its
+design follows from one observation about agent work: a task occupies a
+contiguous span of a trajectory and decomposes into contiguous subtasks,
+so task structure is exactly a set of nested named intervals, and
+recovering it requires only finding the transitions between them.
+% 一个算法提供轨迹本身没有的标签，其设计源于一个关于智能体工作的观察：任务占据轨迹上一段连续区间并分解为连续的子任务，因此任务结构恰好是一组嵌套的命名区间，恢复它只需找到它们之间的转移点。
+This makes the problem segmentation rather than classification: no
+predefined taxonomy is required, and each branch's depth emerges from
+the content instead of a fixed schema.
+% 这使问题成为切分而非分类：不需要预定义的分类体系，每个分支的深度由内容决定而非由固定 schema 规定。
+\emph{Recursive operation segmentation} therefore reads a trajectory,
+cuts it at the points where the agent's responsibility changes, names
+the intervals on both sides, and recurses, so short action-first names
+give agents the stable identifiers that traditional profiling gets for
+free from function names.
 % 一个算法驱动此模型：递归 operation 切分通读轨迹，在智能体责任变化处切开，为两侧区间命名并递归；动词优先的短名称为智能体提供了传统 profiling 从函数名免费获得的稳定标识符。
 The segmentation contract is backend-neutral: an agent, a plain language
 model, or a statistical rule can produce the same marks.
@@ -517,11 +533,12 @@ Four built-in views cover common questions: \texttt{tokens} (LLM calls weighted 
 \resizebox{\linewidth}{!}{\input{figures/fig-architecture.tex}}
 \caption{Data-flow and algorithm pipeline. Local agent histories enter
 through \texttt{agent-session} parsing; public datasets enter as
-operation JSONL. Both paths produce uniform operations. Intent
-attribution, stack construction, and folding are algorithms (segmentation runs once per trajectory; projection and folding are query-time)
-applied identically to both sources.}
+operation JSONL. Both paths produce uniform operations. Recursive
+operation segmentation, projection, and folding are algorithms
+(segmentation runs once per trajectory; projection and folding run at
+query time) applied identically to both sources.}
 \Description{Data-flow diagram from agent trajectories through parsing,
-intent attribution, and stack construction to folded-stack output.}
+operation segmentation, and projection to folded-stack output.}
 \label{fig:architecture}
 \end{figure}
 
@@ -589,6 +606,32 @@ Any backend able to find transitions and name intervals---an agent, a
 plain language model, or a statistical rule---implements the same
 contract; the evaluated backend is a frontier code agent invoked once
 per trajectory with one fixed instruction.
+% 任何能找到 transition 并为 interval 命名的 backend——agent、普通语言模型或统计规则——都实现同一份契约；被评估的 backend 是每条轨迹调用一次、使用一条固定指令的前沿 code agent。
+That instruction is the complete backend interface:
+% 这条指令就是 backend 的完整接口：
+
+\begin{quote}\small
+\emph{Input:} one trajectory's source-only packet---each turn's visible
+prompt, command, and output summary, with no stage labels, outcomes, or
+scores.\\
+\emph{Action:} read the packet once; emit a mark wherever the
+responsibility changes.\\
+\emph{Output:} sparse complete-path marks, for example\\
+{\ttfamily turn 1: [deploy git server]\\
+turn 4: [deploy git server, diagnose SSH access]\\
+turn 9: [deploy git server, diagnose SSH access,\\
+\hspace*{1.2em}test PAM]\\
+turn 15: [deploy git server, verify web endpoint]}\\
+---one line only where the path changes, free depth per branch, names of
+one to three action-first words.
+\end{quote}
+
+% 输入：一条轨迹的 source-only packet——每个 turn 可见的提示词、命令与输出摘要，不含 stage 标签、outcome 或分数。动作：整包读一次，在责任变化处发出 mark。输出：稀疏的完整路径 mark，仅在路径变化处出现一行，每个分支深度自由，名称为一到三个动词开头的词。
+Turns between two marks inherit the preceding path, so the marks are a
+complete segmentation despite being sparse. One ordinary format retry is
+allowed; afterwards the deterministic prefix repair and canonicalization
+replay leave the downstream pipeline unchanged.
+% 两个 mark 之间的 turn 继承前一条路径，因此稀疏的 mark 仍是完整切分。允许一次常规的格式重试；其后确定性的前缀修复与规范化重放不改变下游流水线。
 % 任何能找到转换点并为区间命名的 backend——agent、普通语言模型或统计规则——都实现同一契约；被评测的 backend 是一个前沿代码 agent，每条轨迹以同一固定指令调用一次。
 % 任何能找到转换点并为区间命名的 backend——agent、普通语言模型或统计规则——都实现同一契约。
 
@@ -714,9 +757,27 @@ target-bearing queries). Higher is better.}
 \label{tab:rq2-localization}
 \end{table}
 
+\begin{figure}[tb]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig-rq2-deltas.pdf}
+\caption{Paired MAP differences over the complete RQ2 populations, with 95\%
+intervals from 10{,}000 trajectory-cluster resamples of unrounded per-query
+APs. Adding the target-blind profile to each benchmark's own judge improves
+ranking on all three workloads (left bars, intervals entirely above zero),
+whereas the semantic prefix and the information-matched raw-action control
+are indistinguishable (right bars, intervals spanning zero). Grouping plus
+retained evidence, not the semantic names, drives this gain.}
+\Description{A grouped bar chart of MAP differences on three workloads. The
+bars comparing the profile-refined ranking against the benchmark judge are
+positive on all three workloads with error bars above zero, while the bars
+comparing the semantic prefix against the raw-action control sit at zero with
+error bars crossing it.}
+\label{fig:rq2-deltas}
+\end{figure}
+
 \emph{Results.} Direct+AgentProf beats Direct-only by .031, .107, and
-.117 (all paired 95\% intervals positive; deltas computed from unrounded
-APs over 10{,}000 trajectory-cluster resamples).
+.117, with every paired interval above zero
+(Figure~\ref{fig:rq2-deltas}).
 % 结果。Direct+AgentProf 相对 Direct-only 提高 .031、.107 与 .117（配对 95\% 区间全为正；差值由未舍入 AP 经 10,000 次轨迹簇重抽样计算）。
 The information-matched control ties, and the tie follows from the
 mechanism: the per-step anomaly signal lives in the source evidence that
@@ -824,23 +885,6 @@ implementing the same contract remain viable when no model is available.
 % 要点。递归切分是两个结构轴上最准确的被测自动构造器；实现同一契约的非 LLM backend 在没有模型可用时依然可行。
 
 %% -------------------------------------------------------------------
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/fig-rq4-cost.pdf}
-\caption{Profile construction cost against profile size, on four complete
-public workloads and their union (three-run medians, \texttt{agentpprof
-0.2.37}). Both organizations receive identical inputs and stay linear across
-a 38$\times$ range of profile size, so the semantic hierarchy costs
-19.6\% more time than raw-action grouping at the largest profile while
-keeping construction near one second. The one-time model segmentation pass
-is a separate cost, excluded here.}
-\Description{A line plot of construction time against the number of
-operations in the profile. Both the semantic hierarchy and the raw-action
-grouping rise linearly with profile size, with the semantic line slightly
-above the raw-action line at every size.}
-\label{fig:rq4-cost}
-\end{figure}
-
 \subsection{RQ4: What Is the Profiling Cost?}
 % RQ4：分析开销是多少？
 
@@ -852,11 +896,10 @@ per corpus and deterministic construction/replay afterwards.
 active backend time; the 440-session population takes 58.7 minutes with
 90.8\% of input tokens served from cache.
 % 结果。切分全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token、2,215.9 秒活跃 backend 时间；440-session population 需 58.7 分钟，其中 90.8\% 的输入 token 命中缓存。
-With marks fixed, construction is linear in profile size for both the
-semantic and the raw-action organization (Figure~\ref{fig:rq4-cost}): the
-27{,}765-operation union profile takes 1.16\,s at 465.2\,MiB peak memory
-(0.0418\,ms per operation, $R^2=0.9997$), and switching the additive measure
-is a replay at the same cost.
+With marks fixed, constructing a 27{,}765-operation union profile takes
+1.16\,s at 465.2\,MiB peak memory (0.0418\,ms per operation,
+$R^2=0.9997$), 19.6\% more than raw-action grouping, and switching the
+additive measure is a replay at the same cost.
 % 标记固定后，构建 27,765-operation 的并集 profile 需 1.16 秒、465.2 MiB 峰值内存（每 operation 0.0418 毫秒，$R^2=0.9997$），比 raw-action 分组多 19.6\%；切换可加度量即以同等成本重放。
 \emph{Takeaway.} A corpus pays minutes of model time once; every later
 view, measure switch, and drilldown costs about a second.
