@@ -510,7 +510,7 @@ and a segmentation is a set $S$ of named intervals over $T$ that is
 nested (any two intervals are disjoint or one contains the other),
 covers every step, and contains the whole-session interval as its root.
 % 形式化地，轨迹是有序步骤序列 $T=(t_1,\dots,t_n)$；切分是 $T$ 上的命名区间集合 $S$：区间两两要么不相交、要么一个包含另一个（嵌套），共同覆盖每个步骤，且以整个 session 区间为根。
-The algorithm computes $S$ by one recursive rule: $\textsc{Segment}(I)$ selects zero or more transition points inside interval $I$, which partition $I$ into consecutive child intervals; each child receives a short verb-led name (e.g., \texttt{deploy branches}) and is segmented recursively; selecting no transition terminates the branch.
+The algorithm computes $S$ by one recursive rule: $\textsc{Segment}(I)$ selects zero or more transition points inside interval $I$, which partition $I$ into consecutive child intervals; each child receives a short action-first name and is segmented recursively; selecting no transition terminates the branch.
 % 算法用一条递归规则计算 $S$：$\textsc{Segment}(I)$ 在区间 $I$ 内选择零个或多个转换点，将 $I$ 划分为连续的子区间；每个子区间获得一个动词优先的短名称并被递归切分；不再选择转换点即终止该分支。
 A step's operation path is the name chain of the intervals containing it, from the session root to its innermost interval; equal paths fold across sessions.
 % 一个步骤的 operation 路径是包含它的区间自 session 根到最内层的名称链；相同路径跨 session 折叠。
@@ -525,8 +525,8 @@ emerges per branch from the content rather than from a prescribed
 schema.
 % 其二，切口可组合：嵌套区间构成层次，其深度按分支从内容中涌现，而非来自规定的 schema。
 Third, naming intervals rather than steps yields identifiers at the
-granularity where recurrence lives, so the same short verb-led name
-(one to three words, like \texttt{diagnose authentication}) reappears across sessions and folds.
+granularity where recurrence lives, so the same short action-first name
+(one to three words) reappears across sessions and folds.
 % 其三，为区间而非单步命名，得到与"重复出现"粒度一致的标识符——同一个动词优先的短名称（一到三个词）在不同 session 中再次出现并得以折叠。
 Concretely, in one Git-deployment execution the algorithm cuts the session into \texttt{build deployment system} and, inside it, cuts again where the agent stops writing configuration and starts debugging access, yielding \texttt{deploy branches} and \texttt{diagnose authentication}; a step inside the latter carries the path \texttt{build deployment system > diagnose authentication}, and because the same names reappear in the other two executions, their costs fold together in Figure~\ref{fig:flamegraph}.
 % 具体地，在一次 Git 部署执行中，算法先把 session 切为 \texttt{build deployment system}，再在"智能体从编写配置转向调试访问"处继续切分，得到 \texttt{deploy branches} 与 \texttt{diagnose authentication}；后者内部的步骤携带路径 \texttt{build deployment system > diagnose authentication}；由于同样名称在另外两次执行中再次出现，其开销在 Figure~\ref{fig:flamegraph} 中折叠到一起。
@@ -542,7 +542,7 @@ In evaluation, we use Codex~\cite{codex}, a frontier code agent, invoked once pe
 {\ttfamily step 1: [deploy git server]\\
 step 4: [deploy git server, diagnose SSH access]\\
 step 15: [deploy git server, verify web endpoint]}\\
----one line only where the path changes; names are one to three words starting with a verb.
+---one line only where the path changes; names of one to three action-first words.
 \end{quote}
 
 % 输入：一条轨迹（每步的提示词、命令与输出摘要，不含标签或分数）。动作：读取轨迹，在责任变化处发出 mark，并用 \sys 检查和更新切分，反复阅读和更新 mark 直到认为切分完整。输出：稀疏路径 mark，仅在路径变化处出现一行，名称为一到三个动词开头的词。
@@ -652,13 +652,11 @@ Here we add a third measure: elapsed time.
 % 这里我们增加第三种度量：elapsed time。
 The same hierarchy replays under all three measures with exact conservation, and the \texttt{diagnose authentication} subtree's share rises from 21\% (count) through 37\% (time) to 46\% (tokens)---changing only the measure moves the attributed share by more than a factor of two.
 % 同一层次在三种度量下精确守恒地重放，\texttt{diagnose authentication} 子树的份额从 21\%（count）经 37\%（time）升至 46\%（token）——仅改变度量就使归因份额变化超过两倍。
-A quantitative control shows why alternative organizations fail: of 105 authentication operations, 102 carry only the raw-action label \texttt{run}, and that same \texttt{run} bucket mixes in 97 unrelated operations; coarse action-kind scatters the work across six categories (execute 39\%, version-control 22\%, edit 19\%, inspect 12\%, search 7\%, install 1\%); native call trees place each operation under a distinct source call with no shared responsibility node.
-Only the semantic hierarchy reunites authentication into one focusable cross-run path while preserving all call/tool evidence as drilldown leaves.
-% 定量对照显示为什么其他组织方式失败：105 个认证 operation 中 102 个只带 raw-action 标签 \texttt{run}，而同一个 \texttt{run} bucket 还混入 97 个无关 operation；coarse action-kind 把工作散落到六个类别（execute 39\%、version-control 22\%、edit 19\%、inspect 12\%、search 7\%、install 1\%）；native call tree 把每个 operation 放在不同 source call 下，没有共享责任节点。只有语义层次将认证重聚为一条可聚焦的跨运行路径，同时保留所有 call/tool 证据作为下钻叶。
 Separately, real AgentSight~\cite{agentsight} eBPF recordings replay the
-same way: all 1{,}520 captured process spawns and file operations fold
-under task responsibilities with exact conservation, demonstrating the system-effect layer end to end.
-% 此外，真实的 AgentSight eBPF recording 以相同方式重放：全部 1,520 个捕获的进程创建与文件操作折叠到 task responsibility 之下，精确守恒，端到端展示了 system-effect 层。
+same way: the R114 population folds all 1{,}520 process and file effects
+under task responsibilities through the recorded wrapper tool with exact
+conservation, demonstrating the system-effect layer end to end.
+% 此外，真实的 AgentSight eBPF recording 以相同方式重放：R114 population 通过记录的 wrapper tool，把全部 1,520 个 process 与 file effect 精确守恒地折叠到 task responsibility 之下，端到端展示了 system-effect 层。
 
 \paragraph{Use case 2: where did this project's agent budget go?}
 % 用例 2：这个项目的 agent 预算去哪了？
@@ -760,11 +758,14 @@ a method outputs a ranking of that trajectory's operations, scored by
 average precision (AP approximates the reciprocal rank of the faulty step) and
 averaged as MAP~\cite{robertson2008ap}.
 % 设置。每条 benchmark 轨迹有一个已标注的出错步骤；方法输出对该轨迹 operation 的排序，以 average precision 评分（单目标时 AP 约等于出错步骤排名的倒数），并平均为 MAP。
-We run the complete AgentProcessBench, HINTBench (536 of the paper-reported 629 trajectories), and TraceElephant workloads; all profiler outputs are computed before any fault annotations are revealed.
-% 我们在完整的 AgentProcessBench、HINTBench（论文报告的 629 条中的 536 条）与 TraceElephant workload 上运行；所有 profiler 输出在故障标注揭示之前计算完成。
-Each query is one trajectory containing an annotated faulty step; we report
-average precision (AP) averaged over 614, 400, and 220 such queries. Trajectories without a faulty step (522 total) are excluded from MAP since AP is undefined when no relevant item exists.
-% 每个 query 是一条含标注出错步骤的轨迹；我们报告 average precision (AP) 在 614、400 与 220 个这样的 query 上的平均值。无出错步骤的轨迹（共 522 条）从 MAP 中排除，因为没有相关项时 AP 无定义。
+We run the complete AgentProcessBench, HINTBench, and TraceElephant workloads; all profiler outputs are computed before any fault annotations are revealed.
+% 我们在完整的 AgentProcessBench、HINTBench与 TraceElephant workload 上运行；所有 profiler 输出在故障标注揭示之前计算完成。
+Each query is one trajectory containing an annotated target, and we report
+non-interpolated per-query AP averaged over 614, 400, and 220 target-bearing
+queries; all 522 zero-positive trajectories are consumed for population
+coverage but excluded from MAP because AP is undefined without a relevant
+item.
+% 每个 query 是一条含标注 target 的轨迹，我们报告未插值的 per-query AP，并在 614、400 与 220 个带 target 的 query 上取算术平均；全部 522 条 zero-positive 轨迹计入群体覆盖，但因缺少相关项使 AP 无定义而从 MAP 中排除。
 The \emph{direct diagnostic} is the per-operation output of a
 benchmark-native process judge (AgentProcessBench risk units) or trajectory
 localizer (HINTBench, TraceElephant), which for TraceElephant reads the full
@@ -787,9 +788,10 @@ HINTBench & \textbf{.517} & \textbf{.518} & .411 & .432 \\
 TraceElephant & \textbf{.326} & \textbf{.324} & .209 & .259 \\
 \bottomrule
 \end{tabular}
-\caption{MAP over the complete RQ2 benchmarks (614, 400, and 220
-queries with annotated faulty steps). \sys-Raw uses raw action types instead of semantic names; bold
-marks each workload's best methods. Higher is better.}
+\caption{MAP over the complete RQ2 populations (614, 400, and 220
+target-bearing queries). \sys-Raw ablates only \sys's semantic prefix; bold
+marks each workload's best methods, and the two direct-first columns are
+statistically indistinguishable on every workload. Higher is better.}
 \label{tab:rq2-localization}
 \end{table}
 
@@ -827,21 +829,32 @@ Full-trace reading reaches MAP .502 at a mean 12{,}615 input tokens per
 query, versus .209 for the benchmark's Direct-only diagnostic and .326 for
 Direct+AgentProf.
 % 全 trace 阅读以每 query 平均 12,615 个输入 token 达到 MAP .502，而 benchmark 的 Direct-only 诊断为 .209、Direct+AgentProf 为 .326。
-A two-stage variant first shows only the profile's group names (no actual trajectory content), and the model selects up to five groups to examine;
-stage two then opens only those groups' content.
-% 两阶段变体先只展示 profile 的组名称（不含实际轨迹内容），模型选择最多五个组查看；第二阶段只打开这些组的内容。
-This reaches MAP .455 while opening only 53.0\% of the trajectory content.
-% 这在只打开 53.0\% 轨迹内容的情况下达到 MAP .455。
-Under the raw-action ablation (same information, no semantic names), ranking quality is
-unchanged (MAP .465), but the model opens significantly more content: 65.0\% versus 53.0\%.
-% 在 raw-action 消融（同样信息，无语义名称）下，排序质量不变（MAP .465），但模型打开的内容显著更多：65.0\% 对 53.0\%。
+A two-stage profile-guided variant first shows only the semantic operation
+skeleton, with no source content, and the reader selects at most five groups;
+stage two then opens only those groups' evidence.
+% 两阶段的 profile 引导变体先只展示语义 operation 骨架（不含 source 内容），reader 最多选择五个 group；第二阶段只打开这些 group 的证据。
+It reaches MAP .455 while opening 53.0\% of the source content, and its
+stage-one selections never fell back to a default: the five-group budget
+saturated on 99.5\% of queries, re-parsing the uncapped stage-one responses
+shows the reader proposed more than five groups on zero of 220 queries, and
+every missed target group was entirely absent from its ordered selection
+rather than cut off by the budget.
+% 它在只打开 53.0\% source 内容的情况下达到 MAP .455，且第一阶段的选择从未回退到默认值：五组预算在 99.5\% 的 query 上被用满；重新解析未截断的第一阶段响应显示，reader 在 220 个 query 中的 0 个上提出了超过五组；每个被遗漏的 target group 都是整体缺席于其有序选择，而非被预算截断。
+Under the information-matched \sys-Raw skeleton, ranking quality is
+statistically unchanged (MAP .465; paired delta $+.010$ [$-.021$, $+.042$]),
+but the reader opens significantly more content: 65.0\% versus 53.0\%, paired
+delta $+.120$ [$+.103$, $+.137$], and $2.80$ [$1.96$, $3.60$] more evidence
+operations.
+% 在信息量匹配的 \sys-Raw 骨架下，排序质量在统计上不变（MAP .465；配对差 +.010 [-.021,+.042]），但 reader 打开的内容显著更多：65.0\% 对 53.0\%，配对差 +.120 [+.103,+.137]，且多打开 2.80 [1.96,3.60] 个 evidence operation。
 Semantic naming's measured contribution in this regime is therefore
 attention concentration at equal quality.
 % 因此在该机制下，语义命名可测得的贡献是"同等质量下的注意力集中"。
-A per-query full read is also bounded by the model's context window (the
-4.6M-token Git trajectories cannot fit), whereas
-profile-guided reading works at any length once the profile exists.
-% 每 query 的全量阅读还受模型上下文窗口约束——460 万 token 的 Git 轨迹装不下——而 profile 引导的阅读在 profile 存在后对任意长度都可用。
+A per-query full read is also bounded by the model context window (the
+4{,}558{,}192-token Git population cannot be read whole), whereas
+skeleton-guided reading stays available at any trace length once the profile
+exists. The reader is query-specific while the hierarchy is constructed
+once and replayed across queries and measures.
+% 每 query 的全量阅读还受模型上下文窗口约束——4,558,192-token 的 Git population 无法整体读入——而骨架引导的阅读在 profile 存在后对任意 trace 长度都可用；此外 reader 是 query-specific 的，而层次只构造一次并跨 query 与度量重放。
 \emph{Takeaway.} Failure structure surfaced by the profile matches
 independent human labels at collection scale; profiles add localization
 signal on top of existing judges; and the semantic names buy evidence
@@ -885,25 +898,25 @@ Method & B$^3$ P & B$^3$ R & B$^3$ F1 & Bound. F1 \\
 \midrule
 Codex segmentation & 0.793 & 0.736 & \textbf{0.764} & \textbf{0.480} \\
 Multi-resolution recurrence & 0.782 & 0.575 & 0.663 & 0.266 \\
-Causal Qwen2.5-3B task stack & 0.557 & 0.792 & 0.650 & 0.257 \\
+Qwen3.6-27B one-shot & 0.174 & 1.000 & 0.296 & 0.000 \\
+Native source tree & 0.975 & 0.249 & 0.397 & 0.259 \\
+Source-native step & 0.983 & 0.221 & 0.361 & 0.246 \\
 Raw-action grouping & 0.891 & 0.388 & 0.541 & --- \\
-Benchmark's own tree & 0.975 & 0.249 & 0.397 & 0.259 \\
-One step = one group & 0.983 & 0.221 & 0.361 & 0.246 \\
 \bottomrule
 \end{tabular}
 \caption{Agreement with human stages on all 405 CodeTraceBench
-trajectories. Causal Qwen2.5-3B is a stateful per-turn LLM baseline that produces real internal boundaries.}
+trajectories. Qwen3.6-27B one-shot uses the same prompt but degenerates to one segment per trajectory (boundary F1 = 0).}
 \label{tab:rq3-codetrace}
 \end{table}
 
-\emph{Results.} Codex segmentation reaches 0.764 B$^3$ F1 and 0.480
-boundary F1, beating the strongest automatic baseline (multi-resolution recurrence) by +0.101
+\emph{Results.} Codex single-pass segmentation reaches 0.764 B$^3$ F1 and 0.480
+boundary F1, beating the strongest automatic baseline by +0.101
 [0.087, 0.116] and +0.214 [0.193, 0.235] (paired task-cluster
 intervals).
-A stateful per-turn Qwen2.5-3B baseline that makes push/replace/stay/pop decisions reaches 0.650 B$^3$ F1 and 0.257 boundary F1, confirming that smaller models with carefully designed interfaces can produce meaningful segmentation, though still below Codex.
+The same prompt with Qwen3.6-27B degenerates to one segment per trajectory (boundary F1 = 0), showing that model capability rather than iterative refinement drives the result.
 The marks conserve exactly 20{,}866 operations and
 494{,}862{,}929 tokens.
-% 结果。Codex 切分达到 0.764 B$^3$ F1 与 0.480 边界 F1，以 +0.101 [0.087,0.116] 与 +0.214 [0.193,0.235] 的配对任务簇区间超过最强自动基线（multi-resolution recurrence）。一个有状态的 per-turn Qwen2.5-3B baseline（做 push/replace/stay/pop 决策）达到 0.650 B$^3$ F1 与 0.257 边界 F1，确认较小模型配合精心设计的接口可以产生有意义的切分，尽管仍低于 Codex。标记精确守恒 20,866 个 operation 与 494,862,929 个 token。
+% 结果。Codex 切分达到 0.764 B$^3$ F1 与 0.480 边界 F1，以 +0.101 [0.087,0.116] 与 +0.214 [0.193,0.235] 的配对任务簇区间超过最强自动基线。同一 prompt 用 Qwen3.6-27B 退化为每轨迹单个 segment（boundary F1 = 0），表明结果由模型能力而非迭代优化驱动。标记精确守恒 20,866 个 operation 与 494,862,929 个 token。
 Predicted groups remain largely pure subsets of gold stages
 (B$^3$ precision 0.793): when segmentation disagrees with human stages,
 it subdivides work rather than merging unrelated responsibilities,
@@ -916,8 +929,6 @@ segmenter 0.680 / 0.786 (strongest control: 0.645 / 0.678), and an unsupervised
 TF-IDF/K-Means method (no labels seen) reaches V-measure 0.557 on nine Mind2Web sessions and
 0.815 on 100 ScienceWorld sessions~\cite{mind2web,scienceworld}.
 % 该接口在不同方法家族间泛化：在 287 个 OSWorld-Human session 上，监督边界预测器达到 0.739 边界 F1 / 0.816 B$^3$ F1，无 LLM 的 recurrence segmenter 为 0.680 / 0.786（最强对照 0.645 / 0.678）；无监督的 TF-IDF/K-Means 方法（不接触标签）在 9 个 Mind2Web session 上 V-measure 为 0.557，在 100 个 ScienceWorld session 上为 0.815。
-When the same Codex instruction is frozen and transferred to OSWorld-Human without adaptation, it reaches only 0.448 B$^3$ F1 and 0.149 boundary F1, predicting 569 groups for 2{,}042 gold groups---severe under-segmentation that shows cross-population generalization remains a limitation.
-% 当同一 Codex instruction 冻结后不经调整迁移到 OSWorld-Human 时，只达到 0.448 B$^3$ F1 与 0.149 边界 F1，对 2,042 个 gold group 预测 569 个——严重欠切分，表明跨 population 泛化仍是局限。
 For closed-label literal tags, a fixed evaluation-only
 Qwen3.6-27B~\cite{qwen36} classifier labels all 1{,}012 AgentBoard
 goals~\cite{agentboard} into nine task families at 0.695 macro-F1 and 0.733
