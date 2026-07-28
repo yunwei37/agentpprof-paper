@@ -215,19 +215,17 @@ the intervals on both sides, and recurses, so short action-first names
 give agents the stable identifiers that traditional profiling gets for
 free from function names.
 % 一个算法驱动此模型：递归 operation 切分通读轨迹，在智能体责任变化处切开，为两侧区间命名并递归；动词优先的短名称为智能体提供了传统 profiling 从函数名免费获得的稳定标识符。
-The segmentation contract is backend-neutral: an agent, a plain language
-model, or a statistical rule can produce the same marks.
+The segmentation contract is implementation-neutral: an agent, a language model, or a statistical rule can all produce the same marks.
 % 切分契约与 backend 无关：agent、普通语言模型或统计规则都能产出相同的标记。
 Across all 405 released CodeTraceBench trajectories, recursive
 segmentation agrees with human stage annotations at 0.764
 B$^3$ F1~\cite{bagga-baldwin-1998-entity-based}, versus 0.663 for a statistical baseline and 0.541 for raw
 actions.
 % 在全部 405 条已发布的 CodeTraceBench 轨迹上，递归切分与人工 stage 标注的普通 B$^3$ F1 一致性为 0.764，统计基线为 0.663，raw action 为 0.541。
-On three complete localization benchmarks, the profile raises MAP over
-each benchmark's own diagnostic by .031, .107, and .117, and as a
-reading index it guides a strong reader to equal ranking quality while
-opening 53.0\% instead of 65.0\% of the source evidence.
-% 在三个完整定位 benchmark 上，profile 相对各 benchmark 自带诊断将 MAP 分别提高 .031、.107 与 .117；作为阅读索引，它引导强 reader 在只打开 53.0\%（对 65.0\%）source evidence 的情况下达到同等排序质量。
+On three complete localization benchmarks, the profile improves ranking over each benchmark's own diagnostic, raising MAP by 0.031, 0.107, and 0.117.
+% 在三个完整定位 benchmark 上，profile 改进了排序，相对各 benchmark 自带诊断将 MAP 分别提高 0.031、0.107 与 0.117。
+As a navigation aid, it helps a reader reach equal ranking quality while opening 53.0\% instead of 65.0\% of the source evidence.
+% 作为导航辅助，它帮助读者在只打开 53.0\%（对 65.0\%）source evidence 的情况下达到同等排序质量。
 One fixed hierarchy replays under operation-count and token measures
 with exact conservation, exposing bottlenecks that a count view
 understates by more than a factor of two.
@@ -244,8 +242,7 @@ This paper makes three contributions:
   stacks (Background and Design).
 % 语义 operation stack 模型。识别智能体可观测性中缺失的 profiling 层，提出统一 operation 和查询时 operation stack 的模型。
 \item \textbf{System: \sys.}
-  A profiler that implements this model through a backend-neutral
-  recursive-segmentation contract, producing pprof-compatible output.
+  A profiler that implements this model, producing pprof-compatible output.
 % 系统：\sys。通过与 backend 无关的递归切分契约实现此模型的 profiler，产生 pprof 兼容输出。
 \item \textbf{Evaluation.}
   We evaluate profiler output against independent ground-truth
@@ -335,12 +332,8 @@ executions verifying substitute transport paths without ever establishing the
 endpoint---nearly half the budget went to one never-successful diagnosis that
 a count view understates by more than half.
 % 重复出现的 \texttt{diagnose authentication} 子树按 operation 数只占任务的 21.47\%，按 token 却占 46.15\%；下钻显示三次执行都在验证替代传输路径、却从未建立目标端点——近一半预算花在一个从未成功的诊断上，而 count 视图把它低估了一半以上。
-A same-input control replays identical operations and weights under native,
-coarse-action, and semantic organizations: the responsibility scatters across
-105 native calls and six coarse action kinds (largest branch 39.42\% of its
-tokens); only the semantic organization reunites it into one focusable
-cross-run path.
-% 同输入对照在 native、coarse-action 与 semantic 三种组织下重放完全相同的 operation 与权重：该责任在 native 中散落于 105 个 call、在 coarse 中跨六个 action kind（最大分支仅含其 token 的 39.42\%）；只有语义组织将其重聚为一条可聚焦的跨运行路径。
+A control experiment replays the same operations and weights under three organizations (native call tree, coarse action grouping, and semantic hierarchy): the responsibility scatters across 105 native calls and six coarse action kinds (largest branch 39.42\% of its tokens), but only the semantic organization reunites it into one focusable cross-run path.
+% 对照实验在三种组织（native call tree、coarse action 分组、语义层次）下重放相同的 operation 与权重：该责任在 native 中散落于 105 个 call、在 coarse 中跨六个 action kind（最大分支仅含其 token 的 39.42\%），只有语义组织将其重聚为一条可聚焦的跨运行路径。
 This paper's evaluation returns to this case under RQ1 and asks whether the
 same behavior holds at population scale.
 % 本文的评估在 RQ1 中回到该案例，并检验同样的行为是否在 population 尺度上成立。
@@ -599,12 +592,8 @@ pipeline unchanged.
 % \sys 是一个离线、事后分析器，实现为 Rust CLI（约 9.8K 行代码，Figure~\ref{fig:architecture}）。
 It reads Codex and Claude Code local JSONL history files and AgentSight~\cite{agentsight} recordings for system effects, and reconstructs prompts, LLM calls, tool invocations, and their triggered file and network effects.
 % 它读取 Codex 和 Claude Code 本地 JSONL 历史文件以及 AgentSight~\cite{agentsight} 的系统副作用记录，重建提示词、LLM 调用、工具调用及其触发的文件和网络副作用。
-The backend works in an annotation workspace where the CLI validates
-that marks are nested, noncrossing, and cover every source node (each
-source node corresponds to one turn in the trajectory), then emits one
-standard pprof protobuf profile that existing tools such as
-\texttt{go tool pprof} read directly.
-% backend 工作在三文件标注工作区（\texttt{trace.jsonl}、\texttt{annotation.json}、\texttt{stacks.folded}）中；CLI 校验标记嵌套、不交叉并覆盖每个 source node，然后输出一个标准 pprof protobuf profile，供 \texttt{go tool pprof} 等现有工具直接读取。
+The backend works in an annotation workspace where the CLI validates that marks are nested, noncrossing, and cover every source node (each source node corresponds to one turn in the trajectory), then emits one standard pprof protobuf profile that existing tools such as \texttt{go tool pprof} read directly.
+% backend 在标注 workspace 中工作，CLI 校验标记嵌套、不交叉并覆盖每个 source node（每个 source node 对应轨迹中的一个 turn），然后输出一个标准 pprof protobuf profile，供 \texttt{go tool pprof} 等现有工具直接读取。
 Projection is deterministic: each source node contributes the agent,
 its covering semantic operation path, and its retained LLM-call and
 tool-call evidence, with raw session and prompt identities kept as pprof
@@ -618,14 +607,10 @@ readable references, native parent links, input order, and additive measures,
 and materialize structured operation JSONL as adapter-defined atomic source
 nodes without inventing missing prompt or call relations.
 % Source-specific adapter 保留 replay-stable node ID、source content 或可读引用、原生 parent link、输入顺序与可加度量，并把结构化 operation JSONL 物化为 adapter-defined atomic source node，不虚构缺失的 prompt 或 call relation。
-The backend reads the trajectory and writes interval annotations that
-map source positions to semantic tags and parent links; after validation
-\sys updates derived paths and the folded aggregate.
-% backend 读取 \texttt{trace.jsonl} 且只写 \texttt{annotation.json}，后者把 source start ID 映射到 \texttt{tag}、语义 \texttt{parent} 与 exclusive \texttt{next}；校验通过后 \sys 原子地更新派生 path 与 folded aggregate。
-Nonblocking hierarchy warnings flag degenerate structures (single-child
-recursion, flat fan-outs, coarse leaves), exposing annotation issues
-without forcing artificial depth or blocking generation.
-% 非阻塞 hierarchy warning 标记只有一个显式 semantic child 的递归 operation、几乎没有进一步递归的大型 flat fan-out，以及覆盖至少八个 tool call 的可选 semantic leaf；这些诊断暴露冗余、过早扁平化或过粗的标注，但不强制虚假深度，也不阻塞生成。
+The backend reads the trajectory and writes interval annotations that map source positions to semantic tags and parent links; after validation \sys updates derived paths and the folded aggregate.
+% backend 读取轨迹并写入区间标注，将 source 位置映射到语义标签与父链接；校验通过后 \sys 更新派生路径与折叠聚合。
+Nonblocking hierarchy warnings flag degenerate structures (single-child recursion, flat fan-outs, coarse leaves), exposing annotation issues without forcing artificial depth or blocking generation.
+% 非阻塞 hierarchy warning 标记退化结构（单子递归、flat fan-out、粗叶），暴露标注问题但不强制人为深度或阻塞生成。
 
 \paragraph{Non-LLM recurrence backend.}
 % 非 LLM recurrence backend。
@@ -693,12 +678,10 @@ tens of hours---supplies the long-horizon regime; the RQ4 union covers
 semantic hierarchy reveals materially different bottlenecks when the additive
 resource measure changes.
 % 设置。我们检验该主张的一个必要后果：固定的语义层次在切换可加资源度量时是否暴露实质不同的瓶颈。
-The source population contains 41 real long-horizon agent trajectories,
-3{,}146 source-native turns, and 5{,}750 operations, including three
-independent executions of one Git-deployment task whose 735 source nodes
-receive 96 recursive annotations. The resulting hierarchy reaches semantic
-depth five without a fixed limit.
-% source population 含 41 条真实 long-horizon agent 轨迹、3,146 个 source-native turn 与 5,750 个 operation，其中包含同一 Git 部署任务的三次独立执行——其 735 个 source node 获得 96 个递归标注；所得层次在无固定上限下达到语义深度五，CLI 未报告 unary 或 flat-fan-out warning，并给出 27 条提示性 coarse-leaf warning。
+The source population contains 41 real long-horizon agent trajectories, 3{,}146 source-native turns, and 5{,}750 operations, including three independent executions of one Git-deployment task whose 735 source nodes receive 96 recursive annotations.
+% source population 含 41 条真实 long-horizon agent 轨迹、3,146 个 source-native turn 与 5,750 个 operation，其中包含同一 Git 部署任务的三次独立执行，其 735 个 source node 获得 96 个递归标注。
+The resulting hierarchy reaches semantic depth five without a fixed limit.
+% 所得层次在无固定上限下达到语义深度五。
 
 \paragraph{Use case 1: why did three runs of one task all fail?}
 % 用例 1：同一任务的三次执行为何全部失败？
@@ -757,11 +740,8 @@ The population is 18 Codex and 24 Claude Code sessions recorded on the
 authors' workstation, including ten long-horizon sessions whose longest span
 tens of hours and hundreds of prompts (Figure~\ref{fig:selfprofile}).
 % 该群体为作者工作站上记录的 18 条 Codex 与 24 条 Claude Code session，其中十条为 long-horizon session，最长者跨越数十小时与数百个 prompt（Figure~\ref{fig:selfprofile}）。
-In this local-history scenario, the profiler initializes the annotation
-workspace directly from the raw session logs and materializes 10{,}423
-source nodes: 42 sessions, 1{,}252 prompts, 5{,}620 LLM calls, and
-3{,}509 tool calls carrying 1{,}380{,}863{,}014 provider-reported tokens.
-% 在这个无需 sudo 的原生本地历史场景中，一次 \texttt{--workspace-out} 调用即可直接从原始 session log 初始化标注 workspace；adapter 物化出 10,423 个 source node：42 个 session、1,252 个 prompt、5,620 个 LLM call 与 3,509 个 tool call，携带 1,380,863,014 个有界 provider token 分量。
+In this local-history scenario, the profiler initializes the annotation workspace directly from the raw session logs and materializes 10{,}423 source nodes: 42 sessions, 1{,}252 prompts, 5{,}620 LLM calls, and 3{,}509 tool calls carrying 1{,}380{,}863{,}014 provider-reported tokens.
+% 在此本地历史场景中，profiler 直接从原始 session log 初始化标注 workspace，物化出 10,423 个 source node：42 个 session、1,252 个 prompt、5,620 个 LLM call 与 3,509 个 tool call，携带 1,380,863,014 个 provider-reported token。
 The fixed automatic instruction, identical to the AgentRewardBench run, makes
 one pass, produces 1{,}737 semantic annotations at depths two through four,
 covers all 1{,}294 mandatory session and prompt scopes, and incurs zero
@@ -1129,20 +1109,16 @@ implementing the same contract remain viable when no model is available.
 \emph{Setup.} Cost separates into a one-time automatic segmentation pass
 per corpus and deterministic construction/replay afterwards.
 % 设置。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放。
-The profiling core (parsing, stack construction, folding, and serialization)
-is measured by comparing the fixed semantic hierarchy against the raw
-hierarchy on identical inputs over three runs across four complete public
-workloads and their union, on a 24-core workstation.
-% profiling 核心（解析 operation JSONL、构建栈、折叠权重、序列化 profile）的测量方式是：在四个完整公开 workload 及其并集上、以完全相同的输入各运行三次，比较固定语义层次与 raw 层次；测量使用 \texttt{agentpprof 0.2.37}，硬件为 24 核 Intel Core Ultra 9 285K、125 GiB 内存、Linux 6.15.11。
+The profiling core (parsing, stack construction, folding, and serialization) is measured by comparing the fixed semantic hierarchy against the raw hierarchy on identical inputs over three runs across four complete public workloads and their union, on a 24-core workstation.
+% profiling 核心（解析、栈构建、折叠、序列化）的测量方式是：在四个完整公开 workload 及其并集上、以完全相同的输入各运行三次，比较固定语义层次与 raw 层次，硬件为 24 核工作站。
 This microbenchmark exercises the generic parse/fold/serialize core on public
 field-stack workloads; the annotation-mark representation's deterministic
 pipeline is timed separately.
 % 该 microbenchmark 测试的是通用 parse/fold/serialize 核心在公开 field-stack workload 上的表现；annotation-mark 表示的确定性管线单独计时。
-\emph{Results.} Segmenting all 405 CodeTraceBench trajectories consumes
-12{,}050{,}384 input and 231{,}886 output tokens in 37 minutes of
-active backend time. After annotation, the deterministic downstream
-pipeline completes in under 12 seconds.
-% 结果。切分全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token、2,215.9 秒活跃 backend 时间；为直接 backend 构造 405 个 source-only packet 的中位耗时为 501.64 秒，标注完成后完整的确定性下游管线耗时 11.516 秒。
+\emph{Results.} Segmenting all 405 CodeTraceBench trajectories consumes 12{,}050{,}384 input and 231{,}886 output tokens in 37 minutes of active backend time.
+% 结果。切分全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token、37 分钟活跃 backend 时间。
+After annotation, the deterministic downstream pipeline completes in under 12 seconds.
+% 标注完成后，确定性下游管线在 12 秒内完成。
 A fully instrumented end-to-end pass on the complete 440-session population
 completes all 12 outcome-blind batches in 3{,}521.6\,s on a fixed two-worker
 schedule (58.7 minutes; summed worker time 6{,}661.7\,s), consuming
@@ -1151,11 +1127,10 @@ and 312{,}433 output tokens---27{,}362 input and 710 output tokens per
 session---while one fresh complete pass over the three-session Git population
 takes 466.9\,s and 832{,}544 actual input tokens.
 % 完整插桩的端到端 pass 在完整 440-session population 上以固定双 worker 调度、3,521.6 秒（58.7 分钟；worker 时间合计 6,661.7 秒）完成全部 12 个 outcome-blind batch，消耗 12,039,417 个实际输入 token（其中报告缓存 10,929,408 个，占 90.8\%）与 312,433 个输出 token——即每 session 27,362 输入、710 输出 token；对三 session 的 Git population，一次全新完整 pass 需 466.9 秒与 832,544 个实际输入 token。
-With marks fixed, constructing a 27{,}765-operation union profile takes
-1.2 seconds at under 500\,MiB peak memory, about 20\% more time than
-raw-action grouping. Switching the additive measure is a replay at the
-same cost.
-% 标记固定后，构建 27,765-operation 的并集 profile 需 1.16 秒、465.2 MiB 峰值内存（每 operation 0.0418 毫秒，$R^2=0.9997$；每秒 23,935 个 operation），比 raw-action 分组多 190 毫秒（19.6\%）时间与 5.25 MiB（1.14\%）峰值 RSS；切换可加度量即以同等成本重放。
+With marks fixed, constructing a 27{,}765-operation union profile takes 1.2 seconds at under 500\,MiB peak memory, about 20\% more time than raw-action grouping.
+% 标记固定后，构建 27,765-operation 的并集 profile 需 1.2 秒、峰值内存低于 500 MiB，比 raw-action 分组多约 20\% 时间。
+Switching the additive measure is a replay at the same cost.
+% 切换可加度量即以同等成本重放。
 Deterministic materialization of the full 440-session population takes
 0.26\,s for operations and 0.25\,s for tokens, so construction cost is
 dominated by the automatic backend while materialization stays sub-second.
