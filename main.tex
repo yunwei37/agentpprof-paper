@@ -209,7 +209,7 @@ cuts it at the points where the agent's responsibility changes, names
 the intervals on both sides, and recurses, so short verb-led names (like \texttt{diagnose authentication})
 give agents the stable identifiers that traditional profiling gets for
 free from function names.
-% 一个算法驱动此模型：递归 operation 切分通读轨迹，在智能体责任变化处切开，为两侧区间命名并递归；动词优先的短名称为智能体提供了传统 profiling 从函数名免费获得的稳定标识符。
+% 一个算法驱动此模型：递归 operation 切分通读轨迹，在智能体责任变化处切开，为两侧区间命名并递归；动词引导的短名称为智能体提供了传统 profiling 从函数名免费获得的稳定标识符。
 The segmentation interface is implementation-neutral: an agent, a language model, or a statistical rule can all produce the same marks.
 % 切分接口与实现无关：agent、普通语言模型或统计规则都能产出相同的标记。
 Across all 405 released CodeTraceBench~\cite{li2026codetracer} trajectories, recursive
@@ -511,7 +511,7 @@ nested (any two intervals are disjoint or one contains the other),
 covers every step, and contains the whole-session interval as its root.
 % 形式化地，轨迹是有序步骤序列 $T=(t_1,\dots,t_n)$；切分是 $T$ 上的命名区间集合 $S$：区间两两要么不相交、要么一个包含另一个（嵌套），共同覆盖每个步骤，且以整个 session 区间为根。
 The algorithm computes $S$ by one recursive rule: $\textsc{Segment}(I)$ selects zero or more transition points inside interval $I$, which partition $I$ into consecutive child intervals; each child receives a short verb-led name and is segmented recursively; selecting no transition terminates the branch.
-% 算法用一条递归规则计算 $S$：$\textsc{Segment}(I)$ 在区间 $I$ 内选择零个或多个转换点，将 $I$ 划分为连续的子区间；每个子区间获得一个动词优先的短名称并被递归切分；不再选择转换点即终止该分支。
+% 算法用一条递归规则计算 $S$：$\textsc{Segment}(I)$ 在区间 $I$ 内选择零个或多个转换点，将 $I$ 划分为连续的子区间；每个子区间获得一个动词引导的短名称并被递归切分；不再选择转换点即终止该分支。
 A step's operation path is the name chain of the intervals containing it, from the session root to its innermost interval; equal paths fold across sessions.
 % 一个步骤的 operation 路径是包含它的区间自 session 根到最内层的名称链；相同路径跨 session 折叠。
 Segmentation is the right primitive for three reasons.
@@ -527,7 +527,7 @@ schema.
 Third, naming intervals rather than steps yields identifiers at the
 granularity where recurrence lives, so the same short verb-led name
 (one to three words) reappears across sessions and folds.
-% 其三，为区间而非单步命名，得到与"重复出现"粒度一致的标识符——同一个动词优先的短名称（一到三个词）在不同 session 中再次出现并得以折叠。
+% 其三，为区间而非单步命名，得到与"重复出现"粒度一致的标识符——同一个动词引导的短名称（一到三个词）在不同 session 中再次出现并得以折叠。
 Concretely, in one Git-deployment execution the algorithm cuts the session into \texttt{build deployment system} and, inside it, cuts again where the agent stops writing configuration and starts debugging access, yielding \texttt{deploy branches} and \texttt{diagnose authentication}; a step inside the latter carries the path \texttt{build deployment system > diagnose authentication}, and because the same names reappear in the other two executions, their costs fold together in Figure~\ref{fig:flamegraph}.
 % 具体地，在一次 Git 部署执行中，算法先把 session 切为 \texttt{build deployment system}，再在"智能体从编写配置转向调试访问"处继续切分，得到 \texttt{deploy branches} 与 \texttt{diagnose authentication}；后者内部的步骤携带路径 \texttt{build deployment system > diagnose authentication}；由于同样名称在另外两次执行中再次出现，其开销在 Figure~\ref{fig:flamegraph} 中折叠到一起。
 Any implementation able to find transitions and name intervals (an agent, a language model, or a statistical rule) can serve as the segmenter.
@@ -545,7 +545,7 @@ step 15: [deploy git server, verify web endpoint]}\\
 ---one line only where the path changes; names of one to three verb-led words.
 \end{quote}
 
-% 输入：一条轨迹（每步的提示词、命令与输出摘要，不含标签或分数）。动作：读取轨迹，在责任变化处发出 mark，并用 \sys 检查和更新切分，反复阅读和更新 mark 直到认为切分完整。输出：稀疏路径 mark，仅在路径变化处出现一行，名称为一到三个动词开头的词。
+% 输入：一条轨迹（每步的提示词、命令与输出摘要，不含标签或分数）。动作：读取轨迹，在责任变化处发出 mark，并用 \sys 检查和更新切分，反复阅读和更新 mark 直到认为切分完整。输出：稀疏路径 mark，仅在路径变化处出现一行，名称为一到三个动词引导的词。
 The sparse marks still produce a complete segmentation: steps between two marks inherit the preceding path.
 % 稀疏的 mark 仍产生完整切分：两个 mark 之间的步骤继承前一条路径。
 Segmentation is not a one-shot labeling pass: the agent can revise marks, refine interval names, and add deeper cuts iteratively until it judges the hierarchy complete.
@@ -813,8 +813,6 @@ step.
 \emph{Direct-only} ranks by that diagnostic alone; \emph{Direct+AgentProf} breaks ties by the profiler's group score;
 \emph{Direct+\sys-Raw} is an ablation that groups by raw action type instead of semantic names; \emph{AgentProf-only} uses only the profiler without the benchmark diagnostic (Table~\ref{tab:rq2-localization}).
 % Direct-only 仅按该诊断排序；Direct+AgentProf 用 profiler 的组分数打破并列；Direct+\sys-Raw 是按 raw action 类型而非语义名分组的消融；AgentProf-only 仅用 profiler 不用 benchmark 诊断（Table~\ref{tab:rq2-localization}）。
-Group scores aggregate frozen benchmark-judge predictions per group: vote averaging for AgentProcessBench, and for HINTBench and TraceElephant the 95\% Wilson lower bound~\cite{wilson1927} of each root-to-frame prefix's positive-prediction fraction, an operation taking the maximum over containing prefixes; a separate 80-trajectory HINTBench validation snapshot selects one of 24 candidate field orders before all 536 tests are scored.
-% Group 分数按 group 聚合冻结的 benchmark-judge 预测：AgentProcessBench 用投票平均，HINTBench 与 TraceElephant 用每个 root-to-frame 前缀正预测比例的 95\% Wilson 下界，operation 取其所在前缀的最大值；一个独立的 80 条 HINTBench validation snapshot 在为全部 536 条 test 打分前从 24 种候选字段序中选定一种。
 
 \begin{table}[tb]
 \centering\small
@@ -843,7 +841,7 @@ Adding the profile to each benchmark's own judge improves
 ranking on all three workloads (left bars, intervals entirely above zero),
 whereas the semantic prefix and the raw-action ablation
 are indistinguishable (right bars, intervals spanning zero). Grouping plus
-retained evidence, not the semantic names, drives this ranking gain.}
+retained evidence drives the ranking gain; semantic names improve evidence efficiency in the reading study below.}
 \Description{A grouped bar chart of MAP differences on three workloads. The
 bars comparing the profile-refined ranking against the benchmark judge are
 positive on all three workloads with error bars above zero, while the bars
@@ -860,8 +858,7 @@ lies above zero (Figure~\ref{fig:rq2-deltas}).
 The semantic and \sys-Raw refinements reach the same ranking quality
 (Table~\ref{tab:rq2-localization}; right bars of
 Figure~\ref{fig:rq2-deltas} span zero), confirming that grouping plus
-retained evidence---not naming alone---drives the localization gain over
-Direct-only.
+retained evidence drives the localization gain over Direct-only.
 % 语义与 \sys-Raw 两种细化达到相同的排序质量（Table~\ref{tab:rq2-localization}；Figure~\ref{fig:rq2-deltas} 右侧柱区间跨零），确认了"分组+保留的证据"（而非单独的命名）驱动相对 Direct-only 的定位增益。
 The semantic prefix earns its value in two other measured roles:
 cross-run attribution (RQ1) and directing a reader's attention, which the
@@ -904,8 +901,7 @@ once and replayed across queries and measures.
 % 每 query 的全量阅读还受模型上下文窗口约束——4,558,192-token 的 Git population 无法整体读入——而骨架引导的阅读在 profile 存在后对任意 trace 长度都可用；此外 reader 是 query-specific 的，而层次只构造一次并跨 query 与度量重放。
 \emph{Takeaway.} Failure structure surfaced by the profile matches
 independent human labels at collection scale; profiles add localization
-signal on top of existing judges; and the semantic names buy evidence
-efficiency rather than ranking accuracy.
+signal on top of existing judges; and semantic names concentrate a reader's attention, reducing evidence opened from 65\% to 53\% at equal ranking quality.
 % 要点。profile 呈现的失败结构在集合尺度上与独立人工标注一致；profile 在既有 judge 之上补充定位信号；语义名称换来的是证据效率而非排序精度。
 
 %% -------------------------------------------------------------------
@@ -981,9 +977,8 @@ and threshold fitted on training sessions only---reaches 0.739 boundary F1 /
 0.816 B$^3$ F1, reference-calibrated recurrence reaches 0.734 / 0.801 using
 group annotations the label-free default avoids, the no-LLM recurrence
 segmenter reaches 0.680 / 0.786 (strongest control: 0.645 / 0.678), and a
-target-blind TF-IDF/K-Means method reaches V-measure 0.557 on nine Mind2Web
-sessions and 0.815 on 100 ScienceWorld sessions~\cite{mind2web,scienceworld}.
-% 该接口在不同方法家族间泛化：在 287 个 OSWorld-Human session 上，监督边界预测器达到 0.739 边界 F1 / 0.816 B$^3$ F1，无 LLM 的 recurrence segmenter 为 0.680 / 0.786（最强对照 0.645 / 0.678）；target-blind 的 TF-IDF/K-Means 方法在 9 个 Mind2Web session 上 V-measure 为 0.557，在 100 个 ScienceWorld session 上为 0.815。
+an unsupervised TF-IDF/K-Means method (no labels seen) reaches V-measure 0.557 on nine Mind2Web sessions and 0.815 on 100 ScienceWorld sessions~\cite{mind2web,scienceworld}.
+% 该接口在不同方法家族间泛化：在 287 个 OSWorld-Human session 上，监督边界预测器达到 0.739 边界 F1 / 0.816 B$^3$ F1，无 LLM 的 recurrence segmenter 为 0.680 / 0.786（最强对照 0.645 / 0.678）；无监督的 TF-IDF/K-Means 方法（不接触标签）在 9 个 Mind2Web session 上 V-measure 为 0.557，在 100 个 ScienceWorld session 上为 0.815。
 When the same instruction is frozen and transferred to OSWorld-Human via Codex with GPT-5.6-sol-high without adaptation, it reaches only 0.448 B$^3$ F1 and 0.149 boundary F1, predicting 569 groups for 2{,}042 gold groups---severe under-segmentation that shows cross-population generalization remains a limitation.
 % 当同一 instruction 冻结后通过 Codex + GPT-5.6-sol 不经调整迁移到 OSWorld-Human 时，只达到 0.448 B$^3$ F1 与 0.149 边界 F1，对 2,042 个 gold group 预测 569 个——严重欠切分，表明跨 population 泛化仍是局限。
 For closed-label literal tags, a fixed evaluation-only
@@ -1043,8 +1038,8 @@ harness, distinct from RQ2's 7{,}229-operation mixed-outcome population.}
 \end{table}
 \emph{Results.} Segmenting all 405 CodeTraceBench trajectories with Codex (GPT-5.6-sol-high) consumes 12{,}050{,}384 input and 231{,}886 output tokens in 2{,}215.9\,s (37 minutes) of active backend wall time.
 % 结果。用 Codex（GPT-5.6-sol-high）切分全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token，active backend wall time 为 2,215.9 秒（37 分钟）。
-Constructing the 405 source-only packets takes 501.64\,s median, and after annotation the full deterministic downstream pipeline (assembly, repair, validation, canonicalization, profile construction and readback, scoring) completes in 11.516\,s.
-% 构造 405 个 source-only packet 的中位时间为 501.64 秒；标注完成后，完整的确定性下游管线（组装、修复、校验、规范化、profile 构建与读回、打分）在 11.516 秒内完成。
+Constructing the 405 trajectory inputs (source content only, no outcome labels) takes 501.64\,s median, and after annotation the full deterministic downstream pipeline (assembly, repair, validation, canonicalization, profile construction and readback, scoring) completes in 11.516\,s.
+% 构造 405 条轨迹输入（仅源内容，不含 outcome 标签）的中位时间为 501.64 秒；标注完成后，完整的确定性下游管线（组装、修复、校验、规范化、profile 构建与读回、打分）在 11.516 秒内完成。
 A full end-to-end segmentation pass on 440 sessions (with no outcome labels visible to the segmenter) completes all 12 batches in 3{,}521.6\,s wall-clock time (58.7 minutes; summed worker time 6{,}661.7\,s) on two parallel workers, consuming 12{,}039{,}417 actual input tokens (10{,}929{,}408 reported cached, 90.8\%) and 312{,}433 output tokens---27{,}362 input and 710 output tokens per session---while one fresh pass over the three-session Git population takes 466.9\,s and 832{,}544 actual input tokens.
 % 对 440 个 session 的完整端到端切分（切分器看不到 outcome 标签）在双并行 worker 上以 3,521.6 秒 wall-clock 时间（58.7 分钟；worker 时间合计 6,661.7 秒）完成全部 12 个 batch，消耗 12,039,417 个实际输入 token（其中报告缓存 10,929,408 个，占 90.8\%）与 312,433 个输出 token——每 session 27,362 输入与 710 输出 token；对三 session 的 Git population，一次全新完整 pass 需 466.9 秒与 832,544 个实际输入 token。
 With marks fixed, construction scales linearly across the five input sizes (Table~\ref{tab:rq4-cost}), adding only 5.25\,MiB (1.14\%) peak RSS over raw-action grouping at the union scale.
