@@ -905,12 +905,12 @@ legacy field-valued datasets a conversion step maps each predicted
 group into the same interval-annotation format before \sys folds the
 original additive weights.
 % 每个方法的输出按其预测的层级评估：字面名称用 accuracy 与 macro-F1，置换不变的 partition 用 V-measure 或普通 B$^3$，相邻区间边界用精确的 precision、recall 与 F1；对字段值型的既有数据集，转换步骤先把每个预测 group 映射为同一份区间标注格式，再由 \sys 折叠原始可加权重。
-Direct Agents read complete source-only packets once and emit sparse
+Codex~\cite{codex} reads each complete source-only packet once and emits sparse
 complete-path marks over 17{,}148 source-native steps without access to
 official stages or outcomes before materialization: 4{,}496 marks at semantic
 depth one (3), two (2{,}873), three (1{,}588), or four (32), with no prompt
 requesting a depth.
-% 直接 Agent 只读一遍完整的 source-only packet，并在 17,148 个 source-native 步骤上发出稀疏的完整路径 mark，物化之前不接触官方 stage 或 outcome：共 4,496 个 mark，语义深度为一层（3 个）、两层（2,873 个）、三层（1,588 个）与四层（32 个），且没有任何 prompt 指定深度。
+% Codex 只读一遍完整的 source-only packet，并在 17,148 个 source-native 步骤上发出稀疏的完整路径 mark，物化之前不接触官方 stage 或 outcome：共 4,496 个 mark，语义深度为一层（3 个）、两层（2,873 个）、三层（1,588 个）与四层（32 个），且没有任何 prompt 指定深度。
 The adopted marks' name replay maps 3{,}895 open-vocabulary operation IDs to
 783 stable action-first canonical IDs, re-expanding all operations from the
 unchanged marks, preserving the temporal occurrence and adjacent-boundary
@@ -926,24 +926,27 @@ pprof.
 \toprule
 Method & B$^3$ P & B$^3$ R & B$^3$ F1 & Bound. F1 \\
 \midrule
-Direct Agent segmentation & 0.793 & 0.736 & \textbf{0.764} & \textbf{0.480} \\
+Codex segmentation & 0.793 & 0.736 & \textbf{0.764} & \textbf{0.480} \\
 Multi-resolution recurrence & 0.782 & 0.575 & 0.663 & 0.266 \\
+Qwen3.6-27B one-shot & 0.174 & 1.000 & 0.296 & 0.000 \\
 Native source tree & 0.975 & 0.249 & 0.397 & 0.259 \\
 Source-native step & 0.983 & 0.221 & 0.361 & 0.246 \\
 Raw-action grouping & 0.891 & 0.388 & 0.541 & --- \\
 \bottomrule
 \end{tabular}
 \caption{Agreement with human stages on all 405 CodeTraceBench
-trajectories.}
+trajectories. Qwen3.6-27B one-shot uses the same prompt but degenerates to one segment per trajectory (boundary F1 = 0).}
 \label{tab:rq3-codetrace}
 \end{table}
 
-\emph{Results.} Direct segmentation reaches 0.764 B$^3$ F1 and 0.480
+\emph{Results.} Codex single-pass segmentation reaches 0.764 B$^3$ F1 and 0.480
 boundary F1, beating the strongest automatic baseline by +0.101
 [0.087, 0.116] and +0.214 [0.193, 0.235] (paired task-cluster
-intervals). The marks conserve exactly 20{,}866 operations and
+intervals).
+The same prompt with Qwen3.6-27B degenerates to one segment per trajectory (boundary F1 = 0), showing that model capability rather than iterative refinement drives the result.
+The marks conserve exactly 20{,}866 operations and
 494{,}862{,}929 tokens.
-% 结果。直接切分达到 0.764 B$^3$ F1 与 0.480 边界 F1，以 +0.101 [0.087,0.116] 与 +0.214 [0.193,0.235] 的配对任务簇区间超过最强自动基线；标记精确守恒 20,866 个 operation 与 494,862,929 个 token。
+% 结果。Codex 切分达到 0.764 B$^3$ F1 与 0.480 边界 F1，以 +0.101 [0.087,0.116] 与 +0.214 [0.193,0.235] 的配对任务簇区间超过最强自动基线。同一 prompt 用 Qwen3.6-27B 退化为每轨迹单个 segment（boundary F1 = 0），表明结果由模型能力而非迭代优化驱动。标记精确守恒 20,866 个 operation 与 494,862,929 个 token。
 Predicted groups remain largely pure subsets of gold stages
 (B$^3$ precision 0.793): when segmentation disagrees with human stages,
 it subdivides work rather than merging unrelated responsibilities,
