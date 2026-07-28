@@ -645,57 +645,39 @@ The resulting hierarchy reaches semantic depth five without a fixed limit.
 
 \paragraph{Use case 1: why did three runs of one task all fail?}
 % 用例 1：同一任务的三次执行为何全部失败？
-This is the case previewed in Section~\ref{sec:background}. A stock-pprof
-focus query retains all three executions rather than selecting one trace, and
-Figure~\ref{fig:flamegraph} replays that one fixed hierarchy under both
-additive measures.
-% 这是动机小节预览的案例。stock pprof 的 focus query 保留全部三次执行而非挑选单条轨迹，Figure~\ref{fig:flamegraph} 在两种可加度量下重放同一个固定层次。
-The focused task contains 489 operations and 4{,}558{,}192 tokens from three agent frameworks: by count Terminus2 contributes 56.24\% and OpenHands 43.76\%, while by tokens OpenHands contributes 86.62\%.
-% 该聚焦任务包含来自三个 agent 框架的 489 个 operation 与 4,558,192 个 token：按 count，Terminus2 占 56.24\%、OpenHands 占 43.76\%；按 token，OpenHands 占 86.62\%。
-The repeated \texttt{diagnose authentication} operation directly contains 97
-operations and 1{,}936{,}828 tokens, and its complete recursive subtree
-contains 105 operations and 2{,}103{,}587 tokens (21.47\% and 46.15\% of the
-focused task).
-% 重复出现的 \texttt{diagnose authentication} operation 直接包含 97 个 operation 与 1,936,828 个 token，其完整递归子树包含 105 个 operation 与 2,103,587 个 token（占聚焦任务的 21.47\% 与 46.15\%）。
-The same hierarchy also replays under elapsed time with exact conservation: the subtree holds 1{,}492 of 3{,}982 seconds (37.47\%).
-% 同一层次还按 elapsed time 精确守恒地重放：该子树占 3,982 秒中的 1,492 秒（37.47\%）。
-Its attributed share therefore rises from 21.47\% by count through 37.47\% by time to 46.15\% by tokens: changing only the measure moves the share by more than a factor of two.
-% 因此其归因份额从 count 的 21.47\% 经 time 的 37.47\% 升至 token 的 46.15\%：仅改变度量就使份额变化超过两倍。
-The count view attributes the task mainly to Terminus2 while the token view attributes nearly half to the authentication responsibility.
-% count 视图把该任务主要归因于 Terminus2，token 视图则把接近一半归因于认证责任。
+Three independent agent attempts at one Git-deployment task all failed to deliver a password-authenticated endpoint.
+% 同一 Git 部署任务的三次独立 agent 尝试都未能交付密码认证端点。
+The developer's question: \emph{what went wrong, and is it the same problem across all three runs?}
+% 开发者的问题：出了什么问题？三次执行是同一个问题吗？
+Reading three transcripts totaling 489 operations and 4.6M tokens would take hours.
+% 阅读共 489 个 operation、460 万 token 的三份转录需要数小时。
+The profile answers in one view (Figure~\ref{fig:flamegraph}): all three runs share a \texttt{diagnose authentication} responsibility that consumes 46\% of their combined token budget (2.1M tokens) but only 21\% of operation count.
+% profile 用一个视图回答（Figure~\ref{fig:flamegraph}）：三次执行共享一个 \texttt{diagnose authentication} 责任，消耗 46\% 的 token 预算（210 万 token）但只占 21\% 的 operation 数。
+The same hierarchy replays under elapsed time: the subtree holds 37\% of wall-clock seconds.
+% 同一层次按 elapsed time 重放：该子树占 37\% 的挂钟时间。
+Drilldown shows all three executions verifying substitute transport paths without ever establishing the target endpoint.
+% 下钻显示三次执行都在验证替代传输路径，却从未建立目标端点。
+The insight: the agents kept retrying SSH variants instead of fixing the actual credential issue, and operation count alone would hide this because authentication commands are cheap to issue but expensive to verify.
+% 洞察：agent 不断重试 SSH 变体而非修复实际凭证问题；仅看 operation 数会掩盖这一点，因为认证命令发起成本低但验证成本高。
 
-As a post-hoc organization control, we replay the same 489 source operations
-and both weights over common \texttt{project, agent} prefixes and
-\texttt{call, tool} leaves with three middle organizations---native
-(\texttt{session, prompt}), coarse (\texttt{action kind, raw action}), or
-semantic---so all six profiles conserve exact mass and open in stock pprof.
-% 作为事后组织对照，我们在共同的 \texttt{project, agent} 前缀与 \texttt{call, tool} 叶之下，用三种中间组织（native、coarse、semantic）重放完全相同的 489 个 source operation 与两种权重，六个 profile 均精确守恒质量并可由 stock pprof 打开。
-The SSH members scatter across 105 native calls and span six coarse action
-kinds (largest branch 39.42\% of their tokens), with 102 of 105 merely
-\texttt{run} alongside 97 unrelated operations; only the semantic
-organization yields one focusable cross-run responsibility that an
-operation-count view understates.
-% SSH 成员在 native 组织下散落于 105 个 call，在 coarse 组织下跨六个 action kind（最大分支仅含其 token 的 39.42\%），且 105 个中有 102 个仅为 \texttt{run} 并与 97 个无关 operation 混杂；只有语义组织给出单一可聚焦的跨运行责任，而这一责任正是 operation-count 视图所低估的。
-Separately, real AgentSight~\cite{agentsight} eBPF recordings replay the same
-way: the R114 population folds all 1{,}520 process and file effects under
-task responsibilities through the recorded wrapper tool with exact
-conservation, demonstrating the system-effect layer end to end.
-% 此外，真实的 AgentSight eBPF recording 以相同方式重放：R114 population 通过记录的 wrapper tool，把全部 1,520 个 process 与 file effect 精确守恒地折叠到 task responsibility 之下，端到端展示了 system-effect 层。
+As a control, we replay the same 489 operations under native call trees and coarse action grouping.
+% 作为对照，我们在 native call tree 与 coarse action 分组下重放相同的 489 个 operation。
+Neither surfaces the pattern: the authentication work scatters across 105 native calls and six action kinds, with 102 of 105 labeled merely \texttt{run}.
+% 两者都未呈现该模式：认证工作散落于 105 个 native call 和六个 action kind，其中 102 个仅标为 \texttt{run}。
+Only semantic organization reunites the cross-run responsibility into one focusable path.
 
 \paragraph{Use case 2: where did this project's agent budget go?}
 % 用例 2：这个项目的 agent 预算去哪了？
-A developer profiles the 42 sessions their own coding agents produced
-while building \sys{} and this paper, asking what weeks of agent work
-actually spent tokens doing.
-% 一位开发者对自己的 coding agent 在构建 \sys{} 与本文期间产生的 42 条 session 进行 profiling，想知道数周的 agent 工作到底把 token 花在了什么事上。
-The population is 18 Codex and 24 Claude Code sessions recorded on the
-authors' workstation, including ten long-horizon sessions whose longest span
-tens of hours and hundreds of prompts (Figure~\ref{fig:selfprofile}).
-% 该群体为作者工作站上记录的 18 条 Codex 与 24 条 Claude Code session，其中十条为 long-horizon session，最长者跨越数十小时与数百个 prompt（Figure~\ref{fig:selfprofile}）。
-The profiler reads local session logs directly: 42 sessions, 1{,}252 prompts, 5{,}620 LLM calls, and 3{,}509 tool calls carrying 1.38 billion tokens.
-% profiler 直接读取本地 session log：42 个 session、1,252 个 prompt、5,620 个 LLM call 与 3,509 个 tool call，携带 13.8 亿 token。
-Segmentation produces 1{,}737 annotations at depths two through four, and the operation-count and token profiles conserve exactly 3{,}509 and 1{,}380{,}863{,}014.
-% 切分产生 1,737 个深度二至四的标注，operation-count 与 token profile 分别精确守恒 3,509 与 1,380,863,014。
+A developer spent weeks building \sys{} and this paper with coding agents, accumulating 42 sessions (18 Codex, 24 Claude Code), 1{,}252 prompts, 5{,}620 LLM calls, and 1.38 billion tokens.
+% 一位开发者花数周用 coding agent 构建 \sys{} 与本文，累积 42 个 session（18 Codex、24 Claude Code）、1,252 个 prompt、5,620 次 LLM 调用和 13.8 亿 token。
+The question: \emph{what did the agents actually spend tokens doing?}
+% 问题：agent 到底把 token 花在了什么事上？
+The profile (Figure~\ref{fig:selfprofile}) shows the answer is not one dominant sink but a broad distribution: the largest path (\texttt{refine paper > align evaluation}) holds only 1.7\% of tokens.
+% profile（Figure~\ref{fig:selfprofile}）显示答案不是单一大头而是宽分布：最大路径（\texttt{refine paper > align evaluation}）仅占 1.7\% 的 token。
+The three longest sessions (spanning tens of hours each) keep distinct dominant responsibilities (evaluation alignment, evidence inspection, and merge resolution), so session structure is preserved rather than averaged away.
+% 三条最长 session（各跨越数十小时）各有不同的主导责任（evaluation alignment、evidence inspection、merge resolution），session 结构被保留而非被平均抹掉。
+Switching to operation count shifts where mass concentrates: token mass stays at prompt depth (70\%), while operation mass resolves deeper (44\% at depths three and four) exactly where repeated engineering work concentrates.
+% 切换到 operation 数改变了质量集中处：token 质量停在 prompt 深度（70\%），而 operation 质量解析更深（44\% 在深度三和四），恰在重复工程工作集中处。
 
 \begin{figure*}[t]
 \centering
@@ -711,56 +693,18 @@ second level, and fragmented deeper refinements.}
 \label{fig:selfprofile}
 \end{figure*}
 
-The same hierarchy replays under file-read, file-write, and network widths (Figure~\ref{fig:selfprofile-write}); each created file appears as a drilldown leaf beneath the operation that created it.
-% 同一层次还按 file-read、file-write 与 network 宽度重放（Figure~\ref{fig:selfprofile-write}）；每个被创建的文件都作为下钻叶出现在创建它的 operation 之下。
+The same hierarchy replays under file-write width (Figure~\ref{fig:selfprofile-write}), with each created file appearing as a drilldown leaf.
+% 同一层次按 file-write 宽度重放（Figure~\ref{fig:selfprofile-write}），每个被创建的文件作为下钻叶出现。
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=.97\linewidth]{figures/selfprofile.file-write.png}
-\caption{FILE-WRITE view of the same self-profile hierarchy. Width is
-target-reference count, with each created file preserved along the semantic
-operation $\rightarrow$ LLM $\rightarrow$ tool $\rightarrow$ exact
-write-target path.}
-\Description{A FILE-WRITE flame graph whose semantic-operation frames contain
-LLM and tool frames ending at exact file-write targets.}
+\caption{FILE-WRITE view of the same hierarchy: width is write count, with each created file preserved as a drilldown leaf.}
+\Description{A FILE-WRITE flame graph whose semantic-operation frames contain LLM and tool frames ending at exact file-write targets.}
 \label{fig:selfprofile-write}
 \end{figure*}
-
-The answer is a broad profile rather than a single sink: the largest
-token path, \texttt{refine paper > align evaluation}, holds only 1.735\% of
-mass.
-% 答案是一个宽分布的 profile 而非单一大头：最大的 token path \texttt{refine paper > align evaluation} 仅占总量的 1.735\%。
-Token mass stays mostly at the mandatory prompt depth (70.4\%), reflecting
-genuinely many-tasked development sessions under the fixed one-pass protocol,
-whereas operation mass resolves more deeply (43.9\% at depths three and four)
-exactly where repeated engineering work concentrates.
-% token 质量主要停留在必需的 prompt 深度（70.4\%），这反映了固定一遍协议下真正多任务的开发 session；而 operation 质量解析得更深（深度三与四占 43.9\%），恰好落在重复工程工作集中之处。
-The three longest sessions keep distinct dominant responsibilities---evaluation
-alignment, evidence inspection, and merge/conflict resolution---so
-long-session structure is preserved rather than averaged away.
-% 三条最长 session 各自保有不同的主导责任——evaluation alignment、evidence inspection 与 merge/conflict resolution——因此长会话结构被保留而非被平均抹掉。
-With three workers the annotation critical path is 44.6 minutes and consumes
-15{,}231{,}328 reported input tokens (13{,}112{,}320 cached) plus 311{,}097
-output tokens, and validation completes in 0.211 seconds; this case
-establishes descriptive feasibility on real long-horizon sessions without
-outcome labels.
-% 使用三个 worker 时，标注关键路径为 44.6 分钟，消耗 15,231,328 个报告输入 token（其中 13,112,320 命中缓存）与 311,097 个输出 token，校验在 0.211 秒内完成；该案例在没有 outcome label 的真实长程 session 上建立了描述性可行性。
-
-Beyond single corpora, the two additive measures agree strongly at
-population scale: replaying the frozen 440-session hierarchy (7{,}229
-operations and 51{,}904{,}621 tokens, both conserved exactly) ranks
-every operation once by count and once by tokens, with mean per-task
-Kendall's tau-b~\cite{kendall1938} 0.886 (interval [0.857, 0.915];
-Spearman's rho~\cite{spearman1904} 0.935) and 10 of 77 rankable tasks
-below 0.7.
-% 超出单一语料，两种可加度量在 population 尺度上高度一致：重放冻结的 440-session 层次（7,229 个 operation 与 51,904,621 个 token，均精确守恒），对每个 operation 分别按次数与 token 排序，每任务平均 Kendall tau-b 为 0.886（区间 [0.857,0.915]；Spearman rho 0.935），77 个可排序任务中有 10 个低于 0.7。
-\emph{Takeaway.} One reusable hierarchy attributes multiple resources
-with exact conservation; as the motivating case's same-input control
-shows, it is the only tested organization that reunites a cross-run
-responsibility, and the minority of tasks where count and token rankings
-diverge is precisely where choosing the measure changes the engineering
-decision.
-% 要点。同一可复用层次以精确守恒归因多种资源；它是唯一能重聚跨运行责任的被测组织；而 count 与 token 排序分歧的少数任务，恰恰是度量选择会改变工程决策的场合。
+\emph{Takeaway.} One hierarchy attributes multiple resources with exact conservation; switching measures reveals bottlenecks that operation count alone would hide.
+% 要点。同一层次精确守恒地归因多种资源；切换度量暴露出仅靠 operation 数会掩盖的瓶颈。
 
 
 %% -------------------------------------------------------------------
@@ -795,53 +739,20 @@ through task completion into its source LLM and tool calls.}
 
 \paragraph{Use case 3: what do failing runs do differently?}
 % 用例 3：失败的运行到底做了什么不同？
-A team has 440 real web-agent runs over 125 tasks, where every task
-contains both successful and failed attempts, and asks what behavior
-separates the two---without reading 440 transcripts.
-% 一个团队手上有 125 个任务的 440 次真实 web-agent 运行，每个任务都同时有成功与失败的尝试；他们想知道两者的行为差在哪——而不用去读 440 份转录。
-We aggregate the complete mixed-outcome population~\cite{agentrewardbench}
-rather than one favorable trace pair: the 440 trajectories yield 338
-bad--good pairs (24/102/144/68 from AssistantBench, VisualWebArena, WebArena,
-and WorkArena), with the 202 successful and 238 unsuccessful sessions reusing
-across pairs under pair-occurrence weighting.
-% 我们聚合完整的 mixed-outcome population 而非单个有利的 trace pair：440 条轨迹产生 338 个 bad--good pair（AssistantBench、VisualWebArena、WebArena、WorkArena 分别贡献 24/102/144/68），202 条成功与 238 条失败 session 跨 pair 复用，并按 pair occurrence 加权。
-Before opening outcomes or expert annotations, three automatic Agent workers
-produce 2{,}131 sparse recursive annotations over all 7{,}229 source
-operations, and the resulting hierarchy reaches semantic depth four before
-its LLM-call and tool-call evidence leaves.
-% 在读取 outcome 或专家标注之前，三个自动 Agent worker 在全部 7,229 个 source operation 上生成 2,131 个稀疏递归标注，所得层次在 LLM-call 与 tool-call 证据叶之前达到语义深度四。
-Formally, the signed profile is the difference of two nonnegative profiles,
-bad minus good; each side satisfies the model's nonnegative additive-measure
-definition, and pprof renders the subtraction as positive and negative sample
-values.
-% 形式上，带符号 profile 是两个非负 profile 之差（bad 减 good）：两侧各自满足模型的非负可加度量定义，pprof 将该减法渲染为正负 sample 值。
-Folding all 338 pairs into that one signed profile answers at a glance
-(Figure~\ref{fig:diff-flamegraph}): the aggregate contains 7{,}366 bad-side
-and 3{,}780 good-side operation occurrences, recovery work occupies 44.6\% of
-failed-side versus 12.0\% of successful-side occurrences (completion 1.8\%
-versus 5.1\%), and the recursive recovery focus separates verification
-challenges, repeated searches, mistaken navigation, product or record
-retries, and repository inspection beneath the same responsibility, with
-source labels identifying the contributing session and call.
-% 把全部 338 个配对折叠进这一张带符号 profile，一眼给出答案：聚合包含 7,366 个 bad 侧与 3,780 个 good 侧 operation occurrence；recovery 类工作占失败侧 44.6\%、成功侧仅 12.0\%（completion 分别为 1.8\% 与 5.1\%）；递归的 recovery focus 在同一责任之下区分出验证挑战、重复搜索、误导航、产品或记录重试与仓库检视，并由 source label 指明贡献这些宽度的 session 与 call。
-We then test whether this visible structure corresponds to an independent
-problem rather than merely reflecting more steps: per-trajectory recovery
-exposure---the fraction of source operations whose path contains the shared
-recovery responsibility, computed per unique trajectory after deduplicating
-pair reuse and therefore unaffected by pair multiplicity---predicts consensus
-expert looping labels on 435 trajectories at AP .634 versus prevalence .398
-(AP-minus-prevalence interval [.181, .293] over 10{,}000 task-cluster draws).
-% 我们进一步检验这一可见结构是否对应独立问题、而不只是反映更多步骤：每轨迹的 recovery 暴露度（路径中包含共享 recovery 责任的 source operation 比例；按去重后的唯一轨迹计算，因而不受配对重复的影响）在 435 条轨迹上以 AP .634（prevalence .398；10,000 次 task-cluster 抽样的 AP 减 prevalence 区间为 [.181,.293]）预测一致的专家 looping 标注。
-A fixed-chain repeated/error projection reaches the same detection quality
-(AP .656; recursive-minus-fixed interval [-.107, .061]); the recursive
-profile's distinct value is source-drillable explanation: it decomposes the
-same responsibility into verification, search, navigation, retry, and
-inspection with session and call drilldown.
-% fixed-chain repeated/error 投影达到相同的检测质量（AP .656；recursive 减 fixed 区间 [-.107,.061]）；递归 profile 的独特价值在于可下钻到 source 的解释：它把同一责任分解为验证、搜索、导航、重试与检视，并可下钻到 session 与 call。
-Failed runs spend nearly half their steps re-trying and re-navigating,
-and the structure the profile surfaces matches what human experts
-independently marked.
-% 失败的运行把近一半步骤花在重试与反复导航上，而 profile 呈现的结构与人类专家的独立标注相符。
+A team has 440 web-agent runs~\cite{agentrewardbench} over 125 tasks, where every task has both successful and failed attempts (202 successful, 238 failed).
+% 一个团队有 125 个任务的 440 次 web-agent 运行（202 成功、238 失败），每个任务都同时有成功与失败的尝试。
+The question: \emph{what behavior separates success from failure?}
+% 问题：什么行为区分成功与失败？
+Reading 440 transcripts (7{,}229 operations) is infeasible.
+% 阅读 440 份转录（7,229 个 operation）不现实。
+A signed difference profile (bad minus good, Figure~\ref{fig:diff-flamegraph}) answers at a glance: failed runs spend 45\% of their steps in \texttt{recover interaction} (retrying, re-searching, re-navigating) versus only 12\% for successful runs.
+% 带符号差分 profile（bad 减 good，Figure~\ref{fig:diff-flamegraph}）一眼给出答案：失败运行花 45\% 的步骤在 \texttt{recover interaction}（重试、重搜索、重导航），而成功运行只有 12\%。
+Drilldown decomposes the recovery responsibility into verification challenges, repeated searches, mistaken navigation, and record retries, with source labels identifying which sessions contributed each width.
+% 下钻把 recovery 责任分解为验证挑战、重复搜索、误导航和记录重试，source label 指明哪些 session 贡献了各宽度。
+The insight: failing agents get stuck in retry loops rather than backing out and trying a different approach.
+% 洞察：失败的 agent 陷入重试循环，而不是回退尝试不同方法。
+This structure matches independent expert looping labels at AP 0.63 (baseline 0.40), confirming the profile surfaces a real behavioral pattern, not an artifact of step count.
+% 该结构与独立专家 looping 标注的一致性为 AP 0.63（基线 0.40），确认 profile 呈现的是真实行为模式而非步骤数的副产物。
 
 \paragraph{Supplementing benchmark-native diagnostics.}
 % 补充 benchmark 原生诊断。
