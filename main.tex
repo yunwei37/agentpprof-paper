@@ -532,8 +532,8 @@ Concretely, in one Git-deployment execution the algorithm cuts the session into 
 % 具体地，在一次 Git 部署执行中，算法先把 session 切为 \texttt{build deployment system}，再在"智能体从编写配置转向调试访问"处继续切分，得到 \texttt{deploy branches} 与 \texttt{diagnose authentication}；后者内部的步骤携带路径 \texttt{build deployment system > diagnose authentication}；由于同样名称在另外两次执行中再次出现，其开销在 Figure~\ref{fig:flamegraph} 中折叠到一起。
 Any implementation able to find transitions and name intervals (an agent, a language model, or a statistical rule) can serve as the segmenter.
 % 任何能找到 transition 并为 interval 命名的实现（agent、语言模型或统计规则）都可作为 segmenter。
-In evaluation, we use a frontier code agent invoked once per trajectory with one fixed instruction:
-% 在评估中，我们使用前沿 code agent，每条轨迹调用一次，使用固定指令：
+In evaluation, we use Codex~\cite{codex}, a frontier code agent, invoked once per trajectory with one fixed instruction:
+% 在评估中，我们使用 Codex——一种前沿 code agent——每条轨迹调用一次，使用固定指令：
 
 \begin{quote}\small
 \emph{Input:} one trajectory (each step's prompt, command, and output summary, with no labels or scores).\\
@@ -1014,71 +1014,14 @@ view, measure switch, and drilldown costs about a second.
 \section{Related Work}
 % 相关工作
 
-\textbf{Agent observability.}
-Agent observability
-tools~\cite{langsmith,langfuse,phoenix,otel,openinference,agentops,agenttelemetry,agenttraces-trust}
-aggregate spans, metadata, and evaluations, and focus on single-execution
-debugging.
-% 智能体可观测性工具聚合 span、metadata 与 evaluation，聚焦于单次执行调试。
-Datadog Patterns and LangSmith Insights derive cross-trace hierarchies and
-roll up metrics, NeMo profiles instrumented workflows, and OpenTelemetry
-Profiles links profiles to
-traces~\cite{datadog-patterns,langsmith-insights,nemo-agent-toolkit-profiler,otel-profiles}.
-% Datadog Patterns 与 LangSmith Insights 导出跨 trace 的层次并汇总指标，NeMo 对已插桩的 workflow 做 profiling，OpenTelemetry Profiles 把 profile 与 trace 关联。
-Datadog LLM Observability~\cite{datadog-llmobs} and
-Laminar~\cite{laminar-signals} cluster inputs or extract signals but
-characterize input distributions, not resource attribution.
-% Datadog LLM Observability~\cite{datadog-llmobs} 和 Laminar~\cite{laminar-signals} 聚类输入或提取信号，但刻画的是输入分布而非资源归因。
-\sys complements them by recursively assigning shared semantic
-responsibility over a preserved source-call tree and folding conserved
-resource measures into standard pprof.
-% \sys 在保留的 source-call tree 上递归分配共享语义责任，并把守恒的资源度量折叠为标准 pprof，以此补充这些工具。
-
-\textbf{Cross-run agent analysis.}
-% 跨运行的智能体分析。
-TraceProbe normalizes coding traces into canonical actions and process
-diagnostics; Graphectory builds cyclic action/navigation graphs and
-aggregates phase patterns~\cite{traceprobe2026,graphectory2026};
-Act$\cdot$onomy supplies a fixed three-level behavior taxonomy; CHIEF builds
-task/subtask causal graphs for oracle-guided failure
-attribution~\cite{actonomy2026,chief2026}; Hodoscope compares behavior
-distributions to human review; and TraceGraph builds shared decision
-landscapes that guide recovery~\cite{hodoscope2026,tracegraph2026}.
-% TraceProbe 把编码轨迹规范化为 canonical action 与过程诊断；Graphectory 构建带环的 action/navigation 图并聚合 phase 模式；Act$\cdot$onomy 提供固定三层的行为 taxonomy；CHIEF 构建 task/subtask 因果图以做 oracle 引导的失败归因；Hodoscope 把行为分布与人工评审对比；TraceGraph 构建共享的 decision landscape 以引导恢复。
-All six answer what an agent did and which step went wrong.
-% 这六个系统回答的都是"智能体做了什么、哪一步出了错"。
-\sys asks a profiler's question instead (how much of an additive resource a
-semantic category is responsible for), and that changes two things.
-% \sys 提出的则是 profiler 的问题——某个语义类别对某种可加资源负有多少责任——这带来两点不同。
-First, responsibility is variable-depth and recovered from source content,
-where Act$\cdot$onomy fixes three levels and TraceProbe canonicalizes a
-single action level.
-% 第一，责任是可变深度的、且从 source 内容中恢复，而 Act$\cdot$onomy 固定为三层、TraceProbe 只规范化单一 action 层。
-Second, one hierarchy is a projection surface: the same boundaries replay
-under count, token, and time widths with exact conservation, which cyclic
-graph and distribution aggregations do not provide.
-% 第二，一个层次就是投影面：同一组边界可在 count、token 与 time 宽度下精确守恒地重放，而带环图与分布式聚合不提供这一性质。
-Native LLM and tool calls remain as drilldown leaves beneath every semantic
-frame, so the aggregate stays traceable to the evidence that produced it.
-% 原生 LLM 与 tool call 作为下钻叶保留在每个语义 frame 之下，因此聚合结果始终可追溯到产生它的证据。
-
-\textbf{Profiling and diagnosis.}
-% Profiling 与诊断。
-pprof and flame graphs fold runtime stacks, whereas Pivot Tracing dynamically
-groups measurements across causally related
-events~\cite{pprof,flamegraphs,pivottracing}.
-% pprof 与火焰图折叠运行时栈，而 Pivot Tracing 在因果相关的事件间动态分组度量。
-AgentRx~\cite{agentrx}, TELBench~\cite{telbench},
-AgentAtlas~\cite{agentatlas}, TrajAD~\cite{trajad}, and
-AgentFixer~\cite{agentfixer} perform per-trajectory fault localization,
-CodeTracer reconstructs per-run states, and localization benchmarks score
-faulty steps, agents, or expert-supported
-perspectives~\cite{li2026codetracer,agentprocessbench,hintbench,traceelephant,mpbench2026}.
-% AgentRx、TELBench、AgentAtlas、TrajAD 与 AgentFixer 执行逐轨迹故障定位，CodeTracer 重建每次运行的状态，定位 benchmark 则对出错步骤、责任 agent 或多专家视角打分。
-\sys applies the profiler's population-level principle to agents, annotating
-recurring semantic responsibility over completed trajectories without code
-identity and without treating runtime nesting as semantic truth.
-% \sys 把 profiler 的群体级原则用于智能体：在已完成的轨迹上标注重复出现的语义责任，既不要求代码 identity，也不把运行时嵌套当作语义真相。
+Classic profilers fold runtime call stacks over stable code identity, and Pivot Tracing groups causally related measurements~\cite{pprof,flamegraphs,pivottracing}.
+% 经典 profiler 折叠具有稳定代码身份的运行时调用栈，Pivot Tracing 对因果相关度量分组。
+Agent observability platforms such as LangSmith, Langfuse, and Phoenix~\cite{langsmith,langfuse,phoenix} record spans with metadata for single-execution debugging; analytics layers such as Datadog Patterns and LangSmith Insights~\cite{datadog-patterns,langsmith-insights} roll up cross-trace hierarchies or input distributions; but none constructs recursive semantic responsibility with conserved additive measures in a standard profile.
+% 智能体可观测性平台与标准记录 span 用于单次执行调试，分析层汇总跨 trace 层次、workflow profile 或输入分布；但没有一个在标准 profile 中构造带守恒可加度量与保留调用证据的递归语义责任。
+Cross-run analyses (TraceProbe, Graphectory, Act$\cdot$onomy, CHIEF, Hodoscope, TraceGraph)~\cite{traceprobe2026,graphectory2026,actonomy2026,chief2026,hodoscope2026,tracegraph2026} and per-run diagnosis and localization~\cite{agentrx,telbench,agentatlas,trajad,agentfixer,li2026codetracer,agentprocessbench,hintbench,traceelephant,mpbench2026} answer what an agent did and which step went wrong.
+% 跨运行分析（TraceProbe、Graphectory、Act$\cdot$onomy、CHIEF、Hodoscope、TraceGraph）与单运行诊断和定位回答的都是"智能体做了什么、哪一步出了错"。
+\sys instead asks how much of an additive resource a semantic category is responsible for: it recovers variable-depth responsibility from source content (where Act$\cdot$onomy fixes three levels and TraceProbe one), conserves measures exactly across count, token, and time widths, keeps LLM/tool calls as drilldown leaves, and emits standard pprof---no compared system provides all four---while staying complementary to per-run diagnosis, as RQ2 measures directly.
+% \sys 提出的则是 profiler 的问题——某个语义类别对某种可加资源负有多少责任：从 source 内容恢复可变深度责任（Act$\cdot$onomy 固定三层、TraceProbe 仅一层）、跨 count/token/time 宽度精确守恒、保留 LLM/tool 下钻叶、输出标准 pprof——没有被比较系统同时具备这四点；且与单运行诊断互补，RQ2 直接测量了这一点。
 
 %% ===================================================================
 \section{Conclusion}
