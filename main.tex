@@ -130,10 +130,10 @@ across agent trajectories.
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{../visexp/out/traditional-cpu-baseline-v1/go-http-cpu.png}\\[1pt]
-\includegraphics[width=\columnwidth]{../visexp/out/r221-pprof-renderer-v1/git-multibranch.operations.png}\\[1pt]
-\includegraphics[width=\columnwidth]{../visexp/out/r221-pprof-renderer-v1/git-multibranch.tokens.png}\\[1pt]
-\includegraphics[width=\columnwidth]{../visexp/out/r221-pprof-renderer-v1/git-authentication.tokens.png}
+\includegraphics[width=\columnwidth]{figures/go-http-cpu.png}\\[1pt]
+\includegraphics[width=\columnwidth]{figures/git-multibranch.operations.png}\\[1pt]
+\includegraphics[width=\columnwidth]{figures/git-multibranch.tokens.png}\\[1pt]
+\includegraphics[width=\columnwidth]{figures/git-authentication.tokens.png}
 \caption{One renderer, four standard pprof profiles.
 \emph{(a)} CPU time in a Go HTTP service under load, recorded by stock
 \texttt{runtime/pprof} and truncated to twelve frames for display.
@@ -794,8 +794,8 @@ input tokens per query but is bounded by the context window, which the
 % 名称的价值体现在别处：作为 TraceElephant 上的阅读索引，语义骨架让强外部 reader 只打开 53.0\%（对 65.0\%）的 source evidence 即达到与 raw-action 骨架相同的排序质量（配对差 +.120 [+.103,+.137]）；逐条全量阅读以每 query 12,615 输入 token 达到 MAP .502，但受上下文窗口约束——4,558,192-token 的 Git population 已超出该界限。
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=.70\linewidth]{../visexp/out/r221-pprof-renderer-v1/agentreward-recovery-bad-excess.operations.png}\\[1pt]
-\includegraphics[width=.70\linewidth]{../visexp/out/r221-pprof-renderer-v1/agentreward-completion-good-excess.operations.png}
+\includegraphics[width=.70\linewidth]{figures/agentreward-recovery-bad-excess.operations.png}\\[1pt]
+\includegraphics[width=.70\linewidth]{figures/agentreward-completion-good-excess.operations.png}
 \caption{One signed profile over all 338 bad--good pairs, read from both
 sides. The signed profile is the difference of two nonnegative profiles,
 bad minus good, which stock pprof renders as positive and negative sample
