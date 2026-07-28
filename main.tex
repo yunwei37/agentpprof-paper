@@ -40,7 +40,7 @@ activities involving thousands to millions of interactions with
 users, tools, and system resources.
 % AI 智能体编排长时间运行的多步骤活动，涉及与用户、工具和系统资源的数千到数百万次交互。
 %% S2: Need (→¶2)
-To improve quality, safety, and cost efficiency of AI agent, 
+To improve quality, safety, and cost efficiency of AI agents, 
 developers need to determine where failures concentrate, 
 which workflows trigger unsafe effects, 
 and which task categories consume the most budget.
@@ -57,9 +57,9 @@ paths, by aggregation.
 % unlike traditional software where code paths provide a natural hierarchy for profiling, 
 % agent behaviors are driven by unstructured natural language prompts 
 % and lack deterministic execution stacks. 
-Yet existing agent observability tools are mainly for single-execution debugging or
-tracing instead of profiling, which makes it difficult to answer the above questions
-when the trajectories are becoming long and complex.
+Yet existing agent observability tools focus on single-execution debugging and
+tracing rather than profiling, making these questions difficult to answer
+as trajectories grow long and complex.
 % 然而现有智能体可观测性工具主要用于调试和 tracing，而非 profiling。
 %% S5: Agent challenge (→¶4)
 Agent behavior differs from code execution, creating two challenges for profiling:
@@ -473,9 +473,9 @@ The profiling pipeline has four stages: (1)~parse raw trajectories into operatio
 \label{sec:ops}
 
 %% ¶1: Operations
-Because agent activities span both the intent and system-effect
-layers described in Background, a profiler should not
-distinguish between them in the data representation.
+Because agent activities span both intent and system-effect
+layers, a profiler should not distinguish between them in the
+data representation.
 % 由于智能体活动跨越 Background 中描述的意图层和系统副作用层，分析器不应在数据表示层面区分它们。
 \sys therefore represents every activity as a single abstraction, the
 \operation, a weighted record with string fields and additive
@@ -555,7 +555,7 @@ Task structure is therefore exactly a set of nested named intervals, and
 recovering it only requires finding the transition points between them.
 % 因此任务结构恰好就是一组嵌套的命名区间，恢复它只需要找到区间之间的转换点。
 
-The core algorithm is segmentation, not labeling: instead of assigning
+The core algorithm is segmentation, not labeling. Instead of assigning
 each step a class from a predefined taxonomy, the backend reads a
 trajectory and finds the transition points where the agent's current
 responsibility changes.
@@ -603,9 +603,9 @@ authentication}; a turn inside the latter carries the path
 the same two names reappear in the other two executions, their costs
 fold together in Figure~\ref{fig:flamegraph}.
 % 具体地，在一次 Git 部署执行中，backend 先把 session 切为 \texttt{build deployment system}，再在"智能体从编写配置转向调试访问"处继续切分，得到 \texttt{deploy branches} 与 \texttt{diagnose authentication}；后者内部的 turn 携带路径 \texttt{build deployment system > diagnose authentication}。由于同样两个名称在另外两次执行中再次出现，其开销在 Figure~\ref{fig:flamegraph} 中折叠到一起。
-Any backend able to find transitions and name intervals---an agent, a
-plain language model, or a statistical rule---implements the same
-contract; the evaluated backend is a frontier code agent invoked once
+Any backend able to find transitions and name intervals (an agent, a
+plain language model, or a statistical rule) implements the same
+contract. The evaluated backend is a frontier code agent invoked once
 per trajectory with one fixed instruction.
 % 任何能找到 transition 并为 interval 命名的 backend——agent、普通语言模型或统计规则——都实现同一份契约；被评估的 backend 是每条轨迹调用一次、使用一条固定指令的前沿 code agent。
 That instruction is the complete backend interface:
@@ -630,7 +630,7 @@ one to three action-first words.
 % 输入：一条轨迹的 source-only packet——每个 turn 可见的提示词、命令与输出摘要，不含 stage 标签、outcome 或分数。动作：整包读一次，在责任变化处发出 mark。输出：稀疏的完整路径 mark，仅在路径变化处出现一行，每个分支深度自由，名称为一到三个动词开头的词。
 Turns between two marks inherit the preceding path, so the marks are a
 complete segmentation despite being sparse. One ordinary format retry is
-allowed; afterwards the deterministic prefix repair and canonicalization
+allowed. Afterwards, the deterministic prefix repair and canonicalization
 replay leave the downstream pipeline unchanged.
 % 两个 mark 之间的 turn 继承前一条路径，因此稀疏的 mark 仍是完整切分。允许一次常规的格式重试；其后确定性的前缀修复与规范化重放不改变下游流水线。
 % 任何能找到转换点并为区间命名的 backend——agent、普通语言模型或统计规则——都实现同一契约；被评测的 backend 是一个前沿代码 agent，每条轨迹以同一固定指令调用一次。
@@ -681,7 +681,7 @@ forcing artificial depth or blocking generation.
 The inducer scores adjacent action transitions by normalized pointwise mutual
 information~\cite{bouma2009npmi} and calibrates a label-free cutoff with
 occurrence-weighted two-means~\cite{macqueen1967}, treating detailed
-recurrence as continuity that can remove but never add a coarse boundary; an
+recurrence as continuity that can remove but never add a coarse boundary. An
 optional reference-calibrated mode fits one scalar cutoff on disjoint
 reference groups.
 % inducer 用归一化点互信息为相邻 action 转移评分，并用按出现次数加权的二均值校准无标签阈值；detail 连续性只能删除、不能新增粗边界；可选的 reference-calibrated 模式在不重叠的参考分组上拟合单一标量阈值。
@@ -963,8 +963,8 @@ error bars crossing it.}
 \label{fig:rq2-deltas}
 \end{figure}
 
-\emph{Results.} Direct+AgentProf beats Direct-only by .031 [.024, .039],
-.107 [.093, .120], and .117 [.088, .148], using 10{,}000 paired resamples of
+\emph{Results.} Direct+AgentProf beats Direct-only by 0.031 [0.024, 0.039],
+0.107 [0.093, 0.120], and 0.117 [0.088, 0.148], using 10{,}000 paired resamples of
 trajectory clusters within benchmark-defined strata, so every paired interval
 lies above zero (Figure~\ref{fig:rq2-deltas}).
 % 结果。Direct+AgentProf 相对 Direct-only 分别提高 .031 [.024,.039]、.107 [.093,.120] 与 .117 [.088,.148]（在 benchmark 定义的分层内对轨迹簇做 10,000 次配对重抽样），因此每个配对区间都位于零以上。
@@ -1008,10 +1008,10 @@ operations.
 Semantic naming's measured contribution in this regime is therefore
 attention concentration at equal quality.
 % 因此在该机制下，语义命名可测得的贡献是"同等质量下的注意力集中"。
-A per-query full read is also bounded by the model context window---the
-4{,}558{,}192-token Git population cannot be read whole---whereas
+A per-query full read is also bounded by the model context window (the
+4{,}558{,}192-token Git population cannot be read whole), whereas
 skeleton-guided reading stays available at any trace length once the profile
-exists, and the reader is query-specific while the hierarchy is constructed
+exists. The reader is query-specific while the hierarchy is constructed
 once and replayed across queries and measures.
 % 每 query 的全量阅读还受模型上下文窗口约束——4,558,192-token 的 Git population 无法整体读入——而骨架引导的阅读在 profile 存在后对任意 trace 长度都可用；此外 reader 是 query-specific 的，而层次只构造一次并跨 query 与度量重放。
 \begin{figure*}[!t]
@@ -1144,7 +1144,7 @@ trajectories.}
 \emph{Results.} Direct segmentation reaches 0.764 B$^3$ F1 and 0.480
 boundary F1, beating the strongest automatic baseline by +0.101
 [0.087, 0.116] and +0.214 [0.193, 0.235] (paired task-cluster
-intervals); the marks conserve exactly 20{,}866 operations and
+intervals). The marks conserve exactly 20{,}866 operations and
 494{,}862{,}929 tokens.
 % 结果。直接切分达到 0.764 B$^3$ F1 与 0.480 边界 F1，以 +0.101 [0.087,0.116] 与 +0.214 [0.193,0.235] 的配对任务簇区间超过最强自动基线；标记精确守恒 20,866 个 operation 与 494,862,929 个 token。
 Predicted groups remain largely pure subsets of gold stages
@@ -1256,8 +1256,8 @@ landscapes that guide recovery~\cite{hodoscope2026,tracegraph2026}.
 % TraceProbe 把编码轨迹规范化为 canonical action 与过程诊断；Graphectory 构建带环的 action/navigation 图并聚合 phase 模式；Act$\cdot$onomy 提供固定三层的行为 taxonomy；CHIEF 构建 task/subtask 因果图以做 oracle 引导的失败归因；Hodoscope 把行为分布与人工评审对比；TraceGraph 构建共享的 decision landscape 以引导恢复。
 All six answer what an agent did and which step went wrong.
 % 这六个系统回答的都是"智能体做了什么、哪一步出了错"。
-\sys asks a profiler's question instead---how much of an additive resource a
-semantic category is responsible for---and that changes two things.
+\sys asks a profiler's question instead (how much of an additive resource a
+semantic category is responsible for), and that changes two things.
 % \sys 提出的则是 profiler 的问题——某个语义类别对某种可加资源负有多少责任——这带来两点不同。
 First, responsibility is variable-depth and recovered from source content,
 where Act$\cdot$onomy fixes three levels and TraceProbe canonicalizes a
