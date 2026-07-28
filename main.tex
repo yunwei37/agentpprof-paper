@@ -624,11 +624,11 @@ until its output is frozen.
 % 所有标注、结局与分数在每个方法的输出冻结之前都对其保持隐藏。
 Mean operations per trajectory are 8.5 (AgentProcessBench), 13.9
 (OSWorld-Human), 24.0 (HINTBench), 27.1 (TraceElephant), and 51.5
-(CodeTraceBench), so the benchmark trajectories are short-to-medium horizon
+(CodeTraceBench), so the benchmark trajectories are short to medium length
 while the annotated 42-session workstation portion---whose longest sessions
 span tens of hours---supplies the long-horizon regime; the RQ4 union covers
 27{,}765 operations.
-% 各 workload 平均每条轨迹的 operation 数分别为 AgentProcessBench 8.5、OSWorld-Human 13.9、HINTBench 24.0、TraceElephant 27.1、CodeTraceBench 51.5，因此 benchmark 轨迹属于短到中 horizon，而被标注的 42-session 工作站部分（最长 session 跨越数十小时）提供长 horizon 区间；RQ4 的并集覆盖 27,765 个 operation。
+% 各 workload 平均每条轨迹的 operation 数分别为 AgentProcessBench 8.5、OSWorld-Human 13.9、HINTBench 24.0、TraceElephant 27.1、CodeTraceBench 51.5，因此 benchmark 轨迹属于短到中长度，而被标注的 42-session 工作站部分（最长 session 跨越数十小时）提供长 horizon 区间；RQ4 的并集覆盖 27,765 个 operation。
 
 %% -------------------------------------------------------------------
 \subsection{RQ1: Does Semantic Profiling Improve Resource Attribution?}
@@ -641,7 +641,7 @@ resource measure changes.
 The population contains 41 real long-horizon agent trajectories, 3{,}146 user turns, and 5{,}750 operations, including three independent executions of one Git-deployment task whose 735 steps receive 96 recursive annotations.
 % population 含 41 条真实 long-horizon agent 轨迹、3,146 个用户 turn 与 5,750 个 operation，其中包含同一 Git 部署任务的三次独立执行——其 735 个步骤获得 96 个递归标注。
 The resulting hierarchy reaches semantic depth five without a fixed limit.
-% 所得层次在无固定上限下达到语义深度五，无 unary 或 flat-fan-out warning，另有 27 条提示性 coarse-leaf warning。
+% 所得层次在无固定上限下达到语义深度五。
 
 \paragraph{The motivating case revisited.}
 % 动机案例回顾。
@@ -771,8 +771,8 @@ Drilldown decomposes the recovery responsibility into verification challenges, r
 % 下钻把 recovery 责任分解为验证挑战、重复搜索、误导航和记录重试，source label 指明哪些 session 贡献了各宽度。
 The insight: failing agents get stuck in retry loops rather than backing out and trying a different approach.
 % 洞察：失败的 agent 陷入重试循环，而不是回退尝试不同方法。
-This structure matches independent expert looping labels on 435 unique trajectories at AP .634 versus prevalence .398 (AP-minus-prevalence interval [.181, .293] over 10{,}000 task-cluster draws; computed per unique trajectory after deduplicating pair reuse), confirming the profile surfaces a real behavioral pattern, not an artifact of step count; a fixed-chain repeated/error control reaches the same detection quality (AP .656; recursive-minus-fixed interval [-.107, .061]), while only the recursive profile provides the decomposition above with drilldown to source.
-% 该结构在 435 条唯一轨迹上与独立专家 looping 标注的一致性为 AP .634（prevalence .398；10,000 次 task-cluster 抽样的 AP 减 prevalence 区间 [.181,.293]；按去重后的唯一轨迹计算），确认 profile 呈现的是真实行为模式而非步骤数的副产物；fixed-chain repeated/error 对照达到相同检测质量（AP .656；recursive 减 fixed 区间 [-.107,.061]），但只有递归 profile 提供上述可下钻到 source 的分解。
+This structure matches independent expert looping labels on 435 unique trajectories at AP .634 versus prevalence .398 (difference interval [.181, .293] over 10{,}000 task-cluster draws; computed per unique trajectory after deduplicating pair reuse), confirming the profile surfaces a real behavioral pattern, not an artifact of step count; a fixed-chain repeated/error control reaches the same detection quality (AP .656; difference interval [-.107, .061]), while only the recursive profile provides the decomposition above with drilldown to source.
+% 该结构在 435 条唯一轨迹上与独立专家 looping 标注的一致性为 AP .634（prevalence .398；10,000 次 task-cluster 抽样的差异区间 [.181,.293]；按去重后的唯一轨迹计算），确认 profile 呈现的是真实行为模式而非步骤数的副产物；fixed-chain repeated/error 对照达到相同检测质量（AP .656；差异区间 [-.107,.061]），但只有递归 profile 提供上述可下钻到 source 的分解。
 
 \paragraph{Supplementing benchmark's own diagnostics.}
 % 补充 benchmark 原生诊断。
@@ -959,7 +959,7 @@ preserving per-group coherence for downstream drilldown.
 The interface generalizes across method families: on all 287 OSWorld-Human
 sessions (3{,}978 operations, 3{,}691 adjacent pairs, 2{,}042 human groups),
 a supervised Bernoulli Naive Bayes boundary predictor~\cite{mccallum-nigam-1998}
-over nine fixed visible fields with five session-held-out folds---parameters
+over nine fixed visible fields with five-fold cross-validation (sessions held out)---parameters
 and threshold fitted on training sessions only---reaches 0.739 boundary F1 /
 0.816 B$^3$ F1, calibrated recurrence reaches 0.734 / 0.801 using
 group annotations the unsupervised default avoids, the no-LLM recurrence
