@@ -34,70 +34,26 @@
 \maketitle
 
 \begin{abstract}
-%% S1: Context (→¶1)
-AI agents increasingly orchestrate long-running, multi-step
-activities involving thousands to millions of interactions with
-users, tools, and system resources.
-% AI 智能体编排长时间运行的多步骤活动，涉及与用户、工具和系统资源的数千到数百万次交互。
-%% S2: Need (→¶2)
-To improve quality, safety, and cost efficiency of AI agents, 
-developers need to determine where failures concentrate, 
-which workflows trigger unsafe effects, 
-and which task categories consume the most budget.
-% 为了提高质量、安全性和成本效率，开发者需要确定哪类任务消耗最多预算、故障集中在哪里、哪些工作流触发不安全副作用。
-% While performance profiling traditionally answers these questions 
-% for classic software by aggregating resource consumption, 
-% traditional profilers fail for agents.
-%% S3: Traditional profiling (→¶2+¶4)
-To answer similar questions in traditional systems software, profiling
-attributes resource consumption to responsible entities, such as code
-paths, by aggregation.
-% 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责实体（如代码路径），而非单次执行调试或 tracing。
-%% S4: Gap (→¶2+¶3)
-% unlike traditional software where code paths provide a natural hierarchy for profiling, 
-% agent behaviors are driven by unstructured natural language prompts 
-% and lack deterministic execution stacks. 
-Yet existing agent observability tools focus on single-execution debugging and
-tracing rather than profiling, making these questions difficult to answer
-as trajectories grow long and complex.
-% 然而现有智能体可观测性工具主要用于调试和 tracing，而非 profiling。
-%% S5: Agent challenge (→¶4)
-Agent behavior differs from code execution, creating two challenges for profiling:
-the responsible entities are semantic categories such as task intent
-and workflow phase, not code paths, and agent trajectories lack the
-stable identifiers and structural hierarchies that make
-attribution possible.
-% 智能体行为与代码执行有根本不同。负责实体是语义类别（如任务意图和工作流阶段），而非代码路径，且智能体轨迹缺乏使归因成为可能的稳定标识符和结构层次。
-% To bridge this gap, we propose the Semantic Operation Stack model. 
-% First, we unify all heterogeneous agent activities (prompts, tool calls, 
-% and system I/O) into a single structured record called an operation. 
-% Second, we construct dynamic call stacks at query time by projecting 
-% these operations onto user-defined semantic fields (e.g., intent $\rightarrow$ phase $\rightarrow$ action), merging identical sequences to generate flame graphs.
-%% S6: Model (→¶5)
-We propose a \emph{semantic operation stack model} that
-adapts profiling to agent trajectories.
-Uniform \emph{operations} represent all agent activities, and
-\emph{operation stacks} replace the runtime call stack,
-enabling hierarchical attribution at different levels of
-granularity from the same data.
-% 我们提出将 profiling 适配到智能体轨迹的语义 operation stack 模型。统一的 operation 表示所有智能体活动，operation stack 替代运行时调用栈，使同一数据支持不同粒度的分层归因。
-% (需要例子) 
-%% S7: System (→¶6)
-We observe that an agent's task occupies a contiguous span of a trajectory
-and decomposes into contiguous subtasks, so task structure is a set of
-nested named intervals recoverable by finding only the transitions between
-them, and we design \emph{recursive operation segmentation}: it splits a
-trajectory where the agent's responsibility changes, names the intervals on
-both sides, and recurses to supply the missing stack.
-% 我们观察到：智能体的任务占据轨迹上一段连续区间并可分解为连续的子任务，因此任务结构就是一组嵌套的命名区间，只需找出它们之间的转移点即可恢复；据此我们设计了\emph{递归 operation 切分}：在智能体责任变化处切开轨迹，为两侧区间命名并递归，从而提供缺失的栈。
-\sys implements this in a profiler that compiles local agent
-trajectories into pprof-compatible profiles.
+AI agents increasingly orchestrate long-running, multi-step activities involving thousands to millions of interactions with users, tools, and system resources.
+% AI 智能体编排涉及数千到数百万次交互的长时间多步骤活动。
+To improve quality, safety, and cost efficiency of AI agents, developers need to determine where failures concentrate, which workflows trigger unsafe effects, and which task categories consume the most budget.
+% 为提高智能体的质量、安全性和成本效率，开发者需确定故障集中在哪里、哪些工作流触发不安全副作用、哪类任务消耗最多预算。
+To answer similar questions in traditional systems software, profiling attributes resource consumption to responsible entities, such as code paths, by aggregation.
+% 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责实体（如代码路径）。
+Yet existing agent observability tools focus on single-execution debugging and tracing rather than profiling, making these questions difficult to answer as trajectories grow long and complex.
+% 然而现有智能体可观测性工具聚焦于单次执行的调试和 tracing 而非 profiling，使这些问题在轨迹变长变复杂时难以回答。
+Agent behavior differs from code execution, creating two challenges for profiling: the responsible entities are semantic categories such as task intent and workflow phase, not code paths, and agent trajectories lack the stable identifiers and structural hierarchies that make attribution possible.
+% 智能体行为与代码执行不同，给 profiling 带来两个挑战：负责实体是语义类别（如任务意图和工作流阶段）而非代码路径，且智能体轨迹缺乏使归因成为可能的稳定标识符和结构层次。
+We propose a \emph{semantic operation stack model} that adapts profiling to agent trajectories.
+% 我们提出一个将 profiling 适配到智能体轨迹的语义 operation stack 模型。
+Uniform \emph{operations} represent all agent activities, and \emph{operation stacks} replace the runtime call stack, enabling hierarchical attribution at different levels of granularity from the same data.
+% 统一的 operation 表示所有智能体活动，operation stack 替代运行时调用栈，使同一数据支持不同粒度的分层归因。
+We observe that an agent's task occupies a contiguous span of a trajectory and decomposes into contiguous subtasks, so task structure is a set of nested named intervals recoverable by finding only the transitions between them, and we design \emph{recursive operation segmentation}: it splits a trajectory where the agent's responsibility changes, names the intervals on both sides, and recurses to supply the missing stack.
+% 我们观察到智能体的任务占据轨迹上一段连续区间并可分解为连续子任务，因此任务结构是一组嵌套命名区间，只需找出转移点即可恢复；据此我们设计递归 operation 切分：在责任变化处切开轨迹，为两侧区间命名并递归，提供缺失的栈。
+\sys implements this in a profiler that compiles local agent trajectories into pprof-compatible profiles.
 % \sys 将其实现为一个 profiler，把本地智能体轨迹编译为 pprof 兼容的 profile。
-%% S8: Results (→¶6)
-On real trajectories and public datasets, our evaluation shows that
-semantic profiling effectively attributes cost and locates problems
-across agent trajectories.
-% 在真实轨迹和公开数据集上，我们的评估表明语义 profiling 能有效地跨智能体轨迹归因开销和定位问题。
+On real trajectories and public datasets, our evaluation shows that semantic profiling effectively attributes cost and locates problems across agent trajectories.
+% 在真实轨迹和公开数据集上，评估表明语义 profiling 能有效地跨轨迹归因开销和定位问题。
 \end{abstract}
 
 % AI agents increasingly orchestrate long-running, multi-step
@@ -184,7 +140,7 @@ aggregation, as distinct from single-execution debugging and tracing.
 
 %% ¶3: Existing solutions
 Yet existing agent tools support debugging and tracing but not
-profiling (Background).
+profiling.
 % 然而现有智能体工具支持调试和 tracing，但不支持 profiling（Background）。
 Some~\cite{langsmith,langfuse,phoenix,otel} organize events into
 per-execution span trees, effective for diagnosing a single run but
@@ -199,13 +155,12 @@ to downstream tool calls and system effects.
 % 另一些~\cite{datadog-llmobs,laminar-signals}聚类输入或提取结构化信号，但刻画的是输入分布（"30\% 的用户提问代码问题"）而非资源归因（"review 任务消耗了 40\% 的 token 预算"），因为请求级的标签不会传播到下游工具调用和系统副作用。
 
 %% ¶4: Challenge — why traditional profiling doesn't transfer directly
-Adapting profiling to agent trajectories is challenging
-(Background).
+Adapting profiling to agent trajectories is challenging.
 % 将 profiling 适配到智能体轨迹具有挑战性（Background）。
 In traditional software, the responsible entities are code paths.
 Profiling is straightforward because function names are
 stable and runtime call nesting provides the attribution
-hierarchy (Background).
+hierarchy.
 % 在传统软件中，负责实体是代码路径。Profiling 是直接的，因为函数名是稳定的，运行时调用嵌套提供归因层次。
 Agent behavior differs fundamentally.
 To answer the questions above, the responsible entities need to be
@@ -264,8 +219,8 @@ The segmentation contract is backend-neutral: an agent, a plain language
 model, or a statistical rule can produce the same marks.
 % 切分契约与 backend 无关：agent、普通语言模型或统计规则都能产出相同的标记。
 Across all 405 released CodeTraceBench trajectories, recursive
-segmentation agrees with human stage annotations at 0.764 ordinary
-B$^3$ F1, versus 0.663 for a statistical baseline and 0.541 for raw
+segmentation agrees with human stage annotations at 0.764
+B$^3$ F1~\cite{bagga-baldwin-1998-entity-based}, versus 0.663 for a statistical baseline and 0.541 for raw
 actions.
 % 在全部 405 条已发布的 CodeTraceBench 轨迹上，递归切分与人工 stage 标注的普通 B$^3$ F1 一致性为 0.764，统计基线为 0.663，raw action 为 0.541。
 On three complete localization benchmarks, the profile raises MAP over
@@ -290,14 +245,12 @@ This paper makes three contributions:
 % 语义 operation stack 模型。识别智能体可观测性中缺失的 profiling 层，提出统一 operation 和查询时 operation stack 的模型。
 \item \textbf{System: \sys.}
   A profiler that implements this model through a backend-neutral
-  recursive-segmentation contract, producing pprof-compatible output
-  (Implementation).
+  recursive-segmentation contract, producing pprof-compatible output.
 % 系统：\sys。通过与 backend 无关的递归切分契约实现此模型的 profiler，产生 pprof 兼容输出。
 \item \textbf{Evaluation.}
   We evaluate profiler output against independent ground-truth
   annotations that stay hidden from the profiler, on eight public
-  benchmarks and three real trajectory populations
-  (Evaluation).
+  benchmarks and three real trajectory populations.
 % 评估。将 profiler 输出与对 profiler 隐藏的独立真实标注评分，在八个公开 benchmark 与三个真实轨迹 population 上验证。
 \end{enumerate}
 
@@ -421,7 +374,7 @@ In CPU profiling, the call stack determines attribution at every level: \texttt{
 % 在 CPU 分析中，调用栈决定了每个层级的归因：\texttt{malloc} 的开销同时属于 \texttt{parse}、\texttt{process} 和 \texttt{main}。
 A sequence of prompts may constitute one task or several, and a task may be part of a larger workflow, but no runtime mechanism marks these boundaries or determines at which granularity to attribute cost.
 % 一串提示词可能构成一个任务也可能是多个任务，一个任务可能是更大工作流的一部分，但没有运行时机制标记这些边界或决定在哪个粒度归因开销。
-We quantify this in RQ1 (Evaluation).
+We quantify this in RQ1.
 % 我们在 RQ1 (Evaluation) 中量化了这一点。
 
 \subsection{Design Requirements for Agent Profiling}
@@ -438,7 +391,7 @@ In traditional profiling, each sample is taken inside a call context, so resourc
 % 在传统 profiling 中，每个采样在调用上下文内完成，因此资源消耗自动归因到造成它的代码路径。
 Agent activities span two layers: intent (prompts, LLM calls) and system effects (file I/O, process spawns).
 % 智能体活动跨越两层：意图（提示词、LLM 调用）和系统副作用（文件 I/O、进程创建）。
-The profiler must connect system-layer resource consumption to intent-layer semantic categories.
+The profiler must connect system-layer resource consumption to intent-level semantic categories.
 % 分析器必须将系统层的资源消耗连接到意图层的语义类别。
 \item[R2: Stable tags for folding.]
 In traditional profiling, function names are stable identifiers that enable folding identical stacks.
@@ -459,11 +412,11 @@ Agent events are not nested by execution, so the profiler must construct attribu
 
 The three requirements (cross-layer resource projection, stable tags, and hierarchical attribution) drive the design.
 % 三个需求（跨层资源投影、稳定标签和分层归因）驱动了设计。
-Operations (Design) satisfy R1 by representing intent and system-effect activities in a single record with tag inheritance, so intent-layer tags propagate to the system effects they trigger.
+Operations satisfy R1 by representing intent and system-effect activities in a single record with tag inheritance, so intent tags propagate to the system effects they trigger.
 % Operation（Design）通过将意图和系统副作用活动表示在带标签继承的单一记录中满足 R1，使意图层标签传播到其触发的系统副作用。
-\emph{Recursive operation segmentation} (Design) satisfies R2 and R3 together: it derives short, stable interval names from trajectory content and nests those intervals into the attribution hierarchy that replaces the runtime call stack.
+\emph{Recursive operation segmentation} satisfies R2 and R3 together: it derives short, stable interval names from trajectory content and nests those intervals into the attribution hierarchy that replaces the runtime call stack.
 % 递归 operation 切分（Design）同时满足 R2 与 R3：它从轨迹内容派生短小稳定的区间名称，并将这些区间嵌套为替代运行时调用栈的归因层次。
-\emph{Operation stacks} (Design) then attribute resources at every level of that hierarchy at query time, so the same data supports multiple views without rebuilding the input.
+\emph{Operation stacks} then attribute resources at every level of that hierarchy at query time, so the same data supports multiple views without rebuilding the input.
 % Operation stack（Design）随后在查询时沿该层次的每一层归因资源，使同一数据支持多种视图而无需重建输入。
 The profiling pipeline has four stages: (1)~parse raw trajectories into operations, (2)~segment trajectories into named nested intervals (or apply mapping rules), (3)~project each operation onto a stack frame sequence chosen at query time, and (4)~fold operations with identical stacks, summing their weights.
 % 分析管线有四个阶段：(1) 将原始轨迹解析为 operation，(2) 将轨迹切分为命名嵌套区间（或应用映射规则），(3) 将每个 operation 投影到查询时选择的栈帧序列上，(4) 折叠具有相同栈的 operation 并求和权重。
@@ -517,7 +470,7 @@ Sessions and spans are optional operation fields, not fixed hierarchy levels, so
 it).
 % 会话和 span 是可选的 operation 字段而非固定层次级别，因此同一数据既支持调试视图（包含 \texttt{session}）也支持聚合 profiling 视图（排除它）。
 The frame sequence need not come from fields alone: recursive
-segmentation (Design) supplies each operation's covering
+segmentation supplies each operation's covering
 interval-name chain as a variable-depth frame sequence, and field lists
 and interval paths compose in one stack.
 % 帧序列不必只来自字段：递归切分（Design）为每个 operation 提供其覆盖区间的名称链，作为可变深度的帧序列；字段列表与区间路径可在同一栈中组合。
@@ -555,11 +508,12 @@ Task structure is therefore exactly a set of nested named intervals, and
 recovering it only requires finding the transition points between them.
 % 因此任务结构恰好就是一组嵌套的命名区间，恢复它只需要找到区间之间的转换点。
 
-The core algorithm is segmentation, not labeling. Instead of assigning
-each step a class from a predefined taxonomy, the backend reads a
-trajectory and finds the transition points where the agent's current
-responsibility changes.
-% 核心算法是切分而不是标注：backend 不为每一步从预定义分类中指派类别，而是通读轨迹，找出智能体当前责任发生变化的转换点。
+Because agent work has no predefined taxonomy but transitions are visible
+in the content, the core algorithm is segmentation, not labeling.
+% 由于智能体工作没有预定义分类法，但转换点在内容中可见，核心算法是切分而非标注。
+Instead of assigning each step a class, the backend reads a trajectory
+and finds the transition points where the agent's responsibility changes.
+% backend 不为每步指派类别，而是读取轨迹、找出责任变化处的转换点。
 At each transition it cuts the trajectory and names the intervals on both
 sides; it then recurses into each interval, cutting again wherever a
 finer responsibility change remains, and stops when an interval reads as
@@ -628,10 +582,10 @@ one to three action-first words.
 \end{quote}
 
 % 输入：一条轨迹的 source-only packet——每个 turn 可见的提示词、命令与输出摘要，不含 stage 标签、outcome 或分数。动作：整包读一次，在责任变化处发出 mark。输出：稀疏的完整路径 mark，仅在路径变化处出现一行，每个分支深度自由，名称为一到三个动词开头的词。
-Turns between two marks inherit the preceding path, so the marks are a
-complete segmentation despite being sparse. One ordinary format retry is
-allowed. Afterwards, the deterministic prefix repair and canonicalization
-replay leave the downstream pipeline unchanged.
+The sparse marks still produce a complete segmentation: turns between two
+marks inherit the preceding path. One format retry is allowed; afterwards,
+deterministic prefix repair and canonicalization leave the downstream
+pipeline unchanged.
 % 两个 mark 之间的 turn 继承前一条路径，因此稀疏的 mark 仍是完整切分。允许一次常规的格式重试；其后确定性的前缀修复与规范化重放不改变下游流水线。
 % 任何能找到转换点并为区间命名的 backend——agent、普通语言模型或统计规则——都实现同一契约；被评测的 backend 是一个前沿代码 agent，每条轨迹以同一固定指令调用一次。
 % 任何能找到转换点并为区间命名的 backend——agent、普通语言模型或统计规则——都实现同一契约。
@@ -645,11 +599,11 @@ replay leave the downstream pipeline unchanged.
 % \sys 是一个离线、事后分析器，实现为 Rust CLI（约 9.8K 行代码，Figure~\ref{fig:architecture}）。
 It reads Codex and Claude Code local JSONL history files and AgentSight~\cite{agentsight} recordings for system effects, and reconstructs prompts, LLM calls, tool invocations, and their triggered file and network effects.
 % 它读取 Codex 和 Claude Code 本地 JSONL 历史文件以及 AgentSight~\cite{agentsight} 的系统副作用记录，重建提示词、LLM 调用、工具调用及其触发的文件和网络副作用。
-The backend works in a three-file annotation workspace
-(\texttt{trace.jsonl}, \texttt{annotation.json}, \texttt{stacks.folded});
-the CLI validates that marks are nested, noncrossing, and cover every
-source node, then emits one standard pprof protobuf profile that existing
-tools such as \texttt{go tool pprof} read directly.
+The backend works in an annotation workspace where the CLI validates
+that marks are nested, noncrossing, and cover every source node (each
+source node corresponds to one turn in the trajectory), then emits one
+standard pprof protobuf profile that existing tools such as
+\texttt{go tool pprof} read directly.
 % backend 工作在三文件标注工作区（\texttt{trace.jsonl}、\texttt{annotation.json}、\texttt{stacks.folded}）中；CLI 校验标记嵌套、不交叉并覆盖每个 source node，然后输出一个标准 pprof protobuf profile，供 \texttt{go tool pprof} 等现有工具直接读取。
 Projection is deterministic: each source node contributes the agent,
 its covering semantic operation path, and its retained LLM-call and
@@ -664,16 +618,13 @@ readable references, native parent links, input order, and additive measures,
 and materialize structured operation JSONL as adapter-defined atomic source
 nodes without inventing missing prompt or call relations.
 % Source-specific adapter 保留 replay-stable node ID、source content 或可读引用、原生 parent link、输入顺序与可加度量，并把结构化 operation JSONL 物化为 adapter-defined atomic source node，不虚构缺失的 prompt 或 call relation。
-The backend reads \texttt{trace.jsonl} and writes only
-\texttt{annotation.json}, which maps source start IDs to \texttt{tag},
-semantic \texttt{parent}, and exclusive \texttt{next}; after validation \sys
-atomically updates derived paths and the folded aggregate.
+The backend reads the trajectory and writes interval annotations that
+map source positions to semantic tags and parent links; after validation
+\sys updates derived paths and the folded aggregate.
 % backend 读取 \texttt{trace.jsonl} 且只写 \texttt{annotation.json}，后者把 source start ID 映射到 \texttt{tag}、语义 \texttt{parent} 与 exclusive \texttt{next}；校验通过后 \sys 原子地更新派生 path 与 folded aggregate。
-Nonblocking hierarchy warnings flag a recursive operation with only one
-explicit semantic child, a large flat fan-out with little recursive
-refinement, or an optional semantic leaf spanning at least eight tool
-calls---exposing redundant, prematurely flat, or coarse annotations without
-forcing artificial depth or blocking generation.
+Nonblocking hierarchy warnings flag degenerate structures (single-child
+recursion, flat fan-outs, coarse leaves), exposing annotation issues
+without forcing artificial depth or blocking generation.
 % 非阻塞 hierarchy warning 标记只有一个显式 semantic child 的递归 operation、几乎没有进一步递归的大型 flat fan-out，以及覆盖至少八个 tool call 的可选 semantic leaf；这些诊断暴露冗余、过早扁平化或过粗的标注，但不强制虚假深度，也不阻塞生成。
 
 \paragraph{Non-LLM recurrence backend.}
@@ -745,9 +696,8 @@ resource measure changes.
 The source population contains 41 real long-horizon agent trajectories,
 3{,}146 source-native turns, and 5{,}750 operations, including three
 independent executions of one Git-deployment task whose 735 source nodes
-receive 96 recursive annotations; the resulting hierarchy reaches semantic
-depth five without a fixed limit, and the CLI reports no unary or
-flat-fan-out warning and 27 advisory coarse-leaf warnings.
+receive 96 recursive annotations. The resulting hierarchy reaches semantic
+depth five without a fixed limit.
 % source population 含 41 条真实 long-horizon agent 轨迹、3,146 个 source-native turn 与 5,750 个 operation，其中包含同一 Git 部署任务的三次独立执行——其 735 个 source node 获得 96 个递归标注；所得层次在无固定上限下达到语义深度五，CLI 未报告 unary 或 flat-fan-out warning，并给出 27 条提示性 coarse-leaf warning。
 
 \paragraph{Use case 1: why did three runs of one task all fail?}
@@ -807,11 +757,10 @@ The population is 18 Codex and 24 Claude Code sessions recorded on the
 authors' workstation, including ten long-horizon sessions whose longest span
 tens of hours and hundreds of prompts (Figure~\ref{fig:selfprofile}).
 % 该群体为作者工作站上记录的 18 条 Codex 与 24 条 Claude Code session，其中十条为 long-horizon session，最长者跨越数十小时与数百个 prompt（Figure~\ref{fig:selfprofile}）。
-In this native no-sudo local-history scenario, one \texttt{--workspace-out}
-invocation initializes the annotation workspace directly from the raw session
-logs, and the adapter materializes 10{,}423 source nodes: 42 sessions,
-1{,}252 prompts, 5{,}620 LLM calls, and 3{,}509 tool calls carrying
-1{,}380{,}863{,}014 bounded provider token components.
+In this local-history scenario, the profiler initializes the annotation
+workspace directly from the raw session logs and materializes 10{,}423
+source nodes: 42 sessions, 1{,}252 prompts, 5{,}620 LLM calls, and
+3{,}509 tool calls carrying 1{,}380{,}863{,}014 provider-reported tokens.
 % 在这个无需 sudo 的原生本地历史场景中，一次 \texttt{--workspace-out} 调用即可直接从原始 session log 初始化标注 workspace；adapter 物化出 10,423 个 source node：42 个 session、1,252 个 prompt、5,620 个 LLM call 与 3,509 个 tool call，携带 1,380,863,014 个有界 provider token 分量。
 The fixed automatic instruction, identical to the AgentRewardBench run, makes
 one pass, produces 1{,}737 semantic annotations at depths two through four,
@@ -1180,22 +1129,19 @@ implementing the same contract remain viable when no model is available.
 \emph{Setup.} Cost separates into a one-time automatic segmentation pass
 per corpus and deterministic construction/replay afterwards.
 % 设置。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放。
-The profiling core---parsing operation JSONL, constructing stacks, folding
-weights, and serializing the profile---is measured by comparing the fixed
-semantic hierarchy against the raw hierarchy on identical inputs over three
-runs across four complete public workloads and their union, using
-\texttt{agentpprof 0.2.37} on a 24-core Intel Core Ultra 9 285K with
-125\,GiB RAM and Linux 6.15.11.
+The profiling core (parsing, stack construction, folding, and serialization)
+is measured by comparing the fixed semantic hierarchy against the raw
+hierarchy on identical inputs over three runs across four complete public
+workloads and their union, on a 24-core workstation.
 % profiling 核心（解析 operation JSONL、构建栈、折叠权重、序列化 profile）的测量方式是：在四个完整公开 workload 及其并集上、以完全相同的输入各运行三次，比较固定语义层次与 raw 层次；测量使用 \texttt{agentpprof 0.2.37}，硬件为 24 核 Intel Core Ultra 9 285K、125 GiB 内存、Linux 6.15.11。
 This microbenchmark exercises the generic parse/fold/serialize core on public
 field-stack workloads; the annotation-mark representation's deterministic
 pipeline is timed separately.
 % 该 microbenchmark 测试的是通用 parse/fold/serialize 核心在公开 field-stack workload 上的表现；annotation-mark 表示的确定性管线单独计时。
 \emph{Results.} Segmenting all 405 CodeTraceBench trajectories consumes
-12{,}050{,}384 input and 231{,}886 output tokens in 2{,}215.9\,s of
-active backend time; constructing the 405 source-only packets the direct
-backend reads takes 501.64\,s median, and after annotation the full
-deterministic downstream pipeline takes 11.516\,s.
+12{,}050{,}384 input and 231{,}886 output tokens in 37 minutes of
+active backend time. After annotation, the deterministic downstream
+pipeline completes in under 12 seconds.
 % 结果。切分全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token、2,215.9 秒活跃 backend 时间；为直接 backend 构造 405 个 source-only packet 的中位耗时为 501.64 秒，标注完成后完整的确定性下游管线耗时 11.516 秒。
 A fully instrumented end-to-end pass on the complete 440-session population
 completes all 12 outcome-blind batches in 3{,}521.6\,s on a fixed two-worker
@@ -1206,10 +1152,9 @@ session---while one fresh complete pass over the three-session Git population
 takes 466.9\,s and 832{,}544 actual input tokens.
 % 完整插桩的端到端 pass 在完整 440-session population 上以固定双 worker 调度、3,521.6 秒（58.7 分钟；worker 时间合计 6,661.7 秒）完成全部 12 个 outcome-blind batch，消耗 12,039,417 个实际输入 token（其中报告缓存 10,929,408 个，占 90.8\%）与 312,433 个输出 token——即每 session 27,362 输入、710 输出 token；对三 session 的 Git population，一次全新完整 pass 需 466.9 秒与 832,544 个实际输入 token。
 With marks fixed, constructing a 27{,}765-operation union profile takes
-1.16\,s at 465.2\,MiB peak memory (0.0418\,ms per operation,
-$R^2=0.9997$; 23{,}935 operations/s), 190\,ms (19.6\%) more time and
-5.25\,MiB (1.14\%) more peak RSS than raw-action grouping, and switching the
-additive measure is a replay at the same cost.
+1.2 seconds at under 500\,MiB peak memory, about 20\% more time than
+raw-action grouping. Switching the additive measure is a replay at the
+same cost.
 % 标记固定后，构建 27,765-operation 的并集 profile 需 1.16 秒、465.2 MiB 峰值内存（每 operation 0.0418 毫秒，$R^2=0.9997$；每秒 23,935 个 operation），比 raw-action 分组多 190 毫秒（19.6\%）时间与 5.25 MiB（1.14\%）峰值 RSS；切换可加度量即以同等成本重放。
 Deterministic materialization of the full 440-session population takes
 0.26\,s for operations and 0.25\,s for tokens, so construction cost is
