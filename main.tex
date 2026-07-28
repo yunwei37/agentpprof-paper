@@ -532,8 +532,8 @@ Concretely, in one Git-deployment execution the algorithm cuts the session into 
 % 具体地，在一次 Git 部署执行中，算法先把 session 切为 \texttt{build deployment system}，再在"智能体从编写配置转向调试访问"处继续切分，得到 \texttt{deploy branches} 与 \texttt{diagnose authentication}；后者内部的步骤携带路径 \texttt{build deployment system > diagnose authentication}；由于同样名称在另外两次执行中再次出现，其开销在 Figure~\ref{fig:flamegraph} 中折叠到一起。
 Any implementation able to find transitions and name intervals (an agent, a language model, or a statistical rule) can serve as the segmenter.
 % 任何能找到 transition 并为 interval 命名的实现（agent、语言模型或统计规则）都可作为 segmenter。
-In evaluation, we use Codex~\cite{codex}, invoked once per trajectory with one fixed instruction:
-% 在评估中，我们使用 Codex，每条轨迹调用一次，使用固定指令：
+In evaluation, we use Codex~\cite{codex} with GPT-5.6-sol-high, with one fixed instruction per trajectory:
+% 在评估中，我们使用 Codex 配合 GPT-5.6-sol-high，每条轨迹使用固定指令：
 
 \begin{quote}\small
 \emph{Input:} one trajectory (each step's prompt, command, and output summary, with no labels or scores).\\
@@ -573,29 +573,26 @@ Projection is deterministic: each operation contributes its semantic path and LL
 Switching the additive measure replays the same annotations and changes only stack widths.
 % 切换可加度量只重放同一标注、只改变栈宽度。
 
-\paragraph{Annotated and literal levels.}
-% 标注层级与字面层级。
-A level in the operation stack need not come from annotation.
-% operation stack 中的层级不必来自标注。
-Any responsibility the source log already records literally can become a level directly, at no annotation cost and with no tag error, provided its extent satisfies the same interval contract.
-% 只要其区间满足同一份契约，任何源日志已经字面记录的责任都可以直接成为一个层级，且不付出标注成本、不引入标签误差。
-Agent skills are the concrete case: a scope opens at an exact recorded skill invocation and closes at the next invocation or the next user prompt, which keeps the intervals nested, noncrossing, and covering, so the level folds and conserves exactly like an annotated one.
-% agent skill 是具体例子：作用域在一次被精确记录的 skill 调用处开启，在下一次调用或下一个用户 prompt 处关闭，从而保持区间嵌套、不交叉且全覆盖，因此该层级与标注层级一样可折叠、可精确守恒。
-The two kinds compose in one stack---annotated semantic responsibility above, exact literal levels beneath it---and each literal field is also emitted as a pprof label, so stock \texttt{-tagfocus} selects the same scope a frame does.
-% 两类层级组合在同一个栈中——标注得到的语义责任在上，精确的字面层级在其下——每个字面字段同时作为 pprof label 输出，因此原生 \texttt{-tagfocus} 选中的范围与 frame 一致。
-Because a literal level costs nothing to construct, it extends to a developer's complete history while annotated levels cover the annotated portion of it.
-% 由于字面层级的构建不产生成本，它可以覆盖开发者的完整历史，而标注层级只覆盖其中被标注的部分。
+Levels need not come from annotation: fields already recorded literally (e.g., agent skill invocations) become stack levels at zero cost and compose with annotated semantic levels in one hierarchy.
+% 层级不必来自标注：已被字面记录的字段（如 agent skill 调用）可以零成本成为栈层级，并与标注得到的语义层级组合在同一层次中。
 
 \paragraph{Non-LLM statistical segmenter.}
 % 非 LLM 统计 segmenter。
 The statistical segmenter scores adjacent action transitions by normalized pointwise mutual
-information~\cite{bouma2009npmi} and calibrates a label-free cutoff with
-occurrence-weighted two-means~\cite{macqueen1967}, treating detailed
-recurrence as continuity that can remove but never add a coarse boundary.
+information, $\mathrm{NPMI}(a,b)=\ln[p(a,b)/(p_L(a)p_R(b))]/-\ln p(a,b)$,
+with all probabilities over one transition sample
+space~\cite{bouma2009npmi}, and calibrates a label-free cutoff with
+occurrence-weighted one-dimensional $k$-means
+($k=2$)~\cite{macqueen1967}---initialized at the minimum and maximum scores,
+ties to the lower center, converged midpoint as the global cutoff, with a
+second cutoff fitted on action-changing transitions---treating detailed
+recurrence as continuity that can remove but never add a coarse boundary,
+with exact coarse fallback when detail is missing; the segmenter reads only
+session identity, input order, action, and optional action detail, never
+target annotations or resource weights.
 An optional reference-calibrated mode fits one scalar cutoff on disjoint
 reference groups.
-% 统计 segmenter 用归一化点互信息为相邻 action 转移评分，并用按出现次数加权的二均值校准无标签阈值；detail 连续性只能删除、不能新增粗边界；可选的 reference-calibrated 模式在不重叠的参考分组上拟合单一标量阈值。
-
+% 统计 segmenter 用归一化点互信息 $\mathrm{NPMI}(a,b)=\ln[p(a,b)/(p_L(a)p_R(b))]/-\ln p(a,b)$ 为相邻 action 转移评分（所有概率取自同一转移样本空间），并用按出现次数加权的一维 $k$-means（$k=2$）校准无标签阈值——从最小与最大分数初始化、并列归入较低中心、以收敛中点为全局阈值，另在 action-changing 转移上拟合第二个阈值；detail 连续性只能删除、不能新增粗边界，detail 缺失时精确回退到粗决策；segmenter 只读取 session 身份、输入顺序、action 与可选 action detail，从不读取目标标注或资源权重。可选的 reference-calibrated 模式在不重叠的参考分组上拟合单一标量阈值。
 %% ===================================================================
 \section{Evaluation}
 % 评估
@@ -863,9 +860,11 @@ trajectory clusters within benchmark-defined strata, so every paired interval
 lies above zero (Figure~\ref{fig:rq2-deltas}).
 % 结果。Direct+AgentProf 相对 Direct-only 分别提高 .031 [.024,.039]、.107 [.093,.120] 与 .117 [.088,.148]（在 benchmark 定义的分层内对轨迹簇做 10,000 次配对重抽样），因此每个配对区间都位于零以上。
 The semantic and \sys-Raw refinements reach the same ranking quality
-(.893, .518, and .324), confirming that grouping plus retained
-evidence---not naming alone---drives the localization gain over Direct-only.
-% 语义与 \sys-Raw 两种细化达到相同的排序质量（.893、.518 与 .324），确认了"分组+保留的证据"（而非单独的命名）驱动相对 Direct-only 的定位增益。
+(Table~\ref{tab:rq2-localization}; paired semantic-minus-raw intervals
+[-.0003, .0029], [-.0116, .0103], and [-.0247, .0280]), confirming that
+grouping plus retained evidence---not naming alone---drives the localization
+gain over Direct-only.
+% 语义与 \sys-Raw 两种细化达到相同的排序质量（Table~\ref{tab:rq2-localization}；配对的语义减 raw 区间为 [-.0003,.0029]、[-.0116,.0103] 与 [-.0247,.0280]），确认了"分组+保留的证据"（而非单独的命名）驱动相对 Direct-only 的定位增益。
 The semantic prefix earns its value in two other measured roles:
 cross-run attribution (RQ1) and directing a reader's attention, which the
 following study measures.
@@ -934,8 +933,8 @@ legacy field-valued datasets a conversion step maps each predicted
 group into the same interval-annotation format before \sys folds the
 original additive weights.
 % 每个方法的输出按其预测的层级评估：字面名称用 accuracy 与 macro-F1，置换不变的 partition 用 V-measure 或普通 B$^3$，相邻区间边界用精确的 precision、recall 与 F1；对字段值型的既有数据集，转换步骤先把每个预测 group 映射为同一份区间标注格式，再由 \sys 折叠原始可加权重。
-Codex~\cite{codex} with GPT-5.6-sol-high receives each trajectory (prompts, commands, and output summaries, with no labels or scores visible) and emits sparse interval marks over 17{,}148 steps without access to official stage annotations: 4{,}496 marks at semantic depth one (3), two (2{,}873), three (1{,}588), or four (32), with no prompt requesting a specific depth.
-% Codex 配合 GPT-5.6-sol-high 接收轨迹（提示词、命令与输出摘要，不含标签或分数），在 17,148 个步骤上发出稀疏区间标记，不接触官方 stage 标注：共 4,496 个标记，语义深度为一层（3 个）、两层（2,873 个）、三层（1,588 个）与四层（32 个），且没有任何 prompt 指定深度。
+Codex~\cite{codex} receives each trajectory (prompts, commands, and output summaries, with no labels or scores visible) and emits sparse interval marks over 17{,}148 steps without access to official stage annotations: 4{,}496 marks at semantic depth one (3), two (2{,}873), three (1{,}588), or four (32), with no prompt requesting a specific depth.
+% Codex 接收轨迹（提示词、命令与输出摘要，不含标签或分数），在 17,148 个步骤上发出稀疏区间标记，不接触官方 stage 标注：共 4,496 个标记，语义深度为一层（3 个）、两层（2,873 个）、三层（1,588 个）与四层（32 个），且没有任何 prompt 指定深度。
 Name normalization then maps the 3{,}895 free-form interval names to 783 stable short names (e.g., \texttt{diagnose authentication}); identical names across sessions merge so that recurring work folds in the final profile.
 % 名称归一化把 3,895 个自由形式的区间名映射为 783 个稳定短名称（如 \texttt{diagnose authentication}）；跨 session 的相同名称合并，使重复工作在最终 profile 中折叠。
 
@@ -1005,27 +1004,48 @@ RQ4 asks whether the profiling cost is practical: how much time and tokens does 
 \emph{Setup.} Cost separates into a one-time automatic segmentation pass
 per corpus and deterministic construction/replay afterwards.
 % 设置。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放。
-The profiling core (parsing, stack construction, folding, and serialization) is measured by comparing the fixed semantic hierarchy against the raw hierarchy on identical inputs over three runs across four complete public workloads and their union, on a 24-core workstation.
-% profiling 核心（解析、栈构建、折叠、序列化）的测量方式是：在四个完整公开 workload 及其并集上、以完全相同的输入各运行三次，比较固定语义层次与 raw 层次，硬件为 24 核工作站。
+The profiling core (parsing, stack construction, folding, and serialization) is measured by comparing the fixed semantic hierarchy \texttt{project, agent, task, phase, op, tool, status} against the raw hierarchy \texttt{project, agent, action, status} on identical inputs over three runs across four complete public workloads and their union (Table~\ref{tab:rq4-cost}), using \texttt{agentpprof 0.2.37} on a 24-core Intel Core Ultra 9 285K with 125\,GiB RAM and Linux 6.15.11.
+% profiling 核心（解析、栈构建、折叠、序列化）的测量方式是：在四个完整公开 workload 及其并集上（Table~\ref{tab:rq4-cost}）、以完全相同的输入各运行三次，比较固定语义层次 \texttt{project, agent, task, phase, op, tool, status} 与 raw 层次 \texttt{project, agent, action, status}；测量使用 \texttt{agentpprof 0.2.37}，硬件为 24 核 Intel Core Ultra 9 285K、125 GiB 内存、Linux 6.15.11。
 This microbenchmark exercises the parsing, folding, and serialization core on public workloads; the deterministic pipeline after segmentation is timed separately.
 % 该 microbenchmark 测试解析、折叠与序列化核心在公开 workload 上的表现；切分之后的确定性管线单独计时。
-\emph{Results.} Segmenting all 405 CodeTraceBench trajectories with Codex consumes 12{,}050{,}384 input and 231{,}886 output tokens in 37 minutes of model time.
-% 结果。用 Codex 切分全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token、37 分钟模型时间。
-After annotation, the deterministic downstream pipeline completes in under 12 seconds.
-% 标注完成后，确定性下游管线在 12 秒内完成。
-A full end-to-end segmentation pass on 440 sessions (with no outcome labels visible to the segmenter) completes in 58.7 minutes wall-clock time on two parallel workers, consuming 12M input tokens (90.8\% cache hits) and 312K output tokens---about 27K input and 710 output tokens per session.
-% 对 440 个 session 的完整端到端切分（切分器看不到 outcome 标签）在双并行 worker 上以 58.7 分钟 wall-clock 时间完成，消耗 1200 万输入 token（90.8\% 缓存命中）与 31.2 万输出 token——每 session 约 2.7 万输入与 710 输出 token。
-With marks fixed, constructing a 27{,}765-operation union profile takes 1.2 seconds at under 500\,MiB peak memory, about 20\% more time than raw-action grouping.
-% 标记固定后，构建 27,765-operation 的并集 profile 需 1.2 秒、峰值内存低于 500 MiB，比 raw-action 分组多约 20\% 时间。
+
+\begin{table}[tb]
+\centering\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Workload & Ops & \shortstack{Semantic\\(s)} & \shortstack{Raw action\\(s)} & \shortstack{Peak RSS\\(MiB)} \\
+\midrule
+AgentRewardBench & 729 & 0.04 & 0.03 & 19.3 \\
+SATraj-OS & 4{,}285 & 0.17 & 0.14 & 73.9 \\
+OSWorld-Human & 6{,}010 & 0.24 & 0.21 & 109.1 \\
+AgentNet & 16{,}741 & 0.70 & 0.58 & 279.3 \\
+Union & 27{,}765 & 1.16 & 0.97 & 465.2 \\
+\bottomrule
+\end{tabular}
+\caption{RQ4 profile-construction cost~\cite{safactory,agentnet}: three-run
+median times and largest semantic-profile peak RSS. The 729-operation
+AgentRewardBench row is the fixed public release sample used by the cost
+harness, distinct from RQ2's 7{,}229-operation mixed-outcome population.}
+\label{tab:rq4-cost}
+\end{table}
+\emph{Results.} Segmenting all 405 CodeTraceBench trajectories with Codex (GPT-5.6-sol-high) consumes 12{,}050{,}384 input and 231{,}886 output tokens in 2{,}215.9\,s (37 minutes) of active backend wall time.
+% 结果。用 Codex（GPT-5.6-sol-high）切分全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token，active backend wall time 为 2,215.9 秒（37 分钟）。
+Constructing the 405 source-only packets takes 501.64\,s median, and after annotation the full deterministic downstream pipeline (assembly, repair, validation, canonicalization, profile construction and readback, scoring) completes in 11.516\,s.
+% 构造 405 个 source-only packet 的中位时间为 501.64 秒；标注完成后，完整的确定性下游管线（组装、修复、校验、规范化、profile 构建与读回、打分）在 11.516 秒内完成。
+A full end-to-end segmentation pass on 440 sessions (with no outcome labels visible to the segmenter) completes all 12 batches in 3{,}521.6\,s wall-clock time (58.7 minutes; summed worker time 6{,}661.7\,s) on two parallel workers, consuming 12{,}039{,}417 actual input tokens (10{,}929{,}408 reported cached, 90.8\%) and 312{,}433 output tokens---27{,}362 input and 710 output tokens per session---while one fresh pass over the three-session Git population takes 466.9\,s and 832{,}544 actual input tokens.
+% 对 440 个 session 的完整端到端切分（切分器看不到 outcome 标签）在双并行 worker 上以 3,521.6 秒 wall-clock 时间（58.7 分钟；worker 时间合计 6,661.7 秒）完成全部 12 个 batch，消耗 12,039,417 个实际输入 token（其中报告缓存 10,929,408 个，占 90.8\%）与 312,433 个输出 token——每 session 27,362 输入与 710 输出 token；对三 session 的 Git population，一次全新完整 pass 需 466.9 秒与 832,544 个实际输入 token。
+With marks fixed, construction scales linearly across the five input sizes (Table~\ref{tab:rq4-cost}), adding only 5.25\,MiB (1.14\%) peak RSS over raw-action grouping at the union scale.
+% 标记固定后，构建开销在五个输入规模上线性扩展（Table~\ref{tab:rq4-cost}），在并集规模上比 raw-action 分组仅多 5.25 MiB（1.14\%）峰值 RSS。
 Switching the additive measure is a replay at the same cost.
 % 切换可加度量即以同等成本重放。
 Deterministic materialization of the full 440-session population takes
 0.26\,s for operations and 0.25\,s for tokens, so construction cost is
 dominated by the segmentation step while materialization stays sub-second.
 % 完整 440-session population 的确定性物化在 operation 上需 0.26 秒、在 token 上需 0.25 秒，因此构建成本由切分步骤主导，而物化保持在亚秒级。
-\emph{Takeaway.} A corpus pays minutes of model time once; every later
-view, measure switch, and drilldown costs about a second.
-% 要点。一个语料只需支付一次分钟级的模型时间；之后每次视图、度量切换与下钻的成本约为一秒。
+\emph{Takeaway.} A corpus pays minutes of active backend time once; every
+later view, measure switch, and drilldown costs about a second.
+% 要点。一个语料只需支付一次分钟级的 active backend 时间；之后每次视图、度量切换与下钻的成本约为一秒。
 
 %% ===================================================================
 \section{Related Work}
