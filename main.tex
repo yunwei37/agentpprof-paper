@@ -207,9 +207,8 @@ the content instead of a fixed schema.
 \emph{Recursive operation segmentation} therefore reads a trajectory,
 cuts it at the points where the agent's responsibility changes, names
 the intervals on both sides, and recurses, so short names starting with a verb (like \texttt{diagnose authentication})
-give agents the stable identifiers that traditional profiling gets for
-free from function names.
-% 一个算法驱动此模型：递归 operation 切分通读轨迹，在智能体责任变化处切开，为两侧区间命名并递归；动词引导的短名称为智能体提供了传统 profiling 从函数名免费获得的稳定标识符。
+give agents stable identifiers analogous to function names in traditional profiling.
+% 一个算法驱动此模型：递归 operation 切分通读轨迹，在智能体责任变化处切开，为两侧区间命名并递归；动词引导的短名称为智能体提供稳定标识符，类似于传统 profiling 中的函数名。
 The segmentation interface is implementation-neutral: an agent, a language model, or a statistical rule can all produce the same marks.
 % 切分接口与实现无关：agent、普通语言模型或统计规则都能产出相同的标记。
 Across all 405 released CodeTraceBench~\cite{li2026codetracer} trajectories, recursive
@@ -573,25 +572,14 @@ Projection is deterministic: each operation contributes its semantic path and LL
 Switching the additive measure replays the same annotations and changes only stack widths.
 % 切换可加度量只重放同一标注、只改变栈宽度。
 
-Levels need not come from annotation: fields already recorded literally (e.g., agent skill invocations) become stack levels at zero cost and compose with annotated semantic levels in one hierarchy.
-% 层级不必来自标注：已被字面记录的字段（如 agent skill 调用）可以零成本成为栈层级，并与标注得到的语义层级组合在同一层次中。
+Levels need not come from annotation: fields already recorded literally (e.g., agent skill invocations) become stack levels without annotation cost and compose with annotated semantic levels in one hierarchy.
+% 层级不必来自标注：已被字面记录的字段（如 agent skill 调用）无需标注成本即可成为栈层级，并与标注得到的语义层级组合在同一层次中。
 
 \paragraph{Non-LLM statistical segmenter.}
 % 非 LLM 统计 segmenter。
 The statistical segmenter scores adjacent action transitions by normalized pointwise mutual
-information, $\mathrm{NPMI}(a,b)=\ln[p(a,b)/(p_L(a)p_R(b))]/-\ln p(a,b)$,
-with all probabilities over one transition sample
-space~\cite{bouma2009npmi}, and calibrates a unsupervised cutoff with
-occurrence-weighted one-dimensional $k$-means
-($k=2$)~\cite{macqueen1967}---initialized at the minimum and maximum scores,
-ties to the lower center, converged midpoint as the global cutoff, with a
-second cutoff fitted on action-changing transitions---treating detailed
-recurrence as continuity that can remove but never add a coarse boundary,
-with exact coarse fallback when detail is missing; the segmenter reads only
-session identity, input order, action, and optional action detail, never
-target annotations or resource weights.
-An optional calibrated mode fits one scalar cutoff on disjoint
-reference groups.
+information~\cite{bouma2009npmi} and calibrates an unsupervised cutoff with
+one-dimensional $k$-means ($k=2$)~\cite{macqueen1967}; it reads only action sequences, never target annotations or resource weights.
 % 统计 segmenter 用归一化点互信息 $\mathrm{NPMI}(a,b)=\ln[p(a,b)/(p_L(a)p_R(b))]/-\ln p(a,b)$ 为相邻 action 转移评分（所有概率取自同一转移样本空间），并用按出现次数加权的一维 $k$-means（$k=2$）校准无标签阈值——从最小与最大分数初始化、并列归入较低中心、以收敛中点为全局阈值，另在 action-changing 转移上拟合第二个阈值；detail 连续性只能删除、不能新增粗边界，detail 缺失时精确回退到粗决策；segmenter 只读取 session 身份、输入顺序、action 与可选 action detail，从不读取目标标注或资源权重。可选的 calibrated 模式在不重叠的参考分组上拟合单一标量阈值。
 %% ===================================================================
 \section{Evaluation}
@@ -650,9 +638,9 @@ span tens of hours---supplies the long-horizon regime; the RQ4 union covers
 semantic hierarchy reveals materially different bottlenecks when the additive
 resource measure changes.
 % 设置。我们检验该主张的一个必要后果：固定的语义层次在切换可加资源度量时是否暴露实质不同的瓶颈。
-The population contains 41 real long-horizon agent trajectories, 3{,}146 source-native turns, and 5{,}750 operations, including three independent executions of one Git-deployment task whose 735 source nodes receive 96 recursive annotations.
-% population 含 41 条真实 long-horizon agent 轨迹、3,146 个 source-native turn 与 5,750 个 operation，其中包含同一 Git 部署任务的三次独立执行——其 735 个 source node 获得 96 个递归标注。
-The resulting hierarchy reaches semantic depth five without a fixed limit, with no unary or flat-fan-out warnings and 27 advisory coarse-leaf warnings.
+The population contains 41 real long-horizon agent trajectories, 3{,}146 user turns, and 5{,}750 operations, including three independent executions of one Git-deployment task whose 735 steps receive 96 recursive annotations.
+% population 含 41 条真实 long-horizon agent 轨迹、3,146 个用户 turn 与 5,750 个 operation，其中包含同一 Git 部署任务的三次独立执行——其 735 个步骤获得 96 个递归标注。
+The resulting hierarchy reaches semantic depth five without a fixed limit.
 % 所得层次在无固定上限下达到语义深度五，无 unary 或 flat-fan-out warning，另有 27 条提示性 coarse-leaf warning。
 
 \paragraph{The motivating case revisited.}
@@ -704,11 +692,10 @@ widths with exact conservation of 737, 31, and 61 target references
 file appears as an exact drilldown leaf beneath the operation that created
 it.
 % 同一层次还按 FILE-READ、FILE-WRITE 与 NETWORK-target 宽度重放，分别精确守恒 737、31 与 61 个 target reference（Figure~\ref{fig:selfprofile-write}）；在 FILE-WRITE 视图中，每个被创建的文件作为精确下钻叶出现在创建它的 operation 之下。
-These views ground the Introduction's system-effect question at the
-substrate level: every recorded file and network target is attributed to
+These views answer the Introduction's system-effect question concretely: every recorded file and network target is attributed to
 the semantic responsibility that touched it, making side effects auditable
 per responsibility.
-% 这些视图把 Introduction 的 system-effect 问题落到基底层面：每个被记录的 file 与 network target 都归因到触及它的语义责任，使副作用可按责任审计。
+% 这些视图具体回答 Introduction 的 system-effect 问题：每个被记录的 file 与 network target 都归因到触及它的语义责任，使副作用可按责任审计。
 
 \begin{figure*}[t]
 \centering
@@ -737,8 +724,8 @@ The largest single session holds only 31.23\% of that mass, so the
 priority across the full history appears only after folding.
 % 最大的单个 session 仅持有该质量的 31.23\%，因此覆盖全历史的优先级只有在折叠之后才显现。
 
-At population scale, replaying the frozen 440-trajectory AgentRewardBench hierarchy (7{,}229 operations and 51{,}904{,}621 tokens, both conserved exactly) ranks the same operations once by count and once by tokens: over the 77 of 125 tasks with at least three distinct operations, mean per-task Kendall's tau-b~\cite{kendall1938} is 0.886 [0.857, 0.915] and Spearman's rho~\cite{spearman1904} is 0.935 [0.917, 0.953], the pooled ranking agrees at tau-b 0.929, and 10 of 77 tasks fall below 0.7---stable in the common case and changing decisions in a material minority.
-% 在 population 尺度上，重放冻结的 440-session AgentRewardBench 层次（7,229 个 operation 与 51,904,621 个 token，均精确守恒），对相同 operation 分别按 count 与 token 排序：在 125 个任务中至少有三个不同 operation 的 77 个上，每任务平均 Kendall tau-b 为 0.886 [0.857,0.915]，Spearman rho 为 0.935 [0.917,0.953]，pooled 排序的 tau-b 为 0.929，77 个中有 10 个低于 0.7——常见情形稳定，少数关键情形改变决策。
+Across 440 trajectories, replaying the frozen AgentRewardBench hierarchy (7{,}229 operations and 51{,}904{,}621 tokens, both conserved exactly) ranks the same operations once by count and once by tokens: over the 77 of 125 tasks with at least three distinct operations, mean per-task Kendall's tau-b~\cite{kendall1938} is 0.886 [0.857, 0.915] and Spearman's rho~\cite{spearman1904} is 0.935 [0.917, 0.953], the pooled ranking agrees at tau-b 0.929, and 10 of 77 tasks fall below 0.7---stable in most cases but changing decisions in 10 of 77 tasks.
+% 跨 440 条轨迹，重放冻结的 AgentRewardBench 层次（7,229 个 operation 与 51,904,621 个 token，均精确守恒），对相同 operation 分别按 count 与 token 排序：在 125 个任务中至少有三个不同 operation 的 77 个上，每任务平均 Kendall tau-b 为 0.886 [0.857,0.915]，Spearman rho 为 0.935 [0.917,0.953]，pooled 排序的 tau-b 为 0.929——大多数情形稳定，但 77 个任务中有 10 个改变决策。
 
 \emph{Takeaway.} One hierarchy attributes multiple resources with exact conservation; switching measures reveals bottlenecks that operation count alone would hide, and levels recovered from annotation and from literal source fields compose in the same stack.
 % 要点。同一层次精确守恒地归因多种资源；切换度量暴露出仅靠 operation 数会掩盖的瓶颈；由标注恢复的层级与来自源字段的字面层级组合在同一个栈中。
@@ -778,8 +765,8 @@ The question: \emph{what behavior separates success from failure?}
 % 问题：什么行为区分成功与失败？
 Reading 440 transcripts (7{,}229 operations) is infeasible.
 % 阅读 440 份转录（7,229 个 operation）不现实。
-A signed difference profile over the 338 bad--good pairs the tasks induce (bad minus good, Figure~\ref{fig:diff-flamegraph}) answers at a glance: failed runs spend 44.6\% of their steps in \texttt{recover interaction} (retrying, re-searching, re-navigating) versus only 12.0\% for successful runs.
-% 对任务导出的 338 个 bad--good pair 构建带符号差分 profile（bad 减 good，Figure~\ref{fig:diff-flamegraph}），一眼给出答案：失败运行花 44.6\% 的步骤在 \texttt{recover interaction}（重试、重搜索、重导航），而成功运行只有 12.0\%。
+A signed difference profile over the 338 bad--good pairs the tasks induce (bad minus good, Figure~\ref{fig:diff-flamegraph}) shows the answer directly: failed runs spend 44.6\% of their steps in \texttt{recover interaction} (retrying, re-searching, re-navigating) versus only 12.0\% for successful runs.
+% 对任务导出的 338 个 bad--good pair 构建带符号差分 profile（bad 减 good，Figure~\ref{fig:diff-flamegraph}）直接呈现答案：失败运行花 44.6\% 的步骤在 \texttt{recover interaction}（重试、重搜索、重导航），而成功运行只有 12.0\%。
 Drilldown decomposes the recovery responsibility into verification challenges, repeated searches, mistaken navigation, and record retries, with source labels identifying which sessions contributed each width.
 % 下钻把 recovery 责任分解为验证挑战、重复搜索、误导航和记录重试，source label 指明哪些 session 贡献了各宽度。
 The insight: failing agents get stuck in retry loops rather than backing out and trying a different approach.
@@ -860,10 +847,10 @@ The semantic and \sys-Raw refinements reach the same ranking quality
 Figure~\ref{fig:rq2-deltas} span zero), confirming that grouping plus
 retained evidence drives the localization gain over Direct-only.
 % 语义与 \sys-Raw 两种细化达到相同的排序质量（Table~\ref{tab:rq2-localization}；Figure~\ref{fig:rq2-deltas} 右侧柱区间跨零），确认了"分组+保留的证据"驱动相对 Direct-only 的定位增益。
-The semantic prefix earns its value in two other measured roles:
+The semantic prefix contributes in two other measured roles:
 cross-run attribution (RQ1) and directing a reader's attention, which the
 following study measures.
-% 语义前缀另有两个独立测量的作用：跨运行归因（RQ1）与引导读者的注意力，后者由下面的研究测量。
+% 语义前缀在另外两个被测量的角色中有贡献：跨运行归因（RQ1）与引导读者的注意力，后者由下面的研究测量。
 
 \paragraph{Profile-guided reading on TraceElephant.}
 % TraceElephant 上的 profile 引导阅读。
@@ -900,9 +887,9 @@ exists. The reader is query-specific while the hierarchy is constructed
 once and replayed across queries and measures.
 % 每 query 的全量阅读还受模型上下文窗口约束——4,558,192-token 的 Git population 无法整体读入——而由骨架引导的阅读在 profile 存在后对任意 trace 长度都可用；此外 reader 是 query-specific 的，而层次只构造一次并跨 query 与度量重放。
 \emph{Takeaway.} Failure structure surfaced by the profile matches
-independent human labels at collection scale; profiles add localization
+independent human labels across 435 trajectories; profiles add localization
 signal on top of existing judges; and semantic names concentrate a reader's attention, reducing evidence opened from 65\% to 53\% at equal ranking quality.
-% 要点。profile 呈现的失败结构在集合尺度上与独立人工标注一致；profile 在既有 judge 之上补充定位信号；语义名称集中读者注意力，在相同排序质量下将需要打开的证据从 65\% 降至 53\%。
+% 要点。profile 呈现的失败结构在 435 条轨迹上与独立人工标注一致；profile 在既有 judge 之上补充定位信号；语义名称集中读者注意力，在相同排序质量下将需要打开的证据从 65\% 降至 53\%。
 
 %% -------------------------------------------------------------------
 \subsection{RQ3: How Accurate Are the Tags?}
@@ -931,8 +918,8 @@ Codex~\cite{codex} receives each trajectory (prompts, commands, and output summa
 % Codex 接收轨迹（提示词、命令与输出摘要，不含标签或分数），在 17,148 个步骤上发出稀疏区间标记，不接触官方 stage 标注：共 4,496 个标记，语义深度为一层（3 个）、两层（2,873 个）、三层（1,588 个）与四层（32 个），且没有任何 prompt 指定深度。
 Packet construction bounds every text preview---prompt and response fields to at most 1{,}800 characters, tool commands to 600, and status previews to 200---while additive measures come from untruncated structured counters.
 % Packet 构建对所有文本 preview 限长——prompt 与响应字段至多 1,800 字符、工具命令 600 字符、状态 preview 200 字符——而可加度量取自未截断的结构化计数器。
-Name normalization then maps the 3{,}895 free-form interval names to 783 stable short names (e.g., \texttt{diagnose authentication}) with zero adjacent display-path collisions, failing closed on unresolved ones; identical names across sessions merge so that recurring work folds in the final profile.
-% 名称归一化把 3,895 个自由形式的区间名映射为 783 个稳定短名称（如 \texttt{diagnose authentication}），不产生任何相邻显示路径冲突、无法消解时 fail closed；跨 session 的相同名称合并，使重复工作在最终 profile 中折叠。
+Name normalization then maps the 3{,}895 free-form interval names to 783 stable short names (e.g., \texttt{diagnose authentication}) with zero adjacent display-path collisions, rejecting unresolved ones; identical names across sessions merge so that recurring work folds in the final profile.
+% 名称归一化把 3,895 个自由形式的区间名映射为 783 个稳定短名称（如 \texttt{diagnose authentication}），不产生任何相邻显示路径冲突、无法消解时拒绝；跨 session 的相同名称合并，使重复工作在最终 profile 中折叠。
 
 \begin{table}[tb]
 \centering\small
@@ -1032,8 +1019,8 @@ Union & 27{,}765 & 1.16 & 0.97 & 465.2 \\
 \end{tabular}
 \caption{RQ4 profile-construction cost~\cite{safactory,agentnet}: three-run
 median times and largest semantic-profile peak RSS. The 729-operation
-AgentRewardBench row is the fixed public release sample used by the cost
-harness, distinct from RQ2's 7{,}229-operation mixed population.}
+AgentRewardBench row is the fixed public release sample used for cost
+measurement, distinct from RQ2's 7{,}229-operation mixed population.}
 \label{tab:rq4-cost}
 \end{table}
 \emph{Results.} Segmenting all 405 CodeTraceBench trajectories with Codex (GPT-5.6-sol-high) consumes 12{,}050{,}384 input and 231{,}886 output tokens in 2{,}215.9\,s (37 minutes) of active backend wall time.
@@ -1050,9 +1037,9 @@ Deterministic materialization of the full 440-trajectory population takes
 0.26\,s for operations and 0.25\,s for tokens, so construction cost is
 dominated by the segmentation step while materialization stays sub-second.
 % 完整 440-session population 的确定性物化在 operation 上需 0.26 秒、在 token 上需 0.25 秒，因此构建成本由切分步骤主导，而物化保持在亚秒级。
-\emph{Takeaway.} A corpus pays minutes of active backend time once; every
+\emph{Takeaway.} Segmentation costs minutes of backend time once per corpus; every
 later view, measure switch, and drilldown costs about a second.
-% 要点。一个语料只需支付一次分钟级的 active backend 时间；之后每次视图、度量切换与下钻的成本约为一秒。
+% 要点。切分每语料只需一次分钟级的后端时间；之后每次视图、度量切换与下钻的成本约为一秒。
 
 %% ===================================================================
 \section{Related Work}
