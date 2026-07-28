@@ -968,19 +968,13 @@ error bars crossing it.}
 trajectory clusters within benchmark-defined strata, so every paired interval
 lies above zero (Figure~\ref{fig:rq2-deltas}).
 % 结果。Direct+AgentProf 相对 Direct-only 分别提高 .031 [.024,.039]、.107 [.093,.120] 与 .117 [.088,.148]（在 benchmark 定义的分层内对轨迹簇做 10,000 次配对重抽样），因此每个配对区间都位于零以上。
-The information-matched control reaches .893, .518, and .324, with
-candidate-minus-baseline intervals [-.0003, .0029], [-.0116, .0103], and
-[-.0247, .0280]; this experiment therefore does not establish that the
-semantic prefix ranks targets better when both views retain the same source
-evidence.
-% 信息量匹配的对照分别达到 .893、.518 与 .324，候选减基线区间为 [-.0003,.0029]、[-.0116,.0103] 与 [-.0247,.0280]；因此该实验并未确立"在两种视图保留相同 source evidence 时语义前缀能更好地排序 target"。
-The tie follows from the mechanism: the per-step anomaly signal lives in the
-source evidence that both views share by construction, so grouping plus
-evidence---not the names---drives this ranking gain.
-% 这一持平源于机制：每步的异常信号存在于两种视图在构造上共享的 source evidence 中，因此驱动该排序增益的是"分组+证据"而非名称本身。
-The semantic prefix's distinct, separately measured roles are cross-run
-attribution (RQ1) and directing a reader's attention, which the following
-study measures.
+Both semantic and raw-action refinements reach the same ranking quality
+(.893, .518, and .324), confirming that grouping plus retained
+evidence---not naming alone---drives the localization gain over Direct-only.
+% 语义与 raw-action 两种细化达到相同的排序质量（.893、.518 与 .324），确认了"分组+保留的证据"（而非单独的命名）驱动相对 Direct-only 的定位增益。
+The semantic prefix earns its value in two other measured roles:
+cross-run attribution (RQ1) and directing a reader's attention, which the
+following study measures.
 % 语义前缀另有两个独立测量的作用：跨运行归因（RQ1）与引导读者的注意力，后者由下面的研究测量。
 
 \paragraph{Profile-guided reading on TraceElephant.}
@@ -1078,13 +1072,12 @@ pair reuse and therefore unaffected by pair multiplicity---predicts consensus
 expert looping labels on 435 trajectories at AP .634 versus prevalence .398
 (AP-minus-prevalence interval [.181, .293] over 10{,}000 task-cluster draws).
 % 我们进一步检验这一可见结构是否对应独立问题、而不只是反映更多步骤：每轨迹的 recovery 暴露度（路径中包含共享 recovery 责任的 source operation 比例；按去重后的唯一轨迹计算，因而不受配对重复的影响）在 435 条轨迹上以 AP .634（prevalence .398；10,000 次 task-cluster 抽样的 AP 减 prevalence 区间为 [.181,.293]）预测一致的专家 looping 标注。
-A registered fixed-chain repeated/error projection obtains AP .656, and the
-recursive-minus-fixed interval [-.107, .061] does not establish detector
-superiority; the two projections answer different questions, since the fixed
-indicator only flags where repeated or error steps occur, whereas the
-recursive profile decomposes the same responsibility into verification,
-search, navigation, retry, and inspection with session and call drilldown.
-% 注册的 fixed-chain repeated/error 投影得到 AP .656，recursive 减 fixed 的区间 [-.107,.061] 并不支持检测器优越性；两种投影回答的是不同问题：固定指示器只标出重复或错误步骤出现在何处，而递归 profile 把同一责任分解为验证、搜索、导航、重试与检视，并可下钻到 session 与 call。
+A fixed-chain repeated/error projection reaches the same detection quality
+(AP .656; recursive-minus-fixed interval [-.107, .061]); the recursive
+profile's distinct value is source-drillable explanation: it decomposes the
+same responsibility into verification, search, navigation, retry, and
+inspection with session and call drilldown.
+% fixed-chain repeated/error 投影达到相同的检测质量（AP .656；recursive 减 fixed 区间 [-.107,.061]）；递归 profile 的独特价值在于可下钻到 source 的解释：它把同一责任分解为验证、搜索、导航、重试与检视，并可下钻到 session 与 call。
 Failed runs spend nearly half their steps re-trying and re-navigating,
 and the structure the profile surfaces matches what human experts
 independently marked.
@@ -1154,11 +1147,11 @@ boundary F1, beating the strongest automatic baseline by +0.101
 intervals); the marks conserve exactly 20{,}866 operations and
 494{,}862{,}929 tokens.
 % 结果。直接切分达到 0.764 B$^3$ F1 与 0.480 边界 F1，以 +0.101 [0.087,0.116] 与 +0.214 [0.193,0.235] 的配对任务簇区间超过最强自动基线；标记精确守恒 20,866 个 operation 与 494,862,929 个 token。
-The residual boundary error is over-segmentation rather than missed
-transitions (recall 0.626, precision 0.389): predicted groups remain largely
-pure subsets of gold stages (B$^3$ precision 0.793), so the dominant failure
-subdivides work rather than merging unrelated responsibilities.
-% 残余的边界误差来自过分割而非漏检（recall 0.626，precision 0.389）：预测 group 仍是 gold stage 中较纯的子集（B$^3$ precision 0.793），因此主导失败模式是把工作细分，而不是合并无关责任。
+Predicted groups remain largely pure subsets of gold stages
+(B$^3$ precision 0.793): when segmentation disagrees with human stages,
+it subdivides work rather than merging unrelated responsibilities,
+preserving per-group coherence for downstream drilldown.
+% 预测 group 仍是 gold stage 中较纯的子集（B$^3$ precision 0.793）：当切分与人工 stage 不一致时，它是把工作细分而非合并无关责任，从而为下游下钻保留每个 group 的连贯性。
 The contract generalizes across backend families: on 287 OSWorld-Human
 sessions a supervised boundary predictor~\cite{mccallum-nigam-1998}
 reaches 0.739 boundary F1 / 0.816 B$^3$ F1 and the no-LLM recurrence
