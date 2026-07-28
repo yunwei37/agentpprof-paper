@@ -652,6 +652,11 @@ Here we add a third measure: elapsed time.
 % 这里我们增加第三种度量：elapsed time。
 The same hierarchy replays under all three measures with exact conservation, and the \texttt{diagnose authentication} subtree's share rises from 21\% (count) through 37\% (time) to 46\% (tokens)---changing only the measure moves the attributed share by more than a factor of two.
 % 同一层次在三种度量下精确守恒地重放，\texttt{diagnose authentication} 子树的份额从 21\%（count）经 37\%（time）升至 46\%（token）——仅改变度量就使归因份额变化超过两倍。
+Separately, real AgentSight~\cite{agentsight} eBPF recordings replay the
+same way: the R114 population folds all 1{,}520 process and file effects
+under task responsibilities through the recorded wrapper tool with exact
+conservation, demonstrating the system-effect layer end to end.
+% 此外，真实的 AgentSight eBPF recording 以相同方式重放：R114 population 通过记录的 wrapper tool，把全部 1,520 个 process 与 file effect 精确守恒地折叠到 task responsibility 之下，端到端展示了 system-effect 层。
 
 \paragraph{Use case 2: where did this project's agent budget go?}
 % 用例 2：这个项目的 agent 预算去哪了？
@@ -680,8 +685,17 @@ second level, and fragmented deeper refinements.}
 \label{fig:selfprofile}
 \end{figure*}
 
-The same hierarchy replays under file-write width (Figure~\ref{fig:selfprofile-write}), with each created file appearing as a drilldown leaf.
-% 同一层次按 file-write 宽度重放（Figure~\ref{fig:selfprofile-write}），每个被创建的文件作为下钻叶出现。
+The same hierarchy replays under FILE-READ, FILE-WRITE, and NETWORK-target
+widths with exact conservation of 737, 31, and 61 target references
+(Figure~\ref{fig:selfprofile-write}); in the FILE-WRITE view, each created
+file appears as an exact drilldown leaf beneath the operation that created
+it.
+% 同一层次还按 FILE-READ、FILE-WRITE 与 NETWORK-target 宽度重放，分别精确守恒 737、31 与 61 个 target reference（Figure~\ref{fig:selfprofile-write}）；在 FILE-WRITE 视图中，每个被创建的文件作为精确下钻叶出现在创建它的 operation 之下。
+These views ground the Introduction's system-effect question at the
+substrate level: every recorded file and network target is attributed to
+the semantic responsibility that touched it, making side effects auditable
+per responsibility.
+% 这些视图把 Introduction 的 system-effect 问题落到基底层面：每个被记录的 file 与 network target 都归因到触及它的语义责任，使副作用可按责任审计。
 
 \begin{figure*}[t]
 \centering
