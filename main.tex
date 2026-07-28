@@ -510,7 +510,7 @@ and a segmentation is a set $S$ of named intervals over $T$ that is
 nested (any two intervals are disjoint or one contains the other),
 covers every step, and contains the session-wide interval as its root.
 % 形式化地，轨迹是有序步骤序列 $T=(t_1,\dots,t_n)$；切分是 $T$ 上的命名区间集合 $S$：区间两两要么不相交、要么一个包含另一个（嵌套），共同覆盖每个步骤，且以整个 session 区间为根。
-The algorithm computes $S$ by one recursive rule: $\textsc{Segment}(I)$ selects zero or more transition points inside interval $I$, which partition $I$ into consecutive child intervals; each child receives a short name starting with a verb name and is segmented recursively; selecting no transition terminates the branch.
+The algorithm computes $S$ by one recursive rule: $\textsc{Segment}(I)$ selects zero or more transition points inside interval $I$, which partition $I$ into consecutive child intervals; each child receives a short name starting with a verb and is segmented recursively; selecting no transition terminates the branch.
 % 算法用一条递归规则计算 $S$：$\textsc{Segment}(I)$ 在区间 $I$ 内选择零个或多个转换点，将 $I$ 划分为连续的子区间；每个子区间获得一个动词引导的短名称并被递归切分；不再选择转换点即终止该分支。
 A step's operation path is the name chain of the intervals containing it, from the session root to its innermost interval; equal paths fold across sessions.
 % 一个步骤的 operation 路径是包含它的区间自 session 根到最内层的名称链；相同路径跨 session 折叠。
@@ -525,7 +525,7 @@ emerges per branch from the content rather than from a prescribed
 schema.
 % 其二，切口可组合：嵌套区间构成层次，其深度按分支从内容中涌现，而非来自规定的 schema。
 Third, naming intervals rather than steps yields identifiers at the
-granularity where recurrence lives, so the same short name starting with a verb name
+granularity where recurrence lives, so the same short name starting with a verb
 (one to three words) reappears across sessions and folds.
 % 其三，为区间而非单步命名，得到与"重复出现"粒度一致的标识符——同一个动词引导的短名称（一到三个词）在不同 session 中再次出现并得以折叠。
 Concretely, in one Git-deployment execution the algorithm cuts the session into \texttt{build deployment system} and, inside it, cuts again where the agent stops writing configuration and starts debugging access, yielding \texttt{deploy branches} and \texttt{diagnose authentication}; a step inside the latter carries the path \texttt{build deployment system > diagnose authentication}, and because the same names reappear in the other two executions, their costs fold together in Figure~\ref{fig:flamegraph}.
@@ -590,9 +590,9 @@ recurrence as continuity that can remove but never add a coarse boundary,
 with exact coarse fallback when detail is missing; the segmenter reads only
 session identity, input order, action, and optional action detail, never
 target annotations or resource weights.
-An optional reference-calibrated mode fits one scalar cutoff on disjoint
+An optional calibrated mode fits one scalar cutoff on disjoint
 reference groups.
-% 统计 segmenter 用归一化点互信息 $\mathrm{NPMI}(a,b)=\ln[p(a,b)/(p_L(a)p_R(b))]/-\ln p(a,b)$ 为相邻 action 转移评分（所有概率取自同一转移样本空间），并用按出现次数加权的一维 $k$-means（$k=2$）校准无标签阈值——从最小与最大分数初始化、并列归入较低中心、以收敛中点为全局阈值，另在 action-changing 转移上拟合第二个阈值；detail 连续性只能删除、不能新增粗边界，detail 缺失时精确回退到粗决策；segmenter 只读取 session 身份、输入顺序、action 与可选 action detail，从不读取目标标注或资源权重。可选的 reference-calibrated 模式在不重叠的参考分组上拟合单一标量阈值。
+% 统计 segmenter 用归一化点互信息 $\mathrm{NPMI}(a,b)=\ln[p(a,b)/(p_L(a)p_R(b))]/-\ln p(a,b)$ 为相邻 action 转移评分（所有概率取自同一转移样本空间），并用按出现次数加权的一维 $k$-means（$k=2$）校准无标签阈值——从最小与最大分数初始化、并列归入较低中心、以收敛中点为全局阈值，另在 action-changing 转移上拟合第二个阈值；detail 连续性只能删除、不能新增粗边界，detail 缺失时精确回退到粗决策；segmenter 只读取 session 身份、输入顺序、action 与可选 action detail，从不读取目标标注或资源权重。可选的 calibrated 模式在不重叠的参考分组上拟合单一标量阈值。
 %% ===================================================================
 \section{Evaluation}
 % 评估
@@ -614,13 +614,13 @@ and replay costs are measured and practical (RQ4).
 We evaluate three data classes.
 % 我们评估三类数据。
 \emph{Real inputs}: 41 long-horizon coding-agent sessions (three of which
-repeat one Git-deployment task and form the RQ1 case), 440 mixed-outcome
+repeat one Git-deployment task and form the RQ1 case), 440 mixed
 web-agent trajectories~\cite{agentrewardbench}, and one developer's complete
 local session history from the authors' workstation (1{,}394 sessions), whose
 42 long-horizon development sessions are the annotated portion.
-% 真实输入：41 条 long-horizon coding-agent session（其中三条重复同一个 Git 部署任务，构成 RQ1 案例）、440 条 mixed-outcome web-agent 轨迹，以及作者工作站上一位开发者的完整本地 session 历史（1,394 个 session），其中 42 条 long-horizon 开发 session 是被标注的部分。
+% 真实输入：41 条 long-horizon coding-agent session（其中三条重复同一个 Git 部署任务，构成 RQ1 案例）、440 条 mixed web-agent 轨迹，以及作者工作站上一位开发者的完整本地 session 历史（1,394 个 session），其中 42 条 long-horizon 开发 session 是被标注的部分。
 \emph{Annotated trajectories}: 405 CodeTraceBench trajectories with
-20{,}866 operations and 2{,}948 human-verified
+20{,}866 operations and 2{,}948 human-annotated
 stages~\cite{li2026codetracer}, 287 OSWorld-Human
 sessions~\cite{osworldhuman}, 1{,}012 AgentBoard goals~\cite{agentboard},
 and 2{,}737 published action
@@ -734,11 +734,11 @@ its tokens are cache reads, naming its repeated-context workflow as the first
 thing to inspect.
 % 在该层级下，\texttt{paper-writing-style} 在两种度量上都居首——横跨 20 个 session、37 次调用，计 29,143,650 个 token 与 523 个 operation——且其 99.47\% 的 token 为 cache read，从而指出它反复拉长上下文的工作流是首先该检查的对象。
 The largest single session holds only 31.23\% of that mass, so the
-history-wide priority appears only after folding.
-% 最大的单个 session 仅持有该质量的 31.23\%，因此这一覆盖全历史的优先级只有在折叠之后才显现。
+priority across the full history appears only after folding.
+% 最大的单个 session 仅持有该质量的 31.23\%，因此覆盖全历史的优先级只有在折叠之后才显现。
 
-At population scale, replaying the frozen 440-session AgentRewardBench hierarchy (7{,}229 operations and 51{,}904{,}621 tokens, both conserved exactly) ranks the same operations once by count and once by tokens: over the 77 of 125 tasks with at least three distinct operations, mean per-task Kendall's tau-b~\cite{kendall1938} is 0.886 [0.857, 0.915] and Spearman's rho~\cite{spearman1904} is 0.935 [0.917, 0.953], the pooled ranking agrees at tau-b 0.929, and 10 of 77 tasks fall below 0.7---stable in the common case and decision-changing in a material minority.
-% 在 population 尺度上，重放冻结的 440-session AgentRewardBench 层次（7,229 个 operation 与 51,904,621 个 token，均精确守恒），对相同 operation 分别按 count 与 token 排序：在 125 个任务中至少有三个不同 operation 的 77 个上，每任务平均 Kendall tau-b 为 0.886 [0.857,0.915]，Spearman rho 为 0.935 [0.917,0.953]，pooled 排序的 tau-b 为 0.929，77 个中有 10 个低于 0.7——常见情形稳定，少数关键情形会改变决策。
+At population scale, replaying the frozen 440-trajectory AgentRewardBench hierarchy (7{,}229 operations and 51{,}904{,}621 tokens, both conserved exactly) ranks the same operations once by count and once by tokens: over the 77 of 125 tasks with at least three distinct operations, mean per-task Kendall's tau-b~\cite{kendall1938} is 0.886 [0.857, 0.915] and Spearman's rho~\cite{spearman1904} is 0.935 [0.917, 0.953], the pooled ranking agrees at tau-b 0.929, and 10 of 77 tasks fall below 0.7---stable in the common case and changing decisions in a material minority.
+% 在 population 尺度上，重放冻结的 440-session AgentRewardBench 层次（7,229 个 operation 与 51,904,621 个 token，均精确守恒），对相同 operation 分别按 count 与 token 排序：在 125 个任务中至少有三个不同 operation 的 77 个上，每任务平均 Kendall tau-b 为 0.886 [0.857,0.915]，Spearman rho 为 0.935 [0.917,0.953]，pooled 排序的 tau-b 为 0.929，77 个中有 10 个低于 0.7——常见情形稳定，少数关键情形改变决策。
 
 \emph{Takeaway.} One hierarchy attributes multiple resources with exact conservation; switching measures reveals bottlenecks that operation count alone would hide, and levels recovered from annotation and from literal source fields compose in the same stack.
 % 要点。同一层次精确守恒地归因多种资源；切换度量暴露出仅靠 operation 数会掩盖的瓶颈；由标注恢复的层级与来自源字段的字面层级组合在同一个栈中。
@@ -784,10 +784,10 @@ Drilldown decomposes the recovery responsibility into verification challenges, r
 % 下钻把 recovery 责任分解为验证挑战、重复搜索、误导航和记录重试，source label 指明哪些 session 贡献了各宽度。
 The insight: failing agents get stuck in retry loops rather than backing out and trying a different approach.
 % 洞察：失败的 agent 陷入重试循环，而不是回退尝试不同方法。
-This structure matches independent expert looping labels on 435 unique trajectories at AP .634 versus prevalence .398 (AP-minus-prevalence interval [.181, .293] over 10{,}000 task-cluster draws; computed per unique trajectory after deduplicating pair reuse), confirming the profile surfaces a real behavioral pattern, not an artifact of step count; a fixed-chain repeated/error control reaches the same detection quality (AP .656; recursive-minus-fixed interval [-.107, .061]), while only the recursive profile provides the source-drillable decomposition above.
+This structure matches independent expert looping labels on 435 unique trajectories at AP .634 versus prevalence .398 (AP-minus-prevalence interval [.181, .293] over 10{,}000 task-cluster draws; computed per unique trajectory after deduplicating pair reuse), confirming the profile surfaces a real behavioral pattern, not an artifact of step count; a fixed-chain repeated/error control reaches the same detection quality (AP .656; recursive-minus-fixed interval [-.107, .061]), while only the recursive profile provides the decomposition above with drilldown to source.
 % 该结构在 435 条唯一轨迹上与独立专家 looping 标注的一致性为 AP .634（prevalence .398；10,000 次 task-cluster 抽样的 AP 减 prevalence 区间 [.181,.293]；按去重后的唯一轨迹计算），确认 profile 呈现的是真实行为模式而非步骤数的副产物；fixed-chain repeated/error 对照达到相同检测质量（AP .656；recursive 减 fixed 区间 [-.107,.061]），但只有递归 profile 提供上述可下钻到 source 的分解。
 
-\paragraph{Supplementing benchmark-native diagnostics.}
+\paragraph{Supplementing benchmark's own diagnostics.}
 % 补充 benchmark 原生诊断。
 \emph{Setup.} Each benchmark trajectory has one annotated faulty step;
 a method outputs a ranking of that trajectory's operations, scored by
@@ -805,12 +805,12 @@ coverage but excluded from MAP because AP is undefined without a relevant
 item.
 % 每个 query 是一条含标注 target 的轨迹，我们报告未插值的 per-query AP，并在 614、400 与 220 个带 target 的 query 上取算术平均；全部 522 条 unlabeled 轨迹计入群体覆盖，但因缺少相关项使 AP 无定义而从 MAP 中排除。
 The \emph{direct diagnostic} is the per-operation output of a
-benchmark-native process judge (AgentProcessBench risk units) or trajectory
+benchmark's own process judge (AgentProcessBench risk units) or trajectory
 localizer (HINTBench, TraceElephant), which for TraceElephant reads the full
 trace and reference answer before naming the responsible agent and decisive
 step.
 % \emph{direct diagnostic} 是 benchmark 原生 process judge（AgentProcessBench 的 risk unit）或 trajectory localizer（HINTBench、TraceElephant）的逐 operation 输出；在 TraceElephant 上，它先读取完整 trace 与参考答案，再指出责任 agent 与决定性步骤。
-\emph{Direct-only} ranks by that diagnostic alone; \emph{Direct+AgentProf} breaks ties by the profiler's group score;
+\emph{Direct-only} ranks by that diagnostic alone; \emph{Direct+AgentProf} breaks ties using the profiler's aggregated scores per semantic group;
 \emph{Direct+\sys-Raw} is an ablation that groups by raw action type instead of semantic names; \emph{AgentProf-only} uses only the profiler without the benchmark diagnostic (Table~\ref{tab:rq2-localization}).
 % Direct-only 仅按该诊断排序；Direct+AgentProf 用 profiler 的组分数打破并列；Direct+\sys-Raw 是按 raw action 类型而非语义名分组的消融；AgentProf-only 仅用 profiler 不用 benchmark 诊断（Table~\ref{tab:rq2-localization}）。
 
@@ -878,27 +878,27 @@ skeleton, with no source content, and the reader selects at most five groups;
 stage two then opens only those groups' evidence.
 % 两阶段的 profile 引导变体先只展示语义 operation 骨架（不含 source 内容），reader 最多选择五个 group；第二阶段只打开这些 group 的证据。
 It reaches MAP .455 while opening 53.0\% of the source content, and its
-stage-one selections never fell back to a default: the five-group budget
-saturated on 99.5\% of queries, re-parsing the uncapped stage-one responses
+first-stage selections never fell back to a default: the five-group budget
+saturated on 99.5\% of queries, re-parsing the uncapped first-stage responses
 shows the reader proposed more than five groups on zero of 220 queries, and
 every missed target group was entirely absent from its ordered selection
 rather than cut off by the budget.
 % 它在只打开 53.0\% source 内容的情况下达到 MAP .455，且第一阶段的选择从未回退到默认值：五组预算在 99.5\% 的 query 上被用满；重新解析未截断的第一阶段响应显示，reader 在 220 个 query 中的 0 个上提出了超过五组；每个被遗漏的 target group 都是整体缺席于其有序选择，而非被预算截断。
-Under the information-matched \sys-Raw skeleton, ranking quality is
+Under the information-equivalent \sys-Raw skeleton, ranking quality is
 statistically unchanged (MAP .465; paired delta $+.010$ [$-.021$, $+.042$]),
 but the reader opens significantly more content: 65.0\% versus 53.0\%, paired
 delta $+.120$ [$+.103$, $+.137$], and $2.80$ [$1.96$, $3.60$] more evidence
 operations.
-% 在信息量匹配的 \sys-Raw 骨架下，排序质量在统计上不变（MAP .465；配对差 +.010 [-.021,+.042]），但 reader 打开的内容显著更多：65.0\% 对 53.0\%，配对差 +.120 [+.103,+.137]，且多打开 2.80 [1.96,3.60] 个 evidence operation。
+% 在信息量等价的 \sys-Raw 骨架下，排序质量在统计上不变（MAP .465；配对差 +.010 [-.021,+.042]），但 reader 打开的内容显著更多：65.0\% 对 53.0\%，配对差 +.120 [+.103,+.137]，且多打开 2.80 [1.96,3.60] 个 evidence operation。
 Semantic naming's measured contribution in this regime is therefore
 attention concentration at equal quality.
 % 因此在该机制下，语义命名可测得的贡献是"同等质量下的注意力集中"。
 A per-query full read is also bounded by the model context window (the
 4{,}558{,}192-token Git population cannot be read whole), whereas
-skeleton-guided reading stays available at any trace length once the profile
+reading guided by the skeleton stays available at any trace length once the profile
 exists. The reader is query-specific while the hierarchy is constructed
 once and replayed across queries and measures.
-% 每 query 的全量阅读还受模型上下文窗口约束——4,558,192-token 的 Git population 无法整体读入——而骨架引导的阅读在 profile 存在后对任意 trace 长度都可用；此外 reader 是 query-specific 的，而层次只构造一次并跨 query 与度量重放。
+% 每 query 的全量阅读还受模型上下文窗口约束——4,558,192-token 的 Git population 无法整体读入——而由骨架引导的阅读在 profile 存在后对任意 trace 长度都可用；此外 reader 是 query-specific 的，而层次只构造一次并跨 query 与度量重放。
 \emph{Takeaway.} Failure structure surfaced by the profile matches
 independent human labels at collection scale; profiles add localization
 signal on top of existing judges; and semantic names concentrate a reader's attention, reducing evidence opened from 65\% to 53\% at equal ranking quality.
@@ -911,7 +911,7 @@ signal on top of existing judges; and semantic names concentrate a reader's atte
 RQ3 asks whether recursive segmentation recovers task structure that humans would recognize.
 % RQ3 问递归切分是否恢复出人类会认可的任务结构。
 
-\emph{Setup.} Gold structure is the 2{,}948 human-verified stages over
+\emph{Setup.} Gold structure is the 2{,}948 human-annotated stages over
 all 405 CodeTraceBench trajectories. B$^3$
 F1~\cite{bagga-baldwin-1998-entity-based} asks whether operations that
 belong together end up grouped together; exact adjacent-boundary
@@ -974,7 +974,7 @@ sessions (3{,}978 operations, 3{,}691 adjacent pairs, 2{,}042 human groups),
 a supervised Bernoulli Naive Bayes boundary predictor~\cite{mccallum-nigam-1998}
 over nine fixed visible fields with five session-held-out folds---parameters
 and threshold fitted on training sessions only---reaches 0.739 boundary F1 /
-0.816 B$^3$ F1, reference-calibrated recurrence reaches 0.734 / 0.801 using
+0.816 B$^3$ F1, calibrated recurrence reaches 0.734 / 0.801 using
 group annotations the unsupervised default avoids, the no-LLM recurrence
 segmenter reaches 0.680 / 0.786 (strongest control: 0.645 / 0.678), and a
 an unsupervised TF-IDF/K-Means method (no labels seen) reaches V-measure 0.557 on nine Mind2Web sessions and 0.815 on 100 ScienceWorld sessions~\cite{mind2web,scienceworld}.
@@ -1033,20 +1033,20 @@ Union & 27{,}765 & 1.16 & 0.97 & 465.2 \\
 \caption{RQ4 profile-construction cost~\cite{safactory,agentnet}: three-run
 median times and largest semantic-profile peak RSS. The 729-operation
 AgentRewardBench row is the fixed public release sample used by the cost
-harness, distinct from RQ2's 7{,}229-operation mixed-outcome population.}
+harness, distinct from RQ2's 7{,}229-operation mixed population.}
 \label{tab:rq4-cost}
 \end{table}
 \emph{Results.} Segmenting all 405 CodeTraceBench trajectories with Codex (GPT-5.6-sol-high) consumes 12{,}050{,}384 input and 231{,}886 output tokens in 2{,}215.9\,s (37 minutes) of active backend wall time.
 % 结果。用 Codex（GPT-5.6-sol-high）切分全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token，active backend wall time 为 2,215.9 秒（37 分钟）。
 Constructing the 405 trajectory inputs (source content only, no outcome labels) takes 501.64\,s median, and after annotation the full deterministic downstream pipeline (assembly, repair, validation, canonicalization, profile construction and readback, scoring) completes in 11.516\,s.
 % 构造 405 条轨迹输入（仅源内容，不含 outcome 标签）的中位时间为 501.64 秒；标注完成后，完整的确定性下游管线（组装、修复、校验、规范化、profile 构建与读回、打分）在 11.516 秒内完成。
-A full end-to-end segmentation pass on 440 sessions (with no outcome labels visible to the segmenter) completes all 12 batches in 3{,}521.6\,s wall-clock time (58.7 minutes; summed worker time 6{,}661.7\,s) on two parallel workers, consuming 12{,}039{,}417 actual input tokens (10{,}929{,}408 reported cached, 90.8\%) and 312{,}433 output tokens---27{,}362 input and 710 output tokens per session---while one fresh pass over the three-session Git population takes 466.9\,s and 832{,}544 actual input tokens.
+A full end-to-end segmentation pass on 440 trajectories (with no outcome labels visible to the segmenter) completes all 12 batches in 3{,}521.6\,s wall-clock time (58.7 minutes; summed worker time 6{,}661.7\,s) on two parallel workers, consuming 12{,}039{,}417 actual input tokens (10{,}929{,}408 reported cached, 90.8\%) and 312{,}433 output tokens---27{,}362 input and 710 output tokens per trajectory---while one fresh pass over the three-trajectory Git population takes 466.9\,s and 832{,}544 actual input tokens.
 % 对 440 个 session 的完整端到端切分（切分器看不到 outcome 标签）在双并行 worker 上以 3,521.6 秒 wall-clock 时间（58.7 分钟；worker 时间合计 6,661.7 秒）完成全部 12 个 batch，消耗 12,039,417 个实际输入 token（其中报告缓存 10,929,408 个，占 90.8\%）与 312,433 个输出 token——每 session 27,362 输入与 710 输出 token；对三 session 的 Git population，一次全新完整 pass 需 466.9 秒与 832,544 个实际输入 token。
 With marks fixed, construction scales linearly across the five input sizes (Table~\ref{tab:rq4-cost}), adding only 5.25\,MiB (1.14\%) peak RSS over raw-action grouping at the union scale.
 % 标记固定后，构建开销在五个输入规模上线性扩展（Table~\ref{tab:rq4-cost}），在并集规模上比 raw-action 分组仅多 5.25 MiB（1.14\%）峰值 RSS。
 Switching the additive measure is a replay at the same cost.
 % 切换可加度量即以同等成本重放。
-Deterministic materialization of the full 440-session population takes
+Deterministic materialization of the full 440-trajectory population takes
 0.26\,s for operations and 0.25\,s for tokens, so construction cost is
 dominated by the segmentation step while materialization stays sub-second.
 % 完整 440-session population 的确定性物化在 operation 上需 0.26 秒、在 token 上需 0.25 秒，因此构建成本由切分步骤主导，而物化保持在亚秒级。
