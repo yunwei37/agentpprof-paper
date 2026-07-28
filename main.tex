@@ -626,9 +626,9 @@ Mean operations per trajectory are 8.5 (AgentProcessBench), 13.9
 (OSWorld-Human), 24.0 (HINTBench), 27.1 (TraceElephant), and 51.5
 (CodeTraceBench), so the benchmark trajectories are short to medium length
 while the annotated 42-session workstation portion---whose longest sessions
-span tens of hours---supplies the long-horizon regime; the RQ4 union covers
+span tens of hours---supplies long-horizon coverage; the RQ4 union covers
 27{,}765 operations.
-% 各 workload 平均每条轨迹的 operation 数分别为 AgentProcessBench 8.5、OSWorld-Human 13.9、HINTBench 24.0、TraceElephant 27.1、CodeTraceBench 51.5，因此 benchmark 轨迹属于短到中长度，而被标注的 42-session 工作站部分（最长 session 跨越数十小时）提供长 horizon 区间；RQ4 的并集覆盖 27,765 个 operation。
+% 各 workload 平均每条轨迹的 operation 数分别为 AgentProcessBench 8.5、OSWorld-Human 13.9、HINTBench 24.0、TraceElephant 27.1、CodeTraceBench 51.5，因此 benchmark 轨迹属于短到中长度，而被标注的 42-session 工作站部分（最长 session 跨越数十小时）提供长 horizon 覆盖；RQ4 的并集覆盖 27,765 个 operation。
 
 %% -------------------------------------------------------------------
 \subsection{RQ1: Does Semantic Profiling Improve Resource Attribution?}
@@ -640,8 +640,8 @@ resource measure changes.
 % 设置。我们检验该主张的一个必要后果：固定的语义层次在切换可加资源度量时是否暴露实质不同的瓶颈。
 The population contains 41 real long-horizon agent trajectories, 3{,}146 user turns, and 5{,}750 operations, including three independent executions of one Git-deployment task whose 735 steps receive 96 recursive annotations.
 % population 含 41 条真实 long-horizon agent 轨迹、3,146 个用户 turn 与 5,750 个 operation，其中包含同一 Git 部署任务的三次独立执行——其 735 个步骤获得 96 个递归标注。
-The resulting hierarchy reaches semantic depth five without a fixed limit.
-% 所得层次在无固定上限下达到语义深度五。
+The resulting hierarchy reaches semantic depth five without a fixed limit, with no unary or flat-fan-out warnings and 27 advisory coarse-leaf warnings.
+% 所得层次在无固定上限下达到语义深度五，无 unary 或 flat-fan-out warning，另有 27 条提示性 coarse-leaf warning。
 
 \paragraph{The motivating case revisited.}
 % 动机案例回顾。
@@ -877,9 +877,9 @@ but the reader opens significantly more content: 65.0\% versus 53.0\%, paired
 delta $+.120$ [$+.103$, $+.137$], and $2.80$ [$1.96$, $3.60$] more evidence
 operations.
 % 在信息量等价的 \sys-Raw 骨架下，排序质量在统计上不变（MAP .465；配对差 +.010 [-.021,+.042]），但 reader 打开的内容显著更多：65.0\% 对 53.0\%，配对差 +.120 [+.103,+.137]，且多打开 2.80 [1.96,3.60] 个 evidence operation。
-Semantic naming's measured contribution in this regime is therefore
+Semantic naming's measured contribution in this setting is therefore
 attention concentration at equal quality.
-% 因此在该机制下，语义命名可测得的贡献是"同等质量下的注意力集中"。
+% 因此在该设置下，语义命名可测得的贡献是"同等质量下的注意力集中"。
 A per-query full read is also bounded by the model context window (the
 4{,}558{,}192-token Git population cannot be read whole), whereas
 reading guided by the skeleton stays available at any trace length once the profile
