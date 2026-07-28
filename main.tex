@@ -296,9 +296,12 @@ stack that agent trajectories do not have.
 \subsection{A Motivating Case}
 % 动机案例
 
-Consider three independent agent attempts at one real Git-deployment task,
-none of which delivered the requested password-authenticated endpoint.
-% 设想同一个真实 Git 部署任务的三次独立 agent 尝试，没有一次交付所要求的密码认证端点。
+Three independent agent attempts at one real Git-deployment task all failed to deliver the requested password-authenticated endpoint.
+% 同一个真实 Git 部署任务的三次独立 agent 尝试都未能交付所要求的密码认证端点。
+The developer's question: \emph{what went wrong, and is it the same problem across all three runs?}
+% 开发者的问题：出了什么问题？三次执行是同一个问题吗？
+Reading three transcripts totaling 489 operations and 4.6M tokens would take hours.
+% 阅读共 489 个 operation、460 万 token 的三份转录需要数小时。
 Figure~\ref{fig:flamegraph} places a conventional CPU profile beside the
 semantic profile of those three runs.
 % 图~\ref{fig:flamegraph} 把一个传统 CPU profile 与这三次执行的语义 profile 并置。
@@ -317,18 +320,16 @@ Once that name is constructed, the profile answers the engineer's question
 directly.
 % 一旦这个名字被构造出来，profile 就直接回答了工程师的问题。
 
-Segmentation builds one hierarchy over all three executions (489 operations, 4{,}558{,}192 tokens, semantic depth five with no fixed limit; Figure~\ref{fig:flamegraph}).
-% 切分在三次执行之上构建同一个层次（489 个 operation、4,558,192 个 token，语义深度在无固定上限下达到五层；Figure~\ref{fig:flamegraph}）。
-The repeated \texttt{diagnose authentication} subtree is 21.47\% of the task
-by operation count but 46.15\% by tokens, and drilldown shows all three
-executions verifying substitute transport paths without ever establishing the
-endpoint---nearly half the budget went to one never-successful diagnosis that
-a count view understates by more than half.
-% 重复出现的 \texttt{diagnose authentication} 子树按 operation 数只占任务的 21.47\%，按 token 却占 46.15\%；下钻显示三次执行都在验证替代传输路径、却从未建立目标端点——近一半预算花在一个从未成功的诊断上，而 count 视图把它低估了一半以上。
-A control experiment replays the same operations and weights under three organizations (native call tree, coarse action grouping, and semantic hierarchy): the responsibility scatters across 105 native calls and six coarse action kinds (largest branch 39.42\% of its tokens), but only the semantic organization reunites it into one focusable cross-run path.
-% 对照实验在三种组织（native call tree、coarse action 分组、语义层次）下重放相同的 operation 与权重：该责任在 native 中散落于 105 个 call、在 coarse 中跨六个 action kind（最大分支仅含其 token 的 39.42\%），只有语义组织将其重聚为一条可聚焦的跨运行路径。
-This paper's evaluation returns to this case under RQ1 and asks whether the
-same behavior holds at population scale.
+The profile answers in one view (Figure~\ref{fig:flamegraph}): all three runs share a \texttt{diagnose authentication} responsibility that consumes 46\% of their combined token budget but only 21\% of operation count.
+% profile 用一个视图回答（Figure~\ref{fig:flamegraph}）：三次执行共享一个 \texttt{diagnose authentication} 责任，消耗 46\% 的 token 预算但只占 21\% 的 operation 数。
+Drilldown shows all three executions verifying substitute transport paths without ever establishing the target endpoint.
+% 下钻显示三次执行都在验证替代传输路径，却从未建立目标端点。
+The insight: the agents kept retrying SSH variants instead of fixing the actual credential issue, and operation count alone would hide this because authentication commands are cheap to issue but expensive to verify.
+% 洞察：agent 不断重试 SSH 变体而非修复实际凭证问题；仅看 operation 数会掩盖这一点，因为认证命令发起成本低但验证成本高。
+
+A control experiment replays the same operations under native call trees and coarse action grouping: the authentication work scatters across 105 native calls and six action kinds (102 of 105 labeled merely \texttt{run}), but only semantic organization reunites it into one focusable cross-run path.
+% 对照实验在 native call tree 和 coarse action 分组下重放相同 operation：认证工作散落于 105 个 native call 和六个 action kind（其中 102 个仅标为 \texttt{run}），只有语义组织将其重聚为一条可聚焦的跨运行路径。
+This paper's evaluation returns to this case under RQ1 and asks whether the same behavior holds at population scale.
 % 本文的评估在 RQ1 中回到该案例，并检验同样的行为是否在 population 尺度上成立。
 
 \subsection{Challenges for Agent Profiling}
@@ -643,28 +644,14 @@ The population contains 41 real long-horizon agent trajectories and 5{,}750 oper
 The resulting hierarchy reaches semantic depth five without a fixed limit.
 % 所得层次在无固定上限下达到语义深度五。
 
-\paragraph{Use case 1: why did three runs of one task all fail?}
-% 用例 1：同一任务的三次执行为何全部失败？
-Three independent agent attempts at one Git-deployment task all failed to deliver a password-authenticated endpoint.
-% 同一 Git 部署任务的三次独立 agent 尝试都未能交付密码认证端点。
-The developer's question: \emph{what went wrong, and is it the same problem across all three runs?}
-% 开发者的问题：出了什么问题？三次执行是同一个问题吗？
-Reading three transcripts totaling 489 operations and 4.6M tokens would take hours.
-% 阅读共 489 个 operation、460 万 token 的三份转录需要数小时。
-The profile answers in one view (Figure~\ref{fig:flamegraph}): all three runs share a \texttt{diagnose authentication} responsibility that consumes 46\% of their combined token budget (2.1M tokens) but only 21\% of operation count.
-% profile 用一个视图回答（Figure~\ref{fig:flamegraph}）：三次执行共享一个 \texttt{diagnose authentication} 责任，消耗 46\% 的 token 预算（210 万 token）但只占 21\% 的 operation 数。
-The same hierarchy replays under elapsed time: the subtree holds 37\% of wall-clock seconds.
-% 同一层次按 elapsed time 重放：该子树占 37\% 的挂钟时间。
-Drilldown shows all three executions verifying substitute transport paths without ever establishing the target endpoint.
-% 下钻显示三次执行都在验证替代传输路径，却从未建立目标端点。
-The insight: the agents kept retrying SSH variants instead of fixing the actual credential issue, and operation count alone would hide this because authentication commands are cheap to issue but expensive to verify.
-% 洞察：agent 不断重试 SSH 变体而非修复实际凭证问题；仅看 operation 数会掩盖这一点，因为认证命令发起成本低但验证成本高。
-
-As a control, we replay the same 489 operations under native call trees and coarse action grouping.
-% 作为对照，我们在 native call tree 与 coarse action 分组下重放相同的 489 个 operation。
-Neither surfaces the pattern: the authentication work scatters across 105 native calls and six action kinds, with 102 of 105 labeled merely \texttt{run}.
-% 两者都未呈现该模式：认证工作散落于 105 个 native call 和六个 action kind，其中 102 个仅标为 \texttt{run}。
-Only semantic organization reunites the cross-run responsibility into one focusable path.
+\paragraph{The motivating case revisited.}
+% 动机案例回顾。
+The Git-deployment case from Section~\ref{sec:background} established that semantic organization reunites cross-run responsibility that native and coarse organizations scatter.
+% 第~\ref{sec:background} 节的 Git 部署案例建立了语义组织能重聚跨运行责任、而 native 和 coarse 组织会将其分散。
+Here we add a third measure: elapsed time.
+% 这里我们增加第三种度量：elapsed time。
+The same hierarchy replays under all three measures with exact conservation, and the \texttt{diagnose authentication} subtree's share rises from 21\% (count) through 37\% (time) to 46\% (tokens)---changing only the measure moves the attributed share by more than a factor of two.
+% 同一层次在三种度量下精确守恒地重放，\texttt{diagnose authentication} 子树的份额从 21\%（count）经 37\%（time）升至 46\%（token）——仅改变度量就使归因份额变化超过两倍。
 
 \paragraph{Use case 2: where did this project's agent budget go?}
 % 用例 2：这个项目的 agent 预算去哪了？
@@ -885,6 +872,9 @@ efficiency rather than ranking accuracy.
 \subsection{RQ3: How Accurate Are the Tags?}
 % RQ3：标签有多准确？
 
+RQ3 asks whether recursive segmentation recovers task structure that humans would recognize.
+% RQ3 问递归切分是否恢复出人类会认可的任务结构。
+
 \emph{Setup.} Gold structure is the 2{,}948 human-verified stages over
 all 405 CodeTraceBench trajectories. B$^3$
 F1~\cite{bagga-baldwin-1998-entity-based} asks whether operations that
@@ -969,6 +959,9 @@ implementing the same interface remain viable when no model is available.
 %% -------------------------------------------------------------------
 \subsection{RQ4: What Is the Profiling Cost?}
 % RQ4：分析开销是多少？
+
+RQ4 asks whether the profiling cost is practical: how much time and tokens does segmentation consume, and how fast is replay?
+% RQ4 问 profiling 开销是否实用：切分消耗多少时间和 token，重放有多快？
 
 \emph{Setup.} Cost separates into a one-time automatic segmentation pass
 per corpus and deterministic construction/replay afterwards.
