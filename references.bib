@@ -867,3 +867,258 @@
 % ABSTRACT: Presents an interactive labeling and visualization workflow for
 %   thought-action-result program-repair trajectories.
 % USED_FOR: Companion operational definitions for the eight declared action labels
+
+%% ---------------------------------------------------------------
+%% Synced from docs/paper/references.bib for the expanded Related Work
+%% ---------------------------------------------------------------
+
+% VERIFIED: 2026-07-14
+% REAL: yes
+% PDF: not available (official product documentation)
+% ABSTRACT: Datadog Patterns automatically clusters LLM interactions into a
+%   topic hierarchy and summarizes status, duration, tokens, cost, and evaluations.
+% USED_FOR: Current product baseline for cross-trace hierarchical categorization
+@misc{datadog-patterns,
+  author       = {{Datadog}},
+  title        = {{LLM Observability Patterns}},
+  howpublished = {\url{https://docs.datadoghq.com/llm_observability/monitoring/patterns/}},
+  year         = {2026},
+}
+
+% VERIFIED: 2026-07-14
+% REAL: yes
+% PDF: not available (official product documentation)
+% ABSTRACT: LangSmith Insights automatically analyzes traces, creates reusable
+%   hierarchical behavior categories, and aggregates error, latency, and cost metrics.
+% USED_FOR: Current product baseline for cross-trace hierarchical categorization
+@misc{langsmith-insights,
+  author       = {{LangChain}},
+  title        = {{LangSmith Insights}},
+  howpublished = {\url{https://docs.langchain.com/langsmith/insights}},
+  year         = {2026},
+}
+
+% VERIFIED: 2026-07-15
+% REAL: yes
+% PDF: not available (official product documentation)
+% ABSTRACT: NVIDIA's profiler instruments supported agent workflows, records
+%   per-invocation token and timing data, and analyzes latency, throughput,
+%   bottlenecks, and concurrency.
+% USED_FOR: Closest agent-workflow profiler comparison in Related Work
+@misc{nemo-agent-toolkit-profiler,
+  author = {{NVIDIA}},
+  title = {Profiling and Performance Monitoring of {NVIDIA NeMo Agent Toolkit} Workflows},
+  howpublished = {Official documentation},
+  year = {2026},
+  url = {https://docs.nvidia.com/nemo/agent-toolkit/latest/improve-workflows/profiler.html},
+}
+
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: not available (official specification)
+% ABSTRACT: The OpenTelemetry Profiles signal is a pprof superset that can
+%   link profile samples to traces and spans and correlate profiles with other
+%   telemetry signals.
+% USED_FOR: Prior infrastructure for pprof compatibility and profile-trace linkage
+@misc{otel-profiles,
+  author = {{OpenTelemetry}},
+  title = {{OpenTelemetry Profiles}},
+  howpublished = {Official specification},
+  year = {2026},
+  url = {https://opentelemetry.io/docs/specs/otel/profiles/},
+}
+
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: https://arxiv.org/pdf/2607.06184
+% ABSTRACT: TraceProbe normalizes 2,500 coding-agent trajectories into nine
+%   canonical action types and deterministic effects, then reports recurring
+%   anti-patterns, milestones, tokens, duration, and failed work across runs.
+% USED_FOR: Closest academic process-profile and canonical-effect comparison
+@misc{traceprobe2026,
+  author = {Shu, Rui and Chong, Chun Yong and Zhou, Xin and Peng, Yun and Wu, Zihan and Han, Xu and Zhuang, Zeyang and Yuan, Guowen and Wang, Yuan},
+  title = {What Resolve Rate Hides: Trajectory Structure Diagnostics for Coding Agents},
+  year = {2026},
+  eprint = {2607.06184},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.SE},
+  url = {https://arxiv.org/abs/2607.06184},
+}
+
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: docs/reference/2026-liu-graphectory.pdf
+% PDF_SOURCE: https://arxiv.org/pdf/2512.02393
+% ABSTRACT: Encodes temporal and semantic relations as Graphectory over 4,000
+%   SWE-agent and OpenHands trajectories, derives process-centric metrics and
+%   strategies, and supports online monitoring and intervention.
+% USED_FOR: Closest archival process-centric cross-trajectory comparison
+@article{graphectory2026,
+  author = {Liu, Shuyang and Chen, Yang and Krishna, Rahul and Sinha, Saurabh and Ganhotra, Jatin and Jabbarvand, Reyhaneh},
+  title = {Process-Centric Analysis of Agentic Software Systems},
+  journal = {Proceedings of the ACM on Programming Languages},
+  volume = {10},
+  number = {OOPSLA1},
+  pages = {1961--1988},
+  year = {2026},
+  doi = {10.1145/3798271},
+  url = {https://doi.org/10.1145/3798271},
+}
+
+% VERIFIED: 2026-07-23
+% REAL: yes
+% PDF: https://arxiv.org/pdf/2605.13625
+% ABSTRACT: Introduces Act·onomy, a three-level taxonomy with 10 actions,
+%   46 sub-actions, and 120 leaf categories, plus an automated trace-analysis
+%   tool that assigns the taxonomy and produces behavior profiles.
+% USED_FOR: Closest fixed hierarchical behavior-taxonomy/profile comparison
+@misc{actonomy2026,
+  author = {Gao, Jie and Sun, Kaiser and Huang, Jen-tse and Van Koevering, Katherine and Ji, Sijie and Huang, Heyuan and Shi, Weiyan and Lu, Zhuoran and Xiao, Ziang and Khashabi, Daniel and Dredze, Mark},
+  title = {How to Interpret Agent Behavior},
+  year = {2026},
+  eprint = {2605.13625},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2605.13625},
+}
+
+% VERIFIED: 2026-07-23
+% REAL: yes
+% PDF: https://arxiv.org/pdf/2602.23701
+% ABSTRACT: CHIEF parses task/subtask and OTAR structure into a hierarchical
+%   causal graph, then uses virtual-oracle backtracking and counterfactual
+%   screening to attribute failures on Who&When.
+% USED_FOR: Closest hierarchy-assisted failure-attribution comparison
+@misc{chief2026,
+  author = {Wang, Yawen and Wu, Wenjie and Wang, Junjie and Wang, Qing},
+  title = {From Flat Logs to Causal Graphs: Hierarchical Failure Attribution for {LLM}-based Multi-Agent Systems},
+  year = {2026},
+  eprint = {2602.23701},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2602.23701},
+}
+
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: docs/reference/2026-hodoscope.pdf
+% ABSTRACT: Hodoscope compares group-wise behavior distributions to surface
+%   unknown agent misbehaviors and reports 6--23x lower review effort than
+%   uniform sampling.
+% USED_FOR: Cross-run behavior discovery and inspection-consequence precedent
+@misc{hodoscope2026,
+  author = {Zhong, Ziqian and Saxena, Shashwat and Raghunathan, Aditi},
+  title = {{Hodoscope}: Unsupervised Monitoring for {AI} Misbehaviors},
+  year = {2026},
+  eprint = {2604.11072},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2604.11072},
+}
+
+% VERIFIED: 2026-07-17
+% REAL: yes
+% PDF: https://arxiv.org/pdf/2605.31308
+% ABSTRACT: TraceGraph pools agent trajectories into shared action-observation
+%   decision landscapes and uses identified trap regions in a recovery pipeline
+%   that improves resolved rate on fired SWE-bench subsets.
+% USED_FOR: Cross-run graph and downstream-intervention precedent
+@misc{tracegraph2026,
+  author = {Nian, Junjie and Chen, Kang and Zhang, Ge and Cao, Yixin and Jiang, Yugang},
+  title = {{TraceGraph}: Shared Decision Landscapes for Diagnosing and Improving Agent Trajectories},
+  year = {2026},
+  eprint = {2605.31308},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2605.31308},
+}
+
+% VERIFIED: 2026-07-19
+% REAL: yes
+% PDF: https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/pivot_tracing.pdf
+% ABSTRACT: Dynamically selects, filters, and groups measurements across
+%   causally related events using the happened-before join.
+% USED_FOR: Dynamic causal monitoring and cross-event aggregation precedent
+@inproceedings{pivottracing,
+  author = {Mace, Jonathan and Roelke, Ryan and Fonseca, Rodrigo},
+  title = {Pivot Tracing: Dynamic Causal Monitoring for Distributed Systems},
+  booktitle = {Proceedings of the 25th Symposium on Operating Systems Principles},
+  year = {2015},
+  pages = {378--393},
+}
+
+% VERIFIED: 2026-07-19
+% REAL: yes
+% PDF: https://arxiv.org/pdf/2603.25001
+% ABSTRACT: Introduces MP-Bench with three expert perspectives per failed
+%   multi-agent execution and evaluates graded failure-step rankings with nDCG.
+% USED_FOR: Multi-perspective failure-attribution protocol and RQ2 positioning
+@misc{mpbench2026,
+  author = {In, Yeonjun and Tanjim, Mehrab and Subramanian, Jayakumar and Kim, Sungchul and Bhattacharya, Uttaran and Kim, Wonjoong and Park, Sangwu and Sarkhel, Somdeb and Park, Chanyoung},
+  title = {Rethinking Failure Attribution in Multi-Agent Systems: A Multi-Perspective Benchmark and Evaluation},
+  year = {2026},
+  eprint = {2603.25001},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2603.25001},
+}
+
+% VERIFIED: 2026-07-16
+% REAL: yes
+% PDF: https://aclanthology.org/D07-1043.pdf
+% ABSTRACT: Introduces V-measure as the entropy-based harmonic mean of
+%   clustering homogeneity and completeness for external partition evaluation.
+% USED_FOR: RQ3 standard task-partition fidelity metric
+@inproceedings{rosenberg-hirschberg-2007-v-measure,
+  title = {{V-Measure}: A Conditional Entropy-Based External Cluster Evaluation Measure},
+  author = {Rosenberg, Andrew and Hirschberg, Julia},
+  booktitle = {Proceedings of the 2007 Joint Conference on Empirical Methods in Natural Language Processing and Computational Natural Language Learning},
+  year = {2007},
+  pages = {410--420},
+}
+
+% VERIFIED: 2026-07-14
+% REAL: yes
+% PDF: not applicable (official model card)
+% ABSTRACT: Official Qwen Team release card for the open-weight dense
+%   Qwen3.6-27B model used by the evaluated RQ3 taggers.
+% USED_FOR: Exact model identity for the RQ3 task and action taggers
+@misc{qwen36,
+  author = {{Qwen Team}},
+  title = {{Qwen3.6-27B}: Flagship-Level Coding in a 27B Dense Model},
+  year = {2026},
+  month = apr,
+  howpublished = {Official model card},
+  url = {https://huggingface.co/Qwen/Qwen3.6-27B},
+}
+
+% VERIFIED: 2026-07-14
+% REAL: yes
+% PDF: https://aclanthology.org/2022.emnlp-main.775.pdf
+% ABSTRACT: Introduces ScienceWorld, an interactive text environment and
+%   benchmark for grounded scientific reasoning by agents.
+% USED_FOR: Source citation for the ScienceWorld task-partition workload in RQ3
+@inproceedings{scienceworld,
+  author = {Wang, Ruoyao and Jansen, Peter and C\^{o}t\'{e}, Marc-Alexandre and Ammanabrolu, Prithviraj},
+  title = {{ScienceWorld}: Is Your Agent Smarter than a 5th Grader?},
+  booktitle = {Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing},
+  pages = {11279--11298},
+  year = {2022},
+}
+
+% VERIFIED: 2026-07-16
+% REAL: yes
+% PDF: https://arxiv.org/pdf/2606.22110
+% ABSTRACT: Presents an interactive labeling and visualization workflow for
+%   thought-action-result program-repair trajectories.
+% USED_FOR: Companion operational definitions for the eight declared action labels
+@misc{traceview-2026,
+  author = {Sajadi, Amirali and Nguyen, Tu and Huynh, Kimmie and Parra, Esteban and Chatterjee, Preetha},
+  title = {{TraceView}: Interactive Visualization of Agentic Program Repair Trajectories},
+  year = {2026},
+  eprint = {2606.22110},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.SE},
+  doi = {10.48550/arXiv.2606.22110},
+  url = {https://arxiv.org/abs/2606.22110},
+}
