@@ -92,19 +92,14 @@ On real trajectories and public datasets, our evaluation shows that semantic pro
 \includegraphics[width=\columnwidth]{figures/git-multibranch.tokens.png}\\[1pt]
 \includegraphics[width=\columnwidth]{figures/git-authentication.tokens.png}
 \caption{One renderer, four standard pprof profiles.
-\emph{(a)} CPU time in a Go HTTP service under load, recorded by stock
-\texttt{runtime/pprof} and truncated to twelve frames for display.
-\emph{(b, c)} All three independent agent executions of one Git-deployment
-task under one fixed operation hierarchy, produced by \sys{} and replayed
-under two additive measures: width is operation count in (b) and
-provider-reported tokens in (c). The hierarchy, its boundaries, and its names
-are identical in both; only the measure changes.
+\emph{(a)} CPU time in a Go HTTP service.
+\emph{(b, c)} Three agent executions of one Git-deployment task under one
+fixed operation hierarchy: width is operation count in (b) and tokens in (c).
+The hierarchy is identical in both; only the measure changes.
 \emph{(d)} The same token profile focused on the shared \texttt{diagnose
-authentication} responsibility, which recursion expands into account,
-transport, credential, and retest operations.
-Every panel is read the same way---width is aggregate cost, a parent's cost
-contains its children's, and identical stacks fold---and only the meaning of
-the frames differs between (a) and (b--d).}
+authentication} responsibility.
+Every panel is read the same way: width is aggregate cost, a parent contains
+its children, and identical stacks fold.}
 \Description{Four flame graphs in one visual style. The first descends from a
 Go HTTP server's connection handler into request handling, ranking, parsing,
 and hashing. The second and third show the same agent hierarchy weighted by
@@ -322,9 +317,7 @@ Once that name is constructed, the profile answers the engineer's question
 directly.
 % 一旦这个名字被构造出来，profile 就直接回答了工程师的问题。
 
-The segmentation backend builds one hierarchy over all three executions
-(489 operations, 4{,}558{,}192 provider-reported tokens, semantic depth five
-with no fixed limit; Figure~\ref{fig:flamegraph}).
+Segmentation builds one hierarchy over all three executions (489 operations, 4{,}558{,}192 tokens, semantic depth five with no fixed limit; Figure~\ref{fig:flamegraph}).
 % 切分 backend 在三次执行之上构建同一个层次（489 个 operation、4,558,192 个 provider-reported token，语义深度在无固定上限下达到五层；Figure~\ref{fig:flamegraph}）。
 The repeated \texttt{diagnose authentication} subtree is 21.47\% of the task
 by operation count but 46.15\% by tokens, and drilldown shows all three
@@ -504,8 +497,7 @@ recovering it only requires finding the transition points between them.
 Because agent work has no predefined taxonomy but transitions are visible
 in the content, the core algorithm is segmentation, not labeling.
 % 由于智能体工作没有预定义分类法，但转换点在内容中可见，核心算法是切分而非标注。
-Instead of assigning each step a class, the backend reads a trajectory
-and finds the transition points where the agent's responsibility changes.
+Instead of assigning each step a class, the algorithm reads a trajectory and finds the transition points where the agent's responsibility changes.
 % backend 不为每步指派类别，而是读取轨迹、找出责任变化处的转换点。
 At each transition it cuts the trajectory and names the intervals on both
 sides; it then recurses into each interval, cutting again wherever a
@@ -517,16 +509,10 @@ and a segmentation is a set $S$ of named intervals over $T$ that is
 nested (any two intervals are disjoint or one contains the other),
 covers every turn, and contains the whole-session interval as its root.
 % 形式化地，轨迹是有序 turn 序列 $T=(t_1,\dots,t_n)$；切分是 $T$ 上的命名区间集合 $S$：区间两两要么不相交、要么一个包含另一个（嵌套），共同覆盖每个 turn，且以整个 session 区间为根。
-The backend computes $S$ by one recursive rule: $\textsc{Segment}(I)$
-selects zero or more transition points inside interval $I$, which
-partition $I$ into consecutive child intervals; each child receives a
-short action-first name and is segmented recursively; selecting no
-transition terminates the branch and declares $I$ one operation.
+The algorithm computes $S$ by one recursive rule: $\textsc{Segment}(I)$ selects zero or more transition points inside interval $I$, which partition $I$ into consecutive child intervals; each child receives a short action-first name and is segmented recursively; selecting no transition terminates the branch.
 % backend 用一条递归规则计算 $S$：$\textsc{Segment}(I)$ 在区间 $I$ 内选择零个或多个转换点，将 $I$ 划分为连续的子区间；每个子区间获得一个动词优先的短名称并被递归切分；不再选择转换点即终止该分支，并宣布 $I$ 为一个 operation。
-A turn's operation path is the name chain of the intervals containing
-it, from the session root to its innermost interval; equal paths fold
-across sessions.
-% 一个 turn 的 operation 路径是包含它的区间自 session 根到最内层的名称链；相同路径跨 session 折叠。
+A step's operation path is the name chain of the intervals containing it, from the session root to its innermost interval; equal paths fold across sessions.
+% 一个步骤的 operation 路径是包含它的区间自 session 根到最内层的名称链；相同路径跨 session 折叠。
 Segmentation is the right primitive for three reasons.
 % 切分是正确的基本操作，原因有三。
 First, transitions are what a trajectory actually exhibits: agent work
@@ -541,44 +527,26 @@ Third, naming intervals rather than steps yields identifiers at the
 granularity where recurrence lives, so the same short action-first name
 (one to three words) reappears across sessions and folds.
 % 其三，为区间而非单步命名，得到与"重复出现"粒度一致的标识符——同一个动词优先的短名称（一到三个词）在不同 session 中再次出现并得以折叠。
-Concretely, in one Git-deployment execution the backend cuts the
-session into \texttt{build deployment system} and, inside it, cuts
-again where the agent stops writing configuration and starts debugging
-access, yielding \texttt{deploy branches} and \texttt{diagnose
-authentication}; a turn inside the latter carries the path
-\texttt{build deployment system > diagnose authentication}, and because
-the same two names reappear in the other two executions, their costs
-fold together in Figure~\ref{fig:flamegraph}.
-% 具体地，在一次 Git 部署执行中，backend 先把 session 切为 \texttt{build deployment system}，再在"智能体从编写配置转向调试访问"处继续切分，得到 \texttt{deploy branches} 与 \texttt{diagnose authentication}；后者内部的 turn 携带路径 \texttt{build deployment system > diagnose authentication}。由于同样两个名称在另外两次执行中再次出现，其开销在 Figure~\ref{fig:flamegraph} 中折叠到一起。
-Any backend able to find transitions and name intervals (an agent, a
-plain language model, or a statistical rule) implements the same
-contract. The evaluated backend is a frontier code agent invoked once
-per trajectory with one fixed instruction.
-% 任何能找到 transition 并为 interval 命名的 backend——agent、普通语言模型或统计规则——都实现同一份契约；被评估的 backend 是每条轨迹调用一次、使用一条固定指令的前沿 code agent。
-That instruction is the complete backend interface:
-% 这条指令就是 backend 的完整接口：
+Concretely, in one Git-deployment execution the algorithm cuts the session into \texttt{build deployment system} and, inside it, cuts again where the agent stops writing configuration and starts debugging access, yielding \texttt{deploy branches} and \texttt{diagnose authentication}; a step inside the latter carries the path \texttt{build deployment system > diagnose authentication}, and because the same names reappear in the other two executions, their costs fold together in Figure~\ref{fig:flamegraph}.
+% 具体地，在一次 Git 部署执行中，算法先把 session 切为 \texttt{build deployment system}，再在"智能体从编写配置转向调试访问"处继续切分，得到 \texttt{deploy branches} 与 \texttt{diagnose authentication}；后者内部的步骤携带路径 \texttt{build deployment system > diagnose authentication}；由于同样名称在另外两次执行中再次出现，其开销在 Figure~\ref{fig:flamegraph} 中折叠到一起。
+Any implementation able to find transitions and name intervals (an agent, a language model, or a statistical rule) can serve as the segmenter.
+% 任何能找到 transition 并为 interval 命名的实现（agent、语言模型或统计规则）都可作为 segmenter。
+In evaluation, we use a frontier code agent invoked once per trajectory with one fixed instruction:
+% 在评估中，我们使用前沿 code agent，每条轨迹调用一次，使用固定指令：
 
 \begin{quote}\small
-\emph{Input:} one trajectory's source-only packet---each turn's visible
-prompt, command, and output summary, with no stage labels, outcomes, or
-scores.\\
-\emph{Action:} read the packet once; emit a mark wherever the
-responsibility changes.\\
-\emph{Output:} sparse complete-path marks, for example\\
-{\ttfamily turn 1: [deploy git server]\\
-turn 4: [deploy git server, diagnose SSH access]\\
-turn 9: [deploy git server, diagnose SSH access,\\
-\hspace*{1.2em}test PAM]\\
-turn 15: [deploy git server, verify web endpoint]}\\
----one line only where the path changes, free depth per branch, names of
-one to three action-first words.
+\emph{Input:} one trajectory (each step's prompt, command, and output summary, with no labels or scores).\\
+\emph{Action:} read once; emit a mark wherever the responsibility changes.\\
+\emph{Output:} sparse path marks, e.g.,\\
+{\ttfamily step 1: [deploy git server]\\
+step 4: [deploy git server, diagnose SSH access]\\
+step 15: [deploy git server, verify web endpoint]}\\
+---one line only where the path changes; names of one to three action-first words.
 \end{quote}
 
-% 输入：一条轨迹的 source-only packet——每个 turn 可见的提示词、命令与输出摘要，不含 stage 标签、outcome 或分数。动作：整包读一次，在责任变化处发出 mark。输出：稀疏的完整路径 mark，仅在路径变化处出现一行，每个分支深度自由，名称为一到三个动词开头的词。
-The sparse marks still produce a complete segmentation: turns between two
-marks inherit the preceding path. One format retry is allowed; afterwards,
-deterministic prefix repair and canonicalization leave the downstream
-pipeline unchanged.
+% 输入：一条轨迹（每步的提示词、命令与输出摘要，不含标签或分数）。动作：读一次，在责任变化处发出 mark。输出：稀疏路径 mark，仅在路径变化处出现一行，名称为一到三个动词开头的词。
+The sparse marks still produce a complete segmentation: steps between two marks inherit the preceding path.
+% 稀疏的 mark 仍产生完整切分：两个 mark 之间的步骤继承前一条路径。
 % 两个 mark 之间的 turn 继承前一条路径，因此稀疏的 mark 仍是完整切分。允许一次常规的格式重试；其后确定性的前缀修复与规范化重放不改变下游流水线。
 % 任何能找到转换点并为区间命名的 backend——agent、普通语言模型或统计规则——都实现同一契约；被评测的 backend 是一个前沿代码 agent，每条轨迹以同一固定指令调用一次。
 % 任何能找到转换点并为区间命名的 backend——agent、普通语言模型或统计规则——都实现同一契约。
@@ -592,25 +560,12 @@ pipeline unchanged.
 % \sys 是一个离线、事后分析器，实现为 Rust CLI（约 9.8K 行代码，Figure~\ref{fig:architecture}）。
 It reads Codex and Claude Code local JSONL history files and AgentSight~\cite{agentsight} recordings for system effects, and reconstructs prompts, LLM calls, tool invocations, and their triggered file and network effects.
 % 它读取 Codex 和 Claude Code 本地 JSONL 历史文件以及 AgentSight~\cite{agentsight} 的系统副作用记录，重建提示词、LLM 调用、工具调用及其触发的文件和网络副作用。
-The backend works in an annotation workspace where the CLI validates that marks are nested, noncrossing, and cover every source node (each source node corresponds to one turn in the trajectory), then emits one standard pprof protobuf profile that existing tools such as \texttt{go tool pprof} read directly.
-% backend 在标注 workspace 中工作，CLI 校验标记嵌套、不交叉并覆盖每个 source node（每个 source node 对应轨迹中的一个 turn），然后输出一个标准 pprof protobuf profile，供 \texttt{go tool pprof} 等现有工具直接读取。
-Projection is deterministic: each source node contributes the agent,
-its covering semantic operation path, and its retained LLM-call and
-tool-call evidence, with raw session and prompt identities kept as pprof
-labels rather than visible frames, so equal semantic prefixes fold across
-sessions; switching the additive measure replays the same annotation and
-changes only stack widths.
-% 投影是确定性的：每个 source node 依次给出 agent、覆盖它的语义 operation 路径与保留的 LLM call、tool call 证据，raw session 与 prompt 身份作为 pprof label 保留而非可见 frame，因此相同语义前缀可跨 session 折叠；切换可加度量只重放同一标注、只改变栈宽度。
-
-Source-specific adapters preserve replay-stable node IDs, source content or
-readable references, native parent links, input order, and additive measures,
-and materialize structured operation JSONL as adapter-defined atomic source
-nodes without inventing missing prompt or call relations.
-% Source-specific adapter 保留 replay-stable node ID、source content 或可读引用、原生 parent link、输入顺序与可加度量，并把结构化 operation JSONL 物化为 adapter-defined atomic source node，不虚构缺失的 prompt 或 call relation。
-The backend reads the trajectory and writes interval annotations that map source positions to semantic tags and parent links; after validation \sys updates derived paths and the folded aggregate.
-% backend 读取轨迹并写入区间标注，将 source 位置映射到语义标签与父链接；校验通过后 \sys 更新派生路径与折叠聚合。
-Nonblocking hierarchy warnings flag degenerate structures (single-child recursion, flat fan-outs, coarse leaves), exposing annotation issues without forcing artificial depth or blocking generation.
-% 非阻塞 hierarchy warning 标记退化结构（单子递归、flat fan-out、粗叶），暴露标注问题但不强制人为深度或阻塞生成。
+The CLI validates that interval marks are nested and cover every trajectory step, then emits a standard pprof protobuf profile that \texttt{go tool pprof} reads directly.
+% CLI 校验区间标记嵌套且覆盖轨迹的每一步，然后输出标准 pprof protobuf profile，供 \texttt{go tool pprof} 直接读取。
+Projection is deterministic: each operation contributes its semantic path and LLM/tool evidence, with session identities kept as pprof labels rather than visible frames, so equal semantic prefixes fold across sessions.
+% 投影是确定性的：每个 operation 提供其语义路径与 LLM/tool 证据，session 身份作为 pprof label 而非可见 frame 保留，因此相同语义前缀可跨 session 折叠。
+Switching the additive measure replays the same annotations and changes only stack widths.
+% 切换可加度量只重放同一标注、只改变栈宽度。
 
 \paragraph{Non-LLM recurrence backend.}
 % 非 LLM recurrence backend。
@@ -678,8 +633,8 @@ tens of hours---supplies the long-horizon regime; the RQ4 union covers
 semantic hierarchy reveals materially different bottlenecks when the additive
 resource measure changes.
 % 设置。我们检验该主张的一个必要后果：固定的语义层次在切换可加资源度量时是否暴露实质不同的瓶颈。
-The source population contains 41 real long-horizon agent trajectories, 3{,}146 source-native turns, and 5{,}750 operations, including three independent executions of one Git-deployment task whose 735 source nodes receive 96 recursive annotations.
-% source population 含 41 条真实 long-horizon agent 轨迹、3,146 个 source-native turn 与 5,750 个 operation，其中包含同一 Git 部署任务的三次独立执行，其 735 个 source node 获得 96 个递归标注。
+The population contains 41 real long-horizon agent trajectories and 5{,}750 operations, including three independent executions of one Git-deployment task with 96 recursive annotations.
+% population 含 41 条真实 long-horizon agent 轨迹与 5,750 个 operation，其中包含同一 Git 部署任务的三次独立执行，共 96 个递归标注。
 The resulting hierarchy reaches semantic depth five without a fixed limit.
 % 所得层次在无固定上限下达到语义深度五。
 
@@ -690,27 +645,19 @@ focus query retains all three executions rather than selecting one trace, and
 Figure~\ref{fig:flamegraph} replays that one fixed hierarchy under both
 additive measures.
 % 这是动机小节预览的案例。stock pprof 的 focus query 保留全部三次执行而非挑选单条轨迹，Figure~\ref{fig:flamegraph} 在两种可加度量下重放同一个固定层次。
-The focused task contains 489 operations and 4{,}558{,}192 provider-reported
-tokens from OpenHands/Claude, OpenHands/DeepSeek, and Terminus2/DeepSeek: by
-count Terminus2 contributes 56.24\% and OpenHands 43.76\%, while by tokens
-OpenHands contributes 86.62\%.
-% 该聚焦任务包含来自 OpenHands/Claude、OpenHands/DeepSeek 与 Terminus2/DeepSeek 的 489 个 operation 与 4,558,192 个 provider-reported token：按 count，Terminus2 占 56.24\%、OpenHands 占 43.76\%；按 token，OpenHands 占 86.62\%。
+The focused task contains 489 operations and 4{,}558{,}192 tokens from three agent frameworks: by count Terminus2 contributes 56.24\% and OpenHands 43.76\%, while by tokens OpenHands contributes 86.62\%.
+% 该聚焦任务包含来自三个 agent 框架的 489 个 operation 与 4,558,192 个 token：按 count，Terminus2 占 56.24\%、OpenHands 占 43.76\%；按 token，OpenHands 占 86.62\%。
 The repeated \texttt{diagnose authentication} operation directly contains 97
 operations and 1{,}936{,}828 tokens, and its complete recursive subtree
 contains 105 operations and 2{,}103{,}587 tokens (21.47\% and 46.15\% of the
 focused task).
 % 重复出现的 \texttt{diagnose authentication} operation 直接包含 97 个 operation 与 1,936,828 个 token，其完整递归子树包含 105 个 operation 与 2,103,587 个 token（占聚焦任务的 21.47\% 与 46.15\%）。
-The same unchanged hierarchy also maps all 489 evidence rows under a defined
-elapsed-time width and exactly conserves 3{,}982 seconds, of which the
-subtree holds 1{,}492 seconds (37.47\%).
-% 同一未改变的层次还把全部 489 条 evidence row 映射到定义的 elapsed-time 宽度并精确守恒 3,982 秒，其中该子树占 1,492 秒（37.47\%）。
-Its attributed share therefore rises from 21.47\% by count through 37.47\% by
-time to 46.15\% by tokens: changing only the measure moves the share by more
-than a factor of two, and the count view attributes the task mainly to
-Terminus2 while the token view attributes nearly half of it to the
-authentication responsibility, which source drilldown resolves to specific
-unfinished work.
-% 因此其归因份额从 count 的 21.47\% 经 time 的 37.47\% 升至 token 的 46.15\%：仅改变度量就使份额变化超过两倍；count 视图把该任务主要归因于 Terminus2，token 视图则把接近一半归因于认证责任，而 source drilldown 可将其定位到具体的未完成工作。
+The same hierarchy also replays under elapsed time with exact conservation: the subtree holds 1{,}492 of 3{,}982 seconds (37.47\%).
+% 同一层次还按 elapsed time 精确守恒地重放：该子树占 3,982 秒中的 1,492 秒（37.47\%）。
+Its attributed share therefore rises from 21.47\% by count through 37.47\% by time to 46.15\% by tokens: changing only the measure moves the share by more than a factor of two.
+% 因此其归因份额从 count 的 21.47\% 经 time 的 37.47\% 升至 token 的 46.15\%：仅改变度量就使份额变化超过两倍。
+The count view attributes the task mainly to Terminus2 while the token view attributes nearly half to the authentication responsibility.
+% count 视图把该任务主要归因于 Terminus2，token 视图则把接近一半归因于认证责任。
 
 As a post-hoc organization control, we replay the same 489 source operations
 and both weights over common \texttt{project, agent} prefixes and
@@ -740,38 +687,27 @@ The population is 18 Codex and 24 Claude Code sessions recorded on the
 authors' workstation, including ten long-horizon sessions whose longest span
 tens of hours and hundreds of prompts (Figure~\ref{fig:selfprofile}).
 % 该群体为作者工作站上记录的 18 条 Codex 与 24 条 Claude Code session，其中十条为 long-horizon session，最长者跨越数十小时与数百个 prompt（Figure~\ref{fig:selfprofile}）。
-In this local-history scenario, the profiler initializes the annotation workspace directly from the raw session logs and materializes 10{,}423 source nodes: 42 sessions, 1{,}252 prompts, 5{,}620 LLM calls, and 3{,}509 tool calls carrying 1{,}380{,}863{,}014 provider-reported tokens.
-% 在此本地历史场景中，profiler 直接从原始 session log 初始化标注 workspace，物化出 10,423 个 source node：42 个 session、1,252 个 prompt、5,620 个 LLM call 与 3,509 个 tool call，携带 1,380,863,014 个 provider-reported token。
-The fixed automatic instruction, identical to the AgentRewardBench run, makes
-one pass, produces 1{,}737 semantic annotations at depths two through four,
-covers all 1{,}294 mandatory session and prompt scopes, and incurs zero
-backend failures across 42 batches; the operation-count and token profiles
-conserve exactly 3{,}509 and 1{,}380{,}863{,}014.
-% 与 AgentRewardBench 运行完全相同的固定自动指令只跑一遍，产生 1,737 个深度二至四的语义标注，覆盖全部 1,294 个必需的 session 与 prompt scope，并在 42 个 batch 上零 backend failure；operation-count 与 token profile 分别精确守恒 3,509 与 1,380,863,014。
+The profiler reads local session logs directly: 42 sessions, 1{,}252 prompts, 5{,}620 LLM calls, and 3{,}509 tool calls carrying 1.38 billion tokens.
+% profiler 直接读取本地 session log：42 个 session、1,252 个 prompt、5,620 个 LLM call 与 3,509 个 tool call，携带 13.8 亿 token。
+Segmentation produces 1{,}737 annotations at depths two through four, and the operation-count and token profiles conserve exactly 3{,}509 and 1{,}380{,}863{,}014.
+% 切分产生 1,737 个深度二至四的标注，operation-count 与 token profile 分别精确守恒 3,509 与 1,380,863,014。
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=.97\linewidth]{figures/selfprofile.tokens.png}\\[1pt]
 \includegraphics[width=.97\linewidth]{figures/selfprofile.operations.png}
-\caption{The complete 42-session population under one fixed semantic
-hierarchy. Width is provider-reported tokens (top) or operation count
-(bottom); second-level frames are the annotated responsibilities
-(\texttt{refine paper}, \texttt{develop manuscript}, \texttt{develop
-research}, ...), with deeper refinements and source labels available for
-drilldown in stock pprof.}
+\caption{The 42-session population under one fixed semantic hierarchy.
+Width is tokens (top) or operation count (bottom); second-level frames are
+annotated responsibilities (\texttt{refine paper}, \texttt{develop manuscript},
+...), with deeper refinements available for drilldown in stock pprof.}
 \Description{Two flame graphs over the same 42 development sessions. Both
 show a claude root spanning most width, semantic responsibilities at the
 second level, and fragmented deeper refinements.}
 \label{fig:selfprofile}
 \end{figure*}
 
-The same self-profile hierarchy replays under FILE-READ, FILE-WRITE, and
-NETWORK-target widths with exact conservation of 737, 31, and 61 target
-references (Figure~\ref{fig:selfprofile-write}); in the FILE-WRITE view,
-source-linked LLM and tool frames remain beneath each semantic operation, and
-each created file appears as an exact drilldown leaf beneath the operation
-that created it.
-% 同一 self-profile 层次还以 FILE-READ、FILE-WRITE 与 NETWORK-target 宽度重放，分别精确守恒 737、31 与 61 个 target reference（Figure~\ref{fig:selfprofile-write}）；在 FILE-WRITE 视图中，source-linked 的 LLM 与 tool frame 仍位于每个语义 operation 之下，每个被创建的文件都作为精确的下钻叶出现在创建它的 operation 之下。
+The same hierarchy replays under file-read, file-write, and network widths (Figure~\ref{fig:selfprofile-write}); each created file appears as a drilldown leaf beneath the operation that created it.
+% 同一层次还按 file-read、file-write 与 network 宽度重放（Figure~\ref{fig:selfprofile-write}）；每个被创建的文件都作为下钻叶出现在创建它的 operation 之下。
 
 \begin{figure*}[t]
 \centering
