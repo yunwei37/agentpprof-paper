@@ -549,6 +549,10 @@ The sparse marks still produce a complete segmentation: steps between two marks 
 % 稀疏的 mark 仍产生完整切分：两个 mark 之间的步骤继承前一条路径。
 Segmentation is not a one-shot labeling pass: the agent can revise marks, refine interval names, and add deeper cuts iteratively until it judges the hierarchy complete.
 % 切分不是一次性标注：agent 可以修改标记、精炼区间名称、添加更深的切分，迭代进行直到它认为层次完整为止。
+Revisions are incremental: changing one interval does not require re-annotating the entire trajectory.
+% 修改是增量的：改动一个区间不需要重新标注整条轨迹。
+Although we evaluate segmentation offline, the model also supports online incremental annotation during agent execution.
+% 虽然我们离线评估切分，但该模型也支持在 agent 执行过程中进行在线增量标注。
 % 两个 mark 之间的 turn 继承前一条路径，因此稀疏的 mark 仍是完整切分。允许一次常规的格式重试；其后确定性的前缀修复与规范化重放不改变下游流水线。
 % 任何能找到转换点并为区间命名的 backend——agent、普通语言模型或统计规则——都实现同一契约；被评测的 backend 是一个前沿代码 agent，每条轨迹以同一固定指令调用一次。
 % 任何能找到转换点并为区间命名的 backend——agent、普通语言模型或统计规则——都实现同一契约。
@@ -558,8 +562,8 @@ Segmentation is not a one-shot labeling pass: the agent can revise marks, refine
 % 实现
 \label{sec:impl}
 
-\sys is an offline, post-hoc profiler implemented as a Rust CLI ({$\sim$}9.8K LOC, Figure~\ref{fig:architecture}).
-% \sys 是一个离线、事后分析器，实现为 Rust CLI（约 9.8K 行代码，Figure~\ref{fig:architecture}）。
+\sys is implemented as a Rust CLI ({$\sim$}9.8K LOC, Figure~\ref{fig:architecture}).
+% \sys 实现为 Rust CLI（约 9.8K 行代码，Figure~\ref{fig:architecture}）。
 It reads Codex and Claude Code local JSONL history files and AgentSight~\cite{agentsight} recordings for system effects.
 % 它读取 Codex 和 Claude Code 本地 JSONL 历史文件以及 AgentSight~\cite{agentsight} 的系统副作用记录。
 The pipeline has two stages: first, preprocessing extracts a readable trajectory summary; then, the segmentation agent reads this summary and writes interval marks to an annotation file, which it can revise until satisfied.
