@@ -396,9 +396,9 @@ The algorithm rests on one structural intuition: an agent's task occupies
 a contiguous span of the trajectory, and it decomposes into smaller
 contiguous subtasks.
 % 该算法建立在一个结构直觉上：智能体的任务在轨迹上占据一段连续区间，并且可以分解为更小的连续子任务。
-Task structure is therefore exactly a set of nested named intervals, and
+We model task structure as a set of nested named intervals, and
 recovering it only requires finding the transition points between them.
-% 因此任务结构恰好就是一组嵌套的命名区间，恢复它只需要找到区间之间的转换点。
+% 我们把任务结构建模为一组嵌套的命名区间，恢复它只需要找到区间之间的转换点。
 
 The algorithm reads a trajectory, finds the transition points where the agent's responsibility changes, and names the intervals on both sides.
 % 算法读取轨迹，找出责任变化处的转换点，并为两侧的区间命名。 
@@ -445,10 +445,10 @@ The model supports both offline evaluation and online annotation during executio
 % 实现
 \label{sec:impl}
 
-\sys is implemented as a Rust CLI ({$\sim$}9.8K LOC, Figure~\ref{fig:architecture}).
-% \sys 实现为 Rust CLI（约 9.8K 行代码，Figure~\ref{fig:architecture}）。
-It reads Codex and Claude Code local JSONL history files and AgentSight~\cite{agentsight} recordings for system effects.
-% 它读取 Codex 和 Claude Code 本地 JSONL 历史文件以及 AgentSight~\cite{agentsight} 的系统副作用记录。
+This section describes how \sys realizes the design from Section~\ref{sec:design}. \sys is implemented as a Rust CLI ({$\sim$}9.8K LOC, Figure~\ref{fig:architecture}).
+% 本节描述 \sys 如何实现第~\ref{sec:design} 节的设计。\sys 实现为 Rust CLI（约 9.8K 行代码，Figure~\ref{fig:architecture}）。
+It reads Codex and Claude Code local JSONL history files and AgentSight~\cite{agentsight} recordings for system effects. These files are written incrementally during agent execution, so \sys can build profiles while the agent is still running.
+% 它读取 Codex 和 Claude Code 本地 JSONL 历史文件以及 AgentSight~\cite{agentsight} 的系统副作用记录。这些文件在 agent 执行过程中增量写入，因此 \sys 可以在 agent 运行时就生成 profile。
 The pipeline has two stages: (1) preprocessing extracts a readable trajectory summary, and (2) the segmentation agent reads this summary and writes interval marks to an annotation file, which it can revise until satisfied.
 % 管线分两阶段：首先预处理提取可读的轨迹摘要；然后切分 agent 读取摘要并将区间标记写入标注文件，它可以反复修改直到满意为止。
 The CLI validates that marks are nested and cover every step, then emits a standard pprof protobuf profile that \texttt{go tool pprof} reads directly.
@@ -467,8 +467,8 @@ A non-LLM statistical segmenter is also available, scoring transitions by NPMI~\
 % 评估
 \label{sec:eval}
 
-We evaluate on three data classes.
-% 我们评估三类数据。
+We evaluate whether \sys effectively attributes resources, locates problems, and recovers human-recognizable task structure at practical cost. The evaluation uses three data classes.
+% 我们评估 \sys 是否有效归因资源、定位问题、以实用成本恢复人类可识别的任务结构。评估使用三类数据。
 \emph{Real inputs}: 41 long-horizon coding-agent sessions (three of which
 repeat one Git-deployment task and form the RQ1 case), 440 mixed
 web-agent trajectories~\cite{agentrewardbench}, and one developer's complete
@@ -503,8 +503,8 @@ We test both on 41 real long-horizon agent trajectories (3{,}146 user turns, 5{,
 
 \paragraph{The motivating case revisited.}
 % 动机案例回顾。
-The Git-deployment case from Section~\ref{sec:background} established that semantic organization reunites cross-run responsibility that alternative organizations scatter. Here we add a third measure (elapsed time) to show measure-sensitivity.
-% 第~\ref{sec:background} 节的 Git 部署案例建立了语义组织能重聚跨运行责任、而替代组织会将其分散；这里我们增加第三种度量（elapsed time）以展示度量敏感性。
+The Git-deployment case from Section~\ref{sec:background} demonstrates that semantic organization reunites cross-run responsibility that alternative organizations scatter. Here we add a third measure (elapsed time) to show measure-sensitivity.
+% 第~\ref{sec:background} 节的 Git 部署案例展示了语义组织能重聚跨运行责任、而替代组织会将其分散；这里我们增加第三种度量（elapsed time）以展示度量敏感性。
 The same hierarchy replays under all three measures with exact conservation, and the \texttt{diagnose authentication} subtree's share rises from 21\% (count) through 37\% (time) to 46\% (tokens). Changing only the measure moves the attributed share by more than a factor of two.
 % 同一层次在三种度量下精确守恒地重放，\texttt{diagnose authentication} 子树的份额从 21\%（count）经 37\%（time）升至 46\%（token）。仅改变度量就使归因份额变化超过两倍。
 A quantitative control shows why both alternatives fail.
@@ -651,8 +651,8 @@ original additive weights.
 % 每个方法的输出按其预测的层级评估：字面名称用 accuracy 与 macro-F1，置换不变的 partition 用 V-measure 或普通 B$^3$，相邻区间边界用精确的 precision、recall 与 F1；对字段值型的既有数据集，转换步骤先把每个预测 group 映射为同一份区间标注格式，再由 \sys 折叠原始可加权重。
 Codex~\cite{codex} receives each trajectory (prompts, commands, and output summaries, with no labels or scores visible) and emits sparse interval marks over 17{,}148 steps without access to stage annotations (loaded after all 405 outputs were fixed): 4{,}496 marks at semantic depth one (3), two (2{,}873), three (1{,}588), or four (32), with no prompt requesting a specific depth.
 % Codex 接收轨迹（提示词、命令与输出摘要，不含标签或分数），在 17,148 个步骤上发出稀疏区间标记，不接触官方 stage 标注：共 4,496 个标记，语义深度为一层（3 个）、两层（2,873 个）、三层（1,588 个）与四层（32 个），且没有任何 prompt 指定深度。
-Name normalization then maps the 3{,}895 free-form interval names to 783 stable short names (e.g., \texttt{diagnose authentication}) with zero adjacent display-path collisions, rejecting unresolved ones. Identical names across sessions merge so that recurring work folds in the final profile.
-% 名称归一化把 3,895 个自由形式的区间名映射为 783 个稳定短名称（如 \texttt{diagnose authentication}），不产生任何相邻显示路径冲突、无法消解时拒绝；跨 session 的相同名称合并，使重复工作在最终 profile 中折叠。
+Name normalization then maps the 3{,}895 free-form interval names to 783 stable short names (e.g., \texttt{diagnose authentication}) with zero adjacent display-path collisions, rejecting unresolved ones. Identical names across sessions merge so that identical paths fold in the final profile.
+% 名称归一化把 3,895 个自由形式的区间名映射为 783 个稳定短名称（如 \texttt{diagnose authentication}），不产生任何相邻显示路径冲突、无法消解时拒绝；跨 session 的相同名称合并，使相同路径在最终 profile 中折叠。
 
 \begin{table}[tb]
 \centering\small
