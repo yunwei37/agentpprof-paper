@@ -321,8 +321,8 @@ Agent profiling needs the three mechanisms that call stacks provide automaticall
 \textbf{R2} (stable tags): derive short, repeatable tags from natural-language prompts before folding;
 \textbf{R3} (hierarchical attribution): construct attribution hierarchies from data, not execution nesting.
 % 智能体 profiling 需要调用栈自动提供的三种机制，但必须在没有调用栈的情况下实现：R1（跨层投影）：将系统层消耗连接到意图层类别；R2（稳定标签）：在折叠前从自然语言提示词派生短小、可重复的标签；R3（分层归因）：从数据而非执行嵌套构造归因层次。
-Operations satisfy R1 by representing intent and system-effect activities in a single record with tag inheritance, so intent tags propagate to the system effects they trigger. System effects are linked to their triggering intent via process-tree ancestry captured by AgentSight~\cite{agentsight}.
-% Operation（Design）通过将意图和系统副作用活动表示在带标签继承的单一记录中满足 R1，使意图层标签传播到其触发的系统副作用。系统副作用通过 AgentSight 捕获的进程树祖先关系与触发它们的意图关联。
+Operations satisfy R1 by representing intent and system-effect activities in a single record with tag inheritance, so intent tags propagate to the system effects they trigger via AgentSight~\cite{agentsight}.
+% Operation（Design）通过将意图和系统副作用活动表示在带标签继承的单一记录中满足 R1，使意图层标签通过 AgentSight 传播到其触发的系统副作用。
 \emph{Recursive operation segmentation} satisfies R2 and R3 together by deriving short, stable interval names from trajectory content and nesting those intervals into the attribution hierarchy that replaces the runtime call stack.
 % 递归 operation 切分（Design）同时满足 R2 与 R3：它从轨迹内容派生短小稳定的区间名称，并将这些区间嵌套为替代运行时调用栈的归因层次。
 \emph{Operation stacks} then attribute resources at every level of that hierarchy at query time, so the same data supports multiple views without rebuilding the input.
