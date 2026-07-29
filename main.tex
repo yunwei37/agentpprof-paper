@@ -364,15 +364,9 @@ weights.
 Unlike a call stack, the fields are chosen at query time, not
 determined by execution.
 % 与调用栈不同，字段在查询时选择，而非由执行决定。
-The same operations can therefore be attributed as a flat task summary, a
-per-session tree, a semantic phase/action hierarchy, or a
-trajectory using the dataset's own annotations, and changing the fields changes the
-attribution without changing the data.
-% 因此同一组 operation 可归因为扁平任务摘要、固定会话树、语义阶段/操作层次或使用数据集自身标注的轨迹，改变字段即改变归因方式而无需改变数据。
-Sessions and spans are optional operation fields, not fixed hierarchy levels, so the same data supports both debugging views
-(include \texttt{session}) and aggregate profiling views (exclude
-it).
-% 会话和 span 是可选的 operation 字段而非固定层次级别，因此同一数据既支持调试视图（包含 \texttt{session}）也支持聚合 profiling 视图（排除它）。
+Changing the fields changes the attribution without changing the data: the same operations can be attributed by task, by session, or by action type.
+Sessions and spans are optional fields, so the same data supports both debugging (include \texttt{session}) and aggregate profiling (exclude it).
+% 改变字段即改变归因方式而无需改变数据：同一组 operation 可按任务、按 session 或按 action type 归因。session 和 span 是可选字段，因此同一数据既支持调试（包含 \texttt{session}）也支持聚合 profiling（排除它）。
 The frame sequence need not come from fields alone: recursive
 segmentation supplies each operation's covering
 interval-name chain as a variable depth frame sequence, and field lists
@@ -413,7 +407,7 @@ in the content, the core algorithm is segmentation, not labeling.
 Instead of assigning each step a class, the algorithm reads a trajectory and finds the transition points where the agent's responsibility changes.
 % 算法不为每步指派类别，而是读取轨迹、找出责任变化处的转换点。
 At each transition it cuts the trajectory and names the intervals on both
-sides; it then recurses into each interval, cutting again wherever a
+sides. It then recurses into each interval, cutting again wherever a
 finer responsibility change remains, and stops when an interval reads as
 one coherent piece of work.
 % 在每个转换点它切开轨迹并为两侧的区间命名；随后对每个区间递归，在仍存在更细责任变化处继续切分，直到一个区间读起来是一件连贯的工作为止。
@@ -426,20 +420,8 @@ The algorithm computes $S$ by one recursive rule: $\textsc{Segment}(I)$ selects 
 % 算法用一条递归规则计算 $S$：$\textsc{Segment}(I)$ 在区间 $I$ 内选择零个或多个转换点，将 $I$ 划分为连续的子区间；每个子区间获得一个动词引导的短名称并被递归切分；不再选择转换点即终止该分支。
 A step's operation path is the name chain of the intervals containing it, from the session root to its innermost interval. Equal paths fold across sessions.
 % 一个步骤的 operation 路径是包含它的区间自 session 根到最内层的名称链；相同路径跨 session 折叠。
-Segmentation is the right primitive for three reasons.
-% 切分是正确的基本操作，原因有三。
-First, transitions are what a trajectory actually exhibits: agent work
-has no predefined taxonomy, but a shift in what the agent is trying to
-do is visible in the source content itself.
-% 其一，转换点是轨迹真实呈现的东西：智能体工作没有预定义分类法，但"智能体正在做的事发生了变化"在源内容中是可见的。
-Second, cuts compose: nested intervals form a hierarchy whose depth
-emerges per branch from the content rather than from a prescribed
-schema.
-% 其二，切口可组合：嵌套区间构成层次，其深度按分支从内容中涌现，而非来自规定的 schema。
-Third, naming intervals rather than steps yields identifiers at the
-granularity where recurrence lives, so the same short name starting with a verb
-(one to three words) reappears across sessions and folds.
-% 其三，为区间而非单步命名，得到与"重复出现"粒度一致的标识符——同一个动词引导的短名称（一到三个词）在不同 session 中再次出现并得以折叠。
+Segmentation is the right primitive because transitions are visible in the content, cuts compose into variable-depth hierarchies, and naming intervals (not steps) yields identifiers at the granularity where recurrence lives.
+% 切分是正确的基本操作，因为转换点在内容中可见，切口可组合为可变深度层次，且为区间（而非单步）命名得到与"重复出现"粒度一致的标识符。
 Concretely, in one Git-deployment execution the algorithm cuts the session into \texttt{build deployment system} and, inside it, cuts again where the agent stops writing configuration and starts debugging access, yielding \texttt{deploy branches} and \texttt{diagnose authentication}; a step inside the latter carries the path \texttt{build deployment system > diagnose authentication}, and because the same names reappear in the other two executions, their costs fold together in Figure~\ref{fig:flamegraph}.
 % 具体地，在一次 Git 部署执行中，算法先把 session 切为 \texttt{build deployment system}，再在"智能体从编写配置转向调试访问"处继续切分，得到 \texttt{deploy branches} 与 \texttt{diagnose authentication}；后者内部的步骤携带路径 \texttt{build deployment system > diagnose authentication}；由于同样名称在另外两次执行中再次出现，其开销在 Figure~\ref{fig:flamegraph} 中折叠到一起。
 Any implementation able to find transitions and name intervals (an agent, a language model, or a statistical rule) can serve as the segmenter.
@@ -460,11 +442,9 @@ step 15: [deploy git server, verify web endpoint]}\\
 % 输入：一条轨迹（每步的提示词、命令与输出摘要，不含标签或分数）。动作：读取轨迹，在责任变化处发出 mark，并用 \sys 检查和更新切分，反复阅读和更新 mark 直到认为切分完整。输出：稀疏路径 mark，仅在路径变化处出现一行，名称为一到三个动词引导的词。
 The sparse marks still produce a complete segmentation: steps between two marks inherit the preceding path.
 % 稀疏的 mark 仍产生完整切分：两个 mark 之间的步骤继承前一条路径。
-Segmentation is not a one-shot labeling pass: the agent can revise marks, refine interval names, and add deeper cuts iteratively until it judges the hierarchy complete.
-% 切分不是一次性标注：agent 可以修改标记、精炼区间名称、添加更深的切分，迭代进行直到它认为层次完整为止。
-Revisions are incremental: changing one interval does not require re-annotating the entire trajectory.
-% 修改是增量的：改动一个区间不需要重新标注整条轨迹。
-The model supports both offline evaluation (as presented here) and online incremental annotation during agent execution.
+Segmentation is iterative: the agent can revise marks incrementally without re-annotating the entire trajectory.
+% 切分是迭代的：agent 可以增量修改标记而无需重新标注整条轨迹。
+The model supports both offline evaluation and online annotation during execution.
 % 该模型支持离线评估（如本文所述）和 agent 执行过程中的在线增量标注。
 
 %% ===================================================================
@@ -476,7 +456,7 @@ The model supports both offline evaluation (as presented here) and online increm
 % \sys 实现为 Rust CLI（约 9.8K 行代码，Figure~\ref{fig:architecture}）。
 It reads Codex and Claude Code local JSONL history files and AgentSight~\cite{agentsight} recordings for system effects.
 % 它读取 Codex 和 Claude Code 本地 JSONL 历史文件以及 AgentSight~\cite{agentsight} 的系统副作用记录。
-The pipeline has two stages: first, preprocessing extracts a readable trajectory summary; then, the segmentation agent reads this summary and writes interval marks to an annotation file, which it can revise until satisfied.
+The pipeline has two stages: (1) preprocessing extracts a readable trajectory summary, and (2) the segmentation agent reads this summary and writes interval marks to an annotation file, which it can revise until satisfied.
 % 管线分两阶段：首先预处理提取可读的轨迹摘要；然后切分 agent 读取摘要并将区间标记写入标注文件，它可以反复修改直到满意为止。
 The CLI validates that marks are nested and cover every step, then emits a standard pprof protobuf profile that \texttt{go tool pprof} reads directly.
 % CLI 校验标记嵌套且覆盖每一步，然后输出标准 pprof protobuf profile，供 \texttt{go tool pprof} 直接读取。
@@ -485,12 +465,10 @@ Projection is deterministic: each operation contributes its semantic path and LL
 Switching the additive measure replays the same annotations and changes only stack widths.
 % 切换可加度量只重放同一标注、只改变栈宽度。
 
-Levels need not come from annotation: fields already recorded literally (e.g., agent skill invocations) become stack levels without annotation cost and compose with annotated semantic levels in one hierarchy.
-% 层级不必来自标注：已被字面记录的字段（如 agent skill 调用）无需标注成本即可成为栈层级，并与标注得到的语义层级组合在同一层次中。
-Multi-agent orchestration is a direct instance: when an outer agent delegates to a subagent (e.g., Claude Code spawning an Explore agent to search code), the delegation is an operation whose interval contains all downstream work, so subagent operations inherit the outer agent's semantic path without special handling.
-% 多智能体编排是一个直接实例：当外层 agent 委托给 subagent 时（例如 Claude Code 生成 Explore agent 来搜索代码），委托本身是一个 operation，其区间包含所有下游工作，因此 subagent 操作继承外层 agent 的语义路径，无需特殊处理。
-A non-LLM statistical segmenter is also available: it scores adjacent action transitions by normalized pointwise mutual information~\cite{bouma2009npmi} and calibrates an unsupervised cutoff with one-dimensional $k$-means ($k=2$)~\cite{macqueen1967}, reading only action sequences without target annotations.
-% 还提供非 LLM 统计 segmenter：它用归一化点互信息为相邻 action 转移评分，并用一维 $k$-means（$k=2$）校准无监督阈值，只读取 action 序列而不读取目标标注。
+Fields already recorded literally (e.g., skill invocations) become stack levels without annotation cost.
+Multi-agent orchestration works automatically: subagent operations inherit the outer agent's semantic path.
+A non-LLM statistical segmenter is also available, scoring transitions by NPMI~\cite{bouma2009npmi} and calibrating an unsupervised cutoff with $k$-means~\cite{macqueen1967}.
+% 已被字面记录的字段（如 skill 调用）无需标注成本即可成为栈层级。多智能体编排自动运作：subagent 操作继承外层 agent 的语义路径。还提供非 LLM 统计 segmenter，用 NPMI 为转移评分并用 $k$-means 校准无监督阈值。
 %% ===================================================================
 \section{Evaluation}
 % 评估
@@ -519,13 +497,8 @@ operations~\cite{agentprocessbench,hintbench,traceelephant}.
 All annotations, outcomes, and scores stay hidden from every method
 until its output is produced.
 % 所有标注、结局与分数在每个方法的输出产生之前都对其保持隐藏。
-Mean operations per trajectory are 8.5 (AgentProcessBench), 13.9
-(OSWorld-Human), 24.0 (HINTBench), 27.1 (TraceElephant), and 51.5
-(CodeTraceBench), so the benchmark trajectories are short to medium length
-while the annotated 42-session workstation portion (whose longest sessions
-span tens of hours) supplies long-horizon coverage; the RQ4 union covers
-27{,}765 operations.
-% 各 workload 平均每条轨迹的 operation 数分别为 AgentProcessBench 8.5、OSWorld-Human 13.9、HINTBench 24.0、TraceElephant 27.1、CodeTraceBench 51.5，因此 benchmark 轨迹属于短到中长度，而被标注的 42-session 工作站部分（其最长 session 跨越数十小时）提供长 horizon 覆盖；RQ4 的并集覆盖 27,765 个 operation。
+Benchmark trajectories average 8--52 operations (short to medium); the 42-session from the research of this paper portion supplies long-horizon coverage, whose longest sessions span tens of hours, and the RQ4 union covers 27{,}765 operations.
+% benchmark 轨迹平均 8--52 个 operation（短到中）；42-session 工作站部分提供长 horizon 覆盖；RQ4 并集覆盖 27,765 个 operation。
 
 %% -------------------------------------------------------------------
 \subsection{RQ1: Does Semantic Profiling Improve Resource Attribution?}
@@ -566,33 +539,13 @@ Switching to operation count shifts where mass concentrates: token mass stays at
 The history also demonstrates multi-agent composition at scale: 98 subagent delegations across 14 sessions, where each delegation contains all downstream subagent operations and composes with annotated semantic levels.
 % 该历史还展示了规模化的多智能体组合：跨 14 个 session 的 98 次 subagent 委托，每次委托包含所有下游 subagent 操作，并与标注的语义层级组合。
 
-The same hierarchy replays under FILE-READ, FILE-WRITE, and NETWORK-target
-widths with exact conservation of 737, 31, and 61 target references; in the FILE-WRITE view, each created
-file appears as an exact drilldown leaf beneath the operation that created
-it.
-% 同一层次还按 FILE-READ、FILE-WRITE 与 NETWORK-target 宽度重放，分别精确守恒 737、31 与 61 个 target reference；在 FILE-WRITE 视图中，每个被创建的文件作为精确下钻叶出现在创建它的 operation 之下。
-These views answer the Introduction's system-effect question concretely: every recorded file and network target is attributed to
-the semantic responsibility that touched it, making side effects auditable
-per responsibility.
-% 这些视图具体回答 Introduction 的 system-effect 问题：每个被记录的 file 与 network target 都归因到触及它的语义责任，使副作用可按责任审计。
+The same hierarchy replays under FILE-READ, FILE-WRITE, and NETWORK-target widths, making side effects auditable per responsibility and answer question about what task write most of 
+the artifact files and what task made most of the network calls.
+% 同一层次按 FILE-READ、FILE-WRITE 与 NETWORK-target 宽度重放，使副作用可按责任审计。
 
-Skill invocations appear literally in the session log, so that level costs no
-annotation time and carries no tag error, and it therefore covers the
-developer's complete history rather than only its annotated portion:
-1{,}394 sessions and 6{,}890{,}216{,}049 tokens.
-% skill 调用在 session log 中被字面记录，因此该层级不消耗标注时间、不引入标签误差，可以覆盖开发者的完整历史而不只是其中被标注的部分：1,394 个 session 与 6,890,216,049 个 token。
-A skill scope opens at an exact recorded invocation and closes at the next
-invocation or the next user prompt, which keeps the intervals nested,
-noncrossing, and covering, and the level conserves exactly.
-% 一个 skill 作用域在被精确记录的调用处开启、在下一次调用或下一个用户 prompt 处关闭，从而保持区间嵌套、不交叉且全覆盖，该层级精确守恒。
-Under it, \texttt{paper-writing-style} leads by both measures (29{,}143{,}650
-tokens and 523 operations over 20 sessions and 37 invocations), and 99.47\% of
-its tokens are cache reads, naming its repeated-context workflow as the first
-thing to inspect.
-% 在该层级下，\texttt{paper-writing-style} 在两种度量上都居首（横跨 20 个 session、37 次调用，计 29,143,650 个 token 与 523 个 operation），且其 99.47\% 的 token 为 cache read，从而指出它反复拉长上下文的工作流是首先该检查的对象。
-The largest single session holds only 31.23\% of that mass, so the
-priority across the full history appears only after folding.
-% 最大的单个 session 仅持有该质量的 31.23\%，因此覆盖全历史的优先级只有在折叠之后才显现。
+Skill invocations appear literally in the session log and cost no annotation, so they cover the developer's complete history (1{,}394 sessions, 6.9B tokens).
+Under that level, \texttt{paper-writing-style} leads both measures (29M tokens, 99.47\% cache reads), naming its repeated-context workflow as the first thing to inspect; the largest single session holds only 31\% of that mass, so the priority appears only after folding.
+% skill 调用在 session log 中被字面记录、无需标注，因此覆盖开发者完整历史（1,394 session、69 亿 token）。在该层级下，\texttt{paper-writing-style} 在两种度量上居首（2900 万 token、99.47\% 为 cache read），指出它反复拉长上下文的工作流是首先该检查的对象；最大单 session 仅持有 31\%，因此优先级只有折叠后才显现。
 
 Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tokens, both conserved exactly), ranking operations by count versus tokens yields high agreement: mean Kendall's tau-b is 0.886 [0.857, 0.915] over the 77 tasks with at least three distinct operations, and pooled ranking agrees at tau-b 0.929.
 The 13\% of tasks (10 of 77) where agreement falls below 0.7 are exactly where multi-measure profiling adds value.
@@ -643,16 +596,16 @@ This structure matches independent expert looping labels on 435 trajectories at 
 
 \paragraph{Supplementing benchmark's own diagnostics.}
 % 补充 benchmark 原生诊断。
-\emph{Setup.} Each benchmark trajectory has one annotated faulty step;
-a method outputs a ranking of that trajectory's operations, scored by
+\emph{Setup.} Each benchmark trajectory has one annotated faulty step.
+A method outputs a ranking of that trajectory's operations, scored by
 average precision (AP approximates the reciprocal rank of the faulty step) and
 averaged as MAP~\cite{robertson2008ap}.
 % 设置。每条 benchmark 轨迹有一个已标注的出错步骤；方法输出对该轨迹 operation 的排序，以 average precision 评分（单目标时 AP 约等于出错步骤排名的倒数），并平均为 MAP。
 We run the complete AgentProcessBench, HINTBench (the complete released test
 snapshot, 536 of the paper-reported 629 trajectories), and TraceElephant
-workloads; all profiler outputs are computed before any fault annotations are revealed.
+workloads. All profiler outputs are computed before any fault annotations are revealed.
 % 我们在完整的 AgentProcessBench、HINTBench与 TraceElephant workload 上运行；所有 profiler 输出在故障标注揭示之前计算完成。
-We report per-query AP averaged over 614, 400, and 220 labeled queries; 522 unlabeled trajectories are consumed for population coverage but excluded from MAP.
+We report per-query AP averaged over 614, 400, and 220 labeled queries. The 522 unlabeled trajectories are consumed for population coverage but excluded from MAP.
 % 我们报告 per-query AP，在 614、400 与 220 个带标注的 query 上取平均；522 条无标注轨迹计入群体覆盖但从 MAP 中排除。
 The \emph{direct diagnostic} is the per-operation output of each benchmark's own judge, including LLM-as-judge methods: reads the full trace and reference answer before naming the responsible agent and decisive step.
 % \emph{direct diagnostic} 是 benchmark 原生, 它先读取完整 trace 与参考答案，再指出责任 agent 与决定性步骤。
@@ -674,16 +627,10 @@ Grouping with retained evidence drives the ranking gain (Figure~\ref{fig:rq2-map
 
 \paragraph{Profile-guided reading on TraceElephant.}
 % TraceElephant 上的 profile 引导阅读。
-On the complete 220 queries that contain a faulty step, a Grok 4.5~\cite{grok45} agent (agent-as-judge) receives the task description and trajectory content (without any ground-truth labels) and is asked to rank operations by likely fault.
-% 在全部 220 个含出错步骤的 query 上，Grok 4.5 agent（agent-as-judge）接收任务描述与轨迹内容（不含任何真实标签），被要求按可能出错排序 operation。
-Full-trace reading (without \sys) reaches MAP .502 at a mean 12{,}615 input tokens per query, versus .209 for the benchmark's Direct-only diagnostic and .326 for Direct+\sys.
-% 全 trace 阅读（不用 \sys）以每 query 平均 12,615 个输入 token 达到 MAP .502，而 benchmark 的 Direct-only 诊断为 .209、Direct+\sys 为 .326。
-A profile-guided reader uses the semantic hierarchy to select at most five groups and opens only their evidence.
-% profile 引导的 reader 用语义层次选择最多五个 group，并只打开其 evidence。
-With semantic names, the reader reaches MAP .455 while opening 53.0\% of the source content; with raw-action names, it opens 65.0\% at unchanged MAP (.465; paired $\Delta=+.010$ [$-.021$,$+.042$]; content $\Delta=+.120$ [$+.103$,$+.137$]).
-% 语义骨架达到 MAP .455 且只打开 53.0\% 的源内容；\sys-Raw 骨架需要打开 65.0\% 才能达到相近质量（MAP .465）。
-A per-query full read is also bounded by the model context window (the 4{,}558{,}192-token Git population cannot be read whole).
-% 每 query 的全量阅读还受模型上下文窗口约束（4,558,192-token 的 Git population 无法整体读入）。
+On 220 queries, a Grok 4.5~\cite{grok45} agent-as-judge ranks operations by likely fault.
+Full-trace reading reaches MAP .502 at 12.6K tokens/query; a profile-guided reader using semantic names reaches .455 while opening only 53\% of the source (vs 65\% with raw-action names at unchanged MAP).
+A per-query full read is also bounded by the model context window.
+% 在 220 个 query 上，Grok 4.5 agent-as-judge 按可能出错排序 operation。全 trace 阅读以 12.6K token/query 达到 MAP .502；profile 引导的 reader 用语义名达到 .455 且只打开 53\% 的源（用 raw-action 名需打开 65\% 才达相近 MAP）。
 \emph{Takeaway.} Failure structure surfaced by the profile matches independent human labels across 435 trajectories; profiles add localization signal on top of existing judges; semantic names concentrate the agent's attention, reducing evidence opened from 65\% to 53\% at equal ranking quality.
 % 要点。profile 呈现的失败结构在 435 条轨迹上与独立人工标注一致；profile 在既有 judge 之上补充定位信号；语义名称集中 agent 注意力，在相同排序质量下将需要打开的证据从 65\% 降至 53\%。
 
@@ -754,7 +701,7 @@ An unsupervised TF-IDF/K-Means method reaches V-measure 0.557 on nine Mind2Web s
 The same Codex instruction without adaptation uses coarser task-level boundaries (0.448 B$^3$ F1); matching OSWorld's finer action-group granularity recovers 0.816, showing the framework supports different segmentation scales.
 % 该接口在不同方法家族间泛化。在 287 个 OSWorld-Human session（3,978 个 operation、2,042 个人工 group）上，五折交叉验证的监督 Bernoulli Naive Bayes 边界预测器达到 0.739 边界 F1 / 0.816 B$^3$ F1。Calibrated recurrence 达到 0.734 / 0.801，使用了无监督默认方式所回避的 group 标注。无 LLM 的 recurrence segmenter 达到 0.680 / 0.786（最强对照 0.645 / 0.678）。无监督 TF-IDF/K-Means 方法在 9 个 Mind2Web session 上 V-measure 为 0.557，在 100 个 ScienceWorld session 上为 0.815。同一 Codex instruction 不经调整使用更粗的 task-level 边界（0.448 B$^3$ F1）；匹配 OSWorld 更细的 action-group 粒度后恢复到 0.816，表明框架支持不同切分尺度。
 For closed-label literal tags, a fixed evaluation-only Qwen3.6-27B~\cite{qwen36} classifier labels all 1{,}012 AgentBoard goals~\cite{agentboard} into nine task families at 0.695 macro-F1 and 0.733 accuracy (majority baseline 0.044 / 0.248).
-The same model classifies 2{,}737 published action labels from 120 AutoCodeRover, OpenHands, and RepairAgent trajectories~\cite{traceview-2026,bouzenia-pradel-2025-trajectories} at 0.498 macro-F1 and 0.628 accuracy (majority baseline 0.061 / 0.323); the 0.437 macro-F1 gain has a 95\% bootstrap interval of [0.380, 0.494].
+The same model classifies 2{,}737 published action labels from 120 AutoCodeRover, OpenHands, and RepairAgent trajectories~\cite{traceview-2026,bouzenia-pradel-2025-trajectories} at 0.498 macro-F1 and 0.628 accuracy (majority baseline 0.061 / 0.323). The 0.437 macro-F1 gain has a 95\% bootstrap interval of [0.380, 0.494].
 % 在闭标签的字面标签上，固定的、仅用于评测的 Qwen3.6-27B 把全部 1,012 个 AgentBoard goal 分入九个 task family，macro-F1 与 accuracy 为 0.695 / 0.733（majority 基线 0.044 / 0.248）。同一模型把来自 120 条 AutoCodeRover、OpenHands 与 RepairAgent 轨迹的 2,737 个公开 action 标签分类，macro-F1 与 accuracy 为 0.498 / 0.628（majority 基线 0.061 / 0.323）；0.437 macro-F1 增量的 95\% bootstrap 区间为 [0.380, 0.494]。
 \emph{Takeaway.} Recursive segmentation recovers human-recognizable task structure: 0.764 B$^3$ F1 against human stages, beating the strongest automatic baseline by +0.101. When segmentation disagrees with humans, it over-segments (subdivides work) rather than merging unrelated responsibilities, preserving per-group coherence. Non-LLM methods implementing the same interface remain viable when no model is available.
 % 要点。递归切分恢复出人类可识别的任务结构：相对人工 stage 达到 0.764 B$^3$ F1，比最强自动基线高 +0.101。当切分与人类不一致时，它是过分割（细分工作）而非合并无关责任，从而保留每组连贯性。实现同一接口的非 LLM 方法在没有模型可用时依然可行。
@@ -765,7 +712,6 @@ The same model classifies 2{,}737 published action labels from 120 AutoCodeRover
 
 \emph{Setup.} To evaluate whether profiling cost is practical, we measure segmentation time and tokens and profile replay speed. Cost separates into a one-time automatic segmentation pass per corpus and deterministic construction/replay afterwards (Table~\ref{tab:rq4-cost}).
 % 设置。为评估 profiling 开销是否实用，我们测量切分的时间与 token 以及 profile 重放速度。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放（Table~\ref{tab:rq4-cost}）。
-% 设置。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放（Table~\ref{tab:rq4-cost}）。
 
 \begin{table}[tb]
 \centering\small
