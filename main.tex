@@ -109,8 +109,8 @@ responsibility into account, transport, credential, and retest operations.}
 %% ¶1: Background + context
 AI agents~\cite{sweagent,claudecode,osworld} orchestrate multi-step activities that span two layers, high-level intent (prompts, LLM calls, tool invocations) and low-level system effects (process spawns, file and network I/O).
 % AI 智能体~\cite{sweagent,claudecode,osworld}编排跨越两层的多步骤活动：高层意图（提示词、LLM 调用、工具调用）和低层系统副作用（进程创建、文件和网络 I/O）。
-As agents evolve from short, scripted workflows into complex systems that run for hours and days, production teams accumulate many such trajectories over weeks or months.
-% 随着智能体从短小的脚本化工作流进化为运行数小时乃至数天的复杂系统，生产团队在数周或数月内积累大量此类轨迹。
+As agents evolve from short, scripted workflows into complex systems that run for hours and days, with a large number of interactions each, production teams accumulate many such trajectories over weeks or months.
+% 随着智能体从短小的脚本化工作流进化为每次运行数小时、包含数千次交互的复杂系统，生产团队在数周或数月内积累大量此类轨迹。
 
 %% ¶2: Problem
 To improve agent quality, safety, and cost efficiency, developers
@@ -684,15 +684,8 @@ However, 10 of 77 tasks fall below 0.7, so the measure matters when it matters.
 \includegraphics[width=.97\linewidth]{figures/agentreward-recovery-differential.operations.pdf}\\[2pt]
 \textbf{(b) Completion focus}\\[-2pt]
 \includegraphics[width=.97\linewidth]{figures/agentreward-completion-differential.operations.pdf}
-\caption{Stock-pprof differential flame graphs over all 338 bad--good pairs.
-Each box width is the sum of the good/base and bad/candidate contributions;
-the inset is their net bad-minus-good difference (rose: more in bad; green:
-more in good; gray: overlapping remainder). The arrow reports good
-$\rightarrow$ bad, with percentages relative to the 3{,}780-operation good
-diff base. Recovery grows from 455 to 3{,}286 occurrences (net $+2{,}831$);
-completion falls from 191 to 135 (net $-56$). Agent and source-call frames are
-hidden only in this display; the signed pprof retains them and their evidence
-labels. These are aggregate diagnostic differences, not causal effects.}
+\caption{Stock-pprof differential flame graphs (bad minus good). Box width sums both contributions; inset shows net difference (rose: bad excess; green: good excess). Recovery dominates bad runs; completion favors good runs.}
+% 标准 pprof 差分火焰图（坏减好）。框宽为双方贡献之和；嵌入区显示净差（玫红：坏方多；绿：好方多）。恢复主导失败运行；完成偏向成功运行。
 \Description{Two stock-pprof differential flame graphs. The recovery panel is
 dominated by rose bad-side growth beneath browser-task responsibilities. The
 completion panel has a green good-side excess through report-completion and
