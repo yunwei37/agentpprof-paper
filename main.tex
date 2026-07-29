@@ -780,24 +780,15 @@ On the complete 220 queries that contain a faulty step, a Grok 4.5~\cite{grok45}
 % 在全部 220 个含出错步骤的 query 上，Grok 4.5 agent 接收任务描述与轨迹内容（不含任何真实标签），被要求按可能出错排序 operation。
 Full-trace reading reaches MAP .502 at a mean 12{,}615 input tokens per query, versus .209 for the benchmark's Direct-only diagnostic and .326 for Direct+\sys.
 % 全 trace 阅读以每 query 平均 12,615 个输入 token 达到 MAP .502，而 benchmark 的 Direct-only 诊断为 .209、Direct+\sys 为 .326。
-A two-stage profile-guided variant first shows only the semantic operation
-skeleton, with no source content, and the agent selects at most five groups;
-stage two then opens only those groups' evidence.
+A two-stage profile-guided variant first shows only the semantic operation skeleton, with no source content, and the agent selects at most five groups; stage two then opens only those groups' evidence.
 % 两阶段的 profile 引导变体先只展示语义 operation 骨架（不含 source 内容），agent 最多选择五个 group；第二阶段只打开这些 group 的证据。
-It reaches MAP .455 while opening 53.0\% of the source content; missed targets were absent from the agent's selection entirely, not cut off by the group budget.
-% 它在只打开 53.0\% source 内容的情况下达到 MAP .455；遗漏的 target 完全不在 agent 的选择中，而非被 group budget 截断。
-Under the information-equivalent \sys-Raw skeleton, ranking quality is
-statistically unchanged (MAP .465), but the agent opens significantly more content (65.0\% versus 53.0\%; Figure~\ref{fig:rq2-deltas}).
-% 在信息量等价的 \sys-Raw 骨架下，排序质量在统计上不变（MAP .465），但 agent 打开的内容显著更多（65.0\% 对 53.0\%；Figure~\ref{fig:rq2-deltas}）。
-Semantic naming's measured contribution in this setting is therefore
-attention concentration at equal quality.
-% 因此在该设置下，语义命名可测得的贡献是"同等质量下的注意力集中"。
-A per-query full read is also bounded by the model context window (the
-4{,}558{,}192-token Git population cannot be read whole).
+The semantic skeleton reaches MAP .455 while opening only 53.0\% of the source content; the \sys-Raw skeleton requires 65.0\% to reach comparable quality (MAP .465).
+% 语义骨架达到 MAP .455 且只打开 53.0\% 的源内容；\sys-Raw 骨架需要打开 65.0\% 才能达到相近质量（MAP .465）。
+Missed targets were absent from the agent's selection entirely, not truncated by the five-group limit.
+% 遗漏的 target 完全不在 agent 的选择中，而非被五组上限截断。
+A per-query full read is also bounded by the model context window (the 4{,}558{,}192-token Git population cannot be read whole).
 % 每 query 的全量阅读还受模型上下文窗口约束（4,558,192-token 的 Git population 无法整体读入）。
-\emph{Takeaway.} Failure structure surfaced by the profile matches
-independent human labels across 435 trajectories; profiles add localization
-signal on top of existing judges; and semantic names concentrate the agent's attention, reducing evidence opened from 65\% to 53\% at equal ranking quality.
+\emph{Takeaway.} Failure structure surfaced by the profile matches independent human labels across 435 trajectories; profiles add localization signal on top of existing judges; semantic names concentrate the agent's attention, reducing evidence opened from 65\% to 53\% at equal ranking quality.
 % 要点。profile 呈现的失败结构在 435 条轨迹上与独立人工标注一致；profile 在既有 judge 之上补充定位信号；语义名称集中 agent 注意力，在相同排序质量下将需要打开的证据从 65\% 降至 53\%。
 
 %% -------------------------------------------------------------------
