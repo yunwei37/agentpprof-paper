@@ -126,9 +126,9 @@ trajectories~\cite{agentatlas,agentrewardbench}, a task becoming costly for manu
 per-trajectory LLM evaluation~\cite{llm-as-judge} at scale.
 % 回答这些问题需要跨许多轨迹的分析和评估，在规模化时人工检查或逐轨迹 LLM 评估的成本越来越高。
 In traditional systems software, profiling answers these questions by
-attributing resource consumption to responsible entities by
-aggregation, as distinct from per-execution debugging and tracing.
-% 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责实体来回答这些问题，区别于单次执行调试和 tracing。
+aggregating resource consumption and attributing it to responsible
+entities, distinct from per-execution debugging and tracing.
+% 在传统系统软件中，profiling 通过聚合资源消耗并将其归因到负责实体来回答这些问题，区别于单次执行调试和 tracing。
 
 %% ¶3: Existing solutions
 Yet existing agent tools support debugging and tracing but not
@@ -149,11 +149,10 @@ to downstream tool calls and system effects.
 %% ¶4: Challenge — why traditional profiling doesn't transfer directly
 Adapting profiling to agent trajectories is challenging.
 % 将 profiling 适配到智能体轨迹具有挑战性（Background）。
-In traditional software, the responsible entities are code paths.
-Profiling is straightforward because function names are
-stable and runtime call nesting provides the attribution
-hierarchy.
-% 在传统软件中，负责实体是代码路径。Profiling 是直接的，因为函数名是稳定的，运行时调用嵌套提供归因层次。
+In traditional software, the responsible entities are code paths, and
+profiling is straightforward because function names are stable and
+runtime call nesting provides the attribution hierarchy.
+% 在传统软件中，负责实体是代码路径，而 profiling 是直接的，因为函数名是稳定的，运行时调用嵌套提供归因层次。
 Agent behavior differs. To answer the questions above, the responsible entities must be task intent and workflow phase, not code paths.
 % 智能体行为不同：要回答上述问题，负责实体必须是任务意图和工作流阶段，而非代码路径。
 Agent trajectories lack the two properties that make traditional profiling possible.
@@ -290,7 +289,7 @@ Once that name is constructed, the profile answers the engineer's question
 directly.
 % 一旦这个名字被构造出来，profile 就直接回答了工程师的问题。
 
-The profile answers in one view (Figure~\ref{fig:flamegraph}). All three runs share a \texttt{diagnose authentication} responsibility that consumes 46\% of their combined token budget but only 21\% of operation count.
+The profile answers in one view (Figure~\ref{fig:flamegraph}): all three runs share a \texttt{diagnose authentication} responsibility that consumes 46\% of their combined token budget but only 21\% of operation count.
 % profile 用一个视图回答（Figure~\ref{fig:flamegraph}）：三次执行共享一个 \texttt{diagnose authentication} 责任，消耗 46\% 的 token 预算但只占 21\% 的 operation 数。
 Expanding the view shows all three executions verifying substitute transport paths without ever establishing the target endpoint.
 % 展开视图显示三次执行都在验证替代传输路径，却从未建立目标端点。
@@ -427,8 +426,8 @@ A step's operation path is the name chain of the intervals containing it, from t
 % 一个步骤的 operation 路径是包含它的区间自 session 根到最内层的名称链；相同路径跨 session 折叠。
 Segmentation is the right primitive because transitions are visible in the content, cuts compose into variable-depth hierarchies, and naming intervals (not steps) yields identifiers at the granularity where recurrence lives.
 % 切分是正确的基本操作，因为转换点在内容中可见，切口可组合为可变深度层次，且为区间（而非单步）命名得到与"重复出现"粒度一致的标识符。
-Concretely, in one Git-deployment execution the algorithm cuts the session into \texttt{build deployment system} and, inside it, cuts again where the agent stops writing configuration and starts debugging access, yielding \texttt{deploy branches} and \texttt{diagnose authentication}; a step inside the latter carries the path \texttt{build deployment system > diagnose authentication}, and because the same names reappear in the other two executions, their costs fold together in Figure~\ref{fig:flamegraph}.
-% 具体地，在一次 Git 部署执行中，算法先把 session 切为 \texttt{build deployment system}，再在"智能体从编写配置转向调试访问"处继续切分，得到 \texttt{deploy branches} 与 \texttt{diagnose authentication}；后者内部的步骤携带路径 \texttt{build deployment system > diagnose authentication}；由于同样名称在另外两次执行中再次出现，其开销在 Figure~\ref{fig:flamegraph} 中折叠到一起。
+Concretely, in one Git-deployment execution the algorithm cuts the session into \texttt{build deployment system} and, inside it, cuts again where the agent stops writing configuration and starts debugging access, yielding \texttt{deploy branches} and \texttt{diagnose authentication}. A step inside the latter carries the path \texttt{build deployment system > diagnose authentication}, and because the same names reappear in the other two executions, their costs fold together in Figure~\ref{fig:flamegraph}.
+% 具体地，在一次 Git 部署执行中，算法先把 session 切为 \texttt{build deployment system}，再在"智能体从编写配置转向调试访问"处继续切分，得到 \texttt{deploy branches} 与 \texttt{diagnose authentication}。后者内部的步骤携带路径 \texttt{build deployment system > diagnose authentication}，由于同样名称在另外两次执行中再次出现，其开销在 Figure~\ref{fig:flamegraph} 中折叠到一起。
 Any implementation able to find transitions and name intervals (an agent, a language model, or a statistical rule) can serve as the segmenter.
 % 任何能找到 transition 并为 interval 命名的实现（agent、语言模型或统计规则）都可作为 segmenter。
 In evaluation, we use Codex~\cite{codex} with GPT-5.6-sol-high, with one fixed instruction per trajectory:
@@ -520,10 +519,10 @@ The Git-deployment case from Section~\ref{sec:background} established that seman
 The same hierarchy replays under all three measures with exact conservation, and the \texttt{diagnose authentication} subtree's share rises from 21\% (count) through 37\% (time) to 46\% (tokens). Changing only the measure moves the attributed share by more than a factor of two.
 % 同一层次在三种度量下精确守恒地重放，\texttt{diagnose authentication} 子树的份额从 21\%（count）经 37\%（time）升至 46\%（token）。仅改变度量就使归因份额变化超过两倍。
 A quantitative control shows why both alternatives fail.
-\emph{Raw-action grouping} (by literal action-type, e.g., \texttt{run}, \texttt{edit}) fails: of 105 authentication operations, 102 carry only the label \texttt{run}, and that same bucket mixes in 97 unrelated operations; a coarser action-kind grouping scatters the work across six kinds (execute 39\%, version-control 22\%, edit 19\%, inspect 12\%, search 7\%, install 1\%).
+\emph{Raw-action grouping} (by literal action-type, e.g., \texttt{run}, \texttt{edit}) fails: of 105 authentication operations, 102 carry only the label \texttt{run}, and that same bucket mixes in 97 unrelated operations. A coarser action-kind grouping scatters the work across six kinds (execute 39\%, version-control 22\%, edit 19\%, inspect 12\%, search 7\%, install 1\%).
 \emph{Native call trees} (each operation under its source LLM or tool call) place each operation under a distinct source call with no shared responsibility node.
 Only the semantic hierarchy reunites authentication into one focusable cross-run path while preserving all call/tool evidence as leaf nodes.
-% 定量对照显示为什么两种替代方式都失败。Raw-action 分组（按字面 action-type）失败：105 个认证 operation 中 102 个只带标签 \texttt{run}，而同一 bucket 还混入 97 个无关 operation；更粗的 action-kind 分组把工作散落到六种 kind。Native call tree（每个 operation 在其源 LLM 或 tool call 下）把每个 operation 放在不同 source call 下，没有共享责任节点。只有语义层次将认证重聚为一条可聚焦的跨运行路径，同时保留所有 call/tool 证据作为叶节点。
+% 定量对照显示为什么两种替代方式都失败。Raw-action 分组（按字面 action-type）失败：105 个认证 operation 中 102 个只带标签 \texttt{run}，而同一 bucket 还混入 97 个无关 operation。更粗的 action-kind 分组把工作散落到六种 kind。Native call tree（每个 operation 在其源 LLM 或 tool call 下）把每个 operation 放在不同 source call 下，没有共享责任节点。只有语义层次将认证重聚为一条可聚焦的跨运行路径，同时保留所有 call/tool 证据作为叶节点。
 Separately, real AgentSight~\cite{agentsight} eBPF recordings replay the
 same way, and all 1{,}520 captured process spawns and file operations fold
 under task responsibilities with exact conservation, demonstrating the system-effect layer end to end.
@@ -550,9 +549,9 @@ tasks wrote most artifact files or made most network calls.
 % 同一层次按 FILE-READ、FILE-WRITE 与 NETWORK-target 宽度重放，使副作用可按责任审计。
 
 Skill invocations appear literally in the session log and cost no annotation, so they cover the developer's complete history (1{,}394 sessions, 6.9B tokens).
-Under that level, \texttt{paper-writing-style} leads both measures (29M tokens, 99.47\% cache reads), naming its repeated-context workflow as the first thing to inspect. The largest single session holds only 31\% of that mass, so the priority appears only after folding.
+Under that level, \texttt{paper-writing-style} leads both measures (29M tokens, 99.47\% cache reads), highlighting its repeated-context workflow as the first thing to inspect. The largest single session holds only 31\% of that mass, so the priority appears only after folding.
 The 99.47\% cache-read ratio suggests the workflow repeatedly rebuilds similar context. Restructuring it to reuse context across invocations could reduce token cost.
-% skill 调用在 session log 中被字面记录、无需标注，因此覆盖开发者完整历史（1,394 session、69 亿 token）。在该层级下，\texttt{paper-writing-style} 在两种度量上居首（2900 万 token、99.47\% 为 cache read），指出它反复拉长上下文的工作流是首先该检查的对象；最大单 session 仅持有 31\%，因此优先级只有折叠后才显现。99.47\% 的 cache read 比例表明该工作流反复重建相似上下文；重构它以跨调用复用上下文可降低 token 成本。
+% skill 调用在 session log 中被字面记录、无需标注，因此覆盖开发者完整历史（1,394 session、69 亿 token）。在该层级下，\texttt{paper-writing-style} 在两种度量上居首（2900 万 token、99.47\% 为 cache read），凸显它反复拉长上下文的工作流是首先该检查的对象；最大单 session 仅持有 31\%，因此优先级只有折叠后才显现。99.47\% 的 cache read 比例表明该工作流反复重建相似上下文；重构它以跨调用复用上下文可降低 token 成本。
 
 Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tokens, both conserved exactly), ranking operations by count versus tokens yields high agreement: mean Kendall's tau-b is 0.886 [0.857, 0.915] over the 77 tasks with at least three distinct operations, and pooled ranking agrees at tau-b 0.929.
 The 13\% of tasks (10 of 77) where agreement falls below 0.7 are exactly where multi-measure profiling adds value.
