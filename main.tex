@@ -36,11 +36,10 @@
 \begin{abstract}
 AI agents increasingly orchestrate long-running, multi-step activities involving thousands to millions of interactions with users, tools, and system resources.
 % AI 智能体编排涉及数千到数百万次交互的长时间多步骤活动。
-To improve quality, safety, and cost efficiency of AI agents, developers need to determine where failures concentrate, which workflows trigger unsafe effects, and which task categories consume the most budget---then target those tasks for optimization to reduce token and time cost
-and improve safety and success rate.
-% 为提高智能体的质量、安全性和成本效率，开发者需确定故障集中在哪里、哪些工作流触发不安全副作用、哪类任务消耗最多预算——然后针对这些任务进行优化。
-To answer similar questions in traditional systems software, profiling attributes resource consumption to responsible entities, such as code paths, by aggregation, to identify hotspots.
-% 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责实体（如代码路径）。
+To improve quality, safety, and cost efficiency of AI agents, developers need to determine where failures concentrate, which workflows trigger unsafe effects, and which task categories consume the most budget. They can then target those tasks for optimization to reduce token and time cost and improve success rate.
+% 为提高智能体的质量、安全性和成本效率，开发者需确定故障集中在哪里、哪些工作流触发不安全副作用、哪类任务消耗最多预算。然后针对这些任务进行优化，降低 token 和时间成本，提高成功率。
+In traditional systems software, profiling answers similar questions by aggregating resource consumption and attributing it to responsible code paths, identifying hotspots for optimization.
+% 在传统系统软件中，profiling 通过聚合资源消耗并归因到负责的代码路径来回答类似问题，识别出需要优化的热点。
 Yet existing agent observability tools focus on per-execution debugging and tracing rather than profiling, making these questions difficult to answer as trajectories grow long and complex.
 % 然而现有智能体可观测性工具聚焦于单次执行的调试和 tracing 而非 profiling，使这些问题在轨迹变长变复杂时难以回答。
 Agent behavior differs from code execution. The responsible entities are task intent and workflow phase rather than code paths, and agent trajectories lack the stable identifiers that make attribution possible.
@@ -120,8 +119,8 @@ interactions.
 Which categories of tasks consume the most token budget? Where do
 failures concentrate across workflows? Which behavioral patterns
 trigger unsafe system effects?
-Answering these questions is the first step; acting on the answers---optimizing the high-cost tasks, fixing the failure-prone workflows---is the goal.
-% 为了提高智能体质量、安全性和成本效率，开发者需要跨轨迹和交互分析运维行为。哪类任务消耗最多 token 预算？故障跨工作流集中在哪里？哪些行为模式触发不安全系统副作用？回答这些问题是第一步；针对答案采取行动——优化高成本任务、修复易出错工作流——才是目标。
+Answering these questions is the first step. Acting on the answers, by optimizing high-cost tasks and fixing failure-prone workflows, is the goal.
+% 为了提高智能体质量、安全性和成本效率，开发者需要跨轨迹和交互分析运维行为。哪类任务消耗最多 token 预算？故障跨工作流集中在哪里？哪些行为模式触发不安全系统副作用？回答这些问题是第一步。针对答案采取行动（优化高成本任务、修复易出错工作流）才是目标。
 Answering these questions requires analysis and evaluation across many
 trajectories~\cite{agentatlas,agentrewardbench}, a task becoming costly for manual inspection or
 per-trajectory LLM evaluation~\cite{llm-as-judge} at scale.
@@ -192,7 +191,7 @@ local agent trajectories into pprof-compatible profiles
 One algorithm, \emph{recursive operation segmentation}, supplies the missing tags.
 Its design follows from one observation: a task occupies a contiguous span of a trajectory and decomposes into contiguous subtasks, so task structure is exactly a set of nested named intervals, and recovering it requires only finding the transitions between them.
 % 一个算法——递归 operation 切分——提供缺失的标签。其设计源于一个观察：任务占据轨迹上一段连续区间并分解为连续的子任务，因此任务结构恰好是一组嵌套的命名区间，恢复它只需找到它们之间的转移点。
-The algorithm finds where responsibility changes, names the resulting intervals, and yields short names starting with a verb (like \texttt{diagnose authentication}) that fold across sessions; the interface is implementation-neutral.
+The algorithm finds where responsibility changes, names the resulting intervals, and yields short names starting with a verb (like \texttt{diagnose authentication}) that fold across sessions. The interface is implementation-neutral.
 % 切分接口与实现无关：agent、普通语言模型或统计规则都能产出相同的标记。
 Across all 405 released CodeTraceBench~\cite{li2026codetracer} trajectories, recursive
 segmentation agrees with human stage annotations at 0.764
@@ -283,8 +282,8 @@ stacks recorded at different moments fold into one frame.
 What differs is where the frames come from.
 % 差别在于 frame 从哪里来。
 A call stack supplies \texttt{net/http.(*conn).serve} at every sample for
-free; nothing in an agent trajectory supplies \texttt{diagnose
-authentication}, because the three runs express that intent through different
+free, but nothing in an agent trajectory supplies \texttt{diagnose
+authentication} because the three runs express that intent through different
 prompts and different shell commands.
 % 调用栈在每个样本上免费提供 \texttt{net/http.(*conn).serve}；而智能体轨迹不会提供 \texttt{diagnose authentication}，因为三次执行用不同的提示词和不同的 shell 命令表达同一意图。
 Once that name is constructed, the profile answers the engineer's question
@@ -297,8 +296,8 @@ Expanding the view shows all three executions verifying substitute transport pat
 % 展开视图显示三次执行都在验证替代传输路径，却从未建立目标端点。
 The insight is that the agents kept retrying SSH variants instead of fixing the actual credential issue, and operation count alone would hide this because authentication commands are cheap to issue but expensive to verify.
 % 洞察：agent 不断重试 SSH 变体而非修复实际凭证问题；仅看 operation 数会掩盖这一点，因为认证命令发起成本低但验证成本高。
-The profile points to where to intervene: adding early credential validation or limiting retry depth in \texttt{diagnose authentication} could cut token cost for similar tasks.
-% profile 指出干预点：在 \texttt{diagnose authentication} 中添加早期凭证验证或限制重试深度，可降低类似任务的 token 成本。
+The profile points to where to intervene. Adding early credential validation or limiting retry depth in \texttt{diagnose authentication} could cut token cost for similar tasks.
+% profile 指出干预点。在 \texttt{diagnose authentication} 中添加早期凭证验证或限制重试深度，可降低类似任务的 token 成本。
 
 \paragraph{Challenges for Agent Profiling.}
 Adapting profiling to agent trajectories faces two core challenges.
@@ -516,7 +515,7 @@ We test both on 41 real long-horizon agent trajectories (3{,}146 user turns, 5{,
 
 \paragraph{The motivating case revisited.}
 % 动机案例回顾。
-The Git-deployment case from Section~\ref{sec:background} established that semantic organization reunites cross-run responsibility that alternative organizations scatter; here we add a third measure (elapsed time) to show measure-sensitivity.
+The Git-deployment case from Section~\ref{sec:background} established that semantic organization reunites cross-run responsibility that alternative organizations scatter. Here we add a third measure (elapsed time) to show measure-sensitivity.
 % 第~\ref{sec:background} 节的 Git 部署案例建立了语义组织能重聚跨运行责任、而替代组织会将其分散；这里我们增加第三种度量（elapsed time）以展示度量敏感性。
 The same hierarchy replays under all three measures with exact conservation, and the \texttt{diagnose authentication} subtree's share rises from 21\% (count) through 37\% (time) to 46\% (tokens). Changing only the measure moves the attributed share by more than a factor of two.
 % 同一层次在三种度量下精确守恒地重放，\texttt{diagnose authentication} 子树的份额从 21\%（count）经 37\%（time）升至 46\%（token）。仅改变度量就使归因份额变化超过两倍。
@@ -551,8 +550,8 @@ tasks wrote most artifact files or made most network calls.
 % 同一层次按 FILE-READ、FILE-WRITE 与 NETWORK-target 宽度重放，使副作用可按责任审计。
 
 Skill invocations appear literally in the session log and cost no annotation, so they cover the developer's complete history (1{,}394 sessions, 6.9B tokens).
-Under that level, \texttt{paper-writing-style} leads both measures (29M tokens, 99.47\% cache reads), naming its repeated-context workflow as the first thing to inspect; the largest single session holds only 31\% of that mass, so the priority appears only after folding.
-The 99.47\% cache-read ratio suggests the workflow repeatedly rebuilds similar context; restructuring it to reuse context across invocations could reduce token cost.
+Under that level, \texttt{paper-writing-style} leads both measures (29M tokens, 99.47\% cache reads), naming its repeated-context workflow as the first thing to inspect. The largest single session holds only 31\% of that mass, so the priority appears only after folding.
+The 99.47\% cache-read ratio suggests the workflow repeatedly rebuilds similar context. Restructuring it to reuse context across invocations could reduce token cost.
 % skill 调用在 session log 中被字面记录、无需标注，因此覆盖开发者完整历史（1,394 session、69 亿 token）。在该层级下，\texttt{paper-writing-style} 在两种度量上居首（2900 万 token、99.47\% 为 cache read），指出它反复拉长上下文的工作流是首先该检查的对象；最大单 session 仅持有 31\%，因此优先级只有折叠后才显现。99.47\% 的 cache read 比例表明该工作流反复重建相似上下文；重构它以跨调用复用上下文可降低 token 成本。
 
 Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tokens, both conserved exactly), ranking operations by count versus tokens yields high agreement: mean Kendall's tau-b is 0.886 [0.857, 0.915] over the 77 tasks with at least three distinct operations, and pooled ranking agrees at tau-b 0.929.
@@ -629,7 +628,7 @@ The \emph{direct diagnostic} is the per-operation output of each benchmark's own
 \label{fig:rq2-map}
 \end{figure}
 
-\emph{Results.} Direct+\sys beats Direct-only by 0.031 [0.024, 0.039], 0.107 [0.093, 0.120], and 0.117 [0.088, 0.148] (95\% intervals from 10{,}000 paired resamples); all intervals lie above zero, so every improvement is statistically significant (Figure~\ref{fig:rq2-map}).
+\emph{Results.} Direct+\sys beats Direct-only by 0.031 [0.024, 0.039], 0.107 [0.093, 0.120], and 0.117 [0.088, 0.148] (95\% intervals from 10{,}000 paired resamples). All intervals lie above zero, so every improvement is statistically significant (Figure~\ref{fig:rq2-map}).
 Grouping with retained evidence drives the localization gain. Semantic naming enables cross-run attribution (RQ1) and concentrates the reader's attention, reducing evidence opened from 65\% to 53\% at equal quality (measured below).
 % 分组加保留证据驱动定位增益。语义命名支持跨运行归因（RQ1）并集中读者注意力，在同等质量下将打开的证据从 65\% 降至 53\%（下文测量）。
 
@@ -639,7 +638,7 @@ On 220 queries, a Grok 4.5~\cite{grok45} agent-as-judge ranks operations by like
 Full-trace reading reaches MAP .502 at 12.6K tokens/query. A profile-guided reader selects at most five groups and reaches .455 while opening 53\% of the source, versus .465 and 65\% with raw-action names (paired raw-minus-semantic $\Delta$: $+.010$ [$-.021$,$+.042$] MAP and $+.120$ [$+.103$,$+.137$] content).
 A per-query full read is also bounded by the model context window.
 % 在 220 个 query 上，Grok 4.5 agent-as-judge 按可能出错排序 operation。全 trace 阅读以 12.6K token/query 达到 MAP .502；profile 引导的 reader 用语义名达到 .455 且只打开 53\% 的源（用 raw-action 名需打开 65\% 才达相近 MAP）。
-\emph{Takeaway.} Failure structure surfaced by the profile matches independent human labels across 435 trajectories; profiles add localization signal on top of existing judges; semantic names concentrate the agent's attention, reducing evidence opened from 65\% to 53\% at equal ranking quality.
+\emph{Takeaway.} Failure structure surfaced by the profile matches independent human labels across 435 trajectories. Profiles add localization signal on top of existing judges, and semantic names concentrate the agent's attention, reducing evidence opened from 65\% to 53\% at equal ranking quality.
 % 要点。profile 呈现的失败结构在 435 条轨迹上与独立人工标注一致；profile 在既有 judge 之上补充定位信号；语义名称集中 agent 注意力，在相同排序质量下将需要打开的证据从 65\% 降至 53\%。
 
 %% -------------------------------------------------------------------
@@ -664,7 +663,7 @@ original additive weights.
 % 每个方法的输出按其预测的层级评估：字面名称用 accuracy 与 macro-F1，置换不变的 partition 用 V-measure 或普通 B$^3$，相邻区间边界用精确的 precision、recall 与 F1；对字段值型的既有数据集，转换步骤先把每个预测 group 映射为同一份区间标注格式，再由 \sys 折叠原始可加权重。
 Codex~\cite{codex} receives each trajectory (prompts, commands, and output summaries, with no labels or scores visible) and emits sparse interval marks over 17{,}148 steps without access to stage annotations (loaded after all 405 outputs were fixed): 4{,}496 marks at semantic depth one (3), two (2{,}873), three (1{,}588), or four (32), with no prompt requesting a specific depth.
 % Codex 接收轨迹（提示词、命令与输出摘要，不含标签或分数），在 17,148 个步骤上发出稀疏区间标记，不接触官方 stage 标注：共 4,496 个标记，语义深度为一层（3 个）、两层（2,873 个）、三层（1,588 个）与四层（32 个），且没有任何 prompt 指定深度。
-Name normalization then maps the 3{,}895 free-form interval names to 783 stable short names (e.g., \texttt{diagnose authentication}) with zero adjacent display-path collisions, rejecting unresolved ones; identical names across sessions merge so that recurring work folds in the final profile.
+Name normalization then maps the 3{,}895 free-form interval names to 783 stable short names (e.g., \texttt{diagnose authentication}) with zero adjacent display-path collisions, rejecting unresolved ones. Identical names across sessions merge so that recurring work folds in the final profile.
 % 名称归一化把 3,895 个自由形式的区间名映射为 783 个稳定短名称（如 \texttt{diagnose authentication}），不产生任何相邻显示路径冲突、无法消解时拒绝；跨 session 的相同名称合并，使重复工作在最终 profile 中折叠。
 
 \begin{table}[tb]
@@ -747,7 +746,7 @@ With marks fixed, construction scales linearly across the five input sizes (Tabl
 % 标记固定后，构建开销在五个输入规模上线性扩展（Table~\ref{tab:rq4-cost}），在并集规模上比 raw-action 分组仅多 5.25 MiB（1.14\%）峰值 RSS。
 Deterministic materialization of the full 440-trajectory population takes 0.26\,s for operations and 0.25\,s for tokens, so construction cost is dominated by the segmentation step while materialization stays sub-second.
 % 完整 440 条轨迹 population 的确定性物化在 operation 上需 0.26 秒、在 token 上需 0.25 秒，因此构建成本由切分步骤主导，而物化保持在亚秒级。
-\emph{Takeaway.} The cost is practical: segmentation is a one-time pass costing minutes of backend time per corpus (37 min for 405 trajectories); every later view, measure switch, and inspection costs about one second.
+\emph{Takeaway.} The cost is practical. Segmentation is a one-time pass costing minutes of backend time per corpus (37 min for 405 trajectories), and every later view, measure switch, and inspection costs about one second.
 % 要点。成本是实用的：切分是一次性 pass，每语料需分钟级后端时间（405 条轨迹需 37 分钟）；之后每次视图、度量切换与检视的成本约为一秒。
 
 %% ===================================================================
@@ -756,7 +755,7 @@ Deterministic materialization of the full 440-trajectory population takes 0.26\,
 
 Classic profilers fold runtime call stacks over stable code identity, and Pivot Tracing groups causally related measurements~\cite{pprof,flamegraphs,pivottracing}.
 % 经典 profiler 折叠具有稳定代码身份的运行时调用栈，Pivot Tracing 对因果相关度量分组。
-Agent observability platforms such as LangSmith, Langfuse, and Phoenix~\cite{langsmith,langfuse,phoenix} record spans with metadata for per-execution debugging; analytics layers such as Datadog Patterns and LangSmith Insights~\cite{datadog-patterns,langsmith-insights} roll up cross-trace hierarchies or input distributions; but none constructs recursive semantic responsibility with conserved additive measures in a standard profile.
+Agent observability platforms such as LangSmith, Langfuse, and Phoenix~\cite{langsmith,langfuse,phoenix} record spans with metadata for per-execution debugging. Analytics layers such as Datadog Patterns and LangSmith Insights~\cite{datadog-patterns,langsmith-insights} roll up cross-trace hierarchies or input distributions, but none constructs recursive semantic responsibility with conserved additive measures in a standard profile.
 % 智能体可观测性平台与标准记录 span 用于单次执行调试，分析层汇总跨 trace 层次、workflow profile 或输入分布；但没有一个在标准 profile 中构造带守恒可加度量与保留调用证据的递归语义责任。
 Cross-run analyses (TraceProbe, Graphectory, Act$\cdot$onomy, CHIEF, Hodoscope, TraceGraph)~\cite{traceprobe2026,graphectory2026,actonomy2026,chief2026,hodoscope2026,tracegraph2026} and per-run diagnosis and localization~\cite{agentrx,telbench,agentatlas,trajad,agentfixer,li2026codetracer,agentprocessbench,hintbench,traceelephant,mpbench2026} answer what an agent did and which step went wrong.
 % 跨运行分析（TraceProbe、Graphectory、Act$\cdot$onomy、CHIEF、Hodoscope、TraceGraph）与单运行诊断和定位回答的都是"智能体做了什么、哪一步出了错"。
