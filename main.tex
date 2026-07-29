@@ -781,9 +781,11 @@ Multi-project evaluation and tracing-ecosystem integration are the most impactfu
 \clearpage
 \appendix
 \section{Technical Appendix}
+% 技术附录
 \label{sec:appendix}
 
 \subsection{Reproducibility Scope and Data}
+% 可复现性范围与数据
 \label{app:scope}
 
 The evaluation uses the complete named public populations described in the
@@ -792,14 +794,16 @@ coding-agent histories are observational case-study inputs rather than a new
 dataset, and conclusions drawn from them are limited to the reported
 populations. Public benchmark targets, human stages, outcomes, and scores are
 used only by scorers after each method's output is fixed.
+% 评估使用正文中描述的完整公开数据集，不引入新的 benchmark 数据集。本地编程 agent 历史是观察性案例研究输入而非新数据集，从中得出的结论仅限于所报告的 population。公开 benchmark 的目标、人工 stage、结果和分数仅在各方法输出固定后由评分器使用。
 
-The paper makes no theoretical contribution; the theoretical-contribution
-items in the reproducibility checklist therefore do not apply. \sys is a
+The paper's theoretical contribution is the semantic operation stack model; the theoretical-contribution items in the reproducibility checklist are addressed by the formal definitions in the Design section. \sys is a
 9.8K-LOC implementation, so executable source, preprocessing scripts, and
 released-data manifests belong in the separately submitted code-and-data
 package rather than as printed source listings in this appendix.
+% 本文的理论贡献是语义 operation stack 模型；可复现性清单中的理论项通过 Design 节的形式化定义满足。\sys 是 9.8K 行代码的实现，可执行源码、预处理脚本和数据清单应在单独提交的代码与数据包中，而非本附录的打印源码列表。
 
 \subsection{Automatic Segmentation and Identity}
+% 自动切分与标识
 \label{app:segmentation}
 
 The direct annotation backend is the OpenAI Codex CLI (version 0.145.0,
@@ -812,6 +816,7 @@ truncated to 1{,}800 characters, tool commands to 600, and status previews to
 The fixed instruction is reproduced in the main paper. It emits
 sparse path changes whose names begin with a verb and contain one to three
 words; intervening steps inherit the preceding path.
+% 直接标注后端是 OpenAI Codex CLI（版本 0.145.0，模型 \texttt{gpt-5.6-sol}，高推理努力，默认解码，沙箱非交互模式）。每个 worker 接收一个仅含源的轨迹包，最多做一次标注调用加一次格式重试，与其他 worker 不共享状态。提示词和响应预览截断至 1,800 字符，工具命令截断至 600，状态预览截断至 200；可加度量来自结构化计数器，不截断。固定指令在正文中再现，输出以动词开头、包含一到三个词的稀疏路径变化；中间步骤继承前一条路径。
 
 Before folding, one fixed source-only action--object map canonicalizes
 free-form interval names. If canonicalization would make adjacent display
@@ -820,6 +825,7 @@ needed to distinguish them; unresolved collisions fail closed. Equal
 canonical names receive one stable operation ID across sessions. On
 CodeTraceBench, this maps 3{,}895 free-form names to 783 stable names with
 zero adjacent display-path collisions while preserving every temporal mark.
+% 折叠前，一个固定的仅源 action-object 映射将自由形式的 interval 名称规范化。若规范化会使相邻显示路径相等，边界安全的细化保留区分它们所需的最少源词；未解决的冲突 fail closed。相等的规范名称跨 session 获得一个稳定的 operation ID。在 CodeTraceBench 上，这将 3,895 个自由形式名称映射到 783 个稳定名称，零相邻显示路径冲突，同时保留每个时间标记。
 
 The non-LLM recurrence backend counts adjacent action transitions in
 reference sessions and scores each transition by normalized pointwise mutual
@@ -837,8 +843,10 @@ action-changing transitions. Same-action pairs use the global cutoff;
 different-action pairs use the smaller cutoff. A detailed
 \texttt{(action, action\_detail)} arm may remove a coarse boundary but never
 add one; missing or unseen detail falls back to the coarse decision.
+% 非 LLM 循环后端统计参考 session 中的相邻 action 转移，并用归一化逐点互信息（NPMI）为每个转移评分。出现次数加权的一维 $k$-means（$k=2$）在最小和最大分数处初始化，距离相等时分配到较低中心，并使用收敛的中点作为阈值。相同的确定性过程应用于 action 变化的转移。相同 action 对使用全局阈值，不同 action 对使用较小阈值。细粒度的 \texttt{(action, action\_detail)} 分支可能移除粗边界但永不添加；缺失或未见的 detail 回退到粗决策。
 
 \subsection{RQ2 Protocol}
+% RQ2 协议
 \label{app:rq2}
 
 Within each workload, operations, target-blind paths, benchmark
@@ -850,6 +858,7 @@ operation receives the maximum score over prefixes containing it. The
 released HINTBench snapshot contains 536 of the paper-reported 629
 trajectories. A separate 80-trajectory validation snapshot selects one of 24
 field orders before the 536 test trajectories are scored.
+% 在每个工作负载中，operation、目标盲路径、benchmark 评判/定位器预测和评分规则在加载测试目标前固定。AgentProcessBench 对组内冻结的评判投票取平均。HINTBench 和 TraceElephant 为每个根到帧前缀分配其冻结正预测比例的 95\% Wilson 下界；一个 operation 获得包含它的前缀的最大分数。发布的 HINTBench 快照包含论文报告的 629 条轨迹中的 536 条。一个单独的 80 条轨迹验证快照在 536 条测试轨迹评分前选择 24 种字段顺序之一。
 
 Each target-bearing trajectory contributes one AP value, and MAP is their
 arithmetic mean. The reported Direct+\sys-minus-Direct-only and
@@ -857,6 +866,7 @@ Direct+\sys-minus-Direct+\sys-Raw intervals use 10{,}000 paired resamples of
 trajectory clusters within benchmark-defined strata. Zero-positive
 trajectories are retained for population coverage but excluded because AP is
 undefined without a relevant item.
+% 每条含目标的轨迹贡献一个 AP 值，MAP 是其算术平均。报告的 Direct+\sys 减 Direct-only 和 Direct+\sys 减 Direct+\sys-Raw 区间使用 benchmark 定义层内轨迹聚类的 10,000 次配对重抽样。零正例轨迹保留以覆盖 population 但被排除，因为没有相关项时 AP 未定义。
 
 For the TraceElephant reading study, the Grok~4.5 CLI reader is invoked with
 tools and subagents disabled. Full-trace reading uses one single-turn call per
@@ -865,8 +875,10 @@ skeleton; the reader selects at most five groups, after which a second
 single-turn call receives only those groups' source-visible evidence.
 Unranked operations are appended in original order. Semantic and raw-action
 conditions differ only in the operation names used by the skeleton.
+% 对于 TraceElephant 阅读研究，Grok 4.5 CLI 阅读器在禁用工具和 subagent 的情况下调用。全轨迹阅读每个查询使用一次单轮调用。Profile 引导的阅读首先只暴露目标盲 operation skeleton；阅读器选择最多五个组，之后第二次单轮调用只接收这些组的源可见证据。未排名的 operation 按原始顺序附加。语义和 raw-action 条件仅在 skeleton 使用的 operation 名称上不同。
 
 \subsection{RQ3 Protocol}
+% RQ3 协议
 \label{app:rq3}
 
 For CodeTraceBench, all 405 annotations are materialized before the 2{,}948
@@ -876,6 +888,7 @@ over 17{,}148 source-native steps. B$^3$ scores the resulting
 operation partition, and exact adjacent-boundary precision, recall, and F1
 score the transition decisions. Paired task-cluster intervals preserve the
 benchmark's task grouping.
+% 对于 CodeTraceBench，全部 405 个标注在评分器加载 2,948 个人工 stage 标签前物化。Codex 接收提示词、命令和输出摘要，但不接收标签或分数。它在 17,148 个源原生步骤上发出 4,496 个稀疏标记。B$^3$ 为结果 operation 划分评分，精确相邻边界 precision、recall 和 F1 为转移决策评分。配对的任务聚类区间保留 benchmark 的任务分组。
 
 The OSWorld-Human study uses all 287 sessions, containing 3{,}978 operations,
 3{,}691 adjacent pairs, and 2{,}042 human groups. The supervised Bernoulli
@@ -886,6 +899,7 @@ sessions and predict each held-out session exactly once. Label-free recurrence
 uses only visible transitions from the other four folds. Reference-calibrated
 recurrence additionally fits one scalar NPMI cutoff using the training-fold
 group annotations; it never reads held-out groups.
+% OSWorld-Human 研究使用全部 287 个 session，包含 3,978 个 operation、3,691 个相邻对和 2,042 个人工组。有监督的 Bernoulli Naive Bayes 预测器固定其模型族、九个输入字段、相邻对特征和训练过程。五个 session held-out fold 在训练 session 上拟合参数和决策阈值，每个 held-out session 恰好预测一次。无标签循环仅使用其他四个 fold 的可见转移。参考校准循环额外使用训练 fold 的组标注拟合一个标量 NPMI 阈值；它从不读取 held-out 组。
 
 The evaluation-only Qwen3.6-27B llama.cpp backend classifies all 1{,}012
 AgentBoard goals from goal text and the nine declared family descriptions.
@@ -895,8 +909,10 @@ thought/action only; two complete runs over all 2{,}737 labels produce
 identical assignments. Literal labels use accuracy and macro-F1, partitions
 use V-measure or ordinary B$^3$, and transitions use exact adjacent-boundary
 precision, recall, and F1.
+% 仅评估的 Qwen3.6-27B llama.cpp 后端从目标文本和九个声明的 family 描述分类全部 1,012 个 AgentBoard 目标。三次完整运行产生相同的分配。Action 标签适配器使用固定的八个 TraceView action 定义和当前 thought/action；对全部 2,737 个标签的两次完整运行产生相同分配。字面标签使用 accuracy 和 macro-F1，划分使用 V-measure 或普通 B$^3$，转移使用精确相邻边界 precision、recall 和 F1。
 
 \subsection{Runs, Uncertainty, and Computing Environment}
+% 运行次数、不确定性与计算环境
 \label{app:runs}
 
 The CodeTraceBench direct backend makes one annotation call per trajectory
@@ -907,6 +923,7 @@ OSWorld-Human uses five held-out folds. The closed-label repeat counts are
 given above. RQ4 construction times are medians of three complete runs; peak
 RSS is the largest observed semantic-profile peak. Once marks are fixed,
 projection, folding, serialization, and pprof readback are deterministic.
+% CodeTraceBench 直接后端每条轨迹做一次标注调用（除声明的格式重试外）。RQ2 每条轨迹固定一个 profile 和一个 benchmark 预测，然后用 10,000 次配对重抽样计算不确定性。TraceElephant 阅读器每个 stage 和查询做一次调用。OSWorld-Human 使用五个 held-out fold。封闭标签重复次数见上文。RQ4 构建时间是三次完整运行的中位数；峰值 RSS 是观察到的最大语义 profile 峰值。标记固定后，投影、折叠、序列化和 pprof 回读是确定性的。
 
 The RQ4 construction measurements use \texttt{agentpprof 0.2.37} on a
 24-core Intel Core Ultra 9 285K with 125\,GiB RAM and Linux 6.15.11. The
@@ -916,6 +933,7 @@ CodeTraceBench pass consumes 12{,}050{,}384 input and 231{,}886 output tokens
 and 2{,}215.858\,s of active backend time. Deterministic materialization of
 the 440-trajectory population takes 0.26\,s for operation weights and 0.25\,s
 for token weights.
+% RQ4 构建测量使用 \texttt{agentpprof 0.2.37}，在 24 核 Intel Core Ultra 9 285K、125 GiB RAM 和 Linux 6.15.11 上运行。27,765 个 operation 的并集在 1.16 秒内完成语义构建，峰值 RSS 为 465.2 MiB，而 raw-action 分组为 0.97 秒。自动 CodeTraceBench pass 消耗 12,050,384 个输入和 231,886 个输出 token，活跃后端时间 2,215.858 秒。440 条轨迹 population 的确定性物化在 operation 权重上需 0.26 秒，在 token 权重上需 0.25 秒。
 
 % TODO(reproducibility): record the exact resampling seeds used for every
 % confidence interval in the separately submitted reproduction manifest.
@@ -923,6 +941,7 @@ for token weights.
 % hardware in the separately submitted reproduction manifest.
 
 \subsection{Privacy, Ethics, and Responsible Use}
+% 隐私、伦理与负责任使用
 \label{app:ethics}
 
 Agent histories can contain prompts, model responses, source code, file paths,
@@ -933,6 +952,7 @@ observational inputs, not a released benchmark; the paper reports aggregate
 measurements and task-level paths rather than publishing their raw histories.
 A reproduction package should exclude private histories and use the cited
 public populations for repeatable experiments.
+% Agent 历史可以包含提示词、模型响应、源代码、文件路径、命令、网络目标和系统副作用记录。语义 operation 名称和 pprof 标签是派生数据，但仍可能泄露项目意图、行为或身份。案例研究中的本地历史是观察性输入，而非发布的 benchmark；论文报告聚合测量和任务级路径，而非发布其原始历史。复现包应排除私有历史，使用引用的公开 population 进行可重复实验。
 
 Automatic annotation adds a separate disclosure boundary because a model
 backend reads source packets. Preview length limits bound packet size but do
@@ -942,6 +962,7 @@ retention policy appropriate for the data; sensitive workloads can instead
 use an approved local backend or the non-LLM recurrence backend. Profiles,
 annotations, and intermediate packets should receive the same access control
 and retention protection as their source traces.
+% 自动标注增加了一个单独的披露边界，因为模型后端读取源数据包。预览长度限制约束数据包大小但不编辑秘密。使用远程后端前，操作者应移除凭证和个人数据、最小化字段、选择适合数据的提供商和保留策略；敏感工作负载可改用批准的本地后端或非 LLM 循环后端。Profile、标注和中间数据包应获得与其源 trace 相同的访问控制和保留保护。
 
 Semantic boundaries and names reflect the selected backend and instruction,
 not objective or causal judgments about a person or agent. Agreement with
@@ -952,6 +973,7 @@ Likewise, process, file, and network capture should be limited to systems and
 trajectories the operator is authorized to observe. Using cross-run profiling
 for covert worker surveillance or to infer unrelated private activity falls
 outside the intended debugging and resource-analysis purpose.
+% 语义边界和名称反映所选后端和指令，而非对人或 agent 的客观或因果判断。与人工 stage 的一致性度量命名数据集上的结构对应性，而非普遍正确性。因此 profile 应引导检视而非自主决定雇佣、访问控制或安全决策。同样，进程、文件和网络捕获应限于操作者被授权观察的系统和轨迹。将跨运行 profiling 用于隐蔽的员工监视或推断无关的私人活动超出了预期的调试和资源分析目的。
 
 Finally, public benchmarks and model backends can carry task, language, and
 annotation biases. Results are bounded to the reported populations and should
@@ -959,16 +981,19 @@ be revalidated before deployment in a materially different setting. Model
 annotation also incurs the measured token and compute cost in RQ4; reusing
 fixed annotations and choosing the non-LLM backend where its accuracy is
 adequate reduce repeated inference.
+% 最后，公开 benchmark 和模型后端可能携带任务、语言和标注偏差。结果受限于报告的 population，部署到实质不同的场景前应重新验证。模型标注也会产生 RQ4 中测量的 token 和计算成本；重用固定标注并在精度足够时选择非 LLM 后端可减少重复推理。
 
 \subsection{Reproducibility Checklist Notes}
+% 可复现性清单说明
 \label{app:checklist}
 
 Checklist items concerning novel datasets are not applicable because the
 paper introduces no benchmark dataset. Items concerning theoretical claims
-are likewise not applicable. This appendix supplies the final algorithm
+are addressed by the formal definitions in the Design section. This appendix supplies the final algorithm
 settings, target-blind freezing rules, evaluation metrics, run counts, and the
 measured RQ4 environment. Full preprocessing and experiment source should be
 assessed from the separately submitted code-and-data package; a PDF appendix
 cannot by itself satisfy source-code availability items.
+% 关于新数据集的清单项不适用，因为本文不引入 benchmark 数据集。关于理论声明的项通过 Design 节的形式化定义满足。本附录提供最终算法设置、目标盲冻结规则、评估指标、运行次数和测量的 RQ4 环境。完整的预处理和实验源码应从单独提交的代码与数据包评估；PDF 附录本身无法满足源代码可用性项。
 
 \end{document}
