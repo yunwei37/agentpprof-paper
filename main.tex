@@ -42,8 +42,8 @@ To answer similar questions in traditional systems software, profiling attribute
 % 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责实体（如代码路径）。
 Yet existing agent observability tools focus on per-execution debugging and tracing rather than profiling, making these questions difficult to answer as trajectories grow long and complex.
 % 然而现有智能体可观测性工具聚焦于单次执行的调试和 tracing 而非 profiling，使这些问题在轨迹变长变复杂时难以回答。
-Agent behavior differs from code execution: the responsible entities are task intent and workflow phase rather than code paths, and agent trajectories lack the stable identifiers that make attribution possible.
-% 智能体行为与代码执行不同：负责实体是任务意图和工作流阶段而非代码路径，且智能体轨迹缺乏使归因成为可能的稳定标识符。
+Agent behavior differs from code execution. The responsible entities are task intent and workflow phase rather than code paths, and agent trajectories lack the stable identifiers that make attribution possible.
+% 智能体行为与代码执行不同。负责实体是任务意图和工作流阶段而非代码路径，且智能体轨迹缺乏使归因成为可能的稳定标识符。
 We propose a \emph{semantic operation stack model} that adapts profiling to agent trajectories.
 % 我们提出一个将 profiling 适配到智能体轨迹的语义 operation stack 模型。
 Uniform \emph{operations} represent all agent activities, and \emph{operation stacks} replace the runtime call stack, enabling hierarchical attribution at different levels of granularity from the same data.
@@ -161,8 +161,8 @@ Prompts are natural language, so two prompts expressing the same intent share no
 % 提示词是自然语言，表达相同意图的两个提示词没有共同字符串。
 Agent events have no runtime call-stack hierarchy because prompts,
 tool calls, and system effects are not nested by execution the way
-function calls produce stack frames: a sequence of prompts can be a task or multiple tasks, a task can be part of a bigger task.
-% 智能体事件没有运行时调用栈层次，因为提示词、工具调用和系统副作用不像函数调用那样通过执行嵌套产生栈帧。
+function calls produce stack frames. A sequence of prompts can be a task or multiple tasks, and a task can be part of a bigger task.
+% 智能体事件没有运行时调用栈层次，因为提示词、工具调用和系统副作用不像函数调用那样通过执行嵌套产生栈帧。一串提示词可以是一个任务或多个任务，一个任务也可以是更大任务的一部分。
 
 %% ¶5: Model
 Despite these differences, the fundamental profiling methodology
@@ -355,12 +355,12 @@ and a process event are all operations with the same schema, distinguished only 
 
 %% ¶2: Operation Stacks
 \label{sec:stacks}
-An \opstack provides hierarchical attribution for agent trajectories, replacing the runtime call stack: an ordered list of fields
+An \opstack provides hierarchical attribution for agent trajectories, replacing the runtime call stack. An ordered list of fields
 $[f_1, f_2, \ldots, f_k]$ projects each operation $o$ to a frame
 sequence $\langle o.f_1, o.f_2, \ldots, o.f_k \rangle$, and
 operations with identical sequences are merged, summing their
 weights.
-% Operation stack 承担相同角色：有序字段列表 $[f_1, f_2, \ldots, f_k]$ 将每个 operation $o$ 投影到帧序列 $\langle o.f_1, o.f_2, \ldots, o.f_k \rangle$，具有相同序列的 operation 被合并，权重求和。
+% Operation stack 为智能体轨迹提供分层归因，替代运行时调用栈。有序字段列表 $[f_1, f_2, \ldots, f_k]$ 将每个 operation $o$ 投影到帧序列 $\langle o.f_1, o.f_2, \ldots, o.f_k \rangle$，具有相同序列的 operation 被合并，权重求和。
 Unlike a call stack, the fields are chosen at query time, not
 determined by execution.
 % 与调用栈不同，字段在查询时选择，而非由执行决定。
@@ -520,9 +520,9 @@ A quantitative control shows why both alternatives fail.
 Only the semantic hierarchy reunites authentication into one focusable cross-run path while preserving all call/tool evidence as leaf nodes.
 % 定量对照显示为什么两种替代方式都失败。Raw-action 分组（按字面 action-type）失败：105 个认证 operation 中 102 个只带标签 \texttt{run}，而同一 bucket 还混入 97 个无关 operation；更粗的 action-kind 分组把工作散落到六种 kind。Native call tree（每个 operation 在其源 LLM 或 tool call 下）把每个 operation 放在不同 source call 下，没有共享责任节点。只有语义层次将认证重聚为一条可聚焦的跨运行路径，同时保留所有 call/tool 证据作为叶节点。
 Separately, real AgentSight~\cite{agentsight} eBPF recordings replay the
-same way: all 1{,}520 captured process spawns and file operations fold
+same way, and all 1{,}520 captured process spawns and file operations fold
 under task responsibilities with exact conservation, demonstrating the system-effect layer end to end.
-% 此外，真实的 AgentSight eBPF recording 以相同方式重放：全部 1,520 个捕获的进程创建与文件操作折叠到 task responsibility 之下，精确守恒，端到端展示了 system-effect 层。
+% 此外，真实的 AgentSight eBPF recording 以相同方式重放，全部 1,520 个捕获的进程创建与文件操作折叠到 task responsibility 之下，精确守恒，端到端展示了 system-effect 层。
 
 \paragraph{Use case 2: where did this project's agent budget go?}
 % 用例 2：这个项目的 agent 预算去哪了？
@@ -589,8 +589,8 @@ We pair each failed run with a successful run on the same task (338 pairs), buil
 % 我们把同任务的每次失败运行与一次成功运行配对（338 对），分别构建 profile 并相减（失败减成功）得到带符号差分 profile（Figure~\ref{fig:diff-flamegraph}）。答案立即呈现：失败运行在恢复上消耗了不成比例的更多精力——44.6\% 的步骤在 \texttt{recover interaction}（重试、重搜索、重导航），而成功运行只有 12.0\%。
 The hierarchy decomposes the recovery responsibility into verification challenges, repeated searches, mistaken navigation, and record retries, with source labels identifying which sessions contributed each width.
 % 层次结构把 recovery 责任分解为验证挑战、重复搜索、误导航和记录重试，source label 指明哪些 session 贡献了各宽度。
-The insight: failing agents get stuck in retry loops rather than backing out and trying a different approach.
-% 洞察：失败的 agent 陷入重试循环，而不是回退尝试不同方法。
+The insight is that failing agents get stuck in retry loops rather than backing out and trying a different approach.
+% 洞察是失败的 agent 陷入重试循环，而不是回退尝试不同方法。
 This structure matches independent expert looping labels on 435 trajectories at AP .634 versus prevalence .398 (difference interval [.181, .293]), confirming the profile surfaces a real behavioral pattern. A fixed-chain repeated/error control reaches the same detection quality (AP .656), but only the recursive profile provides the decomposition above with navigation to source.
 % 该结构在 435 条轨迹上与独立专家 looping 标注的一致性为 AP .634（prevalence .398；差异区间 [.181,.293]），确认 profile 呈现的是真实行为模式；fixed-chain repeated/error 对照达到相同检测质量（AP .656），但只有递归 profile 提供上述可导航到 source 的分解。
 
@@ -647,7 +647,7 @@ F1~\cite{ruokolainen2016segmentation} asks whether cuts land exactly
 where humans cut. Baselines receive identical inputs
 (Table~\ref{tab:rq3-codetrace}).
 % 设置。黄金结构是全部 405 条 CodeTraceBench 轨迹上的 2,948 个人工核验 stage。B$^3$ F1 度量"应当在一起的 operation 是否被分到一起"；精确相邻边界 F1 度量"切点是否恰好落在人工切点处"。基线获得完全相同的输入（Table~\ref{tab:rq3-codetrace}）。
-Each method output is evaluated at the level it predicts: literal names by
+Each method output is evaluated at the level it predicts. Literal names use
 accuracy and macro-F1~\cite{lewis2004rcv1}, permutation-invariant partitions
 by V-measure~\cite{rosenberg-hirschberg-2007-v-measure} or ordinary B$^3$,
 and adjacent interval boundaries by exact precision, recall, and F1. For
@@ -771,11 +771,204 @@ structure at 0.764 B$^3$ F1, profiles add localization signal on three
 complete public benchmarks, and one hierarchy replays across additive
 measures with exact conservation.
 % 相对独立标注，切分以 0.764 的 B$^3$ F1 恢复人工 stage 结构；profile 在三个完整公开 benchmark 上补充定位信号；同一层次跨可加度量精确守恒地重放。
-Profilers and debuggers are complementary: the profile answers population questions and guides an agent reader to the evidence worth opening, reducing opened content by 12\% at equal ranking quality.
-% Profiler 与 debugger 互补：profile 回答群体问题，并引导 agent reader 只打开值得打开的证据，在同等排序质量下减少 12\% 的打开内容。
+Profilers and debuggers are complementary. The profile answers population questions and guides an agent reader to the evidence worth opening, reducing opened content by 12\% at equal ranking quality.
+% Profiler 与 debugger 互补。Profile 回答群体问题，并引导 agent reader 只打开值得打开的证据，在同等排序质量下减少 12\% 的打开内容。
 Multi-project evaluation and tracing-ecosystem integration are the most impactful next steps.
 % 多项目评估和 tracing 生态系统集成是最有影响力的下一步。
 
 \bibliography{references}
+
+\clearpage
+\appendix
+\section{Technical Appendix}
+\label{sec:appendix}
+
+\subsection{Reproducibility Scope and Data}
+\label{app:scope}
+
+The evaluation uses the complete named public populations described in the
+main paper. No novel benchmark dataset is introduced. The local
+coding-agent histories are observational case-study inputs rather than a new
+dataset, and conclusions drawn from them are limited to the reported
+populations. Public benchmark targets, human stages, outcomes, and scores are
+used only by scorers after each method's output is fixed.
+
+The paper makes no theoretical contribution; the theoretical-contribution
+items in the reproducibility checklist therefore do not apply. \sys is a
+9.8K-LOC implementation, so executable source, preprocessing scripts, and
+released-data manifests belong in the separately submitted code-and-data
+package rather than as printed source listings in this appendix.
+
+\subsection{Automatic Segmentation and Identity}
+\label{app:segmentation}
+
+The direct annotation backend is the OpenAI Codex CLI (version 0.145.0,
+model \texttt{gpt-5.6-sol}, high reasoning effort, default decoding,
+sandboxed non-interactive mode). Each worker receives one source-only
+trajectory packet, makes one annotation call with at most one format retry,
+and shares no state with other workers. Prompt and response previews are
+truncated to 1{,}800 characters, tool commands to 600, and status previews to
+200; additive measures come from structured counters and are not truncated.
+The fixed instruction is reproduced in the main paper. It emits
+sparse path changes whose names begin with a verb and contain one to three
+words; intervening steps inherit the preceding path.
+
+Before folding, one fixed source-only action--object map canonicalizes
+free-form interval names. If canonicalization would make adjacent display
+paths equal, a boundary-safe refinement retains the minimum source words
+needed to distinguish them; unresolved collisions fail closed. Equal
+canonical names receive one stable operation ID across sessions. On
+CodeTraceBench, this maps 3{,}895 free-form names to 783 stable names with
+zero adjacent display-path collisions while preserving every temporal mark.
+
+The non-LLM recurrence backend counts adjacent action transitions in
+reference sessions and scores each transition by normalized pointwise mutual
+information (NPMI),
+\[
+\mathrm{NPMI}(a,b)=
+\frac{\ln[p(a,b)/(p_L(a)p_R(b))]}{-\ln p(a,b)},
+\]
+where all probabilities use the same transition sample space
+\cite{bouma2009npmi}. Occurrence-weighted one-dimensional $k$-means with
+$k=2$ initializes at the minimum and maximum scores, assigns distance ties
+to the lower center, and uses the converged midpoint as the cutoff
+\cite{macqueen1967}. The same deterministic procedure is applied to
+action-changing transitions. Same-action pairs use the global cutoff;
+different-action pairs use the smaller cutoff. A detailed
+\texttt{(action, action\_detail)} arm may remove a coarse boundary but never
+add one; missing or unseen detail falls back to the coarse decision.
+
+\subsection{RQ2 Protocol}
+\label{app:rq2}
+
+Within each workload, operations, target-blind paths, benchmark
+judge/localizer predictions, and scoring rules are fixed before test targets
+are loaded. AgentProcessBench averages frozen judge votes within a group.
+HINTBench and TraceElephant assign each root-to-frame prefix the 95\% Wilson
+lower bound of its frozen positive-prediction fraction; an
+operation receives the maximum score over prefixes containing it. The
+released HINTBench snapshot contains 536 of the paper-reported 629
+trajectories. A separate 80-trajectory validation snapshot selects one of 24
+field orders before the 536 test trajectories are scored.
+
+Each target-bearing trajectory contributes one AP value, and MAP is their
+arithmetic mean. The reported Direct+\sys-minus-Direct-only and
+Direct+\sys-minus-Direct+\sys-Raw intervals use 10{,}000 paired resamples of
+trajectory clusters within benchmark-defined strata. Zero-positive
+trajectories are retained for population coverage but excluded because AP is
+undefined without a relevant item.
+
+For the TraceElephant reading study, the Grok~4.5 CLI reader is invoked with
+tools and subagents disabled. Full-trace reading uses one single-turn call per
+query. Profile-guided reading first exposes only the target-blind operation
+skeleton; the reader selects at most five groups, after which a second
+single-turn call receives only those groups' source-visible evidence.
+Unranked operations are appended in original order. Semantic and raw-action
+conditions differ only in the operation names used by the skeleton.
+
+\subsection{RQ3 Protocol}
+\label{app:rq3}
+
+For CodeTraceBench, all 405 annotations are materialized before the 2{,}948
+human stage labels are loaded by the scorer. Codex receives prompts, commands,
+and output summaries, but no label or score. It emits 4{,}496 sparse marks
+over 17{,}148 source-native steps. B$^3$ scores the resulting
+operation partition, and exact adjacent-boundary precision, recall, and F1
+score the transition decisions. Paired task-cluster intervals preserve the
+benchmark's task grouping.
+
+The OSWorld-Human study uses all 287 sessions, containing 3{,}978 operations,
+3{,}691 adjacent pairs, and 2{,}042 human groups. The supervised Bernoulli
+Naive Bayes predictor~\cite{mccallum-nigam-1998} fixes its model family, nine
+input fields, adjacent-pair features, and training procedure. Five
+session-held-out folds fit parameters and the decision threshold on training
+sessions and predict each held-out session exactly once. Label-free recurrence
+uses only visible transitions from the other four folds. Reference-calibrated
+recurrence additionally fits one scalar NPMI cutoff using the training-fold
+group annotations; it never reads held-out groups.
+
+The evaluation-only Qwen3.6-27B llama.cpp backend classifies all 1{,}012
+AgentBoard goals from goal text and the nine declared family descriptions.
+Three complete runs produce identical assignments. The action-label adapter
+uses the fixed eight TraceView action definitions and the current
+thought/action only; two complete runs over all 2{,}737 labels produce
+identical assignments. Literal labels use accuracy and macro-F1, partitions
+use V-measure or ordinary B$^3$, and transitions use exact adjacent-boundary
+precision, recall, and F1.
+
+\subsection{Runs, Uncertainty, and Computing Environment}
+\label{app:runs}
+
+The CodeTraceBench direct backend makes one annotation call per trajectory
+apart from the stated format retry. RQ2 fixes one profile and one benchmark
+prediction per trajectory, then computes uncertainty with 10{,}000 paired
+resamples. The TraceElephant reader makes one call per stage and query.
+OSWorld-Human uses five held-out folds. The closed-label repeat counts are
+given above. RQ4 construction times are medians of three complete runs; peak
+RSS is the largest observed semantic-profile peak. Once marks are fixed,
+projection, folding, serialization, and pprof readback are deterministic.
+
+The RQ4 construction measurements use \texttt{agentpprof 0.2.37} on a
+24-core Intel Core Ultra 9 285K with 125\,GiB RAM and Linux 6.15.11. The
+27{,}765-operation union completes semantic construction in 1.16\,s at
+465.2\,MiB peak RSS, versus 0.97\,s for raw-action grouping. The automatic
+CodeTraceBench pass consumes 12{,}050{,}384 input and 231{,}886 output tokens
+and 2{,}215.858\,s of active backend time. Deterministic materialization of
+the 440-trajectory population takes 0.26\,s for operation weights and 0.25\,s
+for token weights.
+
+% TODO(reproducibility): record the exact resampling seeds used for every
+% confidence interval in the separately submitted reproduction manifest.
+% TODO(reproducibility): record the llama.cpp revision and local inference
+% hardware in the separately submitted reproduction manifest.
+
+\subsection{Privacy, Ethics, and Responsible Use}
+\label{app:ethics}
+
+Agent histories can contain prompts, model responses, source code, file paths,
+commands, network targets, and system-effect records. Semantic operation names
+and pprof labels are derived data, but they can still reveal project intent,
+behavior, or identity. The local histories in the case studies are
+observational inputs, not a released benchmark; the paper reports aggregate
+measurements and task-level paths rather than publishing their raw histories.
+A reproduction package should exclude private histories and use the cited
+public populations for repeatable experiments.
+
+Automatic annotation adds a separate disclosure boundary because a model
+backend reads source packets. Preview length limits bound packet size but do
+not redact secrets. Before using a remote backend, operators should remove
+credentials and personal data, minimize fields, and select a provider and
+retention policy appropriate for the data; sensitive workloads can instead
+use an approved local backend or the non-LLM recurrence backend. Profiles,
+annotations, and intermediate packets should receive the same access control
+and retention protection as their source traces.
+
+Semantic boundaries and names reflect the selected backend and instruction,
+not objective or causal judgments about a person or agent. Agreement with
+human stages measures structural correspondence on the named datasets, not
+universal correctness. Profiles should therefore guide inspection rather than
+autonomously determine employment, access-control, or safety decisions.
+Likewise, process, file, and network capture should be limited to systems and
+trajectories the operator is authorized to observe. Using cross-run profiling
+for covert worker surveillance or to infer unrelated private activity falls
+outside the intended debugging and resource-analysis purpose.
+
+Finally, public benchmarks and model backends can carry task, language, and
+annotation biases. Results are bounded to the reported populations and should
+be revalidated before deployment in a materially different setting. Model
+annotation also incurs the measured token and compute cost in RQ4; reusing
+fixed annotations and choosing the non-LLM backend where its accuracy is
+adequate reduce repeated inference.
+
+\subsection{Reproducibility Checklist Notes}
+\label{app:checklist}
+
+Checklist items concerning novel datasets are not applicable because the
+paper introduces no benchmark dataset. Items concerning theoretical claims
+are likewise not applicable. This appendix supplies the final algorithm
+settings, target-blind freezing rules, evaluation metrics, run counts, and the
+measured RQ4 environment. Full preprocessing and experiment source should be
+assessed from the separately submitted code-and-data package; a PDF appendix
+cannot by itself satisfy source-code availability items.
 
 \end{document}
