@@ -198,8 +198,8 @@ actions.
 % 在全部 405 条已发布的 CodeTraceBench 轨迹上，递归切分与人工 stage 标注的普通 B$^3$ F1 一致性为 0.764，统计基线为 0.663，raw action 为 0.541。
 On three complete localization benchmarks, the profile improves ranking over each benchmark's own diagnostic, raising MAP by 0.031, 0.107, and 0.117.
 % 在三个完整定位 benchmark 上，profile 改进了排序，相对各 benchmark 自带诊断将 MAP 分别提高 0.031、0.107 与 0.117。
-As a navigation aid, it helps an agent reader reach equal ranking quality while opening 53.0\% instead of 65.0\% of the source evidence.
-% 作为导航辅助，它帮助 agent reader 在只打开 53.0\%（对 65.0\%）source evidence 的情况下达到同等排序质量。
+As a navigation aid, it helps an agent reader open 53.0\% instead of 65.0\% of the source evidence while reaching similar ranking.
+% 作为导航辅助，它帮助 agent reader 在只打开 53.0\%（对 65.0\%）source evidence 的情况下达到相近排序。
 One fixed hierarchy replays under operation-count and token measures
 with exact conservation, exposing bottlenecks that a count view
 understates by more than a factor of two.
@@ -556,15 +556,6 @@ Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tok
 The 13\% of tasks where agreement falls below 0.7 are exactly where multi-measure profiling adds value (details in Appendix~\ref{app:rq1}).
 % 跨 440 条 AgentRewardBench 轨迹（7,229 个 operation、51,904,621 个 token，均精确守恒），按 count 与 token 排序的一致性高：在至少有三个不同 operation 的 77 个任务上，平均 Kendall tau-b 为 0.886 [0.857, 0.915]，pooled 排序的 tau-b 为 0.929。一致性低于 0.7 的 13\% 任务（77 个中的 10 个）正是多度量 profiling 增加价值的地方。
 
-\paragraph{System-effect alignment.}
-For RQ1's controlled cross-layer test, AgentSight first matches each timestamped process, file, or network event to the same-PID process instance whose lifetime contains it.
-It then links that process to a recorded tool call by an explicit tool/event ID when available, or by recorded root-process identity and overlapping process/tool lifetimes; descendants are accepted only within that tool window.
-The matched wrapper tool identifies the task-level semantic interval, while unmatched events remain unassigned.
-Across 20 real Codex tasks, this rule attributes 1{,}520 of 1{,}574 scoped process/file effects (100\% precision, 96.57\% recall) and rejects all 1{,}629 concurrent-control effects.
-\sys then folds exactly those joined events as unit-weight operations, preserving all 1{,}520 samples and every task-category total.
-This is exactly as described in the agentsight paper~\cite{agentsight}, but here we add the semantic hierarchy to show that the same events fold under task-level responsibilities.
-% RQ1 的受控跨层测试先按 PID 与事件时间匹配对应生命周期内的进程实例，再优先使用显式 tool/event ID，或使用记录的根进程标识与重叠的进程/tool 时间窗关联到 tool call；只有位于该 tool 时间窗内的后代进程才会被接受。匹配到的 wrapper tool 确定 task-level 语义区间，未匹配事件保持未归因。在 20 个真实 Codex 任务中，该规则归因 1,574 个范围内 process/file effect 中的 1,520 个（precision 100\%，recall 96.57\%），并拒绝全部 1,629 个并发 control effect；\sys 精确保留这些事件及每个任务类别的总量。
-
 \emph{Takeaway.} Both conditions hold: the semantic hierarchy reunites cross-run responsibility that raw-action and native organizations scatter (the authentication case), and switching the measure on that fixed hierarchy moves attributed share by more than 2$\times$ (21\% to 46\%), revealing bottlenecks that operation count alone would hide. These bottlenecks are optimization targets: tasks consuming disproportionate budget can be restructured to reduce cost.
 % 要点。两个条件都成立：语义层次重聚了 raw-action 和 native 组织所分散的跨运行责任（认证案例），且在该固定层次上切换度量使归因份额变化超过 2 倍（21\% 到 46\%），暴露出仅靠 operation 数会掩盖的瓶颈。这些瓶颈就是优化目标：消耗不成比例预算的任务可被重构以降低成本。
 
@@ -636,7 +627,7 @@ The \emph{direct diagnostic} is the per-operation output of each benchmark's own
 \end{figure}
 
 \emph{Results.} Direct+\sys beats Direct-only by 0.031, 0.107, and 0.117 MAP on the three workloads (all statistically significant; 95\% intervals in Appendix~\ref{app:rq2}; Figure~\ref{fig:rq2-map}).
-Grouping with retained evidence drives the localization gain. Semantic naming enables cross-run attribution (RQ1) and concentrates the reader's attention, reducing evidence opened from 65\% to 53\% at equal quality (measured below).
+Grouping with retained evidence drives the localization gain. Semantic naming enables cross-run attribution (RQ1) and concentrates the reader's attention, reducing evidence opened from 65\% to 53\% (measured below).
 % 分组加保留证据驱动定位增益。语义命名支持跨运行归因（RQ1）并集中读者注意力，在同等质量下将打开的证据从 65\% 降至 53\%（下文测量）。
 
 \paragraph{Profile-guided reading on TraceElephant.}
@@ -777,8 +768,8 @@ structure at 0.764 B$^3$ F1, profiles add localization signal on three
 complete public benchmarks, and one hierarchy replays across additive
 measures with exact conservation.
 % 相对独立标注，切分以 0.764 的 B$^3$ F1 恢复人工 stage 结构；profile 在三个完整公开 benchmark 上补充定位信号；同一层次跨可加度量精确守恒地重放。
-Profilers and debuggers are complementary. The profile answers population questions and guides an agent reader to the evidence worth opening, reducing opened content by 12 percentage points at equal ranking quality.
-% Profiler 与 debugger 互补。Profile 回答群体问题，并引导 agent reader 只打开值得打开的证据，在同等排序质量下将打开内容减少 12 个百分点。
+Profilers and debuggers are complementary. The profile answers population questions and guides an agent reader to the evidence worth opening, reducing opened content by 12 percentage points while reaching similar ranking.
+% Profiler 与 debugger 互补。Profile 回答群体问题，并引导 agent reader 只打开值得打开的证据，将打开内容减少 12 个百分点且达到相近排序。
 Multi-project evaluation and tracing-ecosystem integration are the most impactful next steps.
 % 多项目评估和 tracing 生态系统集成是最有影响力的下一步。
 
@@ -870,6 +861,14 @@ add one; missing or unseen detail falls back to the coarse decision.
 
 The Git case's 735 source nodes comprise 3 sessions, 3 prompts, 240 LLM calls, and 489 profiled tool operations.
 % Git 案例的 735 个 source node 包含 3 个 session、3 个 prompt、240 次 LLM call 和 489 个纳入 profile 的 tool operation。
+
+\paragraph{System-effect alignment.}
+For RQ1's controlled cross-layer test, AgentSight first matches each timestamped process, file, or network event to the same-PID process instance whose lifetime contains it.
+It then links that process to a recorded tool call by an explicit tool/event ID when available, or by recorded root-process identity and overlapping process/tool lifetimes; descendants are accepted only within that tool window.
+The matched wrapper tool identifies the task-level semantic interval, while unmatched events remain unassigned.
+Across 20 real Codex tasks, this rule attributes 1{,}520 of 1{,}574 scoped process/file effects (100\% precision, 96.57\% recall) and rejects all 1{,}629 concurrent-control effects.
+\sys then folds exactly those joined events as unit-weight operations, preserving all 1{,}520 samples and every task-category total.
+% RQ1 的受控跨层测试先按 PID 与事件时间匹配对应生命周期内的进程实例，再优先使用显式 tool/event ID，或使用记录的根进程标识与重叠的进程/tool 时间窗关联到 tool call；只有位于该 tool 时间窗内的后代进程才会被接受。匹配到的 wrapper tool 确定 task-level 语义区间，未匹配事件保持未归因。在 20 个真实 Codex 任务中，该规则归因 1,574 个范围内 process/file effect 中的 1,520 个（precision 100\%，recall 96.57\%），并拒绝全部 1,629 个并发 control effect；\sys 精确保留这些事件及每个任务类别的总量。
 
 On AgentRewardBench, ranking operations by count versus tokens yields mean Kendall's tau-b 0.886 with 95\% interval [0.857, 0.915] over the 77 tasks with at least three distinct operations. Pooled ranking agrees at tau-b 0.929. The 13\% of tasks (10 of 77) where agreement falls below 0.7 are exactly where multi-measure profiling adds value.
 
