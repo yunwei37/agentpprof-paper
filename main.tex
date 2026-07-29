@@ -36,8 +36,8 @@
 \begin{abstract}
 AI agents increasingly orchestrate long-running, multi-step activities involving thousands to millions of interactions with users, tools, and system resources.
 % AI 智能体编排涉及数千到数百万次交互的长时间多步骤活动。
-To improve quality, safety, and cost efficiency of AI agents, developers need to determine where failures concentrate, which workflows trigger unsafe effects, and which task categories consume the most budget.
-% 为提高智能体的质量、安全性和成本效率，开发者需确定故障集中在哪里、哪些工作流触发不安全副作用、哪类任务消耗最多预算。
+To improve quality, safety, and cost efficiency of AI agents, developers need to determine where failures concentrate, which workflows trigger unsafe effects, and which task categories consume the most budget---then target those tasks for optimization.
+% 为提高智能体的质量、安全性和成本效率，开发者需确定故障集中在哪里、哪些工作流触发不安全副作用、哪类任务消耗最多预算——然后针对这些任务进行优化。
 To answer similar questions in traditional systems software, profiling attributes resource consumption to responsible entities, such as code paths, by aggregation.
 % 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责实体（如代码路径）。
 Yet existing agent observability tools focus on per-execution debugging and tracing rather than profiling, making these questions difficult to answer as trajectories grow long and complex.
@@ -53,8 +53,8 @@ We therefore design \emph{recursive operation segmentation}, which splits a traj
 % 我们观察到智能体的任务占据轨迹上一段连续区间并可分解为连续子任务，因此任务结构是一组嵌套命名区间，只需找出转移点即可恢复。据此我们设计递归 operation 切分，在责任变化处切开轨迹，为两侧区间命名并递归，提供缺失的栈。
 \sys implements this in a profiler that compiles local agent trajectories into pprof-compatible profiles.
 % \sys 将其实现为一个 profiler，把本地智能体轨迹编译为 pprof 兼容的 profile。
-Our evaluation shows that \sys effectively attributes resources and locates problems across agent trajectories at practical cost.
-% 评估表明 \sys 能够有效归因资源、定位问题，且成本实用。
+Our evaluation shows that \sys effectively attributes resources, locates problems, and surfaces optimization targets across agent trajectories at practical cost.
+% 评估表明 \sys 能够有效归因资源、定位问题、暴露优化目标，且成本实用。
 \end{abstract}
 
 % AI agents increasingly orchestrate long-running, multi-step
@@ -119,7 +119,8 @@ interactions.
 Which categories of tasks consume the most token budget? Where do
 failures concentrate across workflows? Which behavioral patterns
 trigger unsafe system effects?
-% 为了提高智能体质量、安全性和成本效率，开发者需要跨轨迹和交互分析运维行为。哪类任务消耗最多 token 预算？故障跨工作流集中在哪里？哪些行为模式触发不安全系统副作用？
+Answering these questions is the first step; acting on the answers---optimizing the high-cost tasks, fixing the failure-prone workflows---is the goal.
+% 为了提高智能体质量、安全性和成本效率，开发者需要跨轨迹和交互分析运维行为。哪类任务消耗最多 token 预算？故障跨工作流集中在哪里？哪些行为模式触发不安全系统副作用？回答这些问题是第一步；针对答案采取行动——优化高成本任务、修复易出错工作流——才是目标。
 Answering these questions requires analysis and evaluation across many
 trajectories~\cite{agentatlas,agentrewardbench}, a task becoming costly for manual inspection or
 per-trajectory LLM evaluation~\cite{llm-as-judge} at scale.
@@ -254,6 +255,8 @@ Flame graphs~\cite{flamegraphs} and pprof~\cite{pprof} call graphs
 visualize the result, where width or node size represents aggregate
 cost.
 % 火焰图~\cite{flamegraphs}和 pprof~\cite{pprof} 调用图可视化其结果，宽度或节点大小代表聚合开销。
+Engineers use these profiles to find where CPU or memory budget is spent, then optimize the responsible code paths to reduce cost.
+% 工程师用这些 profile 找出 CPU 或内存预算消耗在哪里，然后优化负责的代码路径以降低成本。
 These tools support flexible aggregation, but they all assume
 stable function names and a runtime call stack.
 % 这些工具支持灵活聚合，但都假设稳定的函数名和运行时调用栈。
@@ -546,14 +549,15 @@ tasks wrote most artifact files or made most network calls.
 
 Skill invocations appear literally in the session log and cost no annotation, so they cover the developer's complete history (1{,}394 sessions, 6.9B tokens).
 Under that level, \texttt{paper-writing-style} leads both measures (29M tokens, 99.47\% cache reads), naming its repeated-context workflow as the first thing to inspect; the largest single session holds only 31\% of that mass, so the priority appears only after folding.
-% skill 调用在 session log 中被字面记录、无需标注，因此覆盖开发者完整历史（1,394 session、69 亿 token）。在该层级下，\texttt{paper-writing-style} 在两种度量上居首（2900 万 token、99.47\% 为 cache read），指出它反复拉长上下文的工作流是首先该检查的对象；最大单 session 仅持有 31\%，因此优先级只有折叠后才显现。
+The 99.47\% cache-read ratio suggests the workflow repeatedly rebuilds similar context; restructuring it to reuse context across invocations could reduce token cost.
+% skill 调用在 session log 中被字面记录、无需标注，因此覆盖开发者完整历史（1,394 session、69 亿 token）。在该层级下，\texttt{paper-writing-style} 在两种度量上居首（2900 万 token、99.47\% 为 cache read），指出它反复拉长上下文的工作流是首先该检查的对象；最大单 session 仅持有 31\%，因此优先级只有折叠后才显现。99.47\% 的 cache read 比例表明该工作流反复重建相似上下文；重构它以跨调用复用上下文可降低 token 成本。
 
 Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tokens, both conserved exactly), ranking operations by count versus tokens yields high agreement: mean Kendall's tau-b is 0.886 [0.857, 0.915] over the 77 tasks with at least three distinct operations, and pooled ranking agrees at tau-b 0.929.
 The 13\% of tasks (10 of 77) where agreement falls below 0.7 are exactly where multi-measure profiling adds value.
 % 跨 440 条 AgentRewardBench 轨迹（7,229 个 operation、51,904,621 个 token，均精确守恒），按 count 与 token 排序的一致性高：在至少有三个不同 operation 的 77 个任务上，平均 Kendall tau-b 为 0.886 [0.857, 0.915]，pooled 排序的 tau-b 为 0.929。一致性低于 0.7 的 13\% 任务（77 个中的 10 个）正是多度量 profiling 增加价值的地方。
 
-\emph{Takeaway.} Both conditions hold: the semantic hierarchy reunites cross-run responsibility that raw-action and native organizations scatter (the authentication case), and switching the measure on that fixed hierarchy moves attributed share by more than 2$\times$ (21\% to 46\%), revealing bottlenecks that operation count alone would hide.
-% 要点。两个条件都成立：语义层次重聚了 raw-action 和 native 组织所分散的跨运行责任（认证案例），且在该固定层次上切换度量使归因份额变化超过 2 倍（21\% 到 46\%），暴露出仅靠 operation 数会掩盖的瓶颈。
+\emph{Takeaway.} Both conditions hold: the semantic hierarchy reunites cross-run responsibility that raw-action and native organizations scatter (the authentication case), and switching the measure on that fixed hierarchy moves attributed share by more than 2$\times$ (21\% to 46\%), revealing bottlenecks that operation count alone would hide. These bottlenecks are optimization targets: tasks consuming disproportionate budget can be restructured to reduce cost.
+% 要点。两个条件都成立：语义层次重聚了 raw-action 和 native 组织所分散的跨运行责任（认证案例），且在该固定层次上切换度量使归因份额变化超过 2 倍（21\% 到 46\%），暴露出仅靠 operation 数会掩盖的瓶颈。这些瓶颈就是优化目标：消耗不成比例预算的任务可被重构以降低成本。
 
 
 %% -------------------------------------------------------------------
@@ -612,7 +616,7 @@ The \emph{direct diagnostic} is the per-operation output of each benchmark's own
 % \emph{direct diagnostic} 是 benchmark 原生, 它先读取完整 trace 与参考答案，再指出责任 agent 与决定性步骤。
 \emph{Direct-only} ranks by that diagnostic alone; \emph{Direct+\sys} breaks ties by group score (vote mean for AgentProcessBench; 95\% Wilson bound otherwise), with HINTBench field order fixed on 80 validation trajectories;
 \emph{AgentProf-only} uses only the profiler without the benchmark diagnostic (Figure~\ref{fig:rq2-map}).
-% Direct-only 仅按该诊断排序；Direct+\sys 用 profiler 的组分数打破并列；Direct+\sys-Raw 是将语义区间名替换为 raw action 类型的消融（分组结构相同，仅名称不同）；AgentProf-only 仅用 profiler 不用 benchmark 诊断（Figure~\ref{fig:rq2-map}）。
+% Direct-only 仅按该诊断排序；Direct+\sys 用 profiler 的组分数打破并列；AgentProf-only 仅用 profiler 不用 benchmark 诊断（Figure~\ref{fig:rq2-map}）。
 
 \begin{figure}[tb]
 \centering
@@ -623,8 +627,8 @@ The \emph{direct diagnostic} is the per-operation output of each benchmark's own
 \end{figure}
 
 \emph{Results.} Direct+\sys beats Direct-only by 0.031 [0.024, 0.039], 0.107 [0.093, 0.120], and 0.117 [0.088, 0.148] (95\% intervals from 10{,}000 paired resamples); all intervals lie above zero, so every improvement is statistically significant (Figure~\ref{fig:rq2-map}).
-Grouping with retained evidence drives the localization gain. Semantic naming enables cross-run attribution (RQ1) and concentrates the reader's attention, reducing evidence opened from 65\% to 53\% at equal quality (measured below), but does not affect within-trajectory localization ranking.
-% 分组加保留证据驱动排序增益；语义命名带来另一可测收益：它集中读者注意力，在同等质量下将打开的证据从 65\% 降至 53\%（下文测量）。语义前缀还支持跨运行归因（RQ1）。
+Grouping with retained evidence drives the localization gain. Semantic naming enables cross-run attribution (RQ1) and concentrates the reader's attention, reducing evidence opened from 65\% to 53\% at equal quality (measured below).
+% 分组加保留证据驱动定位增益。语义命名支持跨运行归因（RQ1）并集中读者注意力，在同等质量下将打开的证据从 65\% 降至 53\%（下文测量）。
 
 \paragraph{Profile-guided reading on TraceElephant.}
 % TraceElephant 上的 profile 引导阅读。
@@ -818,9 +822,12 @@ sparse path changes whose names begin with a verb and contain one to three
 words; intervening steps inherit the preceding path.
 % 直接标注后端是 OpenAI Codex CLI（版本 0.145.0，模型 \texttt{gpt-5.6-sol}，高推理努力，默认解码，沙箱非交互模式）。每个 worker 接收一个仅含源的轨迹包，最多做一次标注调用加一次格式重试，与其他 worker 不共享状态。提示词和响应预览截断至 1,800 字符，工具命令截断至 600，状态预览截断至 200；可加度量来自结构化计数器，不截断。固定指令在正文中再现，输出以动词开头、包含一到三个词的稀疏路径变化；中间步骤继承前一条路径。
 
-Operationally, each call is one isolated backend request. ``Iteratively'' in
-the instruction refers to revising the mark set within that request, which
-returns one final sparse annotation file.
+Operationally, each call is one isolated backend request. Here, recursion
+refers to the variable-depth nested decomposition constructed by the annotation
+agent within that request, rather than to a sequence of backend requests.
+``Iteratively'' refers to revising the mark set before returning one final
+sparse annotation file.
+% 操作上，每次调用是一个独立的后端请求。这里"递归"指标注 agent 在单次请求内构造的可变深度嵌套分解，而非一系列后端请求。"迭代"指在返回最终稀疏标注文件前修订标记集。
 
 Before folding, one fixed source-only action--object map canonicalizes
 free-form interval names. The map is implemented as ordered verb, object, and
@@ -865,6 +872,7 @@ trajectories are therefore reused when a task has multiple runs, yielding 338
 pair occurrences over the 125 mixed-outcome tasks. The signed aggregate is
 pair-occurrence weighted and contains all 338 failed sides and all 338
 successful sides.
+% AgentRewardBench 配对枚举每个任务内所有失败-成功组合。202 条成功和 238 条失败轨迹在多次运行的任务中被重用，产生 125 个混合结果任务上的 338 对。带符号聚合按配对次数加权，包含全部 338 个失败侧和 338 个成功侧。
 
 Within each workload, operations, target-blind paths, benchmark
 judge/localizer predictions, and scoring rules are fixed before test targets
@@ -883,12 +891,11 @@ while the other 522 zero-positive trajectories remain in the population
 inputs. AP equals reciprocal rank for a query with one relevant operation and
 also handles queries with multiple relevant operations. MAP is the arithmetic
 mean over target-bearing queries because AP is undefined without a relevant
-item. The reported Direct+\sys-minus-Direct-only and
-Direct+\sys-minus-Direct+\sys-Raw intervals use 10{,}000 paired resamples of
+item. The reported Direct+\sys-minus-Direct-only intervals use 10{,}000 paired resamples of
 trajectory clusters within benchmark-defined strata. AgentProcessBench uses
-seeds 20260723 and 20260724, HINTBench uses 20260823 and 20260824, and
-TraceElephant uses 20260923 and 20260924 for the two comparisons.
-% 三个定位 workload 共 1,756 条轨迹，其中 1,234 个含目标 query 分别贡献 614、400、220 个 AP；其余 522 条 zero-positive 轨迹仍进入 population 输入。单一相关 operation 时 AP 等于 reciprocal rank。区间使用层内轨迹聚类的 10,000 次配对重抽样及正文列出的固定种子。
+seed 20260723, HINTBench uses 20260823, and
+TraceElephant uses 20260923.
+% 三个定位 workload 共 1,756 条轨迹，其中 1,234 个含目标 query 分别贡献 614、400、220 个 AP；其余 522 条 zero-positive 轨迹仍进入 population 输入。单一相关 operation 时 AP 等于 reciprocal rank。Direct+\sys-minus-Direct-only 区间使用层内轨迹聚类的 10,000 次配对重抽样。
 
 For the TraceElephant reading study, the Grok~4.5 CLI reader is invoked with
 tools and subagents disabled. Full-trace reading uses one single-turn call per
@@ -939,7 +946,7 @@ The fixed runtime is llama.cpp version 9870 at revision
 \texttt{2d973636e} with the Qwen3.6-27B Q4\_K\_M artifact. It uses one
 4{,}096-token slot, full GPU offload, Jinja templates, reasoning disabled, and
 both RAM cache and prompt reuse disabled.
-% 仅评估的 Qwen3.6-27B llama.cpp 后端从目标文本和九个声明的 family 描述分类全部 1,012 个 AgentBoard 目标。三次完整运行产生相同的分配。Action 标签适配器使用固定的八个 TraceView action 定义和当前 thought/action；对全部 2,737 个标签的两次完整运行产生相同分配。字面标签使用 accuracy 和 macro-F1，划分使用 V-measure 或普通 B$^3$，转移使用精确相邻边界 precision、recall 和 F1。
+% 仅评估的 Qwen3.6-27B llama.cpp 后端从目标文本和九个声明的 family 描述分类全部 1,012 个 AgentBoard 目标。三次完整运行产生相同的分配。Action 标签适配器使用固定的八个 TraceView action 定义和当前 thought/action；对全部 2,737 个标签的两次完整运行产生相同分配。字面标签使用 accuracy 和 macro-F1，划分使用 V-measure 或普通 B$^3$，转移使用精确相邻边界 precision、recall 和 F1。固定运行时为 llama.cpp 版本 9870 修订 \texttt{2d973636e}，使用 Qwen3.6-27B Q4\_K\_M，单个 4,096 token 槽，全 GPU offload，禁用 reasoning、RAM cache 和 prompt 复用。
 
 \subsection{Runs, Uncertainty, and Computing Environment}
 % 运行次数、不确定性与计算环境
