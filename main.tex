@@ -36,9 +36,10 @@
 \begin{abstract}
 AI agents increasingly orchestrate long-running, multi-step activities involving thousands to millions of interactions with users, tools, and system resources.
 % AI 智能体编排涉及数千到数百万次交互的长时间多步骤活动。
-To improve quality, safety, and cost efficiency of AI agents, developers need to determine where failures concentrate, which workflows trigger unsafe effects, and which task categories consume the most budget---then target those tasks for optimization.
+To improve quality, safety, and cost efficiency of AI agents, developers need to determine where failures concentrate, which workflows trigger unsafe effects, and which task categories consume the most budget---then target those tasks for optimization to reduce token and time cost
+and improve safety and success rate.
 % 为提高智能体的质量、安全性和成本效率，开发者需确定故障集中在哪里、哪些工作流触发不安全副作用、哪类任务消耗最多预算——然后针对这些任务进行优化。
-To answer similar questions in traditional systems software, profiling attributes resource consumption to responsible entities, such as code paths, by aggregation.
+To answer similar questions in traditional systems software, profiling attributes resource consumption to responsible entities, such as code paths, by aggregation, to identify hotspots.
 % 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责实体（如代码路径）。
 Yet existing agent observability tools focus on per-execution debugging and tracing rather than profiling, making these questions difficult to answer as trajectories grow long and complex.
 % 然而现有智能体可观测性工具聚焦于单次执行的调试和 tracing 而非 profiling，使这些问题在轨迹变长变复杂时难以回答。
@@ -296,6 +297,8 @@ Expanding the view shows all three executions verifying substitute transport pat
 % 展开视图显示三次执行都在验证替代传输路径，却从未建立目标端点。
 The insight is that the agents kept retrying SSH variants instead of fixing the actual credential issue, and operation count alone would hide this because authentication commands are cheap to issue but expensive to verify.
 % 洞察：agent 不断重试 SSH 变体而非修复实际凭证问题；仅看 operation 数会掩盖这一点，因为认证命令发起成本低但验证成本高。
+The profile points to where to intervene: adding early credential validation or limiting retry depth in \texttt{diagnose authentication} could cut token cost for similar tasks.
+% profile 指出干预点：在 \texttt{diagnose authentication} 中添加早期凭证验证或限制重试深度，可降低类似任务的 token 成本。
 
 \paragraph{Challenges for Agent Profiling.}
 Adapting profiling to agent trajectories faces two core challenges.
