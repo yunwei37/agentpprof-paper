@@ -35,7 +35,7 @@
 
 \begin{abstract}
 AI agents increasingly orchestrate long-running, multi-step activities involving thousands to millions of interactions with users, tools, and system resources.
-% AI 智能体编排涉及数千到数百万次交互的长时间多步骤活动。
+% AI 智能体日益编排涉及与用户、工具和系统资源数千到数百万次交互的长时间多步骤活动。
 To improve quality, safety, and cost efficiency of AI agents, developers need to determine where failures concentrate, which workflows trigger unsafe effects, and which task categories consume the most budget. They can then target those tasks for optimization to reduce token and time cost and improve success rate.
 % 为提高智能体的质量、安全性和成本效率，开发者需确定故障集中在哪里、哪些工作流触发不安全副作用、哪类任务消耗最多预算。然后针对这些任务进行优化，降低 token 和时间成本，提高成功率。
 In traditional systems software, profiling answers similar questions by aggregating resource consumption and attributing it to responsible code paths, identifying hotspots for optimization.
@@ -43,13 +43,13 @@ In traditional systems software, profiling answers similar questions by aggregat
 Yet existing agent observability tools focus on per-execution debugging and tracing rather than profiling, making these questions difficult to answer as trajectories grow long and complex.
 % 然而现有智能体可观测性工具聚焦于单次执行的调试和 tracing 而非 profiling，使这些问题在轨迹变长变复杂时难以回答。
 Agent behavior differs from code execution, which makes profiling challenging. The responsible entities are task intent and workflow phase rather than code paths, and agent trajectories lack the stable identifiers that make attribution possible.
-% 智能体行为与代码执行不同。负责实体是任务意图和工作流阶段而非代码路径，且智能体轨迹缺乏使归因成为可能的稳定标识符。
+% 智能体行为与代码执行不同，这使 profiling 具有挑战性。负责实体是任务意图和工作流阶段而非代码路径，且智能体轨迹缺乏使归因成为可能的稳定标识符。
 We propose a \emph{semantic operation stack model} that adapts profiling to agent trajectories.
 % 我们提出一个将 profiling 适配到智能体轨迹的语义 operation stack 模型。
 Uniform \emph{operations} represent all agent activities, and \emph{operation stacks} replace the runtime call stack, enabling hierarchical attribution at different levels of granularity from the same data.
 % 统一的 operation 表示所有智能体活动，operation stack 替代运行时调用栈，使同一数据支持不同粒度的分层归因。
 We observe that an agent's task occupies a contiguous span of a trajectory and decomposes into contiguous subtasks, so we design \emph{recursive operation segmentation}, which splits a trajectory where the agent's responsibility changes, names the intervals on both sides, and recurses to supply the missing stack.
-% 我们观察到智能体的任务占据轨迹上一段连续区间并可分解为连续子任务，因此任务结构是一组嵌套命名区间，只需找出转移点即可恢复。据此我们设计递归 operation 切分，在责任变化处切开轨迹，为两侧区间命名并递归，提供缺失的栈。
+% 我们观察到智能体的任务占据轨迹上一段连续区间并可分解为连续子任务，因此我们设计递归 operation 切分，在责任变化处切开轨迹，为两侧区间命名并递归，提供缺失的栈。
 \sys implements this in a profiler that compiles local agent trajectories into pprof-compatible profiles.
 % \sys 将其实现为一个 profiler，把本地智能体轨迹编译为 pprof 兼容的 profile。
 Our evaluation shows that \sys effectively attributes resources, locates problems, and surfaces optimization targets across agent trajectories at practical cost.
@@ -190,7 +190,7 @@ One algorithm, \emph{recursive operation segmentation}, supplies the missing tag
 Labeling every prompt individually would be prohibitively expensive, but task structure is recoverable at lower cost: a task occupies a contiguous span of a trajectory and decomposes into contiguous subtasks, so recovering it requires only finding the transitions between them.
 % 一个算法——递归 operation 切分——提供缺失的标签。逐个标注每个 prompt 成本过高，但任务结构可以以较低成本恢复：任务占据轨迹上一段连续区间并分解为连续的子任务，因此恢复它只需找到它们之间的转移点。
 The algorithm finds where responsibility changes, names the resulting intervals, and yields short names starting with a verb (like \texttt{diagnose authentication}) that fold across sessions. The interface is implementation-neutral.
-% 切分接口与实现无关：agent、普通语言模型或统计规则都能产出相同的标记。
+% 算法找出责任变化处，命名生成的区间，产出以动词开头的短名称（如 \texttt{diagnose authentication}），这些名称可跨 session 折叠。切分接口与实现无关。
 Across all 405 released CodeTraceBench~\cite{li2026codetracer} trajectories, recursive
 segmentation agrees with human stage annotations at 0.764
 B$^3$ F1~\cite{bagga-baldwin-1998-entity-based}, versus 0.663 for a statistical baseline and 0.541 for raw
@@ -405,7 +405,7 @@ The algorithm reads a trajectory, finds the transition points where the agent's 
 It then recurses into each interval, cutting again wherever a
 finer responsibility change remains, and stops when an interval reads as
 one coherent piece of work.
-% 在每个转换点它切开轨迹并为两侧的区间命名；随后对每个区间递归，在仍存在更细责任变化处继续切分，直到一个区间读起来是一件连贯的工作为止。
+% 随后对每个区间递归，在仍存在更细责任变化处继续切分，直到一个区间读起来是一件连贯的工作为止。
 Formally, a trajectory is an ordered step sequence $T=(t_1,\dots,t_n)$,
 and a segmentation is a set $S$ of named intervals over $T$ that is
 nested (any two intervals are disjoint or one contains the other),
@@ -555,7 +555,7 @@ The 13\% of tasks where agreement falls below 0.7 are exactly where multi-measur
 % RQ2：分析器输出是否对应真实问题？
 
 \emph{Setup.} To evaluate whether profiler output corresponds to independently annotated real problems, we apply three tests: (1) \emph{differential analysis} checks whether the profile's failure structure matches expert behavioral labels across 440 runs; (2) \emph{localization} checks whether adding profile scores to existing benchmark judges improves fault ranking; (3) \emph{reading study} checks whether semantic names help an agent reader reach the same ranking while opening less evidence.
-% 设置。为评估 profiler 输出是否对应独立标注的真实问题，我们用三个测试：(1) 差分分析检验 profile 的失败结构是否在 440 次运行上与专家行为标注一致；(2) 定位检验在既有 benchmark judge 上添加 profile 分数是否改善故障排序；(3) 阅读研究检验语义名称是否帮助 agent reader 在打开更少证据的情况下达到同等排序。
+% 设置。为评估 profiler 输出是否对应独立标注的真实问题，我们用三个测试：(1) 差分分析检验 profile 的失败结构是否在 440 次运行上与专家行为标注一致；(2) 定位检验在既有 benchmark judge 上添加 profile 分数是否改善故障排序；(3) 阅读研究检验语义名称是否帮助 agent reader 在打开更少证据的情况下达到相近排序。
 
 \begin{figure}[t]
 \centering
@@ -618,14 +618,14 @@ The \emph{direct diagnostic} is the per-operation output of each benchmark's own
 
 \emph{Results.} Direct+\sys beats Direct-only by 0.031, 0.107, and 0.117 MAP on the three workloads (all statistically significant; 95\% intervals in Appendix~\ref{app:rq2}; Figure~\ref{fig:rq2-map}).
 Grouping with retained evidence drives the localization gain. Semantic naming enables cross-run attribution (RQ1) and concentrates the reader's attention, reducing evidence opened from 65\% to 53\% (measured below).
-% 分组加保留证据驱动定位增益。语义命名支持跨运行归因（RQ1）并集中读者注意力，在同等质量下将打开的证据从 65\% 降至 53\%（下文测量）。
+% 分组加保留证据驱动定位增益。语义命名支持跨运行归因（RQ1）并集中读者注意力，将打开的证据从 65\% 降至 53\%（下文测量）。
 
 \paragraph{Profile-guided reading on TraceElephant.}
 % TraceElephant 上的 profile 引导阅读。
 On 220 queries, a Grok 4.5~\cite{grok45} agent-as-judge ranks operations by likely fault.
 Full-trace reading reaches MAP .502 at 12.6K tokens/query. A profile-guided reader selects at most five groups and reaches .455 while opening 53\% of the source, versus .465 and 65\% with raw-action names (intervals in Appendix~\ref{app:rq2}).
 A per-query full read is also bounded by the model context window.
-% 在 220 个 query 上，Grok 4.5 agent-as-judge 按可能出错排序 operation。全 trace 阅读以 12.6K token/query 达到 MAP .502；profile 引导的 reader 用语义名达到 .455 且只打开 53\% 的源（用 raw-action 名需打开 65\% 才达相近 MAP）。
+% 在 220 个 query 上，Grok 4.5 agent-as-judge 按可能出错排序 operation。全 trace 阅读以 12.6K token/query 达到 MAP .502；profile 引导的 reader 用语义名达到 .455 且只打开 53\% 的源字符（用 raw-action 名需打开 65\%）。
 \emph{Takeaway.} Failure structure surfaced by the profile matches independent human labels across 435 trajectories. Profiles add localization signal on top of existing judges, and semantic names concentrate the agent's attention, reducing source characters opened from 65\% to 53\%.
 % 要点。profile 呈现的失败结构在 435 条轨迹上与独立人工标注一致；profile 在既有 judge 之上补充定位信号；语义名称集中 agent 注意力，将需要打开的源字符从 65\% 降至 53\%。
 
@@ -737,7 +737,7 @@ Deterministic materialization of the full 440-trajectory population takes 0.26\,
 Classic profilers fold runtime call stacks over stable code identity, and Pivot Tracing groups causally related measurements~\cite{pprof,flamegraphs,pivottracing}.
 % 经典 profiler 折叠具有稳定代码身份的运行时调用栈，Pivot Tracing 对因果相关度量分组。
 Agent observability platforms such as LangSmith, Langfuse, and Phoenix~\cite{langsmith,langfuse,phoenix} record spans with metadata for per-execution debugging. Analytics layers such as Datadog Patterns and LangSmith Insights~\cite{datadog-patterns,langsmith-insights} roll up cross-trace hierarchies or input distributions, but none constructs recursive semantic responsibility with conserved additive measures in a standard profile.
-% 智能体可观测性平台与标准记录 span 用于单次执行调试，分析层汇总跨 trace 层次、workflow profile 或输入分布；但没有一个在标准 profile 中构造带守恒可加度量与保留调用证据的递归语义责任。
+% LangSmith、Langfuse、Phoenix 等智能体可观测性平台记录带元数据的 span 用于单次执行调试。Datadog Patterns 和 LangSmith Insights 等分析层汇总跨 trace 层次或输入分布，但没有一个在标准 profile 中构造带守恒可加度量的递归语义责任。
 Cross-run analyses (TraceProbe, Graphectory, Act$\cdot$onomy, CHIEF, Hodoscope, TraceGraph)~\cite{traceprobe2026,graphectory2026,actonomy2026,chief2026,hodoscope2026,tracegraph2026} and per-run diagnosis and localization~\cite{agentrx,telbench,agentatlas,trajad,agentfixer,li2026codetracer,agentprocessbench,hintbench,traceelephant,mpbench2026} answer what an agent did and which step went wrong.
 % 跨运行分析（TraceProbe、Graphectory、Act$\cdot$onomy、CHIEF、Hodoscope、TraceGraph）与单运行诊断和定位回答的都是"智能体做了什么、哪一步出了错"。
 \sys instead asks how much of an additive resource a task or workflow phase is responsible for. It recovers variable-depth responsibility from source content (where Act$\cdot$onomy fixes three levels and TraceProbe one), conserves measures exactly across count, token, and time widths, keeps LLM/tool calls as leaf nodes, and emits standard pprof. No compared system provides all four, and \sys stays complementary to per-run diagnosis, as RQ2 measures directly.
