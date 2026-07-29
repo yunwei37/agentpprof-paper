@@ -421,8 +421,8 @@ $\varphi$ selects which operations participate, a stack function
 $\sigma = [f_1, \ldots, f_k]$ maps each operation to its frame
 sequence, and a weight function $w$ assigns a nonnegative measure.
 % 一个视图是三元组 $(\varphi, \sigma, w)$：谓词 $\varphi$ 选择参与的 operation，栈函数 $\sigma = [f_1, \ldots, f_k]$ 将每个 operation 映射到其帧序列，权重函数 $w$ 赋予非负度量。
-Four built-in views cover common questions: \texttt{tokens} (LLM calls weighted by token count), \texttt{time} (all timed operations weighted by duration), \texttt{files} (file operations weighted by event count), and \texttt{network} (network operations weighted by event count).
-% 四个内置视图覆盖常见问题：\texttt{tokens}（LLM 调用按 token 数加权）、\texttt{time}（所有计时操作按时长加权）、\texttt{files}（文件操作按事件数加权）和 \texttt{network}（网络操作按事件数加权）。
+Built-in views cover common questions (e.g., \texttt{tokens}, \texttt{time}, \texttt{files}).
+% 内置视图覆盖常见问题（如 \texttt{tokens}、\texttt{time}、\texttt{files}）。
 
 \begin{figure}[t]
 \centering
@@ -706,8 +706,8 @@ Drilldown decomposes the recovery responsibility into verification challenges, r
 % 下钻把 recovery 责任分解为验证挑战、重复搜索、误导航和记录重试，source label 指明哪些 session 贡献了各宽度。
 The insight: failing agents get stuck in retry loops rather than backing out and trying a different approach.
 % 洞察：失败的 agent 陷入重试循环，而不是回退尝试不同方法。
-This structure matches independent expert looping labels on 435 unique trajectories at AP .634 versus prevalence .398 (difference interval [.181, .293] over 10{,}000 task-cluster draws; computed per unique trajectory after deduplicating pair reuse), confirming the profile surfaces a real behavioral pattern, not an artifact of step count; a fixed-chain repeated/error control reaches the same detection quality (AP .656; difference interval [-.107, .061]), while only the recursive profile provides the decomposition above with drilldown to source.
-% 该结构在 435 条唯一轨迹上与独立专家 looping 标注的一致性为 AP .634（prevalence .398；10,000 次 task-cluster 抽样的差异区间 [.181,.293]；按去重后的唯一轨迹计算），确认 profile 呈现的是真实行为模式而非步骤数的副产物；fixed-chain repeated/error 对照达到相同检测质量（AP .656；差异区间 [-.107,.061]），但只有递归 profile 提供上述可下钻到 source 的分解。
+This structure matches independent expert looping labels on 435 trajectories at AP .634 versus prevalence .398 (difference interval [.181, .293]), confirming the profile surfaces a real behavioral pattern; a fixed-chain repeated/error control reaches the same detection quality (AP .656), while only the recursive profile provides the decomposition above with drilldown to source.
+% 该结构在 435 条轨迹上与独立专家 looping 标注的一致性为 AP .634（prevalence .398；差异区间 [.181,.293]），确认 profile 呈现的是真实行为模式；fixed-chain repeated/error 对照达到相同检测质量（AP .656），但只有递归 profile 提供上述可下钻到 source 的分解。
 
 \paragraph{Supplementing benchmark's own diagnostics.}
 % 补充 benchmark 原生诊断。
@@ -780,12 +780,10 @@ On the complete 220 queries that contain a faulty step, a Grok 4.5~\cite{grok45}
 % 在全部 220 个含出错步骤的 query 上，Grok 4.5 agent 接收任务描述与轨迹内容（不含任何真实标签），被要求按可能出错排序 operation。
 Full-trace reading reaches MAP .502 at a mean 12{,}615 input tokens per query, versus .209 for the benchmark's Direct-only diagnostic and .326 for Direct+\sys.
 % 全 trace 阅读以每 query 平均 12,615 个输入 token 达到 MAP .502，而 benchmark 的 Direct-only 诊断为 .209、Direct+\sys 为 .326。
-A two-stage profile-guided variant first shows only the semantic operation skeleton, with no source content, and the agent selects at most five groups; stage two then opens only those groups' evidence.
-% 两阶段的 profile 引导变体先只展示语义 operation 骨架（不含 source 内容），agent 最多选择五个 group；第二阶段只打开这些 group 的证据。
+A profile-guided variant uses the semantic skeleton to navigate, opening only selected evidence.
+% profile 引导变体用语义骨架导航，只打开选中的证据。
 The semantic skeleton reaches MAP .455 while opening only 53.0\% of the source content; the \sys-Raw skeleton requires 65.0\% to reach comparable quality (MAP .465).
 % 语义骨架达到 MAP .455 且只打开 53.0\% 的源内容；\sys-Raw 骨架需要打开 65.0\% 才能达到相近质量（MAP .465）。
-Missed targets were absent from the agent's selection entirely, not truncated by the five-group limit.
-% 遗漏的 target 完全不在 agent 的选择中，而非被五组上限截断。
 A per-query full read is also bounded by the model context window (the 4{,}558{,}192-token Git population cannot be read whole).
 % 每 query 的全量阅读还受模型上下文窗口约束（4,558,192-token 的 Git population 无法整体读入）。
 \emph{Takeaway.} Failure structure surfaced by the profile matches independent human labels across 435 trajectories; profiles add localization signal on top of existing judges; semantic names concentrate the agent's attention, reducing evidence opened from 65\% to 53\% at equal ranking quality.
