@@ -230,9 +230,7 @@ This paper makes three contributions:
 \section{Background and Motivation}
 \label{sec:background}
 
-\subsection{LLMs and AI Agents}
-% AI 智能体
-
+\paragraph{LLMs and AI Agents.}
 A typical agent trajectory interleaves two layers of activity.
 % 典型的智能体轨迹交织两层活动。
 At the intent layer, the agent receives a user prompt, issues LLM
@@ -246,13 +244,7 @@ and system effects, and a production team accumulates many trajectories over
 time.
 % 单条轨迹可能包含数百个意图与系统副作用之间的循环，生产团队随时间积累许多轨迹。
 
-\subsection{System Profiling}
-% 系统 Profiling
-
-Profiling attributes resource consumption to responsible entities by
-aggregation, as distinct from per-execution debugging and
-tracing.
-% Profiling 通过聚合将资源消耗归因到负责实体，区别于单次执行调试和 tracing。
+\paragraph{System Profiling.}
 In traditional software, the profiling pipeline works as follows:
 a profiler periodically samples execution state, attaches each
 sample to the current call stack, and merges samples with identical
@@ -270,9 +262,7 @@ label-derived pseudo-frames, but only on top of an existing execution
 stack that agent trajectories do not have.
 % Pprof 的 \texttt{tagroot}/\texttt{tagleaf} 选项可以添加标签衍生的伪帧，但仅在智能体轨迹不具备的已有执行栈之上。
 
-\subsection{A Motivating Case}
-% 动机案例
-
+\paragraph{A Motivating Case.}
 Three independent agent attempts at one real Git-deployment task all failed to deliver the requested password-authenticated endpoint.
 % 同一个真实 Git 部署任务的三次独立 agent 尝试都未能交付所要求的密码认证端点。
 The developer's question: \emph{what went wrong, and is it the same problem across all three runs?}
@@ -304,9 +294,7 @@ Drilldown shows all three executions verifying substitute transport paths withou
 The insight: the agents kept retrying SSH variants instead of fixing the actual credential issue, and operation count alone would hide this because authentication commands are cheap to issue but expensive to verify.
 % 洞察：agent 不断重试 SSH 变体而非修复实际凭证问题；仅看 operation 数会掩盖这一点，因为认证命令发起成本低但验证成本高。
 
-\subsection{Challenges for Agent Profiling}
-% 智能体 Profiling 的挑战
-
+\paragraph{Challenges for Agent Profiling.}
 Adapting profiling to agent trajectories faces two core challenges.
 % 将 profiling 适配到智能体轨迹面临两个核心挑战。
 The first is that the responsible entities differ.
@@ -323,25 +311,16 @@ In CPU profiling, the call stack determines attribution at every level: \texttt{
 A sequence of prompts may constitute one task or several, and a task may be part of a larger workflow, but no runtime mechanism marks these boundaries or determines at which granularity to attribute cost.
 % 一串提示词可能构成一个任务也可能是多个任务，一个任务可能是更大工作流的一部分，但没有运行时机制标记这些边界或决定在哪个粒度归因开销。
 
-\subsection{Design Requirements for Agent Profiling}
-% 智能体 Profiling 的设计需求
-
-Agent profiling needs the three mechanisms that call stacks provide automatically, but must achieve them without a call stack:
-% 智能体 profiling 需要调用栈自动提供的三种机制，但必须在没有调用栈的情况下实现：
-\textbf{R1} (cross-layer projection): connect system-layer consumption to intent-level categories;
-% R1（跨层投影）：将系统层消耗连接到意图层类别；
-\textbf{R2} (stable tags): derive short, repeatable tags from natural-language prompts before folding;
-% R2（稳定标签）：在折叠前从自然语言提示词派生短小、可重复的标签；
-\textbf{R3} (hierarchical attribution): construct attribution hierarchies from data, not execution nesting.
-% R3（分层归因）：从数据而非执行嵌套构造归因层次。
-
 %% ===================================================================
 \section{Design}
 % 设计
 \label{sec:design}
 
-The three requirements (cross-layer resource projection, stable tags, and hierarchical attribution) drive the design.
-% 三个需求（跨层资源投影、稳定标签和分层归因）驱动了设计。
+Agent profiling needs the three mechanisms that call stacks provide automatically, but must achieve them without a call stack:
+\textbf{R1} (cross-layer projection): connect system-layer consumption to intent-level categories;
+\textbf{R2} (stable tags): derive short, repeatable tags from natural-language prompts before folding;
+\textbf{R3} (hierarchical attribution): construct attribution hierarchies from data, not execution nesting.
+% 智能体 profiling 需要调用栈自动提供的三种机制，但必须在没有调用栈的情况下实现：R1（跨层投影）：将系统层消耗连接到意图层类别；R2（稳定标签）：在折叠前从自然语言提示词派生短小、可重复的标签；R3（分层归因）：从数据而非执行嵌套构造归因层次。
 Operations satisfy R1 by representing intent and system-effect activities in a single record with tag inheritance, so intent tags propagate to the system effects they trigger.
 % Operation（Design）通过将意图和系统副作用活动表示在带标签继承的单一记录中满足 R1，使意图层标签传播到其触发的系统副作用。
 \emph{Recursive operation segmentation} satisfies R2 and R3 together: it derives short, stable interval names from trajectory content and nests those intervals into the attribution hierarchy that replaces the runtime call stack.
@@ -840,11 +819,8 @@ structure at 0.764 B$^3$ F1, profiles add localization signal on three
 complete public benchmarks, and one hierarchy replays across additive
 measures with exact conservation.
 % 相对独立标注，切分以 0.764 的 B$^3$ F1 恢复人工 stage 结构；profile 在三个完整公开 benchmark 上补充定位信号；同一层次跨可加度量精确守恒地重放。
-A strong agent reader that re-reads a whole trajectory per question remains
-the best single-query localizer, confirming that profilers and
-debuggers are complementary: the profile answers population questions
-and guides the agent to the evidence worth opening.
-% 每次提问都重读整条轨迹的强 agent reader 仍是单问题定位的最优者，这确认了 profiler 与 debugger 互补：profile 回答群体问题，并引导 agent 只打开值得打开的证据。
+Profilers and debuggers are complementary: the profile answers population questions and guides an agent reader to the evidence worth opening, reducing opened content by 12\% at equal ranking quality.
+% Profiler 与 debugger 互补：profile 回答群体问题，并引导 agent reader 只打开值得打开的证据，在同等排序质量下减少 12\% 的打开内容。
 Multi-project evaluation and tracing-ecosystem integration are the most impactful next steps.
 % 多项目评估和 tracing 生态系统集成是最有影响力的下一步。
 
