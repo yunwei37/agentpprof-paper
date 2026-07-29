@@ -588,9 +588,12 @@ Here we add a third measure: elapsed time.
 % 这里我们增加第三种度量：elapsed time。
 The same hierarchy replays under all three measures with exact conservation, and the \texttt{diagnose authentication} subtree's share rises from 21\% (count) through 37\% (time) to 46\% (tokens). Changing only the measure moves the attributed share by more than a factor of two.
 % 同一层次在三种度量下精确守恒地重放，\texttt{diagnose authentication} 子树的份额从 21\%（count）经 37\%（time）升至 46\%（token）。仅改变度量就使归因份额变化超过两倍。
-A quantitative control shows why both alternatives fail: of 105 authentication operations, 102 carry only the raw-action label \texttt{run}, and that same \texttt{run} bucket mixes in 97 unrelated operations; a coarser action-kind grouping (execute, version-control, edit, etc.) scatters the work across six kinds (execute 39\%, version-control 22\%, edit 19\%, inspect 12\%, search 7\%, install 1\%); native call trees place each operation under a distinct source call with no shared responsibility node.
+A quantitative control shows why both alternatives fail.
+Of 105 authentication operations, 102 carry only the raw-action label \texttt{run}, and that same \texttt{run} bucket mixes in 97 unrelated operations.
+A coarser action-kind grouping scatters the work across six kinds (execute 39\%, version-control 22\%, edit 19\%, inspect 12\%, search 7\%, install 1\%).
+Native call trees place each operation under a distinct source call with no shared responsibility node.
 Only the semantic hierarchy reunites authentication into one focusable cross-run path while preserving all call/tool evidence as drilldown leaves.
-% 定量对照显示为什么两种替代方式都失败：105 个认证 operation 中 102 个只带 raw-action 标签 \texttt{run}，而同一个 \texttt{run} bucket 还混入 97 个无关 operation；更粗的 action-kind 分组（execute、version-control、edit 等）把工作散落到六种 kind（execute 39\%、version-control 22\%、edit 19\%、inspect 12\%、search 7\%、install 1\%）；native call tree 把每个 operation 放在不同 source call 下，没有共享责任节点。只有语义层次将认证重聚为一条可聚焦的跨运行路径，同时保留所有 call/tool 证据作为下钻叶。
+% 定量对照显示为什么两种替代方式都失败。105 个认证 operation 中 102 个只带 raw-action 标签 \texttt{run}，而同一个 \texttt{run} bucket 还混入 97 个无关 operation。更粗的 action-kind 分组把工作散落到六种 kind（execute 39\%、version-control 22\%、edit 19\%、inspect 12\%、search 7\%、install 1\%）。Native call tree 把每个 operation 放在不同 source call 下，没有共享责任节点。只有语义层次将认证重聚为一条可聚焦的跨运行路径，同时保留所有 call/tool 证据作为下钻叶。
 Separately, real AgentSight~\cite{agentsight} eBPF recordings replay the
 same way: all 1{,}520 captured process spawns and file operations fold
 under task responsibilities with exact conservation, demonstrating the system-effect layer end to end.
@@ -665,8 +668,9 @@ The largest single session holds only 31.23\% of that mass, so the
 priority across the full history appears only after folding.
 % 最大的单个 session 仅持有该质量的 31.23\%，因此覆盖全历史的优先级只有在折叠之后才显现。
 
-Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tokens, both conserved exactly), ranking operations by count versus tokens yields high agreement: over the 77 of 125 tasks with at least three distinct operations, mean Kendall's tau-b is 0.886 [0.857, 0.915], Spearman's rho is 0.935 [0.917, 0.953], and pooled ranking agrees at tau-b 0.929. However, 10 of 77 tasks fall below 0.7, so the measure matters when it matters.
-% 跨 440 条 AgentRewardBench 轨迹（7,229 个 operation、51,904,621 个 token，均精确守恒），按 count 与 token 排序的一致性高：在 125 个任务中至少有三个不同 operation 的 77 个上，平均 Kendall tau-b 为 0.886 [0.857, 0.915]，Spearman rho 为 0.935 [0.917, 0.953]，pooled 排序的 tau-b 为 0.929。然而 77 个任务中有 10 个低于 0.7，因此关键时刻度量选择很重要。
+Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tokens, both conserved exactly), ranking operations by count versus tokens yields high agreement: mean Kendall's tau-b is 0.886 [0.857, 0.915] over the 77 tasks with at least three distinct operations, and pooled ranking agrees at tau-b 0.929.
+However, 10 of 77 tasks fall below 0.7, so the measure matters when it matters.
+% 跨 440 条 AgentRewardBench 轨迹（7,229 个 operation、51,904,621 个 token，均精确守恒），按 count 与 token 排序的一致性高：在至少有三个不同 operation 的 77 个任务上，平均 Kendall tau-b 为 0.886 [0.857, 0.915]，pooled 排序的 tau-b 为 0.929。然而 77 个任务中有 10 个低于 0.7，因此关键时刻度量选择很重要。
 
 \emph{Takeaway.} Both conditions hold: the semantic hierarchy reunites cross-run responsibility that raw-action and native organizations scatter (the authentication case), and switching the measure on that fixed hierarchy moves attributed share by more than 2$\times$ (21\% to 46\%), revealing bottlenecks that operation count alone would hide.
 % 要点。两个条件都成立：语义层次重聚了 raw-action 和 native 组织所分散的跨运行责任（认证案例），且在该固定层次上切换度量使归因份额变化超过 2 倍（21\% 到 46\%），暴露出仅靠 operation 数会掩盖的瓶颈。
@@ -720,12 +724,8 @@ We run the complete AgentProcessBench, HINTBench (the complete released test
 snapshot, 536 of the paper-reported 629 trajectories), and TraceElephant
 workloads; all profiler outputs are computed before any fault annotations are revealed.
 % 我们在完整的 AgentProcessBench、HINTBench与 TraceElephant workload 上运行；所有 profiler 输出在故障标注揭示之前计算完成。
-Each query is one trajectory containing an annotated target, and we report
-non-interpolated per-query AP averaged over 614, 400, and 220 labeled
-queries; all 522 unlabeled trajectories are consumed for population
-coverage but excluded from MAP because AP is undefined without a relevant
-item.
-% 每个 query 是一条含标注 target 的轨迹，我们报告未插值的 per-query AP，并在 614、400 与 220 个带 target 的 query 上取算术平均；全部 522 条 unlabeled 轨迹计入群体覆盖，但因缺少相关项使 AP 无定义而从 MAP 中排除。
+We report per-query AP averaged over 614, 400, and 220 labeled queries; 522 unlabeled trajectories are consumed for population coverage but excluded from MAP.
+% 我们报告 per-query AP，在 614、400 与 220 个带标注的 query 上取平均；522 条无标注轨迹计入群体覆盖但从 MAP 中排除。
 The \emph{direct diagnostic} is the per-operation output of a
 benchmark's own process judge (AgentProcessBench risk units) or trajectory
 localizer (HINTBench, TraceElephant), which for TraceElephant reads the full
@@ -852,30 +852,17 @@ when segmentation disagrees with human stages,
 it subdivides work rather than merging unrelated responsibilities,
 preserving per-group coherence for downstream drilldown.
 % 预测 group 仍是 gold stage 中较纯的子集（B$^3$ precision 0.793），残余边界误差来自过分割而非漏切（边界 recall 0.626、precision 0.389）：当切分与人工 stage 不一致时，它是把工作细分而非合并无关责任，从而为下游下钻保留每个 group 的连贯性。
-The interface generalizes across method families: on all 287 OSWorld-Human
-sessions (3{,}978 operations, 3{,}691 adjacent pairs, 2{,}042 human groups),
-a supervised Bernoulli Naive Bayes boundary predictor~\cite{mccallum-nigam-1998}
-over nine fixed visible fields with five-fold cross-validation (sessions held out, parameters
-and threshold fitted on training sessions only) reaches 0.739 boundary F1 /
-0.816 B$^3$ F1, calibrated recurrence reaches 0.734 / 0.801 using
-group annotations the unsupervised default avoids, the no-LLM recurrence
-segmenter reaches 0.680 / 0.786 (strongest control: 0.645 / 0.678), and an unsupervised TF-IDF/K-Means method (no labels seen) reaches V-measure 0.557 on nine Mind2Web sessions and 0.815 on 100 ScienceWorld sessions~\cite{mind2web,scienceworld}; the same Codex instruction without adaptation uses coarser task-level boundaries (0.448 B$^3$ F1); matching OSWorld's finer action-group granularity recovers 0.816, showing the framework supports different segmentation scales.
-% 该接口在不同方法家族间泛化：在 287 个 OSWorld-Human session 上，监督边界预测器达到 0.739 边界 F1 / 0.816 B$^3$ F1，无 LLM 的 recurrence segmenter 为 0.680 / 0.786（最强对照 0.645 / 0.678）；无监督的 TF-IDF/K-Means 方法（不接触标签）在 9 个 Mind2Web session 上 V-measure 为 0.557，在 100 个 ScienceWorld session 上为 0.815；同一 Codex instruction 不经调整使用更粗的 task-level 边界（0.448 B$^3$ F1）；匹配 OSWorld 更细的 action-group 粒度后恢复到 0.816，表明框架支持不同切分尺度。
-For closed-label literal tags, a fixed evaluation-only
-Qwen3.6-27B~\cite{qwen36} classifier labels all 1{,}012 AgentBoard
-goals~\cite{agentboard} into nine task families at 0.695 macro-F1 and 0.733
-accuracy (majority baseline 0.044 / 0.248), and the same model
-classifies all 2{,}737 published action labels from 120 AutoCodeRover,
-OpenHands, and RepairAgent
-trajectories~\cite{traceview-2026,bouzenia-pradel-2025-trajectories} at 0.498
-macro-F1 and 0.628 accuracy (majority baseline 0.061 / 0.323).
-% 在闭标签的字面标签上，固定的、仅用于评测的 Qwen3.6-27B 方法把全部 1,012 个 AgentBoard goal 分入九个 task family，macro-F1 与 accuracy 为 0.695 / 0.733（majority 基线 0.044 / 0.248）；同一模型把来自 120 条 AutoCodeRover、OpenHands 与 RepairAgent 轨迹的全部 2,737 个公开 action 标签分类，macro-F1 与 accuracy 为 0.498 / 0.628（majority 基线 0.061 / 0.323）。
-The action classifier's 0.437 macro-F1 gain over majority has a
-full-trajectory 95\% bootstrap interval of [0.380, 0.494]; 39 AutoCodeRover
-inputs literally contain the target word \texttt{Locate}, and excluding them
-leaves 0.490 macro-F1 and 0.622 accuracy, so the positive comparison is
-unchanged.
-% 该 action 分类器相对 majority 的 0.437 macro-F1 增量，其整轨迹 95\% bootstrap 区间为 [0.380,0.494]；39 个 AutoCodeRover 输入字面含目标词 \texttt{Locate}，排除后 macro-F1 与 accuracy 仍为 0.490 与 0.622，正向比较不变。
+The interface generalizes across method families.
+On 287 OSWorld-Human sessions (3{,}978 operations, 2{,}042 human groups), a supervised Bernoulli Naive Bayes boundary predictor~\cite{mccallum-nigam-1998} with five-fold cross-validation reaches 0.739 boundary F1 / 0.816 B$^3$ F1.
+Calibrated recurrence reaches 0.734 / 0.801 using group annotations the unsupervised default avoids.
+The no-LLM recurrence segmenter reaches 0.680 / 0.786 (strongest control: 0.645 / 0.678).
+An unsupervised TF-IDF/K-Means method reaches V-measure 0.557 on nine Mind2Web sessions and 0.815 on 100 ScienceWorld sessions~\cite{mind2web,scienceworld}.
+The same Codex instruction without adaptation uses coarser task-level boundaries (0.448 B$^3$ F1); matching OSWorld's finer action-group granularity recovers 0.816, showing the framework supports different segmentation scales.
+% 该接口在不同方法家族间泛化。在 287 个 OSWorld-Human session（3,978 个 operation、2,042 个人工 group）上，五折交叉验证的监督 Bernoulli Naive Bayes 边界预测器达到 0.739 边界 F1 / 0.816 B$^3$ F1。Calibrated recurrence 达到 0.734 / 0.801，使用了无监督默认方式所回避的 group 标注。无 LLM 的 recurrence segmenter 达到 0.680 / 0.786（最强对照 0.645 / 0.678）。无监督 TF-IDF/K-Means 方法在 9 个 Mind2Web session 上 V-measure 为 0.557，在 100 个 ScienceWorld session 上为 0.815。同一 Codex instruction 不经调整使用更粗的 task-level 边界（0.448 B$^3$ F1）；匹配 OSWorld 更细的 action-group 粒度后恢复到 0.816，表明框架支持不同切分尺度。
+For closed-label literal tags, a fixed evaluation-only Qwen3.6-27B~\cite{qwen36} classifier labels all 1{,}012 AgentBoard goals~\cite{agentboard} into nine task families at 0.695 macro-F1 and 0.733 accuracy (majority baseline 0.044 / 0.248).
+The same model classifies 2{,}737 published action labels from 120 AutoCodeRover, OpenHands, and RepairAgent trajectories~\cite{traceview-2026,bouzenia-pradel-2025-trajectories} at 0.498 macro-F1 and 0.628 accuracy (majority baseline 0.061 / 0.323).
+The action classifier's 0.437 macro-F1 gain has a 95\% bootstrap interval of [0.380, 0.494]; excluding 39 AutoCodeRover inputs that literally contain the target word \texttt{Locate} leaves 0.490 macro-F1, so the positive comparison is unchanged.
+% 在闭标签的字面标签上，固定的、仅用于评测的 Qwen3.6-27B 把全部 1,012 个 AgentBoard goal 分入九个 task family，macro-F1 与 accuracy 为 0.695 / 0.733（majority 基线 0.044 / 0.248）。同一模型把来自 120 条 AutoCodeRover、OpenHands 与 RepairAgent 轨迹的 2,737 个公开 action 标签分类，macro-F1 与 accuracy 为 0.498 / 0.628（majority 基线 0.061 / 0.323）。该 action 分类器相对 majority 的 0.437 macro-F1 增量的 95\% bootstrap 区间为 [0.380, 0.494]；排除 39 个字面含目标词 \texttt{Locate} 的 AutoCodeRover 输入后仍为 0.490 macro-F1，正向比较不变。
 \emph{Takeaway.} Recursive segmentation recovers human-recognizable task structure: 0.764 B$^3$ F1 against human stages, beating the strongest automatic baseline by +0.101. When segmentation disagrees with humans, it over-segments (subdivides work) rather than merging unrelated responsibilities, preserving per-group coherence. Non-LLM methods implementing the same interface remain viable when no model is available.
 % 要点。递归切分恢复出人类可识别的任务结构：相对人工 stage 达到 0.764 B$^3$ F1，比最强自动基线高 +0.101。当切分与人类不一致时，它是过分割（细分工作）而非合并无关责任，从而保留每组连贯性。实现同一接口的非 LLM 方法在没有模型可用时依然可行。
 
