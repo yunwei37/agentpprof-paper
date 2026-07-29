@@ -655,14 +655,14 @@ A developer spent weeks building \sys{} and this paper with coding agents, accum
 % 一位开发者花数周用 coding agent 构建 \sys{} 与本文，累积了一份本地 session 历史，这里标注的是其中的 long-horizon 部分（42 个 session，18 Codex、24 Claude Code，含 1,252 个 prompt、5,620 次 LLM 调用和 13.8 亿 token）。
 The question: \emph{what did the agents actually spend tokens doing?}
 % 问题：agent 到底把 token 花在了什么事上？
-The profile (Figure~\ref{fig:selfprofile}) shows the answer is not one dominant sink but a broad distribution: the largest path (\texttt{refine paper > align evaluation}) holds only 1.7\% of tokens.
+The profile shows the answer is not one dominant sink but a broad distribution: the largest path (\texttt{refine paper > align evaluation}) holds only 1.7\% of tokens.
 % profile（Figure~\ref{fig:selfprofile}）显示答案不是单一大头而是宽分布：最大路径（\texttt{refine paper > align evaluation}）仅占 1.7\% 的 token。
 The three longest sessions (spanning tens of hours each) keep distinct dominant responsibilities (evaluation alignment, evidence inspection, and merge resolution), so session structure is preserved rather than averaged away.
 % 三条最长 session（各跨越数十小时）各有不同的主导责任（evaluation alignment、evidence inspection、merge resolution），session 结构被保留而非被平均抹掉。
 Switching to operation count shifts where mass concentrates: token mass stays at prompt depth (70\%), while operation mass resolves deeper (44\% at depths three and four) exactly where repeated engineering work concentrates.
 % 切换到 operation 数改变了质量集中处：token 质量停在 prompt 深度（70\%），而 operation 质量解析更深（44\% 在深度三和四），恰在重复工程工作集中处。
-The insight: token-heavy work happens at the conversation level, while repetitive tool calls concentrate deeper---a split that only multi-measure profiling reveals.
-% 洞察：token 密集型工作发生在对话层，而重复的工具调用集中在更深层——这种分裂只有多度量 profiling 才能揭示。
+The insight is that token-heavy work happens at the conversation level, while repetitive tool calls concentrate deeper, a split that only multi-measure profiling reveals.
+% 洞察是 token 密集型工作发生在对话层，而重复的工具调用集中在更深层，这种分裂只有多度量 profiling 才能揭示。
 The history also demonstrates multi-agent composition at scale: 98 subagent delegations across 14 sessions, where each delegation contains all downstream subagent operations and composes with annotated semantic levels.
 % 该历史还展示了规模化的多智能体组合：跨 14 个 session 的 98 次 subagent 委托，每次委托包含所有下游 subagent 操作，并与标注的语义层级组合。
 
@@ -681,11 +681,10 @@ The history also demonstrates multi-agent composition at scale: 98 subagent dele
 % \end{figure*}
 
 The same hierarchy replays under FILE-READ, FILE-WRITE, and NETWORK-target
-widths with exact conservation of 737, 31, and 61 target references
-(Figure~\ref{fig:selfprofile-write}); in the FILE-WRITE view, each created
+widths with exact conservation of 737, 31, and 61 target references; in the FILE-WRITE view, each created
 file appears as an exact drilldown leaf beneath the operation that created
 it.
-% 同一层次还按 FILE-READ、FILE-WRITE 与 NETWORK-target 宽度重放，分别精确守恒 737、31 与 61 个 target reference（Figure~\ref{fig:selfprofile-write}）；在 FILE-WRITE 视图中，每个被创建的文件作为精确下钻叶出现在创建它的 operation 之下。
+% 同一层次还按 FILE-READ、FILE-WRITE 与 NETWORK-target 宽度重放，分别精确守恒 737、31 与 61 个 target reference；在 FILE-WRITE 视图中，每个被创建的文件作为精确下钻叶出现在创建它的 operation 之下。
 These views answer the Introduction's system-effect question concretely: every recorded file and network target is attributed to
 the semantic responsibility that touched it, making side effects auditable
 per responsibility.
@@ -710,17 +709,17 @@ A skill scope opens at an exact recorded invocation and closes at the next
 invocation or the next user prompt, which keeps the intervals nested,
 noncrossing, and covering, and the level conserves exactly.
 % 一个 skill 作用域在被精确记录的调用处开启、在下一次调用或下一个用户 prompt 处关闭，从而保持区间嵌套、不交叉且全覆盖，该层级精确守恒。
-Under it, \texttt{paper-writing-style} leads by both measures---29{,}143{,}650
-tokens and 523 operations over 20 sessions and 37 invocations---and 99.47\% of
+Under it, \texttt{paper-writing-style} leads by both measures (29{,}143{,}650
+tokens and 523 operations over 20 sessions and 37 invocations), and 99.47\% of
 its tokens are cache reads, naming its repeated-context workflow as the first
 thing to inspect.
-% 在该层级下，\texttt{paper-writing-style} 在两种度量上都居首——横跨 20 个 session、37 次调用，计 29,143,650 个 token 与 523 个 operation——且其 99.47\% 的 token 为 cache read，从而指出它反复拉长上下文的工作流是首先该检查的对象。
+% 在该层级下，\texttt{paper-writing-style} 在两种度量上都居首（横跨 20 个 session、37 次调用，计 29,143,650 个 token 与 523 个 operation），且其 99.47\% 的 token 为 cache read，从而指出它反复拉长上下文的工作流是首先该检查的对象。
 The largest single session holds only 31.23\% of that mass, so the
 priority across the full history appears only after folding.
 % 最大的单个 session 仅持有该质量的 31.23\%，因此覆盖全历史的优先级只有在折叠之后才显现。
 
-Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tokens, both conserved exactly), ranking operations by count versus tokens yields high agreement: over the 77 of 125 tasks with at least three distinct operations, mean Kendall's tau-b is 0.886 [0.857, 0.915], Spearman's rho is 0.935 [0.917, 0.953], and pooled ranking agrees at tau-b 0.929; but 10 of 77 tasks fall below 0.7---stable in most cases, but the measure matters when it matters.
-% 跨 440 条 AgentRewardBench 轨迹（7,229 个 operation、51,904,621 个 token，均精确守恒），按 count 与 token 排序的一致性高：在 125 个任务中至少有三个不同 operation 的 77 个上，平均 Kendall tau-b 为 0.886 [0.857, 0.915]，Spearman rho 为 0.935 [0.917, 0.953]，pooled 排序的 tau-b 为 0.929；但 77 个任务中有 10 个低于 0.7——大多数情形稳定，但关键时刻度量选择很重要。
+Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tokens, both conserved exactly), ranking operations by count versus tokens yields high agreement: over the 77 of 125 tasks with at least three distinct operations, mean Kendall's tau-b is 0.886 [0.857, 0.915], Spearman's rho is 0.935 [0.917, 0.953], and pooled ranking agrees at tau-b 0.929. However, 10 of 77 tasks fall below 0.7, so the measure matters when it matters.
+% 跨 440 条 AgentRewardBench 轨迹（7,229 个 operation、51,904,621 个 token，均精确守恒），按 count 与 token 排序的一致性高：在 125 个任务中至少有三个不同 operation 的 77 个上，平均 Kendall tau-b 为 0.886 [0.857, 0.915]，Spearman rho 为 0.935 [0.917, 0.953]，pooled 排序的 tau-b 为 0.929。然而 77 个任务中有 10 个低于 0.7，因此关键时刻度量选择很重要。
 
 \emph{Takeaway.} One hierarchy attributes multiple resources with exact conservation; switching measures reveals bottlenecks that operation count alone would hide, and levels recovered from annotation and from literal source fields compose in the same stack.
 % 要点。同一层次精确守恒地归因多种资源；切换度量暴露出仅靠 operation 数会掩盖的瓶颈；由标注恢复的层级与来自源字段的字面层级组合在同一个栈中。
@@ -730,8 +729,8 @@ Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tok
 \subsection{RQ2: Does Profiler Output Correspond to Real Problems?}
 % RQ2：分析器输出是否对应真实问题？
 
-RQ2 asks whether profiler output---constructed without seeing the ground-truth fault annotations---corresponds to independently annotated real problems. We answer at three levels: a differential analysis over 440 runs whose recovery signal matches expert looping labels, a localization test on three complete benchmarks, and a reading study measuring how much evidence a human must open.
-% RQ2 问 profiler 输出（构建时不接触真实故障标注）是否对应独立标注的真实问题。我们在三个层次上回答：440 次运行的差分分析（其 recovery 信号对应专家 looping 标注）、三个完整 benchmark 上的定位测试，以及测量人类需要打开多少证据的阅读研究。
+RQ2 asks whether profiler output, constructed without seeing the ground-truth fault annotations, corresponds to independently annotated real problems. We answer at three levels: a differential analysis over 440 runs whose recovery signal matches expert looping labels, a localization test on three complete benchmarks, and a reading study measuring how much evidence a human must open.
+% RQ2 问 profiler 输出（构建时不接触真实故障标注）是否对应独立标注的真实问题。我们在三个层次上回答：（1）440 次运行的差分分析，其 recovery 信号对应专家 looping 标注；（2）三个完整 benchmark 上的定位测试；（3）测量人类需要打开多少证据的阅读研究。
 
 \begin{figure}
 \centering
@@ -859,19 +858,11 @@ A two-stage profile-guided variant first shows only the semantic operation
 skeleton, with no source content, and the reader selects at most five groups;
 stage two then opens only those groups' evidence.
 % 两阶段的 profile 引导变体先只展示语义 operation 骨架（不含 source 内容），reader 最多选择五个 group；第二阶段只打开这些 group 的证据。
-It reaches MAP .455 while opening 53.0\% of the source content, and its
-first-stage selections never fell back to a default: the five-group budget
-saturated on 99.5\% of queries, re-parsing the uncapped first-stage responses
-shows the reader proposed more than five groups on zero of 220 queries, and
-every missed target group was entirely absent from its ordered selection
-rather than cut off by the budget.
-% 它在只打开 53.0\% source 内容的情况下达到 MAP .455，且第一阶段的选择从未回退到默认值：五组预算在 99.5\% 的 query 上被用满；重新解析未截断的第一阶段响应显示，reader 在 220 个 query 中的 0 个上提出了超过五组；每个被遗漏的 target group 都是整体缺席于其有序选择，而非被预算截断。
+It reaches MAP .455 while opening 53.0\% of the source content; missed targets were absent from the reader's selection entirely, not cut off by the group budget.
+% 它在只打开 53.0\% source 内容的情况下达到 MAP .455；遗漏的 target 完全不在 reader 的选择中，而非被 group budget 截断。
 Under the information-equivalent \sys-Raw skeleton, ranking quality is
-statistically unchanged (MAP .465; paired delta $+.010$ [$-.021$, $+.042$]),
-but the reader opens significantly more content: 65.0\% versus 53.0\%, paired
-delta $+.120$ [$+.103$, $+.137$], and $2.80$ [$1.96$, $3.60$] more evidence
-operations.
-% 在信息量等价的 \sys-Raw 骨架下，排序质量在统计上不变（MAP .465；配对差 +.010 [-.021,+.042]），但 reader 打开的内容显著更多：65.0\% 对 53.0\%，配对差 +.120 [+.103,+.137]，且多打开 2.80 [1.96,3.60] 个 evidence operation。
+statistically unchanged (MAP .465), but the reader opens significantly more content (65.0\% versus 53.0\%; Figure~\ref{fig:rq2-deltas}).
+% 在信息量等价的 \sys-Raw 骨架下，排序质量在统计上不变（MAP .465），但 reader 打开的内容显著更多（65.0\% 对 53.0\%；Figure~\ref{fig:rq2-deltas}）。
 Semantic naming's measured contribution in this setting is therefore
 attention concentration at equal quality.
 % 因此在该设置下，语义命名可测得的贡献是"同等质量下的注意力集中"。
@@ -911,8 +902,8 @@ original additive weights.
 % 每个方法的输出按其预测的层级评估：字面名称用 accuracy 与 macro-F1，置换不变的 partition 用 V-measure 或普通 B$^3$，相邻区间边界用精确的 precision、recall 与 F1；对字段值型的既有数据集，转换步骤先把每个预测 group 映射为同一份区间标注格式，再由 \sys 折叠原始可加权重。
 Codex~\cite{codex} receives each trajectory (prompts, commands, and output summaries, with no labels or scores visible) and emits sparse interval marks over 17{,}148 steps without access to official stage annotations: 4{,}496 marks at semantic depth one (3), two (2{,}873), three (1{,}588), or four (32), with no prompt requesting a specific depth.
 % Codex 接收轨迹（提示词、命令与输出摘要，不含标签或分数），在 17,148 个步骤上发出稀疏区间标记，不接触官方 stage 标注：共 4,496 个标记，语义深度为一层（3 个）、两层（2,873 个）、三层（1,588 个）与四层（32 个），且没有任何 prompt 指定深度。
-Packet construction bounds every text preview---prompt and response fields to at most 1{,}800 characters, tool commands to 600, and status previews to 200---while additive measures come from untruncated structured counters.
-% Packet 构建对所有文本 preview 限长——prompt 与响应字段至多 1,800 字符、工具命令 600 字符、状态 preview 200 字符——而可加度量取自未截断的结构化计数器。
+Packet construction bounds every text preview (prompt and response fields to at most 1{,}800 characters, tool commands to 600, and status previews to 200), while additive measures come from untruncated structured counters.
+% Packet 构建对所有文本 preview 限长（prompt 与响应字段至多 1,800 字符、工具命令 600 字符、状态 preview 200 字符），而可加度量取自未截断的结构化计数器。
 Name normalization then maps the 3{,}895 free-form interval names to 783 stable short names (e.g., \texttt{diagnose authentication}) with zero adjacent display-path collisions, rejecting unresolved ones; identical names across sessions merge so that recurring work folds in the final profile.
 % 名称归一化把 3,895 个自由形式的区间名映射为 783 个稳定短名称（如 \texttt{diagnose authentication}），不产生任何相邻显示路径冲突、无法消解时拒绝；跨 session 的相同名称合并，使重复工作在最终 profile 中折叠。
 
@@ -954,8 +945,8 @@ preserving per-group coherence for downstream drilldown.
 The interface generalizes across method families: on all 287 OSWorld-Human
 sessions (3{,}978 operations, 3{,}691 adjacent pairs, 2{,}042 human groups),
 a supervised Bernoulli Naive Bayes boundary predictor~\cite{mccallum-nigam-1998}
-over nine fixed visible fields with five-fold cross-validation (sessions held out)---parameters
-and threshold fitted on training sessions only---reaches 0.739 boundary F1 /
+over nine fixed visible fields with five-fold cross-validation (sessions held out, parameters
+and threshold fitted on training sessions only) reaches 0.739 boundary F1 /
 0.816 B$^3$ F1, calibrated recurrence reaches 0.734 / 0.801 using
 group annotations the unsupervised default avoids, the no-LLM recurrence
 segmenter reaches 0.680 / 0.786 (strongest control: 0.645 / 0.678), and an unsupervised TF-IDF/K-Means method (no labels seen) reaches V-measure 0.557 on nine Mind2Web sessions and 0.815 on 100 ScienceWorld sessions~\cite{mind2web,scienceworld}; the same Codex instruction without adaptation uses coarser task-level boundaries (0.448 B$^3$ F1); matching OSWorld's finer action-group granularity recovers 0.816, showing the framework supports different segmentation scales.
@@ -1019,8 +1010,8 @@ measurement, distinct from RQ2's 7{,}229-operation mixed population.}
 % 结果。用 Codex（GPT-5.6-sol-high）切分全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token，active backend wall time 为 2,215.9 秒（37 分钟）。
 Constructing the 405 trajectory inputs (source content only, no outcome labels) takes 501.64\,s median, and after annotation the full deterministic downstream pipeline (assembly, repair, validation, canonicalization, profile construction and readback, scoring) completes in 11.516\,s.
 % 构造 405 条轨迹输入（仅源内容，不含 outcome 标签）的中位时间为 501.64 秒；标注完成后，完整的确定性下游管线（组装、修复、校验、规范化、profile 构建与读回、打分）在 11.516 秒内完成。
-A full end-to-end segmentation pass on 440 trajectories (with no outcome labels visible to the segmenter) completes all 12 batches in 3{,}521.6\,s wall-clock time (58.7 minutes; summed worker time 6{,}661.7\,s) on two parallel workers, consuming 12{,}039{,}417 actual input tokens (10{,}929{,}408 reported cached, 90.8\%) and 312{,}433 output tokens---27{,}362 input and 710 output tokens per trajectory---while one fresh pass over the three-trajectory Git population takes 466.9\,s and 832{,}544 actual input tokens.
-% 对 440 个 session 的完整端到端切分（切分器看不到 outcome 标签）在双并行 worker 上以 3,521.6 秒 wall-clock 时间（58.7 分钟；worker 时间合计 6,661.7 秒）完成全部 12 个 batch，消耗 12,039,417 个实际输入 token（其中报告缓存 10,929,408 个，占 90.8\%）与 312,433 个输出 token——每 session 27,362 输入与 710 输出 token；对三 session 的 Git population，一次全新完整 pass 需 466.9 秒与 832,544 个实际输入 token。
+A full end-to-end segmentation pass on 440 trajectories (with no outcome labels visible to the segmenter) completes all 12 batches in 3{,}521.6\,s wall-clock time (58.7 minutes, summed worker time 6{,}661.7\,s) on two parallel workers, consuming 12{,}039{,}417 actual input tokens (10{,}929{,}408 reported cached, 90.8\%) and 312{,}433 output tokens, or 27{,}362 input and 710 output tokens per trajectory. One fresh pass over the three-trajectory Git population takes 466.9\,s and 832{,}544 actual input tokens.
+% 对 440 个 session 的完整端到端切分（切分器看不到 outcome 标签）在双并行 worker 上以 3,521.6 秒 wall-clock 时间（58.7 分钟，worker 时间合计 6,661.7 秒）完成全部 12 个 batch，消耗 12,039,417 个实际输入 token（其中报告缓存 10,929,408 个，占 90.8\%）与 312,433 个输出 token，即每 session 27,362 输入与 710 输出 token。对三 session 的 Git population，一次全新完整 pass 需 466.9 秒与 832,544 个实际输入 token。
 With marks fixed, construction scales linearly across the five input sizes (Table~\ref{tab:rq4-cost}), adding only 5.25\,MiB (1.14\%) peak RSS over raw-action grouping at the union scale.
 % 标记固定后，构建开销在五个输入规模上线性扩展（Table~\ref{tab:rq4-cost}），在并集规模上比 raw-action 分组仅多 5.25 MiB（1.14\%）峰值 RSS。
 Switching the additive measure is a replay at the same cost.
@@ -1043,8 +1034,8 @@ Agent observability platforms such as LangSmith, Langfuse, and Phoenix~\cite{lan
 % 智能体可观测性平台与标准记录 span 用于单次执行调试，分析层汇总跨 trace 层次、workflow profile 或输入分布；但没有一个在标准 profile 中构造带守恒可加度量与保留调用证据的递归语义责任。
 Cross-run analyses (TraceProbe, Graphectory, Act$\cdot$onomy, CHIEF, Hodoscope, TraceGraph)~\cite{traceprobe2026,graphectory2026,actonomy2026,chief2026,hodoscope2026,tracegraph2026} and per-run diagnosis and localization~\cite{agentrx,telbench,agentatlas,trajad,agentfixer,li2026codetracer,agentprocessbench,hintbench,traceelephant,mpbench2026} answer what an agent did and which step went wrong.
 % 跨运行分析（TraceProbe、Graphectory、Act$\cdot$onomy、CHIEF、Hodoscope、TraceGraph）与单运行诊断和定位回答的都是"智能体做了什么、哪一步出了错"。
-\sys instead asks how much of an additive resource a semantic category is responsible for: it recovers variable depth responsibility from source content (where Act$\cdot$onomy fixes three levels and TraceProbe one), conserves measures exactly across count, token, and time widths, keeps LLM/tool calls as drilldown leaves, and emits standard pprof---no compared system provides all four---while staying complementary to per-run diagnosis, as RQ2 measures directly.
-% \sys 提出的则是 profiler 的问题——某个语义类别对某种可加资源负有多少责任：从 source 内容恢复可变深度责任（Act$\cdot$onomy 固定三层、TraceProbe 仅一层）、跨 count/token/time 宽度精确守恒、保留 LLM/tool 下钻叶、输出标准 pprof——没有被比较系统同时具备这四点；且与单运行诊断互补，RQ2 直接测量了这一点。
+\sys instead asks how much of an additive resource a semantic category is responsible for. It recovers variable-depth responsibility from source content (where Act$\cdot$onomy fixes three levels and TraceProbe one), conserves measures exactly across count, token, and time widths, keeps LLM/tool calls as drilldown leaves, and emits standard pprof. No compared system provides all four, and \sys stays complementary to per-run diagnosis, as RQ2 measures directly.
+% \sys 提出的则是 profiler 的问题，即某个语义类别对某种可加资源负有多少责任。它从 source 内容恢复可变深度责任（Act$\cdot$onomy 固定三层、TraceProbe 仅一层）、跨 count/token/time 宽度精确守恒、保留 LLM/tool 下钻叶、输出标准 pprof。没有被比较系统同时具备这四点，且 \sys 与单运行诊断互补，RQ2 直接测量了这一点。
 
 %% ===================================================================
 \section{Conclusion}
