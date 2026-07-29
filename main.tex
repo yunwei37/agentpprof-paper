@@ -655,13 +655,21 @@ workloads; all profiler outputs are computed before any fault annotations are re
 We report per-query AP averaged over 614, 400, and 220 labeled queries; 522 unlabeled trajectories are consumed for population coverage but excluded from MAP.
 % 我们报告 per-query AP，在 614、400 与 220 个带标注的 query 上取平均；522 条无标注轨迹计入群体覆盖但从 MAP 中排除。
 The \emph{direct diagnostic} is the per-operation output of each benchmark's own judge, including LLM-as-judge methods: reads the full trace and reference answer before naming the responsible agent and decisive step.
-% \emph{direct diagnostic} 是 benchmark 原生 process judge（AgentProcessBench 的 risk unit）或 trajectory localizer（HINTBench、TraceElephant）的逐 operation 输出；在 TraceElephant 上，它先读取完整 trace 与参考答案，再指出责任 agent 与决定性步骤。
+% \emph{direct diagnostic} 是 benchmark 原生, 它先读取完整 trace 与参考答案，再指出责任 agent 与决定性步骤。
 \emph{Direct-only} ranks by that diagnostic alone; \emph{Direct+\sys} breaks ties by group score (vote mean for AgentProcessBench; 95\% Wilson bound otherwise), with HINTBench field order fixed on 80 validation trajectories;
-\emph{Direct+\sys-Raw} is an ablation that replaces semantic interval names with raw action types (the grouping structure is identical; only the names differ); \emph{AgentProf-only} uses only the profiler without the benchmark diagnostic.
-% Direct-only 仅按该诊断排序；Direct+\sys 用 profiler 的组分数打破并列；Direct+\sys-Raw 是将语义区间名替换为 raw action 类型的消融（分组结构相同，仅名称不同）；AgentProf-only 仅用 profiler 不用 benchmark 诊断。
+\emph{Direct+\sys-Raw} is an ablation that replaces semantic interval names with raw action types (the grouping structure is identical; only the names differ); \emph{AgentProf-only} uses only the profiler without the benchmark diagnostic (Figure~\ref{fig:rq2-map}).
+% Direct-only 仅按该诊断排序；Direct+\sys 用 profiler 的组分数打破并列；Direct+\sys-Raw 是将语义区间名替换为 raw action 类型的消融（分组结构相同，仅名称不同）；AgentProf-only 仅用 profiler 不用 benchmark 诊断（Figure~\ref{fig:rq2-map}）。
 
-\emph{Results.} Direct+\sys beats Direct-only by 0.031 [0.024, 0.039], 0.107 [0.093, 0.120], and 0.117 [0.088, 0.148] (95\% intervals from 10{,}000 paired resamples); all intervals lie above zero, so every improvement is statistically significant.
-Grouping with retained evidence drives the ranking gain; semantic naming adds a distinct measured benefit: it concentrates the reader's attention, reducing evidence opened from 65\% to 53\% at equal quality (measured below). The semantic prefix also enables cross-run attribution (RQ1).
+\begin{figure}[tb]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig-rq2-map.pdf}
+\caption{MAP over the complete RQ2 populations (614, 400, and 220 labeled queries). \sys-Raw ablates only \sys's semantic prefix. Higher is better.}
+\Description{A grouped bar chart showing MAP scores for four methods across three workloads. Direct+\sys and Direct+\sys-Raw perform best on all workloads.}
+\label{fig:rq2-map}
+\end{figure}
+
+\emph{Results.} Direct+\sys beats Direct-only by 0.031 [0.024, 0.039], 0.107 [0.093, 0.120], and 0.117 [0.088, 0.148] (95\% intervals from 10{,}000 paired resamples); all intervals lie above zero, so every improvement is statistically significant (Figure~\ref{fig:rq2-map}).
+Grouping with retained evidence drives the ranking gain (Figure~\ref{fig:rq2-map}); semantic naming adds a distinct measured benefit: it concentrates the reader's attention, reducing evidence opened from 65\% to 53\% at equal quality (measured below). The semantic prefix also enables cross-run attribution (RQ1).
 % 分组加保留证据驱动排序增益；语义命名带来另一可测收益：它集中读者注意力，在同等质量下将打开的证据从 65\% 降至 53\%（下文测量）。语义前缀还支持跨运行归因（RQ1）。
 
 \paragraph{Profile-guided reading on TraceElephant.}
@@ -669,7 +677,7 @@ Grouping with retained evidence drives the ranking gain; semantic naming adds a 
 On the complete 220 queries that contain a faulty step, a Grok 4.5~\cite{grok45} agent (agent-as-judge) receives the task description and trajectory content (without any ground-truth labels) and is asked to rank operations by likely fault.
 % 在全部 220 个含出错步骤的 query 上，Grok 4.5 agent（agent-as-judge）接收任务描述与轨迹内容（不含任何真实标签），被要求按可能出错排序 operation。
 Full-trace reading (without \sys) reaches MAP .502 at a mean 12{,}615 input tokens per query, versus .209 for the benchmark's Direct-only diagnostic and .326 for Direct+\sys.
-% 全 trace 阅读以每 query 平均 12,615 个输入 token 达到 MAP .502，而 benchmark 的 Direct-only 诊断为 .209、Direct+\sys 为 .326。
+% 全 trace 阅读（不用 \sys）以每 query 平均 12,615 个输入 token 达到 MAP .502，而 benchmark 的 Direct-only 诊断为 .209、Direct+\sys 为 .326。
 A profile-guided reader uses the semantic hierarchy to select at most five groups and opens only their evidence.
 % profile 引导的 reader 用语义层次选择最多五个 group，并只打开其 evidence。
 With semantic names, the reader reaches MAP .455 while opening 53.0\% of the source content; with raw-action names, it opens 65.0\% at unchanged MAP (.465; paired $\Delta=+.010$ [$-.021$,$+.042$]; content $\Delta=+.120$ [$+.103$,$+.137$]).
