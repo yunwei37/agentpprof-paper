@@ -326,11 +326,6 @@ Drilldown shows all three executions verifying substitute transport paths withou
 The insight: the agents kept retrying SSH variants instead of fixing the actual credential issue, and operation count alone would hide this because authentication commands are cheap to issue but expensive to verify.
 % 洞察：agent 不断重试 SSH 变体而非修复实际凭证问题；仅看 operation 数会掩盖这一点，因为认证命令发起成本低但验证成本高。
 
-A control experiment replays the same operations under native call trees and coarse action grouping: the authentication work scatters across 105 native calls and six action kinds (102 of 105 labeled merely \texttt{run}), but only semantic organization reunites it into one focusable cross-run path.
-% 对照实验在 native call tree 和 coarse action 分组下重放相同 operation：认证工作散落于 105 个 native call 和六个 action kind（其中 102 个仅标为 \texttt{run}），只有语义组织将其重聚为一条可聚焦的跨运行路径。
-This paper's evaluation returns to this case under RQ1 and asks whether the same behavior holds at population scale.
-% 本文的评估在 RQ1 中回到该案例，并检验同样的行为是否在 population 尺度上成立。
-
 \subsection{Challenges for Agent Profiling}
 % 智能体 Profiling 的挑战
 
@@ -647,6 +642,8 @@ The resulting hierarchy reaches semantic depth five without a fixed limit, with 
 % 动机案例回顾。
 The Git-deployment case from Section~\ref{sec:background} established that semantic organization reunites cross-run responsibility that native and coarse organizations scatter.
 % 第~\ref{sec:background} 节的 Git 部署案例建立了语义组织能重聚跨运行责任、而 native 和 coarse 组织会将其分散。
+A control experiment replays the same operations under native call trees and coarse action grouping: the authentication work scatters across 105 native calls and six action kinds (102 of 105 labeled merely \texttt{run}), but only semantic organization reunites it into one focusable cross-run path.
+% 对照实验在 native call tree 和 coarse action 分组下重放相同 operation：认证工作散落于 105 个 native call 和六个 action kind（其中 102 个仅标为 \texttt{run}），只有语义组织将其重聚为一条可聚焦的跨运行路径。
 Here we add a third measure: elapsed time.
 % 这里我们增加第三种度量：elapsed time。
 The same hierarchy replays under all three measures with exact conservation, and the \texttt{diagnose authentication} subtree's share rises from 21\% (count) through 37\% (time) to 46\% (tokens)---changing only the measure moves the attributed share by more than a factor of two.
@@ -672,19 +669,19 @@ The three longest sessions (spanning tens of hours each) keep distinct dominant 
 Switching to operation count shifts where mass concentrates: token mass stays at prompt depth (70\%), while operation mass resolves deeper (44\% at depths three and four) exactly where repeated engineering work concentrates.
 % 切换到 operation 数改变了质量集中处：token 质量停在 prompt 深度（70\%），而 operation 质量解析更深（44\% 在深度三和四），恰在重复工程工作集中处。
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=.97\linewidth]{figures/selfprofile.tokens.png}\\[1pt]
-\includegraphics[width=.97\linewidth]{figures/selfprofile.operations.png}
-\caption{The 42-session population under one fixed semantic hierarchy.
-Width is tokens (top) or operation count (bottom); second-level frames are
-annotated responsibilities (\texttt{refine paper}, \texttt{develop manuscript},
-...), with deeper refinements available for drilldown in stock pprof.}
-\Description{Two flame graphs over the same 42 development sessions. Both
-show a claude root spanning most width, semantic responsibilities at the
-second level, and fragmented deeper refinements.}
-\label{fig:selfprofile}
-\end{figure*}
+% \begin{figure*}[t]
+% \centering
+% \includegraphics[width=.97\linewidth]{figures/selfprofile.tokens.png}\\[1pt]
+% \includegraphics[width=.97\linewidth]{figures/selfprofile.operations.png}
+% \caption{The 42-session population under one fixed semantic hierarchy.
+% Width is tokens (top) or operation count (bottom); second-level frames are
+% annotated responsibilities (\texttt{refine paper}, \texttt{develop manuscript},
+% ...), with deeper refinements available for drilldown in stock pprof.}
+% \Description{Two flame graphs over the same 42 development sessions. Both
+% show a claude root spanning most width, semantic responsibilities at the
+% second level, and fragmented deeper refinements.}
+% \label{fig:selfprofile}
+% \end{figure*}
 
 The same hierarchy replays under FILE-READ, FILE-WRITE, and NETWORK-target
 widths with exact conservation of 737, 31, and 61 target references
@@ -697,13 +694,14 @@ the semantic responsibility that touched it, making side effects auditable
 per responsibility.
 % 这些视图具体回答 Introduction 的 system-effect 问题：每个被记录的 file 与 network target 都归因到触及它的语义责任，使副作用可按责任审计。
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=.97\linewidth]{figures/selfprofile.file-write.png}
-\caption{FILE-WRITE view of the same hierarchy: width is write count, with each created file preserved as a drilldown leaf.}
-\Description{A FILE-WRITE flame graph whose semantic-operation frames contain LLM and tool frames ending at exact file-write targets.}
-\label{fig:selfprofile-write}
-\end{figure*}
+% \begin{figure*}[t]
+% \centering
+% \includegraphics[width=.97\linewidth]{figures/selfprofile.file-write.png}
+% \caption{FILE-WRITE view of the same hierarchy: width is write count, with each created file preserved as a drilldown leaf.}
+% \Description{A FILE-WRITE flame graph whose semantic-operation frames contain LLM and tool frames ending at exact file-write targets.}
+% \label{fig:selfprofile-write}
+% \end{figure*}
+
 Not every level requires annotation.
 % 并非每一层都需要标注。
 Skill invocations appear literally in the session log, so that level costs no
@@ -738,10 +736,10 @@ Across 440 trajectories, replaying the frozen AgentRewardBench hierarchy (7{,}22
 RQ2 asks whether profiler output---constructed without seeing the ground-truth fault annotations---corresponds to independently annotated real problems. We answer at three levels: a differential analysis over 440 runs whose recovery signal matches expert looping labels, a localization test on three complete benchmarks, and a reading study measuring how much evidence a human must open.
 % RQ2 问 profiler 输出（构建时不接触真实故障标注）是否对应独立标注的真实问题。我们在三个层次上回答：440 次运行的差分分析（其 recovery 信号对应专家 looping 标注）、三个完整 benchmark 上的定位测试，以及测量人类需要打开多少证据的阅读研究。
 
-\begin{figure*}[!t]
+\begin{figure}
 \centering
-\includegraphics[width=.70\linewidth]{figures/agentreward-recovery-bad-excess.operations.png}\\[1pt]
-\includegraphics[width=.70\linewidth]{figures/agentreward-completion-good-excess.operations.png}
+\includegraphics[width=\linewidth]{figures/agentreward-recovery-bad-excess.operations.png}\\[1pt]
+\includegraphics[width=\linewidth]{figures/agentreward-completion-good-excess.operations.png}
 \caption{One signed profile over all 338 bad--good pairs, read from both
 sides. The signed profile is the difference of two nonnegative profiles,
 bad minus good, which stock pprof renders as positive and negative sample
@@ -755,7 +753,7 @@ graph descends from browser-task responsibilities into recovery work and
 specific retry, search, and inspection operations. The lower graph descends
 through task completion into its source LLM and tool calls.}
 \label{fig:diff-flamegraph}
-\end{figure*}
+\end{figure}
 
 \paragraph{Use case 3: what do failing runs do differently?}
 % 用例 3：失败的运行到底做了什么不同？
