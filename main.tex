@@ -109,8 +109,8 @@ responsibility into account, transport, credential, and retest operations.}
 %% ¶1: Background + context
 AI agents~\cite{sweagent,claudecode,osworld} orchestrate multi-step activities that span two layers, high-level intent (prompts, LLM calls, tool invocations) and low-level system effects (process spawns, file and network I/O).
 % AI 智能体~\cite{sweagent,claudecode,osworld}编排跨越两层的多步骤活动：高层意图（提示词、LLM 调用、工具调用）和低层系统副作用（进程创建、文件和网络 I/O）。
-As agents evolve from short, scripted workflows into complex systems that run for hours and days, with a large number of interactions each, production teams accumulate many such trajectories over weeks or months.
-% 随着智能体从短小的脚本化工作流进化为每次运行数小时、包含数千次交互的复杂系统，生产团队在数周或数月内积累大量此类轨迹。
+As agents evolve from short, scripted workflows into complex systems that run for hours and days, production teams accumulate many such trajectories over weeks or months.
+% 随着智能体从短小的脚本化工作流进化为运行数小时乃至数天的复杂系统，生产团队在数周或数月内积累大量此类轨迹。
 
 %% ¶2: Problem
 To improve agent quality, safety, and cost efficiency, developers
@@ -253,10 +253,10 @@ calls, and invokes tools (code execution, web search, file editing).
 Each tool invocation triggers system effects at the lower layer:
 process spawns, file reads and writes, and network requests.
 % 每次工具调用在下层触发系统副作用：进程创建、文件读写和网络请求。
-A single trajectory may contain hundreds of such intent-effect
-cycles, and a production team accumulates many trajectories over
+A single trajectory may contain hundreds of cycles between intent
+and system effects, and a production team accumulates many trajectories over
 time.
-% 单条轨迹可能包含数百个这样的意图-副作用循环，生产团队随时间积累许多轨迹。
+% 单条轨迹可能包含数百个意图与系统副作用之间的循环，生产团队随时间积累许多轨迹。
 
 \subsection{System Profiling}
 % 系统 Profiling
@@ -675,21 +675,30 @@ However, 10 of 77 tasks fall below 0.7, so the measure matters when it matters.
 \subsection{RQ2: Does Profiler Output Correspond to Real Problems?}
 % RQ2：分析器输出是否对应真实问题？
 
-RQ2 asks whether profiler output, constructed without seeing ground-truth fault annotations, corresponds to independently annotated real problems.
-We answer with three tests: (1) \emph{differential analysis} checks whether the profile's failure structure matches expert behavioral labels across 440 runs; (2) \emph{localization} checks whether adding profile scores to existing benchmark judges improves fault ranking; (3) \emph{reading study} checks whether semantic names help an agent reader reach the same ranking while opening less evidence.
-% RQ2 问 profiler 输出（构建时不接触真实故障标注）是否对应独立标注的真实问题。我们用三个测试回答：(1) 差分分析检验 profile 的失败结构是否在 440 次运行上与专家行为标注一致；(2) 定位检验在既有 benchmark judge 上添加 profile 分数是否改善故障排序；(3) 阅读研究检验语义名称是否帮助 agent reader 在打开更少证据的情况下达到同等排序。
+\emph{Setup.} To evaluate whether profiler output corresponds to independently annotated real problems, we apply three tests: (1) \emph{differential analysis} checks whether the profile's failure structure matches expert behavioral labels across 440 runs; (2) \emph{localization} checks whether adding profile scores to existing benchmark judges improves fault ranking; (3) \emph{reading study} checks whether semantic names help an agent reader reach the same ranking while opening less evidence.
+% 设置。为评估 profiler 输出是否对应独立标注的真实问题，我们用三个测试：(1) 差分分析检验 profile 的失败结构是否在 440 次运行上与专家行为标注一致；(2) 定位检验在既有 benchmark judge 上添加 profile 分数是否改善故障排序；(3) 阅读研究检验语义名称是否帮助 agent reader 在打开更少证据的情况下达到同等排序。
 
-\begin{figure}
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{figures/agentreward-recovery-bad-excess.operations.png}\\[1pt]
-\includegraphics[width=\linewidth]{figures/agentreward-completion-good-excess.operations.png}
-\caption{Signed difference profile (bad minus good) over 338 pairs. \emph{Top:} \texttt{recover interaction} dominates bad runs (3,286 vs 455). \emph{Bottom:} \texttt{report completion} favors good runs (191 vs 135).}
-\Description{Two flame graphs of a signed difference profile. The upper
-graph descends from browser-task responsibilities into recovery work and
-specific retry, search, and inspection operations. The lower graph descends
-through task completion into its source LLM and tool calls.}
+\textbf{(a) Recovery focus}\\[-2pt]
+\includegraphics[width=.97\linewidth]{figures/agentreward-recovery-differential.operations.pdf}\\[2pt]
+\textbf{(b) Completion focus}\\[-2pt]
+\includegraphics[width=.97\linewidth]{figures/agentreward-completion-differential.operations.pdf}
+\caption{Stock-pprof differential flame graphs over all 338 bad--good pairs.
+Each box width is the sum of the good/base and bad/candidate contributions;
+the inset is their net bad-minus-good difference (rose: more in bad; green:
+more in good; gray: overlapping remainder). The arrow reports good
+$\rightarrow$ bad, with percentages relative to the 3{,}780-operation good
+diff base. Recovery grows from 455 to 3{,}286 occurrences (net $+2{,}831$);
+completion falls from 191 to 135 (net $-56$). Agent and source-call frames are
+hidden only in this display; the signed pprof retains them and their evidence
+labels. These are aggregate diagnostic differences, not causal effects.}
+\Description{Two stock-pprof differential flame graphs. The recovery panel is
+dominated by rose bad-side growth beneath browser-task responsibilities. The
+completion panel has a green good-side excess through report-completion and
+send-message paths.}
 \label{fig:diff-flamegraph}
-\end{figure}
+\end{figure*}
 
 \paragraph{Use case 3: what do failing runs do differently?}
 % 用例 3：失败的运行到底做了什么不同？
@@ -699,8 +708,8 @@ The question: \emph{what behavior separates success from failure?}
 % 问题：什么行为区分成功与失败？
 Reading 440 transcripts (7{,}229 operations) is infeasible.
 % 阅读 440 份转录（7,229 个 operation）不现实。
-We pair each failed run with a successful run on the same task (338 pairs), build a profile for each group, and subtract (failed minus successful) to get a signed difference profile (Figure~\ref{fig:diff-flamegraph}). The answer is immediate: failed runs spend 44.6\% of their steps in \texttt{recover interaction} (retrying, re-searching, re-navigating) versus only 12.0\% for successful runs.
-% 我们把同任务的每次失败运行与一次成功运行配对（338 对），分别构建 profile 并相减（失败减成功）得到带符号差分 profile（Figure~\ref{fig:diff-flamegraph}）。答案立即呈现：失败运行花 44.6\% 的步骤在 \texttt{recover interaction}（重试、重搜索、重导航），而成功运行只有 12.0\%。
+We pair each failed run with a successful run on the same task (338 pairs), build a profile for each group, and subtract (failed minus successful) to get a signed difference profile (Figure~\ref{fig:diff-flamegraph}). The answer is immediate: failed runs spend disproportionately more effort on recovery---44.6\% of their steps in \texttt{recover interaction} (retrying, re-searching, re-navigating) versus only 12.0\% for successful runs.
+% 我们把同任务的每次失败运行与一次成功运行配对（338 对），分别构建 profile 并相减（失败减成功）得到带符号差分 profile（Figure~\ref{fig:diff-flamegraph}）。答案立即呈现：失败运行在恢复上消耗了不成比例的更多精力——44.6\% 的步骤在 \texttt{recover interaction}（重试、重搜索、重导航），而成功运行只有 12.0\%。
 Drilldown decomposes the recovery responsibility into verification challenges, repeated searches, mistaken navigation, and record retries, with source labels identifying which sessions contributed each width.
 % 下钻把 recovery 责任分解为验证挑战、重复搜索、误导航和记录重试，source label 指明哪些 session 贡献了各宽度。
 The insight: failing agents get stuck in retry loops rather than backing out and trying a different approach.
@@ -764,10 +773,8 @@ A per-query full read is also bounded by the model context window (the 4{,}558{,
 \subsection{RQ3: How Accurate Are the Tags?}
 % RQ3：标签有多准确？
 
-RQ3 asks whether recursive segmentation recovers task structure that humans would recognize.
-% RQ3 问递归切分是否恢复出人类会认可的任务结构。
-
-\emph{Setup.} We compare segmentation output against 2{,}948 human-annotated stages over all 405 CodeTraceBench trajectories. B$^3$
+\emph{Setup.} To evaluate whether recursive segmentation recovers task structure that humans would recognize, we compare segmentation output against 2{,}948 human-annotated stages over all 405 CodeTraceBench trajectories.
+% 设置。为评估递归切分是否恢复出人类会认可的任务结构，我们把切分输出与全部 405 条 CodeTraceBench 轨迹上的 2,948 个人工标注 stage 进行比较。 B$^3$
 F1~\cite{bagga-baldwin-1998-entity-based} asks whether operations that
 belong together end up grouped together; exact adjacent-boundary
 F1~\cite{ruokolainen2016segmentation} asks whether cuts land exactly
@@ -784,8 +791,8 @@ original additive weights.
 % 每个方法的输出按其预测的层级评估：字面名称用 accuracy 与 macro-F1，置换不变的 partition 用 V-measure 或普通 B$^3$，相邻区间边界用精确的 precision、recall 与 F1；对字段值型的既有数据集，转换步骤先把每个预测 group 映射为同一份区间标注格式，再由 \sys 折叠原始可加权重。
 Codex~\cite{codex} receives each trajectory (prompts, commands, and output summaries, with no labels or scores visible) and emits sparse interval marks over 17{,}148 steps without access to stage annotations (loaded after all 405 outputs were fixed): 4{,}496 marks at semantic depth one (3), two (2{,}873), three (1{,}588), or four (32), with no prompt requesting a specific depth.
 % Codex 接收轨迹（提示词、命令与输出摘要，不含标签或分数），在 17,148 个步骤上发出稀疏区间标记，不接触官方 stage 标注：共 4,496 个标记，语义深度为一层（3 个）、两层（2,873 个）、三层（1,588 个）与四层（32 个），且没有任何 prompt 指定深度。
-Packet construction bounds every text preview (prompt and response fields to at most 1{,}800 characters, tool commands to 600, and status previews to 200), while additive measures come from untruncated structured counters.
-% Packet 构建对所有文本 preview 限长（prompt 与响应字段至多 1,800 字符、工具命令 600 字符、状态 preview 200 字符），而可加度量取自未截断的结构化计数器。
+Input construction bounds every text preview (prompt and response fields to at most 1{,}800 characters, tool commands to 600, and status previews to 200), while additive measures come from untruncated structured counters.
+% 输入构建对所有文本 preview 限长（prompt 与响应字段至多 1,800 字符、工具命令 600 字符、状态 preview 200 字符），而可加度量取自未截断的结构化计数器。
 Name normalization then maps the 3{,}895 free-form interval names to 783 stable short names (e.g., \texttt{diagnose authentication}) with zero adjacent display-path collisions, rejecting unresolved ones; identical names across sessions merge so that recurring work folds in the final profile.
 % 名称归一化把 3,895 个自由形式的区间名映射为 783 个稳定短名称（如 \texttt{diagnose authentication}），不产生任何相邻显示路径冲突、无法消解时拒绝；跨 session 的相同名称合并，使重复工作在最终 profile 中折叠。
 
@@ -841,10 +848,8 @@ The action classifier's 0.437 macro-F1 gain has a 95\% bootstrap interval of [0.
 \subsection{RQ4: What Is the Profiling Cost?}
 % RQ4：分析开销是多少？
 
-RQ4 asks whether the profiling cost is practical: how much time and tokens does segmentation consume, and how fast is replay?
-% RQ4 问 profiling 开销是否实用：切分消耗多少时间和 token，重放有多快？
-
-\emph{Setup.} Cost separates into a one-time automatic segmentation pass per corpus and deterministic construction/replay afterwards (Table~\ref{tab:rq4-cost}).
+\emph{Setup.} To evaluate whether profiling cost is practical, we measure segmentation time and tokens and profile replay speed. Cost separates into a one-time automatic segmentation pass per corpus and deterministic construction/replay afterwards (Table~\ref{tab:rq4-cost}).
+% 设置。为评估 profiling 开销是否实用，我们测量切分的时间与 token 以及 profile 重放速度。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放（Table~\ref{tab:rq4-cost}）。
 % 设置。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放（Table~\ref{tab:rq4-cost}）。
 
 \begin{table}[tb]
