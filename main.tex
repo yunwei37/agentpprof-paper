@@ -42,10 +42,8 @@ To answer similar questions in traditional systems software, profiling attribute
 % 在传统系统软件中，profiling 通过聚合将资源消耗归因到负责实体（如代码路径）。
 Yet existing agent observability tools focus on per-execution debugging and tracing rather than profiling, making these questions difficult to answer as trajectories grow long and complex.
 % 然而现有智能体可观测性工具聚焦于单次执行的调试和 tracing 而非 profiling，使这些问题在轨迹变长变复杂时难以回答。
-Agent behavior differs from code execution, creating two challenges for profiling.
-First, the responsible entities are semantic categories such as task intent and workflow phase, not code paths.
-Second, agent trajectories lack the stable identifiers and structural hierarchies that make attribution possible.
-% 智能体行为与代码执行不同，给 profiling 带来两个挑战。其一，负责实体是语义类别（如任务意图和工作流阶段）而非代码路径。其二，智能体轨迹缺乏使归因成为可能的稳定标识符和结构层次。
+Agent behavior differs from code execution: the responsible entities are task intent and workflow phase rather than code paths, and agent trajectories lack the stable identifiers that make attribution possible.
+% 智能体行为与代码执行不同：负责实体是任务意图和工作流阶段而非代码路径，且智能体轨迹缺乏使归因成为可能的稳定标识符。
 We propose a \emph{semantic operation stack model} that adapts profiling to agent trajectories.
 % 我们提出一个将 profiling 适配到智能体轨迹的语义 operation stack 模型。
 Uniform \emph{operations} represent all agent activities, and \emph{operation stacks} replace the runtime call stack, enabling hierarchical attribution at different levels of granularity from the same data.
@@ -137,8 +135,8 @@ profiling.
 % 然而现有智能体工具支持调试和 tracing，但不支持 profiling（Background）。
 Some~\cite{langsmith,langfuse,phoenix,otel} organize events into
 per-execution span trees, effective for diagnosing a single run but
-unable to aggregate by semantic category.
-% 一些工具~\cite{langsmith,langfuse,phoenix,otel}将事件组织为按执行划分的 span 树，有效诊断单次运行但无法按语义类别聚合。
+unable to aggregate by task intent or workflow phase.
+% 一些工具~\cite{langsmith,langfuse,phoenix,otel}将事件组织为按执行划分的 span 树，有效诊断单次运行但无法按任务意图或工作流阶段聚合。
 Others~\cite{datadog-llmobs,laminar-signals} cluster inputs or
 extract structured signals, but characterize \emph{input
 distributions} (``30\% of users ask code questions'') rather than
@@ -157,9 +155,8 @@ hierarchy.
 % 在传统软件中，负责实体是代码路径。Profiling 是直接的，因为函数名是稳定的，运行时调用嵌套提供归因层次。
 Agent behavior differs fundamentally.
 To answer the questions above, the responsible entities need to be
-semantic categories such as task intent and tool operation, not code
-paths.
-% 智能体行为有根本不同。要回答上述问题，负责实体需要是语义类别（如任务意图和工具操作），而非代码路径。
+task intent and workflow phase, not code paths.
+% 智能体行为有根本不同。要回答上述问题，负责实体需要是任务意图和工作流阶段，而非代码路径。
 Agent trajectories lack the two properties that make traditional profiling possible.
 % 智能体轨迹缺乏使传统 profiling 成为可能的两个特性。
 Prompts are natural language, so two prompts expressing the same intent share no common string.
@@ -329,11 +326,10 @@ Adapting profiling to agent trajectories faces two core challenges.
 The first is that the responsible entities differ.
 % 第一个挑战是负责实体不同。
 In traditional software, profiling attributes cost to code paths, but
-in agent trajectories the relevant entities are semantic categories
-such as task intent and workflow phase.
-% 在传统软件中，profiling 将开销归因到代码路径，但在智能体轨迹中，相关实体是语义类别（如任务意图和工作流阶段）。
-Existing tools~\cite{otel,openinference} do not capture these categories because prompts are natural language: two prompts and tool invocations expressing the same intent may be different, so the profiler cannot aggregate them the way it aggregates identical function names.
-% 现有工具无法捕获这些类别，因为提示词是自然语言：表达相同意图的两个提示词可能措辞不同，因此分析器无法像聚合相同函数名那样聚合它们。
+in agent trajectories the relevant entities are task intent and workflow phase.
+% 在传统软件中，profiling 将开销归因到代码路径，但在智能体轨迹中，相关实体是任务意图和工作流阶段。
+Existing tools~\cite{otel,openinference} do not capture these entities because prompts are natural language: two prompts expressing the same intent may differ, so the profiler cannot aggregate them the way it aggregates identical function names.
+% 现有工具无法捕获这些实体，因为提示词是自然语言：表达相同意图的两个提示词可能不同，因此分析器无法像聚合相同函数名那样聚合它们。
 The second challenge is that agent trajectories have no runtime hierarchy for attribution.
 % 第二个挑战是智能体轨迹没有运行时归因层次。
 In CPU profiling, the call stack determines attribution at every level: \texttt{malloc}'s cost belongs to \texttt{parse}, to \texttt{process}, and to \texttt{main} simultaneously.
@@ -594,9 +590,9 @@ Here we add a third measure: elapsed time.
 % 这里我们增加第三种度量：elapsed time。
 The same hierarchy replays under all three measures with exact conservation, and the \texttt{diagnose authentication} subtree's share rises from 21\% (count) through 37\% (time) to 46\% (tokens). Changing only the measure moves the attributed share by more than a factor of two.
 % 同一层次在三种度量下精确守恒地重放，\texttt{diagnose authentication} 子树的份额从 21\%（count）经 37\%（time）升至 46\%（token）。仅改变度量就使归因份额变化超过两倍。
-A quantitative control shows why both alternatives fail: of 105 authentication operations, 102 carry only the raw-action label \texttt{run}, and that same \texttt{run} bucket mixes in 97 unrelated operations; a coarser action-kind grouping (mapping raw actions to semantic categories like execute, version-control, edit) scatters the work across six categories (execute 39\%, version-control 22\%, edit 19\%, inspect 12\%, search 7\%, install 1\%); native call trees place each operation under a distinct source call with no shared responsibility node.
+A quantitative control shows why both alternatives fail: of 105 authentication operations, 102 carry only the raw-action label \texttt{run}, and that same \texttt{run} bucket mixes in 97 unrelated operations; a coarser action-kind grouping (execute, version-control, edit, etc.) scatters the work across six kinds (execute 39\%, version-control 22\%, edit 19\%, inspect 12\%, search 7\%, install 1\%); native call trees place each operation under a distinct source call with no shared responsibility node.
 Only the semantic hierarchy reunites authentication into one focusable cross-run path while preserving all call/tool evidence as drilldown leaves.
-% 定量对照显示为什么两种替代方式都失败：105 个认证 operation 中 102 个只带 raw-action 标签 \texttt{run}，而同一个 \texttt{run} bucket 还混入 97 个无关 operation；更粗的 action-kind 分组（将 raw action 映射为 execute、version-control、edit 等语义类别）把工作散落到六个类别（execute 39\%、version-control 22\%、edit 19\%、inspect 12\%、search 7\%、install 1\%）；native call tree 把每个 operation 放在不同 source call 下，没有共享责任节点。只有语义层次将认证重聚为一条可聚焦的跨运行路径，同时保留所有 call/tool 证据作为下钻叶。
+% 定量对照显示为什么两种替代方式都失败：105 个认证 operation 中 102 个只带 raw-action 标签 \texttt{run}，而同一个 \texttt{run} bucket 还混入 97 个无关 operation；更粗的 action-kind 分组（execute、version-control、edit 等）把工作散落到六种 kind（execute 39\%、version-control 22\%、edit 19\%、inspect 12\%、search 7\%、install 1\%）；native call tree 把每个 operation 放在不同 source call 下，没有共享责任节点。只有语义层次将认证重聚为一条可聚焦的跨运行路径，同时保留所有 call/tool 证据作为下钻叶。
 Separately, real AgentSight~\cite{agentsight} eBPF recordings replay the
 same way: all 1{,}520 captured process spawns and file operations fold
 under task responsibilities with exact conservation, demonstrating the system-effect layer end to end.
@@ -806,11 +802,8 @@ Semantic naming's measured contribution in this setting is therefore
 attention concentration at equal quality.
 % 因此在该设置下，语义命名可测得的贡献是"同等质量下的注意力集中"。
 A per-query full read is also bounded by the model context window (the
-4{,}558{,}192-token Git population cannot be read whole), whereas
-reading guided by the skeleton stays available at any trace length once the profile
-exists. The agent reader is query-specific while the hierarchy is constructed
-once and replayed across queries and measures.
-% 每 query 的全量阅读还受模型上下文窗口约束（4,558,192-token 的 Git population 无法整体读入），而由骨架引导的阅读在 profile 存在后对任意 trace 长度都可用；此外 agent reader 是 query-specific 的，而层次只构造一次并跨 query 与度量重放。
+4{,}558{,}192-token Git population cannot be read whole).
+% 每 query 的全量阅读还受模型上下文窗口约束（4,558,192-token 的 Git population 无法整体读入）。
 \emph{Takeaway.} Failure structure surfaced by the profile matches
 independent human labels across 435 trajectories; profiles add localization
 signal on top of existing judges; and semantic names concentrate the agent's attention, reducing evidence opened from 65\% to 53\% at equal ranking quality.
@@ -913,12 +906,8 @@ unchanged.
 RQ4 asks whether the profiling cost is practical: how much time and tokens does segmentation consume, and how fast is replay?
 % RQ4 问 profiling 开销是否实用：切分消耗多少时间和 token，重放有多快？
 
-\emph{Setup.} Cost separates into a one-time automatic segmentation pass per corpus and deterministic construction/replay afterwards.
-% 设置。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放。
-The profiling core (parsing, stack construction, folding, and serialization) is measured by comparing the fixed semantic hierarchy \texttt{project, agent, task, phase, op, tool, status} against the raw hierarchy \texttt{project, agent, action, status} on identical inputs over three runs across four complete public workloads and their union (Table~\ref{tab:rq4-cost}), using \texttt{agentpprof 0.2.37} on a 24-core Intel Core Ultra 9 285K with 125\,GiB RAM and Linux 6.15.11.
-% profiling 核心（解析、栈构建、折叠、序列化）的测量方式是：在四个完整公开 workload 及其并集上（Table~\ref{tab:rq4-cost}）、以完全相同的输入各运行三次，比较固定语义层次 \texttt{project, agent, task, phase, op, tool, status} 与 raw 层次 \texttt{project, agent, action, status}；测量使用 \texttt{agentpprof 0.2.37}，硬件为 24 核 Intel Core Ultra 9 285K、125 GiB 内存、Linux 6.15.11。
-This microbenchmark exercises the parsing, folding, and serialization core on public workloads; the deterministic pipeline after segmentation is timed separately.
-% 该 microbenchmark 测试解析、折叠与序列化核心在公开 workload 上的表现；切分之后的确定性管线单独计时。
+\emph{Setup.} Cost separates into a one-time automatic segmentation pass per corpus and deterministic construction/replay afterwards (Table~\ref{tab:rq4-cost}).
+% 设置。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放（Table~\ref{tab:rq4-cost}）。
 
 \begin{table}[tb]
 \centering\small
@@ -940,22 +929,16 @@ AgentRewardBench row is the fixed public release sample used for cost
 measurement, distinct from RQ2's 7{,}229-operation mixed population.}
 \label{tab:rq4-cost}
 \end{table}
-\emph{Results.} Segmenting all 405 CodeTraceBench trajectories with Codex (GPT-5.6-sol-high) consumes 12{,}050{,}384 input and 231{,}886 output tokens in 2{,}215.9\,s (37 minutes) of active backend wall time.
-% 结果。用 Codex（GPT-5.6-sol-high）切分全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token，active backend wall time 为 2,215.9 秒（37 分钟）。
-Constructing the 405 trajectory inputs (source content only, no outcome labels) takes 501.64\,s median, and after annotation the full deterministic downstream pipeline (assembly, repair, validation, canonicalization, profile construction and readback, scoring) completes in 11.516\,s.
-% 构造 405 条轨迹输入（仅源内容，不含 outcome 标签）的中位时间为 501.64 秒；标注完成后，完整的确定性下游管线（组装、修复、校验、规范化、profile 构建与读回、打分）在 11.516 秒内完成。
-A full end-to-end segmentation pass on 440 trajectories (with no outcome labels visible to the segmenter) completes all 12 batches in 3{,}521.6\,s wall-clock time (58.7 minutes, summed worker time 6{,}661.7\,s) on two parallel workers, consuming 12{,}039{,}417 actual input tokens (10{,}929{,}408 reported cached, 90.8\%) and 312{,}433 output tokens, or 27{,}362 input and 710 output tokens per trajectory. One fresh pass over the three-trajectory Git population takes 466.9\,s and 832{,}544 actual input tokens.
-% 对 440 个 session 的完整端到端切分（切分器看不到 outcome 标签）在双并行 worker 上以 3,521.6 秒 wall-clock 时间（58.7 分钟，worker 时间合计 6,661.7 秒）完成全部 12 个 batch，消耗 12,039,417 个实际输入 token（其中报告缓存 10,929,408 个，占 90.8\%）与 312,433 个输出 token，即每 session 27,362 输入与 710 输出 token。对三 session 的 Git population，一次全新完整 pass 需 466.9 秒与 832,544 个实际输入 token。
+\emph{Results.} Segmenting all 405 CodeTraceBench trajectories with Codex (GPT-5.6-sol-high) consumes 12{,}050{,}384 input and 231{,}886 output tokens in 37 minutes of active backend wall time.
+% 结果。用 Codex（GPT-5.6-sol-high）切分全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token，active backend wall time 为 37 分钟。
+A full end-to-end segmentation pass on 440 trajectories completes in 58.7 minutes, consuming 12{,}039{,}417 input and 312{,}433 output tokens, or 27{,}362 input and 710 output tokens per trajectory.
+% 对 440 条轨迹的完整端到端切分在 58.7 分钟内完成，消耗 12,039,417 输入与 312,433 输出 token，即每条轨迹 27,362 输入与 710 输出 token。
 With marks fixed, construction scales linearly across the five input sizes (Table~\ref{tab:rq4-cost}), adding only 5.25\,MiB (1.14\%) peak RSS over raw-action grouping at the union scale.
 % 标记固定后，构建开销在五个输入规模上线性扩展（Table~\ref{tab:rq4-cost}），在并集规模上比 raw-action 分组仅多 5.25 MiB（1.14\%）峰值 RSS。
-Switching the additive measure is a replay at the same cost.
-% 切换可加度量即以同等成本重放。
-Deterministic materialization of the full 440-trajectory population takes
-0.26\,s for operations and 0.25\,s for tokens, so construction cost is
-dominated by the segmentation step while materialization stays sub-second.
-% 完整 440-session population 的确定性物化在 operation 上需 0.26 秒、在 token 上需 0.25 秒，因此构建成本由切分步骤主导，而物化保持在亚秒级。
-\emph{Takeaway.} The cost is practical: segmentation is a one-time pass costing minutes of backend time per corpus (37 min for 405 trajectories); every later view, measure switch, and drilldown costs about one second.
-% 要点。成本是实用的：切分是一次性 pass，每语料需分钟级后端时间（405 条轨迹需 37 分钟）；之后每次视图、度量切换与下钻的成本约为一秒。
+Deterministic materialization of the full 440-trajectory population takes 0.26\,s for operations and 0.25\,s for tokens, so construction cost is dominated by the segmentation step while materialization stays sub-second.
+% 完整 440 条轨迹 population 的确定性物化在 operation 上需 0.26 秒、在 token 上需 0.25 秒，因此构建成本由切分步骤主导，而物化保持在亚秒级。
+\emph{Takeaway.} Segmentation is a one-time pass costing minutes of backend time per corpus (37 min for 405 trajectories); every later view, measure switch, and drilldown costs about one second.
+% 要点。切分是一次性 pass，每语料需分钟级后端时间（405 条轨迹需 37 分钟）；之后每次视图、度量切换与下钻的成本约为一秒。
 
 %% ===================================================================
 \section{Related Work}
@@ -967,8 +950,8 @@ Agent observability platforms such as LangSmith, Langfuse, and Phoenix~\cite{lan
 % 智能体可观测性平台与标准记录 span 用于单次执行调试，分析层汇总跨 trace 层次、workflow profile 或输入分布；但没有一个在标准 profile 中构造带守恒可加度量与保留调用证据的递归语义责任。
 Cross-run analyses (TraceProbe, Graphectory, Act$\cdot$onomy, CHIEF, Hodoscope, TraceGraph)~\cite{traceprobe2026,graphectory2026,actonomy2026,chief2026,hodoscope2026,tracegraph2026} and per-run diagnosis and localization~\cite{agentrx,telbench,agentatlas,trajad,agentfixer,li2026codetracer,agentprocessbench,hintbench,traceelephant,mpbench2026} answer what an agent did and which step went wrong.
 % 跨运行分析（TraceProbe、Graphectory、Act$\cdot$onomy、CHIEF、Hodoscope、TraceGraph）与单运行诊断和定位回答的都是"智能体做了什么、哪一步出了错"。
-\sys instead asks how much of an additive resource a semantic category is responsible for. It recovers variable-depth responsibility from source content (where Act$\cdot$onomy fixes three levels and TraceProbe one), conserves measures exactly across count, token, and time widths, keeps LLM/tool calls as drilldown leaves, and emits standard pprof. No compared system provides all four, and \sys stays complementary to per-run diagnosis, as RQ2 measures directly.
-% \sys 提出的则是 profiler 的问题，即某个语义类别对某种可加资源负有多少责任。它从 source 内容恢复可变深度责任（Act$\cdot$onomy 固定三层、TraceProbe 仅一层）、跨 count/token/time 宽度精确守恒、保留 LLM/tool 下钻叶、输出标准 pprof。没有被比较系统同时具备这四点，且 \sys 与单运行诊断互补，RQ2 直接测量了这一点。
+\sys instead asks how much of an additive resource a task or workflow phase is responsible for. It recovers variable-depth responsibility from source content (where Act$\cdot$onomy fixes three levels and TraceProbe one), conserves measures exactly across count, token, and time widths, keeps LLM/tool calls as drilldown leaves, and emits standard pprof. No compared system provides all four, and \sys stays complementary to per-run diagnosis, as RQ2 measures directly.
+% \sys 提出的则是 profiler 的问题，即某个任务或工作流阶段对某种可加资源负有多少责任。它从 source 内容恢复可变深度责任（Act$\cdot$onomy 固定三层、TraceProbe 仅一层）、跨 count/token/time 宽度精确守恒、保留 LLM/tool 下钻叶、输出标准 pprof。没有被比较系统同时具备这四点，且 \sys 与单运行诊断互补，RQ2 直接测量了这一点。
 
 %% ===================================================================
 \section{Conclusion}
