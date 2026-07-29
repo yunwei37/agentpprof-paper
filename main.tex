@@ -42,7 +42,7 @@ In traditional systems software, profiling answers similar questions by aggregat
 % 在传统系统软件中，profiling 通过聚合资源消耗并归因到负责的代码路径来回答类似问题，识别出需要优化的热点。
 Yet existing agent observability tools focus on per-execution debugging and tracing rather than profiling, making these questions difficult to answer as trajectories grow long and complex.
 % 然而现有智能体可观测性工具聚焦于单次执行的调试和 tracing 而非 profiling，使这些问题在轨迹变长变复杂时难以回答。
-Agent behavior differs from code execution, which makes profiling challenging. The responsible entities are task intent and workflow phase like \emph{diagnose authentication}, \emph{compare branches}, \emph{revise evaluation} rather than the prompts or tool calls that realize them, and agent trajectories lack the stable identifiers that make aggregation possible.
+Agent behavior differs from code execution, which makes profiling challenging. The responsible entities are task intent and workflow phase like \emph{diagnose authentication}, \emph{compare branches} rather than the prompts or tool calls that realize them, and agent trajectories lack the stable identifiers that make aggregation possible.
 % 智能体行为与代码执行不同，这使 profiling 具有挑战性。负责实体是语义责任——诊断认证、比较分支、修订评估——而非实现它们的字面提示词或工具调用，且智能体轨迹缺乏使归因成为可能的稳定标识符。
 We propose a \emph{semantic operation stack model} that adapts profiling to agent trajectories.
 % 我们提出一个将 profiling 适配到智能体轨迹的语义 operation stack 模型。
