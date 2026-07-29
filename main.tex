@@ -593,21 +593,16 @@ span tens of hours) supplies long-horizon coverage; the RQ4 union covers
 \subsection{RQ1: Does Semantic Profiling Improve Resource Attribution?}
 % RQ1：语义 profiling 是否改善资源归因？
 
-\emph{Setup.} We test one necessary consequence of the claim: whether a fixed
-semantic hierarchy reveals materially different bottlenecks when the additive
-resource measure changes.
-% 设置。我们检验该主张的一个必要后果：固定的语义层次在切换可加资源度量时是否暴露实质不同的瓶颈。
-The population contains 41 real long-horizon agent trajectories, 3{,}146 user turns, and 5{,}750 operations, including three independent executions of one Git-deployment task whose 735 steps receive 96 recursive annotations.
-% population 含 41 条真实 long-horizon agent 轨迹、3,146 个用户 turn 与 5,750 个 operation，其中包含同一 Git 部署任务的三次独立执行——其 735 个步骤获得 96 个递归标注。
-The resulting hierarchy reaches semantic depth five without a fixed limit.
-% 所得层次在无固定上限下达到语义深度五。
+\emph{Setup.} If semantic profiling improves resource attribution, then the same fixed hierarchy should (1) reunite cross-run responsibility that alternative organizations scatter, and (2) reveal materially different bottlenecks when the additive measure changes.
+We test both on 41 real long-horizon agent trajectories (3{,}146 user turns, 5{,}750 operations), including three independent executions of one Git-deployment task whose 735 steps receive 96 recursive annotations reaching semantic depth five.
+% 设置。若语义 profiling 改善资源归因，则同一固定层次应 (1) 重聚被其他组织方式分散的跨运行责任，(2) 在切换可加度量时暴露实质不同的瓶颈。我们在 41 条真实 long-horizon agent 轨迹（3,146 个用户 turn、5,750 个 operation）上测试两者，其中包括同一 Git 部署任务的三次独立执行——其 735 个步骤获得 96 个递归标注，语义深度达五层。
 
 \paragraph{The motivating case revisited.}
 % 动机案例回顾。
-The Git-deployment case from Section~\ref{sec:background} established that semantic organization reunites cross-run responsibility that native and coarse organizations scatter.
-% 第~\ref{sec:background} 节的 Git 部署案例建立了语义组织能重聚跨运行责任、而 native 和 coarse 组织会将其分散。
-A control experiment replays the same operations under native call trees and coarse action grouping: the authentication work scatters across 105 native calls and six action kinds (102 of 105 labeled merely \texttt{run}), but only semantic organization reunites it into one focusable cross-run path.
-% 对照实验在 native call tree 和 coarse action 分组下重放相同 operation：认证工作散落于 105 个 native call 和六个 action kind（其中 102 个仅标为 \texttt{run}），只有语义组织将其重聚为一条可聚焦的跨运行路径。
+The Git-deployment case from Section~\ref{sec:background} established that semantic organization reunites cross-run responsibility that alternative organizations scatter.
+% 第~\ref{sec:background} 节的 Git 部署案例建立了语义组织能重聚跨运行责任、而替代组织会将其分散。
+A control experiment replays the same operations under two alternative organizations: \emph{native call trees} (each operation grouped by its source LLM or tool call, as recorded in the trajectory) and \emph{raw-action grouping} (operations grouped by their literal action-type field, e.g., \texttt{run}, \texttt{edit}, \texttt{search}). The authentication work scatters across 105 native calls and six action kinds (102 of 105 labeled merely \texttt{run}), but only semantic organization reunites it into one focusable cross-run path.
+% 对照实验在两种替代组织方式下重放相同 operation：native call tree（每个 operation 按源 LLM 或 tool call 分组，如轨迹中所记录）和 raw-action 分组（operation 按其字面 action-type 字段分组，如 \texttt{run}、\texttt{edit}、\texttt{search}）。认证工作散落于 105 个 native call 和六个 action kind（其中 102 个仅标为 \texttt{run}），只有语义组织将其重聚为一条可聚焦的跨运行路径。
 Here we add a third measure: elapsed time.
 % 这里我们增加第三种度量：elapsed time。
 The same hierarchy replays under all three measures with exact conservation, and the \texttt{diagnose authentication} subtree's share rises from 21\% (count) through 37\% (time) to 46\% (tokens). Changing only the measure moves the attributed share by more than a factor of two.
@@ -692,16 +687,17 @@ priority across the full history appears only after folding.
 Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tokens, both conserved exactly), ranking operations by count versus tokens yields high agreement: over the 77 of 125 tasks with at least three distinct operations, mean Kendall's tau-b is 0.886 [0.857, 0.915], Spearman's rho is 0.935 [0.917, 0.953], and pooled ranking agrees at tau-b 0.929. However, 10 of 77 tasks fall below 0.7, so the measure matters when it matters.
 % 跨 440 条 AgentRewardBench 轨迹（7,229 个 operation、51,904,621 个 token，均精确守恒），按 count 与 token 排序的一致性高：在 125 个任务中至少有三个不同 operation 的 77 个上，平均 Kendall tau-b 为 0.886 [0.857, 0.915]，Spearman rho 为 0.935 [0.917, 0.953]，pooled 排序的 tau-b 为 0.929。然而 77 个任务中有 10 个低于 0.7，因此关键时刻度量选择很重要。
 
-\emph{Takeaway.} One hierarchy attributes multiple resources with exact conservation; switching measures reveals bottlenecks that operation count alone would hide, and levels recovered from annotation and from literal source fields compose in the same stack.
-% 要点。同一层次精确守恒地归因多种资源；切换度量暴露出仅靠 operation 数会掩盖的瓶颈；由标注恢复的层级与来自源字段的字面层级组合在同一个栈中。
+\emph{Takeaway.} Both conditions hold: the semantic hierarchy reunites cross-run responsibility that raw-action and native organizations scatter (the authentication case), and switching the measure on that fixed hierarchy moves attributed share by more than 2$\times$ (21\% to 46\%), revealing bottlenecks that operation count alone would hide.
+% 要点。两个条件都成立：语义层次重聚了 raw-action 和 native 组织所分散的跨运行责任（认证案例），且在该固定层次上切换度量使归因份额变化超过 2 倍（21\% 到 46\%），暴露出仅靠 operation 数会掩盖的瓶颈。
 
 
 %% -------------------------------------------------------------------
 \subsection{RQ2: Does Profiler Output Correspond to Real Problems?}
 % RQ2：分析器输出是否对应真实问题？
 
-RQ2 asks whether profiler output, constructed without seeing the ground-truth fault annotations, corresponds to independently annotated real problems. We answer at three levels: a differential analysis over 440 runs whose recovery signal matches expert looping labels, a localization test on three complete benchmarks, and a reading study measuring how much evidence an analyzer agent must open.
-% RQ2 问 profiler 输出（构建时不接触真实故障标注）是否对应独立标注的真实问题。我们在三个层次上回答：（1）440 次运行的差分分析，其 recovery 信号对应专家 looping 标注；（2）三个完整 benchmark 上的定位测试；（3）测量分析器 agent 需要打开多少证据的阅读研究。
+RQ2 asks whether profiler output, constructed without seeing ground-truth fault annotations, corresponds to independently annotated real problems.
+We answer with three tests: (1) \emph{differential analysis} checks whether the profile's failure structure matches expert behavioral labels across 440 runs; (2) \emph{localization} checks whether adding profile scores to existing benchmark judges improves fault ranking; (3) \emph{reading study} checks whether semantic names help an agent reader reach the same ranking while opening less evidence.
+% RQ2 问 profiler 输出（构建时不接触真实故障标注）是否对应独立标注的真实问题。我们用三个测试回答：(1) 差分分析检验 profile 的失败结构是否在 440 次运行上与专家行为标注一致；(2) 定位检验在既有 benchmark judge 上添加 profile 分数是否改善故障排序；(3) 阅读研究检验语义名称是否帮助 agent reader 在打开更少证据的情况下达到同等排序。
 
 \begin{figure}
 \centering
@@ -935,10 +931,8 @@ inputs literally contain the target word \texttt{Locate}, and excluding them
 leaves 0.490 macro-F1 and 0.622 accuracy, so the positive comparison is
 unchanged.
 % 该 action 分类器相对 majority 的 0.437 macro-F1 增量，其整轨迹 95\% bootstrap 区间为 [0.380,0.494]；39 个 AutoCodeRover 输入字面含目标词 \texttt{Locate}，排除后 macro-F1 与 accuracy 仍为 0.490 与 0.622，正向比较不变。
-\emph{Takeaway.} Recursive segmentation is the most accurate tested
-automatic constructor on both structural axes, and non-LLM methods
-implementing the same interface remain viable when no model is available.
-% 要点。递归切分是两个结构轴上最准确的被测自动构造器；实现同一接口的非 LLM 方法在没有模型可用时依然可行。
+\emph{Takeaway.} Recursive segmentation recovers human-recognizable task structure: 0.764 B$^3$ F1 against human stages, beating the strongest automatic baseline by +0.101. When segmentation disagrees with humans, it over-segments (subdivides work) rather than merging unrelated responsibilities, preserving per-group coherence. Non-LLM methods implementing the same interface remain viable when no model is available.
+% 要点。递归切分恢复出人类可识别的任务结构：相对人工 stage 达到 0.764 B$^3$ F1，比最强自动基线高 +0.101。当切分与人类不一致时，它是过分割（细分工作）而非合并无关责任，从而保留每组连贯性。实现同一接口的非 LLM 方法在没有模型可用时依然可行。
 
 %% -------------------------------------------------------------------
 \subsection{RQ4: What Is the Profiling Cost?}
@@ -989,9 +983,8 @@ Deterministic materialization of the full 440-trajectory population takes
 0.26\,s for operations and 0.25\,s for tokens, so construction cost is
 dominated by the segmentation step while materialization stays sub-second.
 % 完整 440-session population 的确定性物化在 operation 上需 0.26 秒、在 token 上需 0.25 秒，因此构建成本由切分步骤主导，而物化保持在亚秒级。
-\emph{Takeaway.} Segmentation costs minutes of backend time once per corpus; every
-later view, measure switch, and drilldown costs about a second.
-% 要点。切分每语料只需一次分钟级的后端时间；之后每次视图、度量切换与下钻的成本约为一秒。
+\emph{Takeaway.} The cost is practical: segmentation is a one-time pass costing minutes of backend time per corpus (37 min for 405 trajectories); every later view, measure switch, and drilldown costs about one second.
+% 要点。成本是实用的：切分是一次性 pass，每语料需分钟级后端时间（405 条轨迹需 37 分钟）；之后每次视图、度量切换与下钻的成本约为一秒。
 
 %% ===================================================================
 \section{Related Work}
