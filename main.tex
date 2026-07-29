@@ -527,13 +527,8 @@ Levels need not come from annotation: fields already recorded literally (e.g., a
 % 层级不必来自标注：已被字面记录的字段（如 agent skill 调用）无需标注成本即可成为栈层级，并与标注得到的语义层级组合在同一层次中。
 Multi-agent orchestration is a direct instance: when an outer agent delegates to a subagent (e.g., Claude Code spawning an Explore agent to search code), the delegation is an operation whose interval contains all downstream work, so subagent operations inherit the outer agent's semantic path without special handling.
 % 多智能体编排是一个直接实例：当外层 agent 委托给 subagent 时（例如 Claude Code 生成 Explore agent 来搜索代码），委托本身是一个 operation，其区间包含所有下游工作，因此 subagent 操作继承外层 agent 的语义路径，无需特殊处理。
-
-\paragraph{Non-LLM statistical segmenter.}
-% 非 LLM 统计 segmenter。
-The statistical segmenter scores adjacent action transitions by normalized pointwise mutual
-information~\cite{bouma2009npmi} and calibrates an unsupervised cutoff with
-one-dimensional $k$-means ($k=2$)~\cite{macqueen1967}; it reads only action sequences, never target annotations or resource weights.
-% 统计 segmenter 用归一化点互信息 $\mathrm{NPMI}(a,b)=\ln[p(a,b)/(p_L(a)p_R(b))]/-\ln p(a,b)$ 为相邻 action 转移评分（所有概率取自同一转移样本空间），并用按出现次数加权的一维 $k$-means（$k=2$）校准无标签阈值——从最小与最大分数初始化、并列归入较低中心、以收敛中点为全局阈值，另在 action-changing 转移上拟合第二个阈值；detail 连续性只能删除、不能新增粗边界，detail 缺失时精确回退到粗决策；segmenter 只读取 session 身份、输入顺序、action 与可选 action detail，从不读取目标标注或资源权重。可选的 calibrated 模式在不重叠的参考分组上拟合单一标量阈值。
+A non-LLM statistical segmenter is also available: it scores adjacent action transitions by normalized pointwise mutual information~\cite{bouma2009npmi} and calibrates an unsupervised cutoff with one-dimensional $k$-means ($k=2$)~\cite{macqueen1967}, reading only action sequences without target annotations.
+% 还提供非 LLM 统计 segmenter：它用归一化点互信息为相邻 action 转移评分，并用一维 $k$-means（$k=2$）校准无监督阈值，只读取 action 序列而不读取目标标注。
 %% ===================================================================
 \section{Evaluation}
 % 评估
@@ -732,47 +727,23 @@ localizer (HINTBench, TraceElephant), which for TraceElephant reads the full
 trace and reference answer before naming the responsible agent and decisive
 step.
 % \emph{direct diagnostic} 是 benchmark 原生 process judge（AgentProcessBench 的 risk unit）或 trajectory localizer（HINTBench、TraceElephant）的逐 operation 输出；在 TraceElephant 上，它先读取完整 trace 与参考答案，再指出责任 agent 与决定性步骤。
-\emph{Direct-only} ranks by that diagnostic alone; \emph{Direct+\sys} breaks ties using the profiler's aggregated scores per semantic group;
-\emph{Direct+\sys-Raw} is an ablation that replaces semantic interval names with raw action types (the grouping structure is identical; only the names differ); \emph{AgentProf-only} uses only the profiler without the benchmark diagnostic (Table~\ref{tab:rq2-localization}).
-% Direct-only 仅按该诊断排序；Direct+\sys 用 profiler 的组分数打破并列；Direct+\sys-Raw 是将语义区间名替换为 raw action 类型的消融（分组结构相同，仅名称不同）；AgentProf-only 仅用 profiler 不用 benchmark 诊断（Table~\ref{tab:rq2-localization}）。
-
-\begin{table}[tb]
-\centering\small
-\setlength{\tabcolsep}{1.8pt}
-\begin{tabular}{@{}lrrrr@{}}
-\toprule
-Workload & \shortstack{Direct+\\\sys} & \shortstack{Direct+\\\sys-Raw} & \shortstack{Direct\\only} & \shortstack{\sys\\only} \\
-\midrule
-AgentProcessBench & \textbf{.894} & \textbf{.893} & .863 & .791 \\
-HINTBench & \textbf{.517} & \textbf{.518} & .411 & .432 \\
-TraceElephant & \textbf{.326} & \textbf{.324} & .209 & .259 \\
-\bottomrule
-\end{tabular}
-\caption{MAP over the complete RQ2 populations (614, 400, and 220
-labeled queries). \sys-Raw ablates only \sys's semantic prefix; bold
-marks each workload's best methods. Higher is better.}
-\label{tab:rq2-localization}
-\end{table}
+\emph{Direct-only} ranks by that diagnostic alone; \emph{Direct+\sys} breaks ties by group score (vote mean for AgentProcessBench; 95\% Wilson bound otherwise), with HINTBench field order fixed on 80 validation trajectories;
+\emph{Direct+\sys-Raw} is an ablation that replaces semantic interval names with raw action types (the grouping structure is identical; only the names differ); \emph{AgentProf-only} uses only the profiler without the benchmark diagnostic (Figure~\ref{fig:rq2-map}).
+% Direct-only 仅按该诊断排序；Direct+\sys 用 profiler 的组分数打破并列；Direct+\sys-Raw 是将语义区间名替换为 raw action 类型的消融（分组结构相同，仅名称不同）；AgentProf-only 仅用 profiler 不用 benchmark 诊断（Figure~\ref{fig:rq2-map}）。
 
 \begin{figure}[tb]
 \centering
-\includegraphics[width=\columnwidth]{figures/fig-rq2-deltas.pdf}
-\caption{Paired MAP differences with 95\% intervals (10,000 resamples). Left: profile improves all three benchmarks (intervals above zero). Right: semantic vs raw-action ablation indistinguishable (intervals span zero).}
-\Description{A grouped bar chart of MAP differences on three workloads. The
-bars comparing the profile-refined ranking against the benchmark judge are
-positive on all three workloads with error bars above zero, while the bars
-comparing the semantic prefix against the raw-action ablation sit at zero with
-error bars crossing it.}
-\label{fig:rq2-deltas}
+\includegraphics[width=\columnwidth]{figures/fig-rq2-map.pdf}
+\caption{MAP over the complete RQ2 populations (614, 400, and 220 labeled queries). \sys-Raw ablates only \sys's semantic prefix. Higher is better.}
+\Description{A grouped bar chart showing MAP scores for four methods across three workloads. Direct+\sys and Direct+\sys-Raw perform best on all workloads.}
+\label{fig:rq2-map}
 \end{figure}
 
-\emph{Results.} Direct+\sys beats Direct-only by 0.031 [0.024, 0.039],
-0.107 [0.093, 0.120], and 0.117 [0.088, 0.148], using 10{,}000 paired resamples of
-trajectory clusters within benchmark-defined strata, so every paired interval
-lies above zero (Figure~\ref{fig:rq2-deltas}).
-% 结果。Direct+\sys 相对 Direct-only 分别提高 .031 [.024,.039]、.107 [.093,.120] 与 .117 [.088,.148]（在 benchmark 定义的分层内对轨迹簇做 10,000 次配对重抽样），因此每个配对区间都位于零以上。
-Grouping with retained evidence drives the ranking gain (Table~\ref{tab:rq2-localization}); semantic naming adds a distinct measured benefit: it concentrates the reader's attention, reducing evidence opened from 65\% to 53\% at equal quality (measured below). The semantic prefix also enables cross-run attribution (RQ1).
-% 分组加保留证据驱动排序增益（Table~\ref{tab:rq2-localization}）；语义命名带来另一可测收益：它集中读者注意力，在同等质量下将打开的证据从 65\% 降至 53\%（下文测量）。语义前缀还支持跨运行归因（RQ1）。
+\emph{Results.} Direct+\sys beats Direct-only by 0.031 [0.024, 0.039], 0.107 [0.093, 0.120], and 0.117 [0.088, 0.148] (95\% intervals from 10{,}000 paired resamples); all intervals lie above zero, so every improvement is statistically significant (Figure~\ref{fig:rq2-map}).
+The semantic vs raw-action ablation is indistinguishable (intervals span zero).
+% 结果。Direct+\sys 相对 Direct-only 分别提高 .031 [.024,.039]、.107 [.093,.120] 与 .117 [.088,.148]（10,000 次配对重抽样的 95\% 区间）；所有区间位于零以上，因此每项改进在统计上显著（Figure~\ref{fig:rq2-map}）。语义与 raw-action 消融无统计差异（区间跨越零）。
+Grouping with retained evidence drives the ranking gain (Figure~\ref{fig:rq2-map}); semantic naming adds a distinct measured benefit: it concentrates the reader's attention, reducing evidence opened from 65\% to 53\% at equal quality (measured below). The semantic prefix also enables cross-run attribution (RQ1).
+% 分组加保留证据驱动排序增益（Figure~\ref{fig:rq2-map}）；语义命名带来另一可测收益：它集中读者注意力，在同等质量下将打开的证据从 65\% 降至 53\%（下文测量）。语义前缀还支持跨运行归因（RQ1）。
 
 \paragraph{Profile-guided reading on TraceElephant.}
 % TraceElephant 上的 profile 引导阅读。
@@ -782,7 +753,7 @@ Full-trace reading reaches MAP .502 at a mean 12{,}615 input tokens per query, v
 % 全 trace 阅读以每 query 平均 12,615 个输入 token 达到 MAP .502，而 benchmark 的 Direct-only 诊断为 .209、Direct+\sys 为 .326。
 A profile-guided variant uses the semantic skeleton to navigate, opening only selected evidence.
 % profile 引导变体用语义骨架导航，只打开选中的证据。
-The semantic skeleton reaches MAP .455 while opening only 53.0\% of the source content; the \sys-Raw skeleton requires 65.0\% to reach comparable quality (MAP .465).
+The semantic skeleton reaches MAP .455 while opening 53.0\% of the source content; \sys-Raw opens 65.0\% at unchanged MAP (.465; paired $\Delta=+.010$ [$-.021$,$+.042$]; content $\Delta=+.120$ [$+.103$,$+.137$]).
 % 语义骨架达到 MAP .455 且只打开 53.0\% 的源内容；\sys-Raw 骨架需要打开 65.0\% 才能达到相近质量（MAP .465）。
 A per-query full read is also bounded by the model context window (the 4{,}558{,}192-token Git population cannot be read whole).
 % 每 query 的全量阅读还受模型上下文窗口约束（4,558,192-token 的 Git population 无法整体读入）。
@@ -811,7 +782,7 @@ legacy field-valued datasets a conversion step maps each predicted
 group into the same interval-annotation format before \sys folds the
 original additive weights.
 % 每个方法的输出按其预测的层级评估：字面名称用 accuracy 与 macro-F1，置换不变的 partition 用 V-measure 或普通 B$^3$，相邻区间边界用精确的 precision、recall 与 F1；对字段值型的既有数据集，转换步骤先把每个预测 group 映射为同一份区间标注格式，再由 \sys 折叠原始可加权重。
-Codex~\cite{codex} receives each trajectory (prompts, commands, and output summaries, with no labels or scores visible) and emits sparse interval marks over 17{,}148 steps without access to official stage annotations: 4{,}496 marks at semantic depth one (3), two (2{,}873), three (1{,}588), or four (32), with no prompt requesting a specific depth.
+Codex~\cite{codex} receives each trajectory (prompts, commands, and output summaries, with no labels or scores visible) and emits sparse interval marks over 17{,}148 steps without access to stage annotations (loaded after all 405 outputs were fixed): 4{,}496 marks at semantic depth one (3), two (2{,}873), three (1{,}588), or four (32), with no prompt requesting a specific depth.
 % Codex 接收轨迹（提示词、命令与输出摘要，不含标签或分数），在 17,148 个步骤上发出稀疏区间标记，不接触官方 stage 标注：共 4,496 个标记，语义深度为一层（3 个）、两层（2,873 个）、三层（1,588 个）与四层（32 个），且没有任何 prompt 指定深度。
 Packet construction bounds every text preview (prompt and response fields to at most 1{,}800 characters, tool commands to 600, and status previews to 200), while additive measures come from untruncated structured counters.
 % Packet 构建对所有文本 preview 限长（prompt 与响应字段至多 1,800 字符、工具命令 600 字符、状态 preview 200 字符），而可加度量取自未截断的结构化计数器。
@@ -898,7 +869,7 @@ measurement, distinct from RQ2's 7{,}229-operation mixed population.}
 \end{table}
 \emph{Results.} Segmenting all 405 CodeTraceBench trajectories with Codex (GPT-5.6-sol-high) consumes 12{,}050{,}384 input and 231{,}886 output tokens in 37 minutes of active backend wall time.
 % 结果。用 Codex（GPT-5.6-sol-high）切分全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token，active backend wall time 为 37 分钟。
-A full end-to-end segmentation pass on 440 trajectories completes in 58.7 minutes, consuming 12{,}039{,}417 input and 312{,}433 output tokens, or 27{,}362 input and 710 output tokens per trajectory.
+A full end-to-end segmentation pass on 440 trajectories completes in 58.7 minutes on two fixed workers, consuming 12{,}039{,}417 input and 312{,}433 output tokens, or 27{,}362 input and 710 output tokens per trajectory.
 % 对 440 条轨迹的完整端到端切分在 58.7 分钟内完成，消耗 12,039,417 输入与 312,433 输出 token，即每条轨迹 27,362 输入与 710 输出 token。
 With marks fixed, construction scales linearly across the five input sizes (Table~\ref{tab:rq4-cost}), adding only 5.25\,MiB (1.14\%) peak RSS over raw-action grouping at the union scale.
 % 标记固定后，构建开销在五个输入规模上线性扩展（Table~\ref{tab:rq4-cost}），在并集规模上比 raw-action 分组仅多 5.25 MiB（1.14\%）峰值 RSS。
