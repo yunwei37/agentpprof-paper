@@ -575,20 +575,15 @@ We test both on 41 real long-horizon agent trajectories (3{,}146 user turns, 5{,
 
 \paragraph{The motivating case revisited.}
 % 动机案例回顾。
-The Git-deployment case from Section~\ref{sec:background} established that semantic organization reunites cross-run responsibility that alternative organizations scatter.
-% 第~\ref{sec:background} 节的 Git 部署案例建立了语义组织能重聚跨运行责任、而替代组织会将其分散。
-A control experiment replays the same operations under two alternative organizations: \emph{native call trees} (each operation grouped by its source LLM or tool call, as recorded in the trajectory) and \emph{raw-action grouping} (operations grouped by their literal action-type field, e.g., \texttt{run}, \texttt{edit}, \texttt{search}). The authentication work scatters across 105 native calls and six action kinds (102 of 105 labeled merely \texttt{run}), but only semantic organization reunites it into one focusable cross-run path.
-% 对照实验在两种替代组织方式下重放相同 operation：native call tree（每个 operation 按源 LLM 或 tool call 分组，如轨迹中所记录）和 raw-action 分组（operation 按其字面 action-type 字段分组，如 \texttt{run}、\texttt{edit}、\texttt{search}）。认证工作散落于 105 个 native call 和六个 action kind（其中 102 个仅标为 \texttt{run}），只有语义组织将其重聚为一条可聚焦的跨运行路径。
-Here we add a third measure: elapsed time.
-% 这里我们增加第三种度量：elapsed time。
+The Git-deployment case from Section~\ref{sec:background} established that semantic organization reunites cross-run responsibility that alternative organizations scatter; here we add a third measure (elapsed time) to show measure-sensitivity.
+% 第~\ref{sec:background} 节的 Git 部署案例建立了语义组织能重聚跨运行责任、而替代组织会将其分散；这里我们增加第三种度量（elapsed time）以展示度量敏感性。
 The same hierarchy replays under all three measures with exact conservation, and the \texttt{diagnose authentication} subtree's share rises from 21\% (count) through 37\% (time) to 46\% (tokens). Changing only the measure moves the attributed share by more than a factor of two.
 % 同一层次在三种度量下精确守恒地重放，\texttt{diagnose authentication} 子树的份额从 21\%（count）经 37\%（time）升至 46\%（token）。仅改变度量就使归因份额变化超过两倍。
 A quantitative control shows why both alternatives fail.
-Of 105 authentication operations, 102 carry only the raw-action label \texttt{run}, and that same \texttt{run} bucket mixes in 97 unrelated operations.
-A coarser action-kind grouping scatters the work across six kinds (execute 39\%, version-control 22\%, edit 19\%, inspect 12\%, search 7\%, install 1\%).
-Native call trees place each operation under a distinct source call with no shared responsibility node.
+\emph{Raw-action grouping} (by literal action-type, e.g., \texttt{run}, \texttt{edit}) fails: of 105 authentication operations, 102 carry only the label \texttt{run}, and that same bucket mixes in 97 unrelated operations; a coarser action-kind grouping scatters the work across six kinds (execute 39\%, version-control 22\%, edit 19\%, inspect 12\%, search 7\%, install 1\%).
+\emph{Native call trees} (each operation under its source LLM or tool call) place each operation under a distinct source call with no shared responsibility node.
 Only the semantic hierarchy reunites authentication into one focusable cross-run path while preserving all call/tool evidence as drilldown leaves.
-% 定量对照显示为什么两种替代方式都失败。105 个认证 operation 中 102 个只带 raw-action 标签 \texttt{run}，而同一个 \texttt{run} bucket 还混入 97 个无关 operation。更粗的 action-kind 分组把工作散落到六种 kind（execute 39\%、version-control 22\%、edit 19\%、inspect 12\%、search 7\%、install 1\%）。Native call tree 把每个 operation 放在不同 source call 下，没有共享责任节点。只有语义层次将认证重聚为一条可聚焦的跨运行路径，同时保留所有 call/tool 证据作为下钻叶。
+% 定量对照显示为什么两种替代方式都失败。Raw-action 分组（按字面 action-type）失败：105 个认证 operation 中 102 个只带标签 \texttt{run}，而同一 bucket 还混入 97 个无关 operation；更粗的 action-kind 分组把工作散落到六种 kind。Native call tree（每个 operation 在其源 LLM 或 tool call 下）把每个 operation 放在不同 source call 下，没有共享责任节点。只有语义层次将认证重聚为一条可聚焦的跨运行路径，同时保留所有 call/tool 证据作为下钻叶。
 Separately, real AgentSight~\cite{agentsight} eBPF recordings replay the
 same way: all 1{,}520 captured process spawns and file operations fold
 under task responsibilities with exact conservation, demonstrating the system-effect layer end to end.
@@ -602,28 +597,12 @@ The question: \emph{what did the agents actually spend tokens doing?}
 % 问题：agent 到底把 token 花在了什么事上？
 The profile shows the answer is not one dominant sink but a broad distribution: the largest path (\texttt{refine paper > align evaluation}) holds only 1.7\% of tokens.
 % profile（Figure~\ref{fig:selfprofile}）显示答案不是单一大头而是宽分布：最大路径（\texttt{refine paper > align evaluation}）仅占 1.7\% 的 token。
-The three longest sessions (spanning tens of hours each) keep distinct dominant responsibilities (evaluation alignment, evidence inspection, and merge resolution), so session structure is preserved rather than averaged away.
-% 三条最长 session（各跨越数十小时）各有不同的主导责任（evaluation alignment、evidence inspection、merge resolution），session 结构被保留而非被平均抹掉。
-Switching to operation count shifts where mass concentrates: token mass stays at prompt depth (70\%), while operation mass resolves deeper (44\% at depths three and four) exactly where repeated engineering work concentrates.
-% 切换到 operation 数改变了质量集中处：token 质量停在 prompt 深度（70\%），而 operation 质量解析更深（44\% 在深度三和四），恰在重复工程工作集中处。
-The insight is that token-heavy work happens at the conversation level, while repetitive tool calls concentrate deeper, a split that only multi-measure profiling reveals.
-% 洞察是 token 密集型工作发生在对话层，而重复的工具调用集中在更深层，这种分裂只有多度量 profiling 才能揭示。
+The three longest sessions (spanning tens of hours each) keep distinct dominant responsibilities (evaluation alignment, evidence inspection, and merge resolution).
+% 三条最长 session（各跨越数十小时）各有不同的主导责任（evaluation alignment、evidence inspection、merge resolution）
+Switching to operation count shifts where mass concentrates: token mass stays at prompt depth (70\%), while operation mass resolves deeper (44\% at depths three and four).
+% 切换到 operation 数改变了质量集中处：token 质量停在 prompt 深度（70\%），而 operation 质量解析更深（44\% 在深度三和四）。
 The history also demonstrates multi-agent composition at scale: 98 subagent delegations across 14 sessions, where each delegation contains all downstream subagent operations and composes with annotated semantic levels.
 % 该历史还展示了规模化的多智能体组合：跨 14 个 session 的 98 次 subagent 委托，每次委托包含所有下游 subagent 操作，并与标注的语义层级组合。
-
-% \begin{figure*}[t]
-% \centering
-% \includegraphics[width=.97\linewidth]{figures/selfprofile.tokens.png}\\[1pt]
-% \includegraphics[width=.97\linewidth]{figures/selfprofile.operations.png}
-% \caption{The 42-session population under one fixed semantic hierarchy.
-% Width is tokens (top) or operation count (bottom); second-level frames are
-% annotated responsibilities (\texttt{refine paper}, \texttt{develop manuscript},
-% ...), with deeper refinements available for drilldown in stock pprof.}
-% \Description{Two flame graphs over the same 42 development sessions. Both
-% show a claude root spanning most width, semantic responsibilities at the
-% second level, and fragmented deeper refinements.}
-% \label{fig:selfprofile}
-% \end{figure*}
 
 The same hierarchy replays under FILE-READ, FILE-WRITE, and NETWORK-target
 widths with exact conservation of 737, 31, and 61 target references; in the FILE-WRITE view, each created
@@ -635,16 +614,6 @@ the semantic responsibility that touched it, making side effects auditable
 per responsibility.
 % 这些视图具体回答 Introduction 的 system-effect 问题：每个被记录的 file 与 network target 都归因到触及它的语义责任，使副作用可按责任审计。
 
-% \begin{figure*}[t]
-% \centering
-% \includegraphics[width=.97\linewidth]{figures/selfprofile.file-write.png}
-% \caption{FILE-WRITE view of the same hierarchy: width is write count, with each created file preserved as a drilldown leaf.}
-% \Description{A FILE-WRITE flame graph whose semantic-operation frames contain LLM and tool frames ending at exact file-write targets.}
-% \label{fig:selfprofile-write}
-% \end{figure*}
-
-Not every level requires annotation.
-% 并非每一层都需要标注。
 Skill invocations appear literally in the session log, so that level costs no
 annotation time and carries no tag error, and it therefore covers the
 developer's complete history rather than only its annotated portion:
@@ -678,12 +647,12 @@ However, 10 of 77 tasks fall below 0.7, so the measure matters when it matters.
 \emph{Setup.} To evaluate whether profiler output corresponds to independently annotated real problems, we apply three tests: (1) \emph{differential analysis} checks whether the profile's failure structure matches expert behavioral labels across 440 runs; (2) \emph{localization} checks whether adding profile scores to existing benchmark judges improves fault ranking; (3) \emph{reading study} checks whether semantic names help an agent reader reach the same ranking while opening less evidence.
 % 设置。为评估 profiler 输出是否对应独立标注的真实问题，我们用三个测试：(1) 差分分析检验 profile 的失败结构是否在 440 次运行上与专家行为标注一致；(2) 定位检验在既有 benchmark judge 上添加 profile 分数是否改善故障排序；(3) 阅读研究检验语义名称是否帮助 agent reader 在打开更少证据的情况下达到同等排序。
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
 \textbf{(a) Recovery focus}\\[-2pt]
-\includegraphics[width=.97\linewidth]{figures/agentreward-recovery-differential.operations.pdf}\\[2pt]
+\includegraphics[width=\columnwidth]{figures/agentreward-recovery-differential.operations.pdf}\\[2pt]
 \textbf{(b) Completion focus}\\[-2pt]
-\includegraphics[width=.97\linewidth]{figures/agentreward-completion-differential.operations.pdf}
+\includegraphics[width=\columnwidth]{figures/agentreward-completion-differential.operations.pdf}
 \caption{Stock-pprof differential flame graphs (bad minus good). Box width sums both contributions; inset shows net difference (rose: bad excess; green: good excess). Recovery dominates bad runs; completion favors good runs.}
 % 标准 pprof 差分火焰图（坏减好）。框宽为双方贡献之和；嵌入区显示净差（玫红：坏方多；绿：好方多）。恢复主导失败运行；完成偏向成功运行。
 \Description{Two stock-pprof differential flame graphs. The recovery panel is
@@ -691,7 +660,7 @@ dominated by rose bad-side growth beneath browser-task responsibilities. The
 completion panel has a green good-side excess through report-completion and
 send-message paths.}
 \label{fig:diff-flamegraph}
-\end{figure*}
+\end{figure}
 
 \paragraph{Use case 3: what do failing runs do differently?}
 % 用例 3：失败的运行到底做了什么不同？
