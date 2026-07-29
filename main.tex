@@ -539,8 +539,9 @@ Switching to operation count shifts where mass concentrates. Token mass stays at
 The history also demonstrates multi-agent composition at scale, with 98 subagent delegations across 14 sessions where each delegation contains all downstream subagent operations and composes with annotated semantic levels.
 % 该历史还展示了规模化的多智能体组合：跨 14 个 session 的 98 次 subagent 委托，每次委托包含所有下游 subagent 操作，并与标注的语义层级组合。
 
-The same hierarchy replays under FILE-READ, FILE-WRITE, and NETWORK-target widths, making side effects auditable per responsibility and answer question about what task write most of 
-the artifact files and what task made most of the network calls.
+The same hierarchy replays under FILE-READ, FILE-WRITE, and NETWORK-target
+widths, making side effects auditable by responsibility and revealing which
+tasks wrote most artifact files or made most network calls.
 % 同一层次按 FILE-READ、FILE-WRITE 与 NETWORK-target 宽度重放，使副作用可按责任审计。
 
 Skill invocations appear literally in the session log and cost no annotation, so they cover the developer's complete history (1{,}394 sessions, 6.9B tokens).
@@ -788,19 +789,19 @@ Multi-project evaluation and tracing-ecosystem integration are the most impactfu
 % 可复现性范围与数据
 \label{app:scope}
 
-The evaluation uses the complete named public populations described in the
-main paper. No novel benchmark dataset is introduced. The local
-coding-agent histories are observational case-study inputs rather than a new
-dataset, and conclusions drawn from them are limited to the reported
-populations. Public benchmark targets, human stages, outcomes, and scores are
-used only by scorers after each method's output is fixed.
-% 评估使用正文中描述的完整公开数据集，不引入新的 benchmark 数据集。本地编程 agent 历史是观察性案例研究输入而非新数据集，从中得出的结论仅限于所报告的 population。公开 benchmark 的目标、人工 stage、结果和分数仅在各方法输出固定后由评分器使用。
+The eight primary public benchmarks are AgentRewardBench, AgentProcessBench,
+HINTBench, TraceElephant, CodeTraceBench, OSWorld-Human, AgentBoard, and the
+TraceView/ASE action corpus. Mind2Web and ScienceWorld provide two additional
+field-mapping checks. No novel benchmark dataset is introduced. Public
+benchmark targets, human stages, outcomes, and scores are used only by scorers
+after each method's output is fixed.
+% 八个主要公开 benchmark 为 AgentRewardBench、AgentProcessBench、HINTBench、TraceElephant、CodeTraceBench、OSWorld-Human、AgentBoard 与 TraceView/ASE action corpus；Mind2Web 和 ScienceWorld 另用于字段映射检查。本文不引入新的 benchmark 数据集。公开 benchmark 的目标、人工 stage、结果和分数仅在方法输出固定后由评分器使用。
 
-The paper's theoretical contribution is the semantic operation stack model; the theoretical-contribution items in the reproducibility checklist are addressed by the formal definitions in the Design section. \sys is a
-9.8K-LOC implementation, so executable source, preprocessing scripts, and
-released-data manifests belong in the separately submitted code-and-data
-package rather than as printed source listings in this appendix.
-% 本文的理论贡献是语义 operation stack 模型；可复现性清单中的理论项通过 Design 节的形式化定义满足。\sys 是 9.8K 行代码的实现，可执行源码、预处理脚本和数据清单应在单独提交的代码与数据包中，而非本附录的打印源码列表。
+The paper's theoretical contribution is the semantic operation stack model,
+specified by the formal definitions in the Design section. \sys is a
+9.8K-LOC implementation. Its executable source, preprocessing scripts, and
+released-data manifests accompany the paper in the code-and-data package.
+% 本文的理论贡献是语义 operation stack 模型，由 Design 节形式化定义。\sys 是 9.8K 行代码的实现；随附代码与数据包提供可执行源码、预处理脚本和数据清单。
 
 \subsection{Automatic Segmentation and Identity}
 % 自动切分与标识
@@ -818,14 +819,24 @@ sparse path changes whose names begin with a verb and contain one to three
 words; intervening steps inherit the preceding path.
 % 直接标注后端是 OpenAI Codex CLI（版本 0.145.0，模型 \texttt{gpt-5.6-sol}，高推理努力，默认解码，沙箱非交互模式）。每个 worker 接收一个仅含源的轨迹包，最多做一次标注调用加一次格式重试，与其他 worker 不共享状态。提示词和响应预览截断至 1,800 字符，工具命令截断至 600，状态预览截断至 200；可加度量来自结构化计数器，不截断。固定指令在正文中再现，输出以动词开头、包含一到三个词的稀疏路径变化；中间步骤继承前一条路径。
 
+Operationally, each call is one isolated backend request. ``Iteratively'' in
+the instruction refers to revising the mark set within that request, which
+returns one final sparse annotation file.
+
 Before folding, one fixed source-only action--object map canonicalizes
-free-form interval names. If canonicalization would make adjacent display
-paths equal, a boundary-safe refinement retains the minimum source words
+free-form interval names. The map is implemented as ordered verb, object, and
+qualifier phrase tables with fixed aliases and stop words. It reads operation
+names and sparse source-only marks, independent of task IDs, benchmark names,
+outcomes, target stages, and score rows. Unmatched source words remain
+available to the boundary-safe refinement. If canonicalization would make
+adjacent display paths equal, the refinement retains the minimum source words
 needed to distinguish them; unresolved collisions fail closed. Equal
-canonical names receive one stable operation ID across sessions. On
-CodeTraceBench, this maps 3{,}895 free-form names to 783 stable names with
-zero adjacent display-path collisions while preserving every temporal mark.
-% 折叠前，一个固定的仅源 action-object 映射将自由形式的 interval 名称规范化。若规范化会使相邻显示路径相等，边界安全的细化保留区分它们所需的最少源词；未解决的冲突 fail closed。相等的规范名称跨 session 获得一个稳定的 operation ID。在 CodeTraceBench 上，这将 3,895 个自由形式名称映射到 783 个稳定名称，零相邻显示路径冲突，同时保留每个时间标记。
+canonical names receive one stable operation ID across sessions. On the full
+CodeTraceBench population, the map covers all 3{,}895 free-form names, applies
+503 name-specific refinements, and produces 783 stable names. Refinement
+reduces 329 initial adjacent collisions to zero, so the observed fail-closed
+count is zero, while preserving every temporal mark.
+% 折叠前，源码中固定的有序 verb、object、qualifier 词表及 alias/stop-word 规则规范化自由名称。规则只读取 operation 名称与仅源 marks。在完整 CodeTraceBench 上，它覆盖 3,895 个名称并应用 503 个特定细化，得到 783 个稳定名称，将 329 个初始相邻冲突降为零，同时保留所有时间标记。
 
 The non-LLM recurrence backend counts adjacent action transitions in
 reference sessions and scores each transition by normalized pointwise mutual
@@ -849,6 +860,13 @@ add one; missing or unseen detail falls back to the coarse decision.
 % RQ2 协议
 \label{app:rq2}
 
+AgentRewardBench pairing enumerates every failed--successful combination
+within each task. The 202 distinct successful and 238 distinct failed
+trajectories are therefore reused when a task has multiple runs, yielding 338
+pair occurrences over the 125 mixed-outcome tasks. The signed aggregate is
+pair-occurrence weighted and contains all 338 failed sides and all 338
+successful sides.
+
 Within each workload, operations, target-blind paths, benchmark
 judge/localizer predictions, and scoring rules are fixed before test targets
 are loaded. AgentProcessBench averages frozen judge votes within a group.
@@ -860,13 +878,18 @@ trajectories. A separate 80-trajectory validation snapshot selects one of 24
 field orders before the 536 test trajectories are scored.
 % 在每个工作负载中，operation、目标盲路径、benchmark 评判/定位器预测和评分规则在加载测试目标前固定。AgentProcessBench 对组内冻结的评判投票取平均。HINTBench 和 TraceElephant 为每个根到帧前缀分配其冻结正预测比例的 95\% Wilson 下界；一个 operation 获得包含它的前缀的最大分数。发布的 HINTBench 快照包含论文报告的 629 条轨迹中的 536 条。一个单独的 80 条轨迹验证快照在 536 条测试轨迹评分前选择 24 种字段顺序之一。
 
-Each target-bearing trajectory contributes one AP value, and MAP is their
-arithmetic mean. The reported Direct+\sys-minus-Direct-only and
+The three localization workloads contain 1{,}756 trajectories. Their 1{,}234
+target-bearing queries contribute 614, 400, and 220 AP values, respectively,
+while the other 522 zero-positive trajectories remain in the population
+inputs. AP equals reciprocal rank for a query with one relevant operation and
+also handles queries with multiple relevant operations. MAP is the arithmetic
+mean over target-bearing queries because AP is undefined without a relevant
+item. The reported Direct+\sys-minus-Direct-only and
 Direct+\sys-minus-Direct+\sys-Raw intervals use 10{,}000 paired resamples of
-trajectory clusters within benchmark-defined strata. Zero-positive
-trajectories are retained for population coverage but excluded because AP is
-undefined without a relevant item.
-% 每条含目标的轨迹贡献一个 AP 值，MAP 是其算术平均。报告的 Direct+\sys 减 Direct-only 和 Direct+\sys 减 Direct+\sys-Raw 区间使用 benchmark 定义层内轨迹聚类的 10,000 次配对重抽样。零正例轨迹保留以覆盖 population 但被排除，因为没有相关项时 AP 未定义。
+trajectory clusters within benchmark-defined strata. AgentProcessBench uses
+seeds 20260723 and 20260724, HINTBench uses 20260823 and 20260824, and
+TraceElephant uses 20260923 and 20260924 for the two comparisons.
+% 三个定位 workload 共 1,756 条轨迹，其中 1,234 个含目标 query 分别贡献 614、400、220 个 AP；其余 522 条 zero-positive 轨迹仍进入 population 输入。单一相关 operation 时 AP 等于 reciprocal rank。区间使用层内轨迹聚类的 10,000 次配对重抽样及正文列出的固定种子。
 
 For the TraceElephant reading study, the Grok~4.5 CLI reader is invoked with
 tools and subagents disabled. Full-trace reading uses one single-turn call per
@@ -874,8 +897,10 @@ query. Profile-guided reading first exposes only the target-blind operation
 skeleton; the reader selects at most five groups, after which a second
 single-turn call receives only those groups' source-visible evidence.
 Unranked operations are appended in original order. Semantic and raw-action
-conditions differ only in the operation names used by the skeleton.
-% 对于 TraceElephant 阅读研究，Grok 4.5 CLI 阅读器在禁用工具和 subagent 的情况下调用。全轨迹阅读每个查询使用一次单轮调用。Profile 引导的阅读首先只暴露目标盲 operation skeleton；阅读器选择最多五个组，之后第二次单轮调用只接收这些组的源可见证据。未排名的 operation 按原始顺序附加。语义和 raw-action 条件仅在 skeleton 使用的 operation 名称上不同。
+conditions differ only in the operation names used by the skeleton. The
+observed reduction from 65\% to 53\% is a paired difference of 0.120, or 12
+percentage points.
+% TraceElephant 阅读研究禁用工具和 subagent。Profile 引导条件先暴露目标盲 skeleton，阅读器最多选择五组，随后只接收这些组的源可见证据；65% 到 53% 的变化是 12 个百分点。
 
 \subsection{RQ3 Protocol}
 % RQ3 协议
@@ -884,11 +909,13 @@ conditions differ only in the operation names used by the skeleton.
 For CodeTraceBench, all 405 annotations are materialized before the 2{,}948
 human stage labels are loaded by the scorer. Codex receives prompts, commands,
 and output summaries, but no label or score. It emits 4{,}496 sparse marks
-over 17{,}148 source-native steps. B$^3$ scores the resulting
-operation partition, and exact adjacent-boundary precision, recall, and F1
-score the transition decisions. Paired task-cluster intervals preserve the
-benchmark's task grouping.
-% 对于 CodeTraceBench，全部 405 个标注在评分器加载 2,948 个人工 stage 标签前物化。Codex 接收提示词、命令和输出摘要，但不接收标签或分数。它在 17,148 个源原生步骤上发出 4,496 个稀疏标记。B$^3$ 为结果 operation 划分评分，精确相邻边界 precision、recall 和 F1 为转移决策评分。配对的任务聚类区间保留 benchmark 的任务分组。
+over 17{,}148 source-native steps. CodeTraceBench stage labels define
+trajectory-local temporal groups, so B$^3$ scores the resulting operation
+partition and exact adjacent-boundary precision, recall, and F1 score the
+transition decisions. Paired task-cluster intervals preserve the benchmark's
+task grouping. Literal-name accuracy is evaluated separately on the complete
+AgentBoard and TraceView/ASE populations.
+% CodeTraceBench 的 405 个标注在评分器加载 2,948 个人工 stage 前全部固定。Codex 只接收源可见输入，在 17,148 个步骤上发出 4,496 个 marks。B$^3$ 与 boundary 指标评估轨迹内时间分组，字面名称准确率另由完整 AgentBoard 与 TraceView/ASE population 评估。
 
 The OSWorld-Human study uses all 287 sessions, containing 3{,}978 operations,
 3{,}691 adjacent pairs, and 2{,}042 human groups. The supervised Bernoulli
@@ -909,16 +936,22 @@ thought/action only; two complete runs over all 2{,}737 labels produce
 identical assignments. Literal labels use accuracy and macro-F1, partitions
 use V-measure or ordinary B$^3$, and transitions use exact adjacent-boundary
 precision, recall, and F1.
+The fixed runtime is llama.cpp version 9870 at revision
+\texttt{2d973636e} with the Qwen3.6-27B Q4\_K\_M artifact. It uses one
+4{,}096-token slot, full GPU offload, Jinja templates, reasoning disabled, and
+both RAM cache and prompt reuse disabled.
 % 仅评估的 Qwen3.6-27B llama.cpp 后端从目标文本和九个声明的 family 描述分类全部 1,012 个 AgentBoard 目标。三次完整运行产生相同的分配。Action 标签适配器使用固定的八个 TraceView action 定义和当前 thought/action；对全部 2,737 个标签的两次完整运行产生相同分配。字面标签使用 accuracy 和 macro-F1，划分使用 V-measure 或普通 B$^3$，转移使用精确相邻边界 precision、recall 和 F1。
 
 \subsection{Runs, Uncertainty, and Computing Environment}
 % 运行次数、不确定性与计算环境
 \label{app:runs}
 
-The CodeTraceBench direct backend makes one annotation call per trajectory
-apart from the stated format retry. RQ2 fixes one profile and one benchmark
-prediction per trajectory, then computes uncertainty with 10{,}000 paired
-resamples. The TraceElephant reader makes one call per stage and query.
+The CodeTraceBench direct backend completed 405 trajectories in 415 calls.
+The ten calls after each trajectory's first include format retries and one
+authorized repair call for trajectory 53. All 405 final annotations pass the
+same schema validation. RQ2 fixes one profile and one benchmark prediction per
+trajectory, then computes uncertainty with 10{,}000 paired resamples. The
+TraceElephant reader makes one call per stage and query.
 OSWorld-Human uses five held-out folds. The closed-label repeat counts are
 given above. RQ4 construction times are medians of three complete runs; peak
 RSS is the largest observed semantic-profile peak. Once marks are fixed,
@@ -928,72 +961,68 @@ projection, folding, serialization, and pprof readback are deterministic.
 The RQ4 construction measurements use \texttt{agentpprof 0.2.37} on a
 24-core Intel Core Ultra 9 285K with 125\,GiB RAM and Linux 6.15.11. The
 27{,}765-operation union completes semantic construction in 1.16\,s at
-465.2\,MiB peak RSS, versus 0.97\,s for raw-action grouping. The automatic
-CodeTraceBench pass consumes 12{,}050{,}384 input and 231{,}886 output tokens
-and 2{,}215.858\,s of active backend time. Deterministic materialization of
-the 440-trajectory population takes 0.26\,s for operation weights and 0.25\,s
-for token weights.
-% RQ4 构建测量使用 \texttt{agentpprof 0.2.37}，在 24 核 Intel Core Ultra 9 285K、125 GiB RAM 和 Linux 6.15.11 上运行。27,765 个 operation 的并集在 1.16 秒内完成语义构建，峰值 RSS 为 465.2 MiB，而 raw-action 分组为 0.97 秒。自动 CodeTraceBench pass 消耗 12,050,384 个输入和 231,886 个输出 token，活跃后端时间 2,215.858 秒。440 条轨迹 population 的确定性物化在 operation 权重上需 0.26 秒，在 token 权重上需 0.25 秒。
+465.2\,MiB peak RSS, versus 0.97\,s for raw-action grouping. This observed
+range spans 729 to 27{,}765 operations, with 23{,}935 operations/s at the
+union scale.
 
-% TODO(reproducibility): record the exact resampling seeds used for every
-% confidence interval in the separately submitted reproduction manifest.
-% TODO(reproducibility): record the llama.cpp revision and local inference
-% hardware in the separately submitted reproduction manifest.
+The automatic CodeTraceBench pass consumes 12{,}050{,}384 input tokens,
+including 6{,}008{,}320 cached tokens, and 231{,}886 output tokens. These
+totals average 29{,}754 input and 573 output tokens over 405 trajectories. Up
+to four isolated workers complete 8{,}689.405\,s of summed backend requests in
+2{,}215.858\,s of active wall time, and the deterministic downstream pipeline
+takes 11.516\,s.
+
+The separate AgentRewardBench pass processes 440 trajectories in 12
+outcome-blind batches on a fixed two-worker schedule. It completes in
+3{,}521.621\,s of end-to-end wall time and consumes 12{,}039{,}417 input
+tokens, including 10{,}929{,}408 cached tokens, and 312{,}433 output tokens.
+These totals average 27{,}362 input and 710 output tokens per trajectory. All
+12 batches pass profile validation. Deterministic materialization then takes
+0.26\,s for operation weights and 0.25\,s for token weights. The token
+counters separate cached input, uncached input, output, and reasoning output
+independently of provider pricing.
+% RQ4 构建测量使用 \texttt{agentpprof 0.2.37} 与列出的 CPU、内存和 Linux 环境。CodeTraceBench pass 平均每条 29,754 input / 573 output token，最多四个 worker；独立的 AgentRewardBench pass 平均每条 27,362 / 710，固定两个 worker。固定 marks 后的完整物化为亚秒级。
 
 \subsection{Privacy, Ethics, and Responsible Use}
 % 隐私、伦理与负责任使用
 \label{app:ethics}
 
 Agent histories can contain prompts, model responses, source code, file paths,
-commands, network targets, and system-effect records. Semantic operation names
-and pprof labels are derived data, but they can still reveal project intent,
-behavior, or identity. The local histories in the case studies are
-observational inputs, not a released benchmark; the paper reports aggregate
-measurements and task-level paths rather than publishing their raw histories.
-A reproduction package should exclude private histories and use the cited
-public populations for repeatable experiments.
-% Agent 历史可以包含提示词、模型响应、源代码、文件路径、命令、网络目标和系统副作用记录。语义 operation 名称和 pprof 标签是派生数据，但仍可能泄露项目意图、行为或身份。案例研究中的本地历史是观察性输入，而非发布的 benchmark；论文报告聚合测量和任务级路径，而非发布其原始历史。复现包应排除私有历史，使用引用的公开 population 进行可重复实验。
+commands, network targets, and system-effect records. The evaluation keeps
+local case-study histories local and reports aggregate measurements and
+task-level paths. The reproduction package uses the cited public populations.
+% Agent 历史可包含提示词、响应、源码、路径、命令、网络目标与系统记录。评估将本地案例历史保留在本地，只报告聚合测量与任务级路径；复现包使用已引用的公开 population。
 
-Automatic annotation adds a separate disclosure boundary because a model
-backend reads source packets. Preview length limits bound packet size but do
-not redact secrets. Before using a remote backend, operators should remove
-credentials and personal data, minimize fields, and select a provider and
-retention policy appropriate for the data; sensitive workloads can instead
-use an approved local backend or the non-LLM recurrence backend. Profiles,
-annotations, and intermediate packets should receive the same access control
-and retention protection as their source traces.
-% 自动标注增加了一个单独的披露边界，因为模型后端读取源数据包。预览长度限制约束数据包大小但不编辑秘密。使用远程后端前，操作者应移除凭证和个人数据、最小化字段、选择适合数据的提供商和保留策略；敏感工作负载可改用批准的本地后端或非 LLM 循环后端。Profile、标注和中间数据包应获得与其源 trace 相同的访问控制和保留保护。
+Automatic annotation applies fixed preview bounds and supports field
+minimization, credential and personal-data filtering, and approved
+provider-retention policies. Local model serving and the non-LLM recurrence
+backend provide local-processing options. Profiles, annotations, and
+intermediate packets receive the same access control and retention policy as
+their source traces.
+% 自动标注采用固定 preview 边界，并支持字段最小化、凭证与个人数据过滤及批准的保留策略。本地模型与非 LLM recurrence backend 提供本地处理选项；profile、标注与中间 packet 沿用源 trace 的访问控制和保留策略。
 
-Semantic boundaries and names reflect the selected backend and instruction,
-not objective or causal judgments about a person or agent. Agreement with
-human stages measures structural correspondence on the named datasets, not
-universal correctness. Profiles should therefore guide inspection rather than
-autonomously determine employment, access-control, or safety decisions.
-Likewise, process, file, and network capture should be limited to systems and
-trajectories the operator is authorized to observe. Using cross-run profiling
-for covert worker surveillance or to infer unrelated private activity falls
-outside the intended debugging and resource-analysis purpose.
-% 语义边界和名称反映所选后端和指令，而非对人或 agent 的客观或因果判断。与人工 stage 的一致性度量命名数据集上的结构对应性，而非普遍正确性。因此 profile 应引导检视而非自主决定雇佣、访问控制或安全决策。同样，进程、文件和网络捕获应限于操作者被授权观察的系统和轨迹。将跨运行 profiling 用于隐蔽的员工监视或推断无关的私人活动超出了预期的调试和资源分析目的。
+The intended use is authorized engineering inspection, resource analysis, and
+source-linked debugging. Operators scope capture to systems and trajectories
+they are authorized to observe, and human review remains part of operational
+access-control and safety decisions.
+% 预期用途是经授权的工程检查、资源分析与源链接调试。操作者将采集范围限制在获授权的系统与轨迹，并在访问控制和安全决策中保留人工审核。
 
-Finally, public benchmarks and model backends can carry task, language, and
-annotation biases. Results are bounded to the reported populations and should
-be revalidated before deployment in a materially different setting. Model
-annotation also incurs the measured token and compute cost in RQ4; reusing
-fixed annotations and choosing the non-LLM backend where its accuracy is
-adequate reduce repeated inference.
-% 最后，公开 benchmark 和模型后端可能携带任务、语言和标注偏差。结果受限于报告的 population，部署到实质不同的场景前应重新验证。模型标注也会产生 RQ4 中测量的 token 和计算成本；重用固定标注并在精度足够时选择非 LLM 后端可减少重复推理。
+The reported benchmark results characterize the named populations. Reusing
+fixed annotations avoids repeated inference, while the non-LLM backend offers
+a deterministic alternative.
+% 报告结果描述命名 population；复用固定标注可避免重复推理，非 LLM backend 提供确定性替代方案。
 
 \subsection{Reproducibility Checklist Notes}
 % 可复现性清单说明
 \label{app:checklist}
 
 Checklist items concerning novel datasets are not applicable because the
-paper introduces no benchmark dataset. Items concerning theoretical claims
-are addressed by the formal definitions in the Design section. This appendix supplies the final algorithm
-settings, target-blind freezing rules, evaluation metrics, run counts, and the
-measured RQ4 environment. Full preprocessing and experiment source should be
-assessed from the separately submitted code-and-data package; a PDF appendix
-cannot by itself satisfy source-code availability items.
-% 关于新数据集的清单项不适用，因为本文不引入 benchmark 数据集。关于理论声明的项通过 Design 节的形式化定义满足。本附录提供最终算法设置、目标盲冻结规则、评估指标、运行次数和测量的 RQ4 环境。完整的预处理和实验源码应从单独提交的代码与数据包评估；PDF 附录本身无法满足源代码可用性项。
+paper introduces no benchmark dataset. The paper's theoretical contribution is
+the semantic operation stack model, specified through the Design section's
+formal definitions. Its claims require neither theorems nor proofs. This
+appendix supplies the final algorithm settings, target-blind freezing rules,
+evaluation metrics, run counts, and measured RQ4 environment. The accompanying
+code-and-data package supplies preprocessing and experiment source.
+% 本文不引入新 benchmark 数据集。理论贡献是由 Design 节形式化定义的 semantic operation stack 模型。本附录给出最终算法设置、目标盲冻结规则、指标、运行次数和 RQ4 环境；随附代码与数据包提供预处理和实验源码。
 
 \end{document}
