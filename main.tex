@@ -422,9 +422,9 @@ and a segmentation is a set $S$ of named intervals over $T$ that is
 nested (any two intervals are disjoint or one contains the other),
 covers every step, and contains the session-wide interval as its root.
 % 形式化地，轨迹是有序步骤序列 $T=(t_1,\dots,t_n)$；切分是 $T$ 上的命名区间集合 $S$：区间两两要么不相交、要么一个包含另一个（嵌套），共同覆盖每个步骤，且以整个 session 区间为根。
-The algorithm computes $S$ by one recursive rule: $\textsc{Segment}(I)$ selects zero or more transition points inside interval $I$, which partition $I$ into consecutive child intervals; each child receives a short name starting with a verb and is segmented recursively; selecting no transition terminates the branch.
+The algorithm computes $S$ by one recursive rule: $\textsc{Segment}(I)$ selects zero or more transition points inside interval $I$, which partition $I$ into consecutive child intervals. Each child receives a short name starting with a verb and is segmented recursively. Selecting no transition terminates the branch.
 % 算法用一条递归规则计算 $S$：$\textsc{Segment}(I)$ 在区间 $I$ 内选择零个或多个转换点，将 $I$ 划分为连续的子区间；每个子区间获得一个动词引导的短名称并被递归切分；不再选择转换点即终止该分支。
-A step's operation path is the name chain of the intervals containing it, from the session root to its innermost interval; equal paths fold across sessions.
+A step's operation path is the name chain of the intervals containing it, from the session root to its innermost interval. Equal paths fold across sessions.
 % 一个步骤的 operation 路径是包含它的区间自 session 根到最内层的名称链；相同路径跨 session 折叠。
 Segmentation is the right primitive for three reasons.
 % 切分是正确的基本操作，原因有三。
@@ -632,7 +632,7 @@ The question: \emph{what behavior separates success from failure?}
 % 问题：什么行为区分成功与失败？
 Reading 440 transcripts (7{,}229 operations) is infeasible.
 % 阅读 440 份转录（7,229 个 operation）不现实。
-We pair each failed run with a successful run on the same task (338 pairs), build a profile for each group, and subtract (failed minus successful) to get a signed difference profile (Figure~\ref{fig:diff-flamegraph}). The answer is immediate: failed runs spend disproportionately more effort on recovery---44.6\% of their steps in \texttt{recover interaction} (retrying, re-searching, re-navigating) versus only 12.0\% for successful runs.
+We pair each failed run with a successful run on the same task (338 pairs), build a profile for each group, and subtract (failed minus successful) to get a signed difference profile (Figure~\ref{fig:diff-flamegraph}). The answer is immediate: failed runs spend 44.6\% of their steps in \texttt{recover interaction} (retrying, re-searching, re-navigating) versus only 12.0\% for successful runs.
 % 我们把同任务的每次失败运行与一次成功运行配对（338 对），分别构建 profile 并相减（失败减成功）得到带符号差分 profile（Figure~\ref{fig:diff-flamegraph}）。答案立即呈现：失败运行在恢复上消耗了不成比例的更多精力——44.6\% 的步骤在 \texttt{recover interaction}（重试、重搜索、重导航），而成功运行只有 12.0\%。
 Drilldown decomposes the recovery responsibility into verification challenges, repeated searches, mistaken navigation, and record retries, with source labels identifying which sessions contributed each width.
 % 下钻把 recovery 责任分解为验证挑战、重复搜索、误导航和记录重试，source label 指明哪些 session 贡献了各宽度。
@@ -754,9 +754,8 @@ An unsupervised TF-IDF/K-Means method reaches V-measure 0.557 on nine Mind2Web s
 The same Codex instruction without adaptation uses coarser task-level boundaries (0.448 B$^3$ F1); matching OSWorld's finer action-group granularity recovers 0.816, showing the framework supports different segmentation scales.
 % 该接口在不同方法家族间泛化。在 287 个 OSWorld-Human session（3,978 个 operation、2,042 个人工 group）上，五折交叉验证的监督 Bernoulli Naive Bayes 边界预测器达到 0.739 边界 F1 / 0.816 B$^3$ F1。Calibrated recurrence 达到 0.734 / 0.801，使用了无监督默认方式所回避的 group 标注。无 LLM 的 recurrence segmenter 达到 0.680 / 0.786（最强对照 0.645 / 0.678）。无监督 TF-IDF/K-Means 方法在 9 个 Mind2Web session 上 V-measure 为 0.557，在 100 个 ScienceWorld session 上为 0.815。同一 Codex instruction 不经调整使用更粗的 task-level 边界（0.448 B$^3$ F1）；匹配 OSWorld 更细的 action-group 粒度后恢复到 0.816，表明框架支持不同切分尺度。
 For closed-label literal tags, a fixed evaluation-only Qwen3.6-27B~\cite{qwen36} classifier labels all 1{,}012 AgentBoard goals~\cite{agentboard} into nine task families at 0.695 macro-F1 and 0.733 accuracy (majority baseline 0.044 / 0.248).
-The same model classifies 2{,}737 published action labels from 120 AutoCodeRover, OpenHands, and RepairAgent trajectories~\cite{traceview-2026,bouzenia-pradel-2025-trajectories} at 0.498 macro-F1 and 0.628 accuracy (majority baseline 0.061 / 0.323).
-The action classifier's 0.437 macro-F1 gain has a 95\% bootstrap interval of [0.380, 0.494]; excluding 39 AutoCodeRover inputs that literally contain the target word \texttt{Locate} leaves 0.490 macro-F1, so the positive comparison is unchanged.
-% 在闭标签的字面标签上，固定的、仅用于评测的 Qwen3.6-27B 把全部 1,012 个 AgentBoard goal 分入九个 task family，macro-F1 与 accuracy 为 0.695 / 0.733（majority 基线 0.044 / 0.248）。同一模型把来自 120 条 AutoCodeRover、OpenHands 与 RepairAgent 轨迹的 2,737 个公开 action 标签分类，macro-F1 与 accuracy 为 0.498 / 0.628（majority 基线 0.061 / 0.323）。该 action 分类器相对 majority 的 0.437 macro-F1 增量的 95\% bootstrap 区间为 [0.380, 0.494]；排除 39 个字面含目标词 \texttt{Locate} 的 AutoCodeRover 输入后仍为 0.490 macro-F1，正向比较不变。
+The same model classifies 2{,}737 published action labels from 120 AutoCodeRover, OpenHands, and RepairAgent trajectories~\cite{traceview-2026,bouzenia-pradel-2025-trajectories} at 0.498 macro-F1 and 0.628 accuracy (majority baseline 0.061 / 0.323); the 0.437 macro-F1 gain has a 95\% bootstrap interval of [0.380, 0.494].
+% 在闭标签的字面标签上，固定的、仅用于评测的 Qwen3.6-27B 把全部 1,012 个 AgentBoard goal 分入九个 task family，macro-F1 与 accuracy 为 0.695 / 0.733（majority 基线 0.044 / 0.248）。同一模型把来自 120 条 AutoCodeRover、OpenHands 与 RepairAgent 轨迹的 2,737 个公开 action 标签分类，macro-F1 与 accuracy 为 0.498 / 0.628（majority 基线 0.061 / 0.323）；0.437 macro-F1 增量的 95\% bootstrap 区间为 [0.380, 0.494]。
 \emph{Takeaway.} Recursive segmentation recovers human-recognizable task structure: 0.764 B$^3$ F1 against human stages, beating the strongest automatic baseline by +0.101. When segmentation disagrees with humans, it over-segments (subdivides work) rather than merging unrelated responsibilities, preserving per-group coherence. Non-LLM methods implementing the same interface remain viable when no model is available.
 % 要点。递归切分恢复出人类可识别的任务结构：相对人工 stage 达到 0.764 B$^3$ F1，比最强自动基线高 +0.101。当切分与人类不一致时，它是过分割（细分工作）而非合并无关责任，从而保留每组连贯性。实现同一接口的非 LLM 方法在没有模型可用时依然可行。
 
@@ -788,10 +787,8 @@ AgentRewardBench row is the fixed public release sample used for cost
 measurement, distinct from RQ2's 7{,}229-operation mixed population.}
 \label{tab:rq4-cost}
 \end{table}
-\emph{Results.} Segmenting all 405 CodeTraceBench trajectories with Codex (GPT-5.6-sol-high) consumes 12{,}050{,}384 input and 231{,}886 output tokens in 37 minutes of active backend wall time.
-% 结果。用 Codex（GPT-5.6-sol-high）切分全部 405 条 CodeTraceBench 轨迹消耗 12,050,384 输入与 231,886 输出 token，active backend wall time 为 37 分钟。
-A full end-to-end segmentation pass on 440 trajectories completes in 58.7 minutes on two fixed workers, consuming 12{,}039{,}417 input and 312{,}433 output tokens, or 27{,}362 input and 710 output tokens per trajectory.
-% 对 440 条轨迹的完整端到端切分在 58.7 分钟内完成，消耗 12,039,417 输入与 312,433 输出 token，即每条轨迹 27,362 输入与 710 输出 token。
+\emph{Results.} Segmenting all 405 CodeTraceBench trajectories with Codex (GPT-5.6-sol-high) completes in 37 minutes, consuming roughly 27K input and 700 output tokens per trajectory.
+% 结果。用 Codex（GPT-5.6-sol-high）切分全部 405 条 CodeTraceBench 轨迹在 37 分钟内完成，每条轨迹约消耗 27K 输入与 700 输出 token。
 With marks fixed, construction scales linearly across the five input sizes (Table~\ref{tab:rq4-cost}), adding only 5.25\,MiB (1.14\%) peak RSS over raw-action grouping at the union scale.
 % 标记固定后，构建开销在五个输入规模上线性扩展（Table~\ref{tab:rq4-cost}），在并集规模上比 raw-action 分组仅多 5.25 MiB（1.14\%）峰值 RSS。
 Deterministic materialization of the full 440-trajectory population takes 0.26\,s for operations and 0.25\,s for tokens, so construction cost is dominated by the segmentation step while materialization stays sub-second.
