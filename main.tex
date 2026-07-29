@@ -96,13 +96,8 @@ On real trajectories and public datasets, our evaluation shows that semantic pro
 \includegraphics[width=\columnwidth]{figures/git-authentication.tokens.png}
 \caption{One renderer, four standard pprof profiles.
 \emph{(a)} CPU time in a Go HTTP service.
-\emph{(b, c)} Three agent executions of one Git-deployment task under one
-fixed operation hierarchy: width is operation count in (b) and tokens in (c).
-The hierarchy is identical in both; only the measure changes.
-\emph{(d)} The same token profile focused on the shared \texttt{diagnose
-authentication} responsibility.
-Every panel is read the same way: width is aggregate cost, a parent contains
-its children, and identical stacks fold.}
+\emph{(b, c)} Three agent executions under one fixed hierarchy: width is operation count (b) or tokens (c).
+\emph{(d)} Token profile focused on \texttt{diagnose authentication}.}
 \Description{Four flame graphs in one visual style. The first descends from a
 Go HTTP server's connection handler into request handling, ranking, parsing,
 and hashing. The second and third show the same agent hierarchy weighted by
@@ -438,12 +433,7 @@ Four built-in views cover common questions: \texttt{tokens} (LLM calls weighted 
 \begin{figure}[t]
 \centering
 \resizebox{\linewidth}{!}{\input{figures/fig-architecture.tex}}
-\caption{Data-flow and algorithm pipeline. Local agent histories enter
-through \texttt{agent-session} parsing; public datasets enter as
-operation JSONL. Both paths produce uniform operations. Recursive
-operation segmentation, projection, and folding are algorithms
-(segmentation runs once per trajectory; projection and folding run at
-query time) applied identically to both sources.}
+\caption{Data-flow pipeline. Local histories and public datasets both produce uniform operations; segmentation runs once, projection and folding at query time.}
 \Description{Data-flow diagram from agent trajectories through parsing,
 operation segmentation, and projection to folded-stack output.}
 \label{fig:architecture}
@@ -555,10 +545,7 @@ one-dimensional $k$-means ($k=2$)~\cite{macqueen1967}; it reads only action sequ
 % 评估
 \label{sec:eval}
 
-The evaluation asks whether semantic profiling improves resource attribution (RQ1), whether profiler output corresponds to real problems (RQ2), how accurate the tags are (RQ3), and what the profiling costs (RQ4).
-% 评估问：语义 profiling 是否改善资源归因（RQ1），profiler 输出是否对应真实问题（RQ2），标签有多准确（RQ3），以及 profiling 成本多少（RQ4）。
-
-We evaluate three data classes.
+We evaluate on three data classes.
 % 我们评估三类数据。
 \emph{Real inputs}: 41 long-horizon coding-agent sessions (three of which
 repeat one Git-deployment task and form the RQ1 case), 440 mixed
@@ -607,9 +594,9 @@ Here we add a third measure: elapsed time.
 % 这里我们增加第三种度量：elapsed time。
 The same hierarchy replays under all three measures with exact conservation, and the \texttt{diagnose authentication} subtree's share rises from 21\% (count) through 37\% (time) to 46\% (tokens). Changing only the measure moves the attributed share by more than a factor of two.
 % 同一层次在三种度量下精确守恒地重放，\texttt{diagnose authentication} 子树的份额从 21\%（count）经 37\%（time）升至 46\%（token）。仅改变度量就使归因份额变化超过两倍。
-A quantitative control shows why alternative organizations fail: of 105 authentication operations, 102 carry only the raw-action label \texttt{run}, and that same \texttt{run} bucket mixes in 97 unrelated operations; coarse action-kind scatters the work across six categories (execute 39\%, version-control 22\%, edit 19\%, inspect 12\%, search 7\%, install 1\%); native call trees place each operation under a distinct source call with no shared responsibility node.
+A quantitative control shows why both alternatives fail: of 105 authentication operations, 102 carry only the raw-action label \texttt{run}, and that same \texttt{run} bucket mixes in 97 unrelated operations; a coarser action-kind grouping (mapping raw actions to semantic categories like execute, version-control, edit) scatters the work across six categories (execute 39\%, version-control 22\%, edit 19\%, inspect 12\%, search 7\%, install 1\%); native call trees place each operation under a distinct source call with no shared responsibility node.
 Only the semantic hierarchy reunites authentication into one focusable cross-run path while preserving all call/tool evidence as drilldown leaves.
-% 定量对照显示为什么其他组织方式失败：105 个认证 operation 中 102 个只带 raw-action 标签 \texttt{run}，而同一个 \texttt{run} bucket 还混入 97 个无关 operation；coarse action-kind 把工作散落到六个类别（execute 39\%、version-control 22\%、edit 19\%、inspect 12\%、search 7\%、install 1\%）；native call tree 把每个 operation 放在不同 source call 下，没有共享责任节点。只有语义层次将认证重聚为一条可聚焦的跨运行路径，同时保留所有 call/tool 证据作为下钻叶。
+% 定量对照显示为什么两种替代方式都失败：105 个认证 operation 中 102 个只带 raw-action 标签 \texttt{run}，而同一个 \texttt{run} bucket 还混入 97 个无关 operation；更粗的 action-kind 分组（将 raw action 映射为 execute、version-control、edit 等语义类别）把工作散落到六个类别（execute 39\%、version-control 22\%、edit 19\%、inspect 12\%、search 7\%、install 1\%）；native call tree 把每个 operation 放在不同 source call 下，没有共享责任节点。只有语义层次将认证重聚为一条可聚焦的跨运行路径，同时保留所有 call/tool 证据作为下钻叶。
 Separately, real AgentSight~\cite{agentsight} eBPF recordings replay the
 same way: all 1{,}520 captured process spawns and file operations fold
 under task responsibilities with exact conservation, demonstrating the system-effect layer end to end.
@@ -703,14 +690,7 @@ We answer with three tests: (1) \emph{differential analysis} checks whether the 
 \centering
 \includegraphics[width=\linewidth]{figures/agentreward-recovery-bad-excess.operations.png}\\[1pt]
 \includegraphics[width=\linewidth]{figures/agentreward-completion-good-excess.operations.png}
-\caption{One signed profile over all 338 bad--good pairs, read from both
-sides. The signed profile is the difference of two nonnegative profiles,
-bad minus good, which stock pprof renders as positive and negative sample
-values. \emph{Top:} positive samples under \texttt{recover interaction},
-3{,}286 bad-side versus 455 good-side occurrences. \emph{Bottom:} negative
-samples under \texttt{report completion}, 135 bad-side versus 191 good-side
-occurrences. These are aggregate diagnostic differences, not causal
-effects.}
+\caption{Signed difference profile (bad minus good) over 338 pairs. \emph{Top:} \texttt{recover interaction} dominates bad runs (3,286 vs 455). \emph{Bottom:} \texttt{report completion} favors good runs (191 vs 135).}
 \Description{Two flame graphs of a signed difference profile. The upper
 graph descends from browser-task responsibilities into recovery work and
 specific retry, search, and inspection operations. The lower graph descends
@@ -726,8 +706,8 @@ The question: \emph{what behavior separates success from failure?}
 % 问题：什么行为区分成功与失败？
 Reading 440 transcripts (7{,}229 operations) is infeasible.
 % 阅读 440 份转录（7,229 个 operation）不现实。
-A signed difference profile over the 338 bad--good pairs the tasks induce (bad minus good, Figure~\ref{fig:diff-flamegraph}) shows the answer directly: failed runs spend 44.6\% of their steps in \texttt{recover interaction} (retrying, re-searching, re-navigating) versus only 12.0\% for successful runs.
-% 对任务导出的 338 个 bad--good pair 构建带符号差分 profile（bad 减 good，Figure~\ref{fig:diff-flamegraph}）直接呈现答案：失败运行花 44.6\% 的步骤在 \texttt{recover interaction}（重试、重搜索、重导航），而成功运行只有 12.0\%。
+We pair each failed run with a successful run on the same task (338 pairs), build a profile for each group, and subtract (failed minus successful) to get a signed difference profile (Figure~\ref{fig:diff-flamegraph}). The answer is immediate: failed runs spend 44.6\% of their steps in \texttt{recover interaction} (retrying, re-searching, re-navigating) versus only 12.0\% for successful runs.
+% 我们把同任务的每次失败运行与一次成功运行配对（338 对），分别构建 profile 并相减（失败减成功）得到带符号差分 profile（Figure~\ref{fig:diff-flamegraph}）。答案立即呈现：失败运行花 44.6\% 的步骤在 \texttt{recover interaction}（重试、重搜索、重导航），而成功运行只有 12.0\%。
 Drilldown decomposes the recovery responsibility into verification challenges, repeated searches, mistaken navigation, and record retries, with source labels identifying which sessions contributed each width.
 % 下钻把 recovery 责任分解为验证挑战、重复搜索、误导航和记录重试，source label 指明哪些 session 贡献了各宽度。
 The insight: failing agents get stuck in retry loops rather than backing out and trying a different approach.
@@ -783,13 +763,7 @@ marks each workload's best methods. Higher is better.}
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig-rq2-deltas.pdf}
-\caption{Paired MAP differences over the complete RQ2 populations, with 95\%
-intervals from 10{,}000 trajectory-cluster resamples.
-Adding the profile to each benchmark's own judge improves
-ranking on all three workloads (left bars, intervals entirely above zero),
-whereas the semantic prefix and the raw-action ablation
-are indistinguishable (right bars, intervals spanning zero). Grouping plus
-retained evidence drives the ranking gain; semantic names improve evidence efficiency in the reading study below.}
+\caption{Paired MAP differences with 95\% intervals (10,000 resamples). Left: profile improves all three benchmarks (intervals above zero). Right: semantic vs raw-action ablation indistinguishable (intervals span zero).}
 \Description{A grouped bar chart of MAP differences on three workloads. The
 bars comparing the profile-refined ranking against the benchmark judge are
 positive on all three workloads with error bars above zero, while the bars
@@ -849,8 +823,7 @@ signal on top of existing judges; and semantic names concentrate the agent's att
 RQ3 asks whether recursive segmentation recovers task structure that humans would recognize.
 % RQ3 问递归切分是否恢复出人类会认可的任务结构。
 
-\emph{Setup.} Gold structure is the 2{,}948 human-annotated stages over
-all 405 CodeTraceBench trajectories. B$^3$
+\emph{Setup.} We compare segmentation output against 2{,}948 human-annotated stages over all 405 CodeTraceBench trajectories. B$^3$
 F1~\cite{bagga-baldwin-1998-entity-based} asks whether operations that
 belong together end up grouped together; exact adjacent-boundary
 F1~\cite{ruokolainen2016segmentation} asks whether cuts land exactly
@@ -887,8 +860,7 @@ Native source tree & 0.975 & 0.249 & 0.397 & 0.259 \\
 Source-native step & 0.983 & 0.221 & 0.361 & 0.246 \\
 \bottomrule
 \end{tabular}
-\caption{Agreement with human stages on all 405 CodeTraceBench
-trajectories. Causal Qwen2.5-3B is a stateful per-turn baseline that makes push/replace/stay/pop decisions.}
+\caption{Agreement with human stages on all 405 CodeTraceBench trajectories.}
 \label{tab:rq3-codetrace}
 \end{table}
 
@@ -941,8 +913,7 @@ unchanged.
 RQ4 asks whether the profiling cost is practical: how much time and tokens does segmentation consume, and how fast is replay?
 % RQ4 问 profiling 开销是否实用：切分消耗多少时间和 token，重放有多快？
 
-\emph{Setup.} Cost separates into a one-time automatic segmentation pass
-per corpus and deterministic construction/replay afterwards.
+\emph{Setup.} Cost separates into a one-time automatic segmentation pass per corpus and deterministic construction/replay afterwards.
 % 设置。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放。
 The profiling core (parsing, stack construction, folding, and serialization) is measured by comparing the fixed semantic hierarchy \texttt{project, agent, task, phase, op, tool, status} against the raw hierarchy \texttt{project, agent, action, status} on identical inputs over three runs across four complete public workloads and their union (Table~\ref{tab:rq4-cost}), using \texttt{agentpprof 0.2.37} on a 24-core Intel Core Ultra 9 285K with 125\,GiB RAM and Linux 6.15.11.
 % profiling 核心（解析、栈构建、折叠、序列化）的测量方式是：在四个完整公开 workload 及其并集上（Table~\ref{tab:rq4-cost}）、以完全相同的输入各运行三次，比较固定语义层次 \texttt{project, agent, task, phase, op, tool, status} 与 raw 层次 \texttt{project, agent, action, status}；测量使用 \texttt{agentpprof 0.2.37}，硬件为 24 核 Intel Core Ultra 9 285K、125 GiB 内存、Linux 6.15.11。
