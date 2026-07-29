@@ -167,8 +167,8 @@ function calls produce stack frames. A sequence of prompts can be a task or mult
 %% ¶5: Model
 Despite these differences, the fundamental profiling methodology
 transfers to agent trajectories by projecting resources onto responsible
-entities, assigning stable tags, and attributing hierarchically.
-% 尽管有这些差异，基本的 profiling 方法论可以迁移到智能体轨迹：将资源投影到负责实体、赋予稳定标签、分层归因。
+entities, assigning stable identifiers, and attributing hierarchically.
+% 尽管有这些差异，基本的 profiling 方法论可以迁移到智能体轨迹：将资源投影到负责实体、赋予稳定标识符、分层归因。
 We propose a \emph{semantic operation stack model} with two
 components.
 % 我们提出一个包含两个组件的语义 operation stack 模型。
@@ -187,9 +187,9 @@ We implement this model in \sys, an offline profiler that compiles
 local agent trajectories into pprof-compatible profiles
 (Figure~\ref{fig:architecture}).
 % 我们在 \sys 中实现此模型，这是一个离线 profiler，将本地智能体轨迹编译为 pprof 兼容的 profile（Figure~\ref{fig:architecture}）。
-One algorithm, \emph{recursive operation segmentation}, supplies the missing tags.
+One algorithm, \emph{recursive operation segmentation}, supplies the missing identifiers.
 Labeling every prompt individually would be prohibitively expensive, but task structure is recoverable at lower cost: a task occupies a contiguous span of a trajectory and decomposes into contiguous subtasks, so recovering it requires only finding the transitions between them.
-% 一个算法——递归 operation 切分——提供缺失的标签。逐个标注每个 prompt 成本过高，但任务结构可以以较低成本恢复：任务占据轨迹上一段连续区间并分解为连续的子任务，因此恢复它只需找到它们之间的转移点。
+% 一个算法——递归 operation 切分——提供缺失的标识符。逐个标注每个 prompt 成本过高，但任务结构可以以较低成本恢复：任务占据轨迹上一段连续区间并分解为连续的子任务，因此恢复它只需找到它们之间的转移点。
 The algorithm finds where responsibility changes, names the resulting intervals, and yields short names starting with a verb (like \texttt{diagnose authentication}) that fold across sessions. The interface is implementation-neutral.
 % 算法找出责任变化处，命名生成的区间，产出以动词开头的短名称（如 \texttt{diagnose authentication}），这些名称可跨 session 折叠。切分接口与实现无关。
 Across all 405 released CodeTraceBench~\cite{li2026codetracer} trajectories, recursive
@@ -322,9 +322,9 @@ In AI Agents, sequence of prompts may constitute one task or several, and a task
 
 Agent profiling needs the three mechanisms that call stacks provide automatically, but must achieve them without a call stack:
 \textbf{R1} (cross-layer projection): connect system-layer consumption to intent-level categories;
-\textbf{R2} (stable tags): derive short, repeatable tags from natural-language prompts before folding;
+\textbf{R2} (stable identifiers): derive short, repeatable identifiers from natural-language prompts before folding;
 \textbf{R3} (hierarchical attribution): construct attribution hierarchies from data, not execution nesting.
-% 智能体 profiling 需要调用栈自动提供的三种机制，但必须在没有调用栈的情况下实现：R1（跨层投影）：将系统层消耗连接到意图层类别；R2（稳定标签）：在折叠前从自然语言提示词派生短小、可重复的标签；R3（分层归因）：从数据而非执行嵌套构造归因层次。
+% 智能体 profiling 需要调用栈自动提供的三种机制，但必须在没有调用栈的情况下实现：R1（跨层投影）：将系统层消耗连接到意图层类别；R2（稳定标识符）：在折叠前从自然语言提示词派生短小、可重复的标识符；R3（分层归因）：从数据而非执行嵌套构造归因层次。
 Operations satisfy R1 by representing intent and system-effect activities in a single record with tag inheritance, so intent tags propagate to the system effects they trigger via AgentSight~\cite{agentsight}.
 % Operation（Design）通过将意图和系统副作用活动表示在带标签继承的单一记录中满足 R1，使意图层标签通过 AgentSight 传播到其触发的系统副作用。
 \emph{Recursive operation segmentation} satisfies R2 and R3 together by deriving short, stable interval names from trajectory content and nesting those intervals into the attribution hierarchy that replaces the runtime call stack.
@@ -338,8 +338,8 @@ The profiling pipeline has four stages: (1)~parse raw trajectories into operatio
 % 语义 Operation Stack 模型
 \label{sec:ops}
 
-This section defines operations and operation stacks, the data structures that satisfy R1 (cross-layer projection) and enable R3 (hierarchical attribution). R2 (stable tags) requires deriving tags from trajectory content and is addressed in Section~\ref{sec:intent}.
-% 本节定义 operation 与 operation stack，即满足 R1（跨层投影）并支持 R3（分层归因）的数据结构。R2（稳定标签）需要从轨迹内容派生标签，在第~\ref{sec:intent} 节讨论。
+This section defines operations and operation stacks, the data structures that satisfy R1 (cross-layer projection) and enable R3 (hierarchical attribution). R2 (stable identifiers) requires deriving identifiers from trajectory content and is addressed in Section~\ref{sec:intent}.
+% 本节定义 operation 与 operation stack，即满足 R1（跨层投影）并支持 R3（分层归因）的数据结构。R2（稳定标识符）需要从轨迹内容派生标识符，在第~\ref{sec:intent} 节讨论。
 
 %% ¶1: Operations
 Because agent activities span both intent and system-effect
@@ -390,8 +390,8 @@ operation segmentation, and projection to folded-stack output.}
 % 递归 Operation 切分
 \label{sec:intent}
 
-Operation stacks can project any field an operation already carries, but agent trajectories lack the two fields that make traditional profiling work: stable task tags and a nesting hierarchy. Labeling every prompt individually would be prohibitively expensive. Recursive operation segmentation derives both fields from trajectory content at lower cost by marking only the transition points where responsibility changes.
-% Operation stack 可以投影 operation 已有的任何字段，但智能体轨迹缺乏使传统 profiling 可行的两个字段：稳定的任务标签和嵌套层次。逐个标注每个 prompt 成本过高。递归 operation 切分以较低成本从轨迹内容派生这两个字段，只需标注责任变化处的转换点。
+Operation stacks can project any field an operation already carries, but agent trajectories lack the two fields that make traditional profiling work: stable task identifiers and a nesting hierarchy. Labeling every prompt individually would be prohibitively expensive. Recursive operation segmentation derives both fields from trajectory content at lower cost by marking only the transition points where responsibility changes.
+% Operation stack 可以投影 operation 已有的任何字段，但智能体轨迹缺乏使传统 profiling 可行的两个字段：稳定的任务标识符和嵌套层次。逐个标注每个 prompt 成本过高。递归 operation 切分以较低成本从轨迹内容派生这两个字段，只需标注责任变化处的转换点。
 
 The algorithm rests on one structural intuition: an agent's task occupies
 a contiguous span of the trajectory, and it decomposes into smaller
@@ -632,8 +632,8 @@ A per-query full read is also bounded by the model context window.
 % 要点。profile 呈现的失败结构在 435 条轨迹上与独立人工标注一致；profile 在既有 judge 之上补充定位信号；语义名称集中 agent 注意力，将需要打开的源字符从 65\% 降至 53\%。
 
 %% -------------------------------------------------------------------
-\subsection{RQ3: How Accurate Are the Tags?}
-% RQ3：标签有多准确？
+\subsection{RQ3: How Accurate Are the Identifiers?}
+% RQ3：标识符有多准确？
 
 \emph{Setup.} To evaluate whether recursive segmentation recovers task structure that humans would recognize, we compare segmentation output against 2{,}948 human-annotated stages over all 405 CodeTraceBench trajectories.
 % 设置。为评估递归切分是否恢复出人类会认可的任务结构，我们把切分输出与全部 405 条 CodeTraceBench 轨迹上的 2,948 个人工标注 stage 进行比较。 B$^3$
