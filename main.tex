@@ -611,20 +611,19 @@ We report per-query AP averaged over 614, 400, and 220 labeled queries. The 522 
 The \emph{direct diagnostic} is the per-operation output of each benchmark's own judge, including LLM-as-judge methods: reads the full trace and reference answer before naming the responsible agent and decisive step.
 % \emph{direct diagnostic} 是 benchmark 原生, 它先读取完整 trace 与参考答案，再指出责任 agent 与决定性步骤。
 \emph{Direct-only} ranks by that diagnostic alone; \emph{Direct+\sys} breaks ties by group score (vote mean for AgentProcessBench; 95\% Wilson bound otherwise), with HINTBench field order fixed on 80 validation trajectories;
-\emph{Direct+\sys-Raw} is an ablation that replaces semantic interval names with raw action types (the grouping structure is identical; only the names differ); \emph{AgentProf-only} uses only the profiler without the benchmark diagnostic (Figure~\ref{fig:rq2-map}).
+\emph{AgentProf-only} uses only the profiler without the benchmark diagnostic (Figure~\ref{fig:rq2-map}).
 % Direct-only 仅按该诊断排序；Direct+\sys 用 profiler 的组分数打破并列；Direct+\sys-Raw 是将语义区间名替换为 raw action 类型的消融（分组结构相同，仅名称不同）；AgentProf-only 仅用 profiler 不用 benchmark 诊断（Figure~\ref{fig:rq2-map}）。
 
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig-rq2-map.pdf}
-\caption{MAP over the complete RQ2 populations (614, 400, and 220 labeled queries). \sys-Raw ablates only \sys's semantic prefix. Higher is better.}
-\Description{A grouped bar chart showing MAP scores for four methods across three workloads. Direct+\sys and Direct+\sys-Raw perform best on all workloads.}
+\caption{MAP over the complete RQ2 populations (614, 400, and 220 labeled queries). Higher is better.}
+\Description{A grouped bar chart showing MAP scores for three methods across three workloads. Direct+\sys performs best on all workloads.}
 \label{fig:rq2-map}
 \end{figure}
 
 \emph{Results.} Direct+\sys beats Direct-only by 0.031 [0.024, 0.039], 0.107 [0.093, 0.120], and 0.117 [0.088, 0.148] (95\% intervals from 10{,}000 paired resamples); all intervals lie above zero, so every improvement is statistically significant (Figure~\ref{fig:rq2-map}).
-The Direct+\sys-minus-Direct+\sys-Raw intervals are $[-.0003,.0029]$, $[-.0116,.0103]$, and $[-.0247,.0280]$.
-Grouping with retained evidence drives the ranking gain (Figure~\ref{fig:rq2-map}); semantic naming adds a distinct measured benefit: it concentrates the reader's attention, reducing evidence opened from 65\% to 53\% at equal quality (measured below). The semantic prefix also enables cross-run attribution (RQ1).
+Grouping with retained evidence drives the localization gain. Semantic naming enables cross-run attribution (RQ1) and concentrates the reader's attention, reducing evidence opened from 65\% to 53\% at equal quality (measured below), but does not affect within-trajectory localization ranking.
 % 分组加保留证据驱动排序增益；语义命名带来另一可测收益：它集中读者注意力，在同等质量下将打开的证据从 65\% 降至 53\%（下文测量）。语义前缀还支持跨运行归因（RQ1）。
 
 \paragraph{Profile-guided reading on TraceElephant.}
