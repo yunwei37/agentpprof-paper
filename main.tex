@@ -187,8 +187,8 @@ local agent trajectories into pprof-compatible profiles
 (Figure~\ref{fig:architecture}).
 % 我们在 \sys 中实现此模型，这是一个离线 profiler，将本地智能体轨迹编译为 pprof 兼容的 profile（Figure~\ref{fig:architecture}）。
 One algorithm, \emph{recursive operation segmentation}, supplies the missing tags.
-Its design follows from one observation: a task occupies a contiguous span of a trajectory and decomposes into contiguous subtasks, so task structure is exactly a set of nested named intervals, and recovering it requires only finding the transitions between them.
-% 一个算法——递归 operation 切分——提供缺失的标签。其设计源于一个观察：任务占据轨迹上一段连续区间并分解为连续的子任务，因此任务结构恰好是一组嵌套的命名区间，恢复它只需找到它们之间的转移点。
+Labeling every prompt individually would be prohibitively expensive, but task structure is recoverable at lower cost: a task occupies a contiguous span of a trajectory and decomposes into contiguous subtasks, so recovering it requires only finding the transitions between them.
+% 一个算法——递归 operation 切分——提供缺失的标签。逐个标注每个 prompt 成本过高，但任务结构可以以较低成本恢复：任务占据轨迹上一段连续区间并分解为连续的子任务，因此恢复它只需找到它们之间的转移点。
 The algorithm finds where responsibility changes, names the resulting intervals, and yields short names starting with a verb (like \texttt{diagnose authentication}) that fold across sessions. The interface is implementation-neutral.
 % 切分接口与实现无关：agent、普通语言模型或统计规则都能产出相同的标记。
 Across all 405 released CodeTraceBench~\cite{li2026codetracer} trajectories, recursive
@@ -337,11 +337,14 @@ The profiling pipeline has four stages: (1)~parse raw trajectories into operatio
 % 语义 Operation Stack 模型
 \label{sec:ops}
 
+This section defines operations and operation stacks, the data structures that satisfy R1 (cross-layer projection) and enable R3 (hierarchical attribution). R2 (stable tags) requires deriving tags from trajectory content and is addressed in Section~\ref{sec:intent}.
+% 本节定义 operation 与 operation stack，即满足 R1（跨层投影）并支持 R3（分层归因）的数据结构。R2（稳定标签）需要从轨迹内容派生标签，在第~\ref{sec:intent} 节讨论。
+
 %% ¶1: Operations
 Because agent activities span both intent and system-effect
 layers, a profiler should not distinguish between them in the
 data representation.
-% 由于智能体活动跨越 Background 中描述的意图层和系统副作用层，分析器不应在数据表示层面区分它们。
+% 由于智能体活动跨越意图层和系统副作用层，分析器不应在数据表示层面区分它们。
 \sys therefore represents every activity as a single abstraction, the
 \operation, a weighted record with string fields and additive
 measures.
@@ -370,16 +373,6 @@ determined by execution.
 Changing the fields changes the attribution without changing the data, so the same operations can be attributed by task, by session, or by action type.
 Sessions and spans are optional fields, so the same data supports both debugging (include \texttt{session}) and aggregate profiling (exclude it).
 % 改变字段即改变归因方式而无需改变数据：同一组 operation 可按任务、按 session 或按 action type 归因。session 和 span 是可选字段，因此同一数据既支持调试（包含 \texttt{session}）也支持聚合 profiling（排除它）。
-The frame sequence need not come from fields alone. Recursive
-segmentation supplies each operation's covering
-interval-name chain as a variable depth frame sequence, and field lists
-and interval paths compose in one stack.
-% 帧序列不必只来自字段：递归切分（Design）为每个 operation 提供其覆盖区间的名称链，作为可变深度的帧序列；字段列表与区间路径可在同一栈中组合。
-A view is a triple $(\varphi, \sigma, w)$: a predicate
-$\varphi$ selects which operations participate, a stack function
-$\sigma = [f_1, \ldots, f_k]$ maps each operation to its frame
-sequence, and a weight function $w$ assigns a nonnegative measure.
-% 一个视图是三元组 $(\varphi, \sigma, w)$：谓词 $\varphi$ 选择参与的 operation，栈函数 $\sigma = [f_1, \ldots, f_k]$ 将每个 operation 映射到其帧序列，权重函数 $w$ 赋予非负度量。
 Built-in views cover common questions (e.g., \texttt{tokens}, \texttt{time}, \texttt{files}).
 % 内置视图覆盖常见问题（如 \texttt{tokens}、\texttt{time}、\texttt{files}）。
 
@@ -396,6 +389,9 @@ operation segmentation, and projection to folded-stack output.}
 % 递归 Operation 切分
 \label{sec:intent}
 
+Operation stacks can project any field an operation already carries, but agent trajectories lack the two fields that make traditional profiling work: stable task tags and a nesting hierarchy. Labeling every prompt individually would be prohibitively expensive. Recursive operation segmentation derives both fields from trajectory content at lower cost by marking only the transition points where responsibility changes.
+% Operation stack 可以投影 operation 已有的任何字段，但智能体轨迹缺乏使传统 profiling 可行的两个字段：稳定的任务标签和嵌套层次。逐个标注每个 prompt 成本过高。递归 operation 切分以较低成本从轨迹内容派生这两个字段，只需标注责任变化处的转换点。
+
 The algorithm rests on one structural intuition: an agent's task occupies
 a contiguous span of the trajectory, and it decomposes into smaller
 contiguous subtasks.
@@ -404,13 +400,9 @@ Task structure is therefore exactly a set of nested named intervals, and
 recovering it only requires finding the transition points between them.
 % 因此任务结构恰好就是一组嵌套的命名区间，恢复它只需要找到区间之间的转换点。
 
-Because agent work has no predefined taxonomy but transitions are visible
-in the content, the core algorithm is segmentation, not labeling.
-% 由于智能体工作没有预定义分类法，但转换点在内容中可见，核心算法是切分而非标注。
-Instead of assigning each step a class, the algorithm reads a trajectory and finds the transition points where the agent's responsibility changes.
-% 算法不为每步指派类别，而是读取轨迹、找出责任变化处的转换点。
-At each transition it cuts the trajectory and names the intervals on both
-sides. It then recurses into each interval, cutting again wherever a
+The algorithm reads a trajectory, finds the transition points where the agent's responsibility changes, and names the intervals on both sides.
+% 算法读取轨迹，找出责任变化处的转换点，并为两侧的区间命名。 
+It then recurses into each interval, cutting again wherever a
 finer responsibility change remains, and stops when an interval reads as
 one coherent piece of work.
 % 在每个转换点它切开轨迹并为两侧的区间命名；随后对每个区间递归，在仍存在更细责任变化处继续切分，直到一个区间读起来是一件连贯的工作为止。
@@ -423,8 +415,6 @@ The algorithm computes $S$ by one recursive rule: $\textsc{Segment}(I)$ selects 
 % 算法用一条递归规则计算 $S$：$\textsc{Segment}(I)$ 在区间 $I$ 内选择零个或多个转换点，将 $I$ 划分为连续的子区间；每个子区间获得一个动词引导的短名称并被递归切分；不再选择转换点即终止该分支。
 A step's operation path is the name chain of the intervals containing it, from the session root to its innermost interval. Equal paths fold across sessions.
 % 一个步骤的 operation 路径是包含它的区间自 session 根到最内层的名称链；相同路径跨 session 折叠。
-Segmentation is the right primitive because transitions are visible in the content, cuts compose into variable-depth hierarchies, and naming intervals (not steps) yields identifiers at the granularity where recurrence lives.
-% 切分是正确的基本操作，因为转换点在内容中可见，切口可组合为可变深度层次，且为区间（而非单步）命名得到与"重复出现"粒度一致的标识符。
 Concretely, in one Git-deployment execution the algorithm cuts the session into \texttt{build deployment system} and, inside it, cuts again where the agent stops writing configuration and starts debugging access, yielding \texttt{deploy branches} and \texttt{diagnose authentication}. A step inside the latter carries the path \texttt{build deployment system > diagnose authentication}, and because the same names reappear in the other two executions, their costs fold together in Figure~\ref{fig:flamegraph}.
 % 具体地，在一次 Git 部署执行中，算法先把 session 切为 \texttt{build deployment system}，再在"智能体从编写配置转向调试访问"处继续切分，得到 \texttt{deploy branches} 与 \texttt{diagnose authentication}。后者内部的步骤携带路径 \texttt{build deployment system > diagnose authentication}，由于同样名称在另外两次执行中再次出现，其开销在 Figure~\ref{fig:flamegraph} 中折叠到一起。
 Any implementation able to find transitions and name intervals (an agent, a language model, or a statistical rule) can serve as the segmenter.
