@@ -556,6 +556,15 @@ Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tok
 The 13\% of tasks where agreement falls below 0.7 are exactly where multi-measure profiling adds value (details in Appendix~\ref{app:rq1}).
 % 跨 440 条 AgentRewardBench 轨迹（7,229 个 operation、51,904,621 个 token，均精确守恒），按 count 与 token 排序的一致性高：在至少有三个不同 operation 的 77 个任务上，平均 Kendall tau-b 为 0.886 [0.857, 0.915]，pooled 排序的 tau-b 为 0.929。一致性低于 0.7 的 13\% 任务（77 个中的 10 个）正是多度量 profiling 增加价值的地方。
 
+\paragraph{System-effect alignment.}
+For RQ1's controlled cross-layer test, AgentSight first matches each timestamped process, file, or network event to the same-PID process instance whose lifetime contains it.
+It then links that process to a recorded tool call by an explicit tool/event ID when available, or by recorded root-process identity and overlapping process/tool lifetimes; descendants are accepted only within that tool window.
+The matched wrapper tool identifies the task-level semantic interval, while unmatched events remain unassigned.
+Across 20 real Codex tasks, this rule attributes 1{,}520 of 1{,}574 scoped process/file effects (100\% precision, 96.57\% recall) and rejects all 1{,}629 concurrent-control effects.
+\sys then folds exactly those joined events as unit-weight operations, preserving all 1{,}520 samples and every task-category total.
+This is exactly as described in the agentsight paper~\cite{agentsight}, but here we add the semantic hierarchy to show that the same events fold under task-level responsibilities.
+% RQ1 的受控跨层测试先按 PID 与事件时间匹配对应生命周期内的进程实例，再优先使用显式 tool/event ID，或使用记录的根进程标识与重叠的进程/tool 时间窗关联到 tool call；只有位于该 tool 时间窗内的后代进程才会被接受。匹配到的 wrapper tool 确定 task-level 语义区间，未匹配事件保持未归因。在 20 个真实 Codex 任务中，该规则归因 1,574 个范围内 process/file effect 中的 1,520 个（precision 100\%，recall 96.57\%），并拒绝全部 1,629 个并发 control effect；\sys 精确保留这些事件及每个任务类别的总量。
+
 \emph{Takeaway.} Both conditions hold: the semantic hierarchy reunites cross-run responsibility that raw-action and native organizations scatter (the authentication case), and switching the measure on that fixed hierarchy moves attributed share by more than 2$\times$ (21\% to 46\%), revealing bottlenecks that operation count alone would hide. These bottlenecks are optimization targets: tasks consuming disproportionate budget can be restructured to reduce cost.
 % 要点。两个条件都成立：语义层次重聚了 raw-action 和 native 组织所分散的跨运行责任（认证案例），且在该固定层次上切换度量使归因份额变化超过 2 倍（21\% 到 46\%），暴露出仅靠 operation 数会掩盖的瓶颈。这些瓶颈就是优化目标：消耗不成比例预算的任务可被重构以降低成本。
 
@@ -636,8 +645,8 @@ On 220 queries, a Grok 4.5~\cite{grok45} agent-as-judge ranks operations by like
 Full-trace reading reaches MAP .502 at 12.6K tokens/query. A profile-guided reader selects at most five groups and reaches .455 while opening 53\% of the source, versus .465 and 65\% with raw-action names (intervals in Appendix~\ref{app:rq2}).
 A per-query full read is also bounded by the model context window.
 % 在 220 个 query 上，Grok 4.5 agent-as-judge 按可能出错排序 operation。全 trace 阅读以 12.6K token/query 达到 MAP .502；profile 引导的 reader 用语义名达到 .455 且只打开 53\% 的源（用 raw-action 名需打开 65\% 才达相近 MAP）。
-\emph{Takeaway.} Failure structure surfaced by the profile matches independent human labels across 435 trajectories. Profiles add localization signal on top of existing judges, and semantic names concentrate the agent's attention, reducing evidence opened from 65\% to 53\% at equal ranking quality.
-% 要点。profile 呈现的失败结构在 435 条轨迹上与独立人工标注一致；profile 在既有 judge 之上补充定位信号；语义名称集中 agent 注意力，在相同排序质量下将需要打开的证据从 65\% 降至 53\%。
+\emph{Takeaway.} Failure structure surfaced by the profile matches independent human labels across 435 trajectories. Profiles add localization signal on top of existing judges, and semantic names concentrate the agent's attention, reducing source characters opened from 65\% to 53\%.
+% 要点。profile 呈现的失败结构在 435 条轨迹上与独立人工标注一致；profile 在既有 judge 之上补充定位信号；语义名称集中 agent 注意力，将需要打开的源字符从 65\% 降至 53\%。
 
 %% -------------------------------------------------------------------
 \subsection{RQ3: How Accurate Are the Tags?}
@@ -698,11 +707,11 @@ preserving per-group coherence (breakdown in Appendix~\ref{app:rq3}).
 % 预测 group 仍是 gold stage 中较纯的子集（B$^3$ precision 0.793），残余边界误差来自过分割而非漏切（边界 recall 0.626、precision 0.389）：当切分与人工 stage 不一致时，它是把工作细分而非合并无关责任，从而为下游检视保留每个 group 的连贯性。
 The interface generalizes across method families: on OSWorld-Human~\cite{osworldhuman}, a supervised Naive Bayes predictor reaches 0.816 B$^3$ F1, and a no-LLM recurrence segmenter reaches 0.786 (details in Appendix~\ref{app:rq3}).
 The framework supports different segmentation scales: on OSWorld-Human, the unchanged Codex instruction uses coarser task-level boundaries (0.448 B$^3$ F1), while a supervised adapter matched to its finer action-group granularity reaches 0.816.
-% 该接口在不同方法家族间泛化。在 287 个 OSWorld-Human session（3,978 个 operation、2,042 个人工 group）上，五折交叉验证的监督 Bernoulli Naive Bayes 边界预测器达到 0.739 边界 F1 / 0.816 B$^3$ F1。Calibrated recurrence 达到 0.734 / 0.801，使用了无监督默认方式所回避的 group 标注。无 LLM 的 recurrence segmenter 达到 0.680 / 0.786（最强对照 0.645 / 0.678）。无监督 TF-IDF/K-Means 方法在 9 个 Mind2Web session 上 V-measure 为 0.557，在 100 个 ScienceWorld session 上为 0.815。同一 Codex instruction 不经调整使用更粗的 task-level 边界（0.448 B$^3$ F1）；匹配 OSWorld 更细 action-group 粒度的监督 adapter 达到 0.816，表明框架支持不同切分尺度。
+% 该接口在不同方法家族间泛化。在 287 个 OSWorld-Human session（3,978 个 operation、2,042 个人工 group）上，五折交叉验证的监督 Bernoulli Naive Bayes 边界预测器达到 0.739 边界 F1 / 0.816 B$^3$ F1。Calibrated recurrence 达到 0.734 / 0.801，使用了无监督默认方式所回避的 group 标注。无 LLM 的 recurrence segmenter 达到 0.680 / 0.786（最强对照 0.645 / 0.678）。无监督 TF-IDF/K-Means 方法在 9 个 Mind2Web session 上 V-measure 为 0.557，在 100 个 ScienceWorld session 上为 0.815。同一 Codex instruction 不经调整使用更粗的 task-level 边界（0.448 B$^3$ F1）；匹配 OSWorld 更细 action-group 粒度的监督 Naive Bayes adapter 达到 0.816，表明框架支持不同切分尺度。
 For closed-label literal tags, a Qwen3.6-27B~\cite{qwen36} classifier labels 1{,}012 AgentBoard goals~\cite{agentboard} at 0.695 macro-F1, and 2{,}737 action labels from AutoCodeRover, OpenHands, and RepairAgent trajectories~\cite{traceview-2026,bouzenia-pradel-2025-trajectories} at 0.498 macro-F1 (details in Appendix~\ref{app:rq3}).
 % 在闭标签的字面标签上，固定的、仅用于评测的 Qwen3.6-27B 把全部 1,012 个 AgentBoard goal 分入九个 task family，macro-F1 与 accuracy 为 0.695 / 0.733（majority 基线 0.044 / 0.248）。同一模型把来自 120 条 AutoCodeRover、OpenHands 与 RepairAgent 轨迹的 2,737 个公开 action 标签分类，macro-F1 与 accuracy 为 0.498 / 0.628（majority 基线 0.061 / 0.323）；0.437 macro-F1 增量的 95\% bootstrap 区间为 [0.380, 0.494]。
-\emph{Takeaway.} Recursive segmentation recovers human-recognizable task structure: 0.764 B$^3$ F1 against human stages, beating the strongest automatic baseline by +0.101. When segmentation disagrees with humans, it over-segments (subdivides work) rather than merging unrelated responsibilities, preserving per-group coherence. Non-LLM methods implementing the same interface remain viable when no model is available.
-% 要点。递归切分恢复出人类可识别的任务结构：相对人工 stage 达到 0.764 B$^3$ F1，比最强自动基线高 +0.101。当切分与人类不一致时，它是过分割（细分工作）而非合并无关责任，从而保留每组连贯性。实现同一接口的非 LLM 方法在没有模型可用时依然可行。
+\emph{Takeaway.} Recursive segmentation recovers human-recognizable task structure: 0.764 B$^3$ F1 against human stages, beating the strongest automatic baseline by +0.101. When segmentation disagrees with humans, it predominantly over-segments (subdivides work) rather than merging unrelated responsibilities, preserving per-group coherence. Non-LLM methods implementing the same interface remain viable when no model is available.
+% 要点。递归切分恢复出人类可识别的任务结构：相对人工 stage 达到 0.764 B$^3$ F1，比最强自动基线高 +0.101。当切分与人类不一致时，它以过分割（细分工作）为主而非合并无关责任，从而保留每组连贯性。实现同一接口的非 LLM 方法在没有模型可用时依然可行。
 
 %% -------------------------------------------------------------------
 \subsection{RQ4: What Is the Profiling Cost?}
