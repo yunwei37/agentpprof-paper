@@ -27,7 +27,7 @@
 
 \begin{document}
 
-\title{AgentProf: Semantic Profiling for AI Agents}
+\title{AgentProf: Semantic Profiler for Long Horizon AI Agents}
 \author{Anonymous Submission}
 \affiliations{}
 
@@ -355,8 +355,6 @@ In CPU profiling, the call stack determines attribution at every level: \texttt{
 % 在 CPU 分析中，调用栈决定了每个层级的归因：\texttt{malloc} 的开销同时属于 \texttt{parse}、\texttt{process} 和 \texttt{main}。
 A sequence of prompts may constitute one task or several, and a task may be part of a larger workflow, but no runtime mechanism marks these boundaries or determines at which granularity to attribute cost.
 % 一串提示词可能构成一个任务也可能是多个任务，一个任务可能是更大工作流的一部分，但没有运行时机制标记这些边界或决定在哪个粒度归因开销。
-We quantify this in RQ1.
-% 我们在 RQ1 (Evaluation) 中量化了这一点。
 
 \subsection{Design Requirements for Agent Profiling}
 % 智能体 Profiling 的设计需求
@@ -569,6 +567,8 @@ Switching the additive measure replays the same annotations and changes only sta
 
 Levels need not come from annotation: fields already recorded literally (e.g., agent skill invocations) become stack levels without annotation cost and compose with annotated semantic levels in one hierarchy.
 % 层级不必来自标注：已被字面记录的字段（如 agent skill 调用）无需标注成本即可成为栈层级，并与标注得到的语义层级组合在同一层次中。
+Multi-agent orchestration is a direct instance: when an outer agent delegates to a subagent (e.g., Claude Code spawning an Explore agent to search code), the delegation is an operation whose interval contains all downstream work, so subagent operations inherit the outer agent's semantic path without special handling.
+% 多智能体编排是一个直接实例：当外层 agent 委托给 subagent 时（例如 Claude Code 生成 Explore agent 来搜索代码），委托本身是一个 operation，其区间包含所有下游工作，因此 subagent 操作继承外层 agent 的语义路径，无需特殊处理。
 
 \paragraph{Non-LLM statistical segmenter.}
 % 非 LLM 统计 segmenter。
@@ -581,18 +581,8 @@ one-dimensional $k$-means ($k=2$)~\cite{macqueen1967}; it reads only action sequ
 % 评估
 \label{sec:eval}
 
-The evaluation addresses four research questions.
-% 评估回答四个研究问题。
-\textbf{RQ1:} Does semantic profiling improve resource attribution?
-\textbf{RQ2:} Does profiler output correspond to real problems?
-\textbf{RQ3:} How accurate are the tags?
-\textbf{RQ4:} What is the profiling cost?
-Together they form one chain: semantic responsibility can be recovered
-accurately (RQ3), the recovered hierarchy aggregates across runs while
-conserving every additive measure (RQ1), the aggregate corresponds to real
-problems and reduces the evidence a reader must open (RQ2), and construction
-and replay costs are measured and practical (RQ4).
-% 四个 RQ 构成一条链：语义责任可以被准确恢复（RQ3）；恢复的层次跨运行聚合并精确守恒每种可加度量（RQ1）；聚合结果对应真实问题并减少 reader 必须打开的证据（RQ2）；构建与重放成本可测且实用（RQ4）。
+The evaluation asks whether semantic profiling improves resource attribution (RQ1), whether profiler output corresponds to real problems (RQ2), how accurate the tags are (RQ3), and what the profiling costs (RQ4).
+% 评估问：语义 profiling 是否改善资源归因（RQ1），profiler 输出是否对应真实问题（RQ2），标签有多准确（RQ3），以及 profiling 成本多少（RQ4）。
 
 We evaluate three data classes.
 % 我们评估三类数据。
@@ -635,8 +625,8 @@ resource measure changes.
 % 设置。我们检验该主张的一个必要后果：固定的语义层次在切换可加资源度量时是否暴露实质不同的瓶颈。
 The population contains 41 real long-horizon agent trajectories, 3{,}146 user turns, and 5{,}750 operations, including three independent executions of one Git-deployment task whose 735 steps receive 96 recursive annotations.
 % population 含 41 条真实 long-horizon agent 轨迹、3,146 个用户 turn 与 5,750 个 operation，其中包含同一 Git 部署任务的三次独立执行——其 735 个步骤获得 96 个递归标注。
-The resulting hierarchy reaches semantic depth five without a fixed limit, with no unary or flat-fan-out warnings and 27 advisory coarse-leaf warnings.
-% 所得层次在无固定上限下达到语义深度五，无 unary 或 flat-fan-out warning，另有 27 条提示性 coarse-leaf warning。
+The resulting hierarchy reaches semantic depth five without a fixed limit.
+% 所得层次在无固定上限下达到语义深度五。
 
 \paragraph{The motivating case revisited.}
 % 动机案例回顾。
@@ -668,6 +658,10 @@ The three longest sessions (spanning tens of hours each) keep distinct dominant 
 % 三条最长 session（各跨越数十小时）各有不同的主导责任（evaluation alignment、evidence inspection、merge resolution），session 结构被保留而非被平均抹掉。
 Switching to operation count shifts where mass concentrates: token mass stays at prompt depth (70\%), while operation mass resolves deeper (44\% at depths three and four) exactly where repeated engineering work concentrates.
 % 切换到 operation 数改变了质量集中处：token 质量停在 prompt 深度（70\%），而 operation 质量解析更深（44\% 在深度三和四），恰在重复工程工作集中处。
+The insight: token-heavy work happens at the conversation level, while repetitive tool calls concentrate deeper---a split that only multi-measure profiling reveals.
+% 洞察：token 密集型工作发生在对话层，而重复的工具调用集中在更深层——这种分裂只有多度量 profiling 才能揭示。
+The history also demonstrates multi-agent composition at scale: 98 subagent delegations across 14 sessions, where each delegation contains all downstream subagent operations and composes with annotated semantic levels.
+% 该历史还展示了规模化的多智能体组合：跨 14 个 session 的 98 次 subagent 委托，每次委托包含所有下游 subagent 操作，并与标注的语义层级组合。
 
 % \begin{figure*}[t]
 % \centering
@@ -722,8 +716,8 @@ The largest single session holds only 31.23\% of that mass, so the
 priority across the full history appears only after folding.
 % 最大的单个 session 仅持有该质量的 31.23\%，因此覆盖全历史的优先级只有在折叠之后才显现。
 
-Across 440 trajectories, replaying the frozen AgentRewardBench hierarchy (7{,}229 operations and 51{,}904{,}621 tokens, both conserved exactly) ranks the same operations once by count and once by tokens: over the 77 of 125 tasks with at least three distinct operations, mean per-task Kendall's tau-b~\cite{kendall1938} is 0.886 [0.857, 0.915] and Spearman's rho~\cite{spearman1904} is 0.935 [0.917, 0.953], the pooled ranking agrees at tau-b 0.929, and 10 of 77 tasks fall below 0.7---stable in most cases but changing decisions in 10 of 77 tasks.
-% 跨 440 条轨迹，重放冻结的 AgentRewardBench 层次（7,229 个 operation 与 51,904,621 个 token，均精确守恒），对相同 operation 分别按 count 与 token 排序：在 125 个任务中至少有三个不同 operation 的 77 个上，每任务平均 Kendall tau-b 为 0.886 [0.857,0.915]，Spearman rho 为 0.935 [0.917,0.953]，pooled 排序的 tau-b 为 0.929——大多数情形稳定，但 77 个任务中有 10 个改变决策。
+Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tokens, both conserved exactly), ranking operations by count versus tokens yields high agreement: over the 77 of 125 tasks with at least three distinct operations, mean Kendall's tau-b is 0.886 [0.857, 0.915], Spearman's rho is 0.935 [0.917, 0.953], and pooled ranking agrees at tau-b 0.929; but 10 of 77 tasks fall below 0.7---stable in most cases, but the measure matters when it matters.
+% 跨 440 条 AgentRewardBench 轨迹（7,229 个 operation、51,904,621 个 token，均精确守恒），按 count 与 token 排序的一致性高：在 125 个任务中至少有三个不同 operation 的 77 个上，平均 Kendall tau-b 为 0.886 [0.857, 0.915]，Spearman rho 为 0.935 [0.917, 0.953]，pooled 排序的 tau-b 为 0.929；但 77 个任务中有 10 个低于 0.7——大多数情形稳定，但关键时刻度量选择很重要。
 
 \emph{Takeaway.} One hierarchy attributes multiple resources with exact conservation; switching measures reveals bottlenecks that operation count alone would hide, and levels recovered from annotation and from literal source fields compose in the same stack.
 % 要点。同一层次精确守恒地归因多种资源；切换度量暴露出仅靠 operation 数会掩盖的瓶颈；由标注恢复的层级与来自源字段的字面层级组合在同一个栈中。
@@ -796,8 +790,8 @@ trace and reference answer before naming the responsible agent and decisive
 step.
 % \emph{direct diagnostic} 是 benchmark 原生 process judge（AgentProcessBench 的 risk unit）或 trajectory localizer（HINTBench、TraceElephant）的逐 operation 输出；在 TraceElephant 上，它先读取完整 trace 与参考答案，再指出责任 agent 与决定性步骤。
 \emph{Direct-only} ranks by that diagnostic alone; \emph{Direct+AgentProf} breaks ties using the profiler's aggregated scores per semantic group;
-\emph{Direct+\sys-Raw} is an ablation that groups by raw action type instead of semantic names; \emph{AgentProf-only} uses only the profiler without the benchmark diagnostic (Table~\ref{tab:rq2-localization}).
-% Direct-only 仅按该诊断排序；Direct+AgentProf 用 profiler 的组分数打破并列；Direct+\sys-Raw 是按 raw action 类型而非语义名分组的消融；AgentProf-only 仅用 profiler 不用 benchmark 诊断（Table~\ref{tab:rq2-localization}）。
+\emph{Direct+\sys-Raw} is an ablation that replaces semantic interval names with raw action types (the grouping structure is identical; only the names differ); \emph{AgentProf-only} uses only the profiler without the benchmark diagnostic (Table~\ref{tab:rq2-localization}).
+% Direct-only 仅按该诊断排序；Direct+AgentProf 用 profiler 的组分数打破并列；Direct+\sys-Raw 是将语义区间名替换为 raw action 类型的消融（分组结构相同，仅名称不同）；AgentProf-only 仅用 profiler 不用 benchmark 诊断（Table~\ref{tab:rq2-localization}）。
 
 \begin{table}[tb]
 \centering\small
@@ -961,11 +955,8 @@ over nine fixed visible fields with five-fold cross-validation (sessions held ou
 and threshold fitted on training sessions only---reaches 0.739 boundary F1 /
 0.816 B$^3$ F1, calibrated recurrence reaches 0.734 / 0.801 using
 group annotations the unsupervised default avoids, the no-LLM recurrence
-segmenter reaches 0.680 / 0.786 (strongest control: 0.645 / 0.678), and a
-an unsupervised TF-IDF/K-Means method (no labels seen) reaches V-measure 0.557 on nine Mind2Web sessions and 0.815 on 100 ScienceWorld sessions~\cite{mind2web,scienceworld}.
-% 该接口在不同方法家族间泛化：在 287 个 OSWorld-Human session 上，监督边界预测器达到 0.739 边界 F1 / 0.816 B$^3$ F1，无 LLM 的 recurrence segmenter 为 0.680 / 0.786（最强对照 0.645 / 0.678）；无监督的 TF-IDF/K-Means 方法（不接触标签）在 9 个 Mind2Web session 上 V-measure 为 0.557，在 100 个 ScienceWorld session 上为 0.815。
-When the same instruction is frozen and transferred to OSWorld-Human via Codex with GPT-5.6-sol-high without adaptation, it reaches only 0.448 B$^3$ F1 and 0.149 boundary F1, predicting 569 groups for 2{,}042 gold groups---severe under-segmentation that shows cross-population generalization remains a limitation.
-% 当同一 instruction 冻结后通过 Codex（GPT-5.6-sol-high）不经调整迁移到 OSWorld-Human 时，只达到 0.448 B$^3$ F1 与 0.149 边界 F1，对 2,042 个 gold group 预测 569 个——严重欠切分，表明跨 population 泛化仍是局限。
+segmenter reaches 0.680 / 0.786 (strongest control: 0.645 / 0.678), and an unsupervised TF-IDF/K-Means method (no labels seen) reaches V-measure 0.557 on nine Mind2Web sessions and 0.815 on 100 ScienceWorld sessions~\cite{mind2web,scienceworld}; the same Codex instruction without adaptation uses coarser task-level boundaries (0.448 B$^3$ F1); matching OSWorld's finer action-group granularity recovers 0.816, showing the framework supports different segmentation scales.
+% 该接口在不同方法家族间泛化：在 287 个 OSWorld-Human session 上，监督边界预测器达到 0.739 边界 F1 / 0.816 B$^3$ F1，无 LLM 的 recurrence segmenter 为 0.680 / 0.786（最强对照 0.645 / 0.678）；无监督的 TF-IDF/K-Means 方法（不接触标签）在 9 个 Mind2Web session 上 V-measure 为 0.557，在 100 个 ScienceWorld session 上为 0.815；同一 Codex instruction 不经调整使用更粗的 task-level 边界（0.448 B$^3$ F1）；匹配 OSWorld 更细的 action-group 粒度后恢复到 0.816，表明框架支持不同切分尺度。
 For closed-label literal tags, a fixed evaluation-only
 Qwen3.6-27B~\cite{qwen36} classifier labels all 1{,}012 AgentBoard
 goals~\cite{agentboard} into nine task families at 0.695 macro-F1 and 0.733
