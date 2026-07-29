@@ -376,12 +376,7 @@ and a process event are all operations with the same schema, distinguished only 
 
 %% ¶2: Operation Stacks
 \label{sec:stacks}
-An \opstack provides hierarchical attribution for agent trajectories, replacing the runtime call stack.
-% 一个 operation stack 为智能体轨迹提供分层归因，替代运行时调用栈。
-In CPU profiling, the call stack determines which code paths
-share responsibility for a resource cost.
-% 在 CPU 分析中，调用栈决定哪些代码路径共同承担资源开销。
-An operation stack serves the same role: an ordered list of fields
+An \opstack provides hierarchical attribution for agent trajectories, replacing the runtime call stack: an ordered list of fields
 $[f_1, f_2, \ldots, f_k]$ projects each operation $o$ to a frame
 sequence $\langle o.f_1, o.f_2, \ldots, o.f_k \rangle$, and
 operations with identical sequences are merged, summing their
@@ -490,8 +485,8 @@ Segmentation is not a one-shot labeling pass: the agent can revise marks, refine
 % 切分不是一次性标注：agent 可以修改标记、精炼区间名称、添加更深的切分，迭代进行直到它认为层次完整为止。
 Revisions are incremental: changing one interval does not require re-annotating the entire trajectory.
 % 修改是增量的：改动一个区间不需要重新标注整条轨迹。
-Although we evaluate segmentation offline, the model also supports online incremental annotation during agent execution.
-% 虽然我们离线评估切分，但该模型也支持在 agent 执行过程中进行在线增量标注。
+The model supports both offline evaluation (as presented here) and online incremental annotation during agent execution.
+% 该模型支持离线评估（如本文所述）和 agent 执行过程中的在线增量标注。
 
 %% ===================================================================
 \section{Implementation}
@@ -621,8 +616,8 @@ priority across the full history appears only after folding.
 % 最大的单个 session 仅持有该质量的 31.23\%，因此覆盖全历史的优先级只有在折叠之后才显现。
 
 Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tokens, both conserved exactly), ranking operations by count versus tokens yields high agreement: mean Kendall's tau-b is 0.886 [0.857, 0.915] over the 77 tasks with at least three distinct operations, and pooled ranking agrees at tau-b 0.929.
-However, 10 of 77 tasks fall below 0.7, so the measure matters when it matters.
-% 跨 440 条 AgentRewardBench 轨迹（7,229 个 operation、51,904,621 个 token，均精确守恒），按 count 与 token 排序的一致性高：在至少有三个不同 operation 的 77 个任务上，平均 Kendall tau-b 为 0.886 [0.857, 0.915]，pooled 排序的 tau-b 为 0.929。然而 77 个任务中有 10 个低于 0.7，因此关键时刻度量选择很重要。
+The 13\% of tasks (10 of 77) where agreement falls below 0.7 are exactly where multi-measure profiling adds value.
+% 跨 440 条 AgentRewardBench 轨迹（7,229 个 operation、51,904,621 个 token，均精确守恒），按 count 与 token 排序的一致性高：在至少有三个不同 operation 的 77 个任务上，平均 Kendall tau-b 为 0.886 [0.857, 0.915]，pooled 排序的 tau-b 为 0.929。一致性低于 0.7 的 13\% 任务（77 个中的 10 个）正是多度量 profiling 增加价值的地方。
 
 \emph{Takeaway.} Both conditions hold: the semantic hierarchy reunites cross-run responsibility that raw-action and native organizations scatter (the authentication case), and switching the measure on that fixed hierarchy moves attributed share by more than 2$\times$ (21\% to 46\%), revealing bottlenecks that operation count alone would hide.
 % 要点。两个条件都成立：语义层次重聚了 raw-action 和 native 组织所分散的跨运行责任（认证案例），且在该固定层次上切换度量使归因份额变化超过 2 倍（21\% 到 46\%），暴露出仅靠 operation 数会掩盖的瓶颈。
@@ -687,8 +682,6 @@ The \emph{direct diagnostic} is the per-operation output of each benchmark's own
 % Direct-only 仅按该诊断排序；Direct+\sys 用 profiler 的组分数打破并列；Direct+\sys-Raw 是将语义区间名替换为 raw action 类型的消融（分组结构相同，仅名称不同）；AgentProf-only 仅用 profiler 不用 benchmark 诊断。
 
 \emph{Results.} Direct+\sys beats Direct-only by 0.031 [0.024, 0.039], 0.107 [0.093, 0.120], and 0.117 [0.088, 0.148] (95\% intervals from 10{,}000 paired resamples); all intervals lie above zero, so every improvement is statistically significant.
-The corresponding \sys-minus-\sys-Raw intervals are [-.0003,.0029], [-.0116,.0103], and [-.0247,.0280], all spanning zero.
-% 结果。Direct+\sys 相对 Direct-only 分别提高 .031 [.024,.039]、.107 [.093,.120] 与 .117 [.088,.148]（10,000 次配对重抽样的 95\% 区间）；所有区间位于零以上，因此每项改进在统计上显著。对应的 \sys-\sys-Raw 区间均跨越零。
 Grouping with retained evidence drives the ranking gain; semantic naming adds a distinct measured benefit: it concentrates the reader's attention, reducing evidence opened from 65\% to 53\% at equal quality (measured below). The semantic prefix also enables cross-run attribution (RQ1).
 % 分组加保留证据驱动排序增益；语义命名带来另一可测收益：它集中读者注意力，在同等质量下将打开的证据从 65\% 降至 53\%（下文测量）。语义前缀还支持跨运行归因（RQ1）。
 
@@ -698,9 +691,9 @@ On the complete 220 queries that contain a faulty step, a Grok 4.5~\cite{grok45}
 % 在全部 220 个含出错步骤的 query 上，Grok 4.5 agent（agent-as-judge）接收任务描述与轨迹内容（不含任何真实标签），被要求按可能出错排序 operation。
 Full-trace reading (without \sys) reaches MAP .502 at a mean 12{,}615 input tokens per query, versus .209 for the benchmark's Direct-only diagnostic and .326 for Direct+\sys.
 % 全 trace 阅读以每 query 平均 12,615 个输入 token 达到 MAP .502，而 benchmark 的 Direct-only 诊断为 .209、Direct+\sys 为 .326。
-A profile-guided variant uses the semantic skeleton to select at most five groups and opens only their evidence.
-% profile 引导变体用语义骨架选择最多五个 group，并只打开其 evidence。
-The semantic skeleton reaches MAP .455 while opening 53.0\% of the source content; \sys-Raw opens 65.0\% at unchanged MAP (.465; paired $\Delta=+.010$ [$-.021$,$+.042$]; content $\Delta=+.120$ [$+.103$,$+.137$]).
+A profile-guided reader uses the semantic hierarchy to select at most five groups and opens only their evidence.
+% profile 引导的 reader 用语义层次选择最多五个 group，并只打开其 evidence。
+With semantic names, the reader reaches MAP .455 while opening 53.0\% of the source content; with raw-action names, it opens 65.0\% at unchanged MAP (.465; paired $\Delta=+.010$ [$-.021$,$+.042$]; content $\Delta=+.120$ [$+.103$,$+.137$]).
 % 语义骨架达到 MAP .455 且只打开 53.0\% 的源内容；\sys-Raw 骨架需要打开 65.0\% 才能达到相近质量（MAP .465）。
 A per-query full read is also bounded by the model context window (the 4{,}558{,}192-token Git population cannot be read whole).
 % 每 query 的全量阅读还受模型上下文窗口约束（4,558,192-token 的 Git population 无法整体读入）。
