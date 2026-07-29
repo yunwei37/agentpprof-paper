@@ -753,8 +753,6 @@ original additive weights.
 % 每个方法的输出按其预测的层级评估：字面名称用 accuracy 与 macro-F1，置换不变的 partition 用 V-measure 或普通 B$^3$，相邻区间边界用精确的 precision、recall 与 F1；对字段值型的既有数据集，转换步骤先把每个预测 group 映射为同一份区间标注格式，再由 \sys 折叠原始可加权重。
 Codex~\cite{codex} receives each trajectory (prompts, commands, and output summaries, with no labels or scores visible) and emits sparse interval marks over 17{,}148 steps without access to stage annotations (loaded after all 405 outputs were fixed): 4{,}496 marks at semantic depth one (3), two (2{,}873), three (1{,}588), or four (32), with no prompt requesting a specific depth.
 % Codex 接收轨迹（提示词、命令与输出摘要，不含标签或分数），在 17,148 个步骤上发出稀疏区间标记，不接触官方 stage 标注：共 4,496 个标记，语义深度为一层（3 个）、两层（2,873 个）、三层（1,588 个）与四层（32 个），且没有任何 prompt 指定深度。
-Input construction bounds every text preview (prompt and response fields to at most 1{,}800 characters, tool commands to 600, and status previews to 200), while additive measures come from untruncated structured counters.
-% 输入构建对所有文本 preview 限长（prompt 与响应字段至多 1,800 字符、工具命令 600 字符、状态 preview 200 字符），而可加度量取自未截断的结构化计数器。
 Name normalization then maps the 3{,}895 free-form interval names to 783 stable short names (e.g., \texttt{diagnose authentication}) with zero adjacent display-path collisions, rejecting unresolved ones; identical names across sessions merge so that recurring work folds in the final profile.
 % 名称归一化把 3,895 个自由形式的区间名映射为 783 个稳定短名称（如 \texttt{diagnose authentication}），不产生任何相邻显示路径冲突、无法消解时拒绝；跨 session 的相同名称合并，使重复工作在最终 profile 中折叠。
 
