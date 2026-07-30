@@ -25,3 +25,7 @@ comment.cut
 # Python
 __pycache__/
 *.pyc
+
+# arXiv submission
+arxiv-submit/
+arxiv-submit.tar.gz

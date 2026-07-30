@@ -581,8 +581,8 @@ The hierarchy decomposes the recovery responsibility into verification challenge
 % 层次结构把 recovery 责任分解为验证挑战、重复搜索、误导航和记录重试，source label 指明哪些 session 贡献了各宽度。
 The insight is that failing agents get stuck in retry loops rather than backing out and trying a different approach.
 % 洞察是失败的 agent 陷入重试循环，而不是回退尝试不同方法。
-This structure matches independent expert looping labels on 435 trajectories at AP .634 versus prevalence .398 (difference interval [.181, .293]), confirming the profile surfaces a real behavioral pattern. A fixed-chain repeated/error control reaches the same detection quality (AP .656), but only the recursive profile provides the decomposition above with navigation to source.
-% 该结构在 435 条轨迹上与独立专家 looping 标注的一致性为 AP .634（prevalence .398；差异区间 [.181,.293]），确认 profile 呈现的是真实行为模式；fixed-chain repeated/error 对照达到相同检测质量（AP .656），但只有递归 profile 提供上述可导航到 source 的分解。
+This structure matches independent expert looping labels on 435 trajectories at AP .634 versus random baseline .398 (difference interval [.181, .293]), confirming the profile surfaces a real behavioral pattern. A fixed-chain repeated/error control reaches the same detection quality (AP .656), but only the recursive profile provides the decomposition above with navigation to source.
+% 该结构在 435 条轨迹上与独立专家 looping 标注的一致性为 AP .634（随机基线 .398；差异区间 [.181,.293]），确认 profile 呈现的是真实行为模式；fixed-chain repeated/error 对照达到相同检测质量（AP .656），但只有递归 profile 提供上述可导航到 source 的分解。
 
 \paragraph{Supplementing benchmark's own diagnostics.}
 % 补充 benchmark 原生诊断。
@@ -596,7 +596,7 @@ snapshot, 536 of the paper-reported 629 trajectories), and TraceElephant
 workloads. All profiler outputs are computed before any fault annotations are revealed.
 % 我们在完整的 AgentProcessBench、HINTBench与 TraceElephant workload 上运行；所有 profiler 输出在故障标注揭示之前计算完成。
 We report per-query AP averaged over 614, 400, and 220 queries included in MAP. The 522 trajectories without an annotated faulty operation are consumed for dataset coverage but excluded from MAP.
-% 我们报告 per-query AP，在 614、400 与 220 个进入 MAP 计算的 query 上取平均；522 条没有已标注故障 operation 的轨迹计入群体覆盖但从 MAP 中排除。
+% 我们报告 per-query AP，在 614、400 与 220 个进入 MAP 计算的 query 上取平均；522 条没有已标注故障 operation 的轨迹计入数据集覆盖但从 MAP 中排除。
 The \emph{direct diagnostic} is the per-operation output of each benchmark's own judge, including LLM-as-judge methods; it reads the full trace and reference answer before naming the responsible agent and decisive step.
 % \emph{direct diagnostic} 是 benchmark 原生输出；它先读取完整 trace 与参考答案，再指出责任 agent 与决定性步骤。
 \emph{Direct-only} ranks by that diagnostic alone; \emph{Direct+\sys} breaks ties by group score (vote mean for AgentProcessBench; 95\% Wilson bound otherwise), with HINTBench field order fixed on 80 validation trajectories;
@@ -675,7 +675,7 @@ Name normalization then maps the 3{,}895 free-form interval names to 783 stable 
 Method & B$^3$ P & B$^3$ R & B$^3$ F1 & Bound. F1 \\
 \midrule
 Codex segmentation & 0.793 & 0.736 & \textbf{0.764} & \textbf{0.480} \\
-Multi-resolution recurrence & 0.782 & 0.575 & 0.663 & 0.266 \\
+Statistical recurrence & 0.782 & 0.575 & 0.663 & 0.266 \\
 Causal Qwen2.5-3B task stack & 0.557 & 0.792 & 0.650 & 0.257 \\
 Raw-action grouping & 0.891 & 0.388 & 0.541 & --- \\
 Native source tree & 0.975 & 0.249 & 0.397 & 0.259 \\
@@ -788,7 +788,7 @@ measures with exact conservation.
 A repair guided by a single profile reduces agent-side model tokens by 19.0\% without material official-quality loss; selective annotation reduces provider tokens by 20.4\% with complete coverage and maintained structural quality.
 % 由单个 profile 指导的修复在官方质量无实质损失下减少 19.0\% agent-side model token；选择性标注在完整覆盖和结构质量不降低下减少 provider token 20.4\%。
 Profilers and debuggers are complementary. The profile answers cross-run questions and guides inspection to the content worth opening, reducing opened content by 12 percentage points while reaching similar ranking.
-% Profiler 与 debugger 互补。Profile 回答群体问题，并引导检视只打开值得打开的内容，将打开内容减少 12 个百分点且达到相近排序。
+% Profiler 与 debugger 互补。Profile 回答跨运行问题，并引导检视只打开值得打开的内容，将打开内容减少 12 个百分点且达到相近排序。
 Multi-project evaluation and tracing-ecosystem integration are the most impactful next steps.
 % 多项目评估和 tracing 生态系统集成是最有影响力的下一步。
 
@@ -864,7 +864,7 @@ information (NPMI),
 \frac{\ln[p(a,b)/(p_L(a)p_R(b))]}{-\ln p(a,b)},
 \]
 where all probabilities use the same transition sample space
-\cite{bouma2009npmi}. Occurrence-weighted one-dimensional $k$-means with
+\cite{bouma2009npmi}. Weighted one-dimensional $k$-means with
 $k=2$ initializes at the minimum and maximum scores, assigns distance ties
 to the lower center, and uses the converged midpoint as the cutoff
 \cite{macqueen1967}. The same deterministic procedure is applied to
@@ -872,7 +872,7 @@ action-changing transitions. Same-action pairs use the global cutoff;
 different-action pairs use the smaller cutoff. A detailed
 \texttt{(action, action\_detail)} arm may remove a coarse boundary but never
 add one; missing or unseen detail falls back to the coarse decision.
-% 非 LLM 循环后端统计参考 session 中的相邻 action 转移，并用归一化逐点互信息（NPMI）为每个转移评分。出现次数加权的一维 $k$-means（$k=2$）在最小和最大分数处初始化，距离相等时分配到较低中心，并使用收敛的中点作为阈值。相同的确定性过程应用于 action 变化的转移。相同 action 对使用全局阈值，不同 action 对使用较小阈值。细粒度的 \texttt{(action, action\_detail)} 分支可能移除粗边界但永不添加；缺失或未见的 detail 回退到粗决策。
+% 非 LLM 循环后端统计参考 session 中的相邻 action 转移，并用归一化逐点互信息（NPMI）为每个转移评分。加权的一维 $k$-means（$k=2$）在最小和最大分数处初始化，距离相等时分配到较低中心，并使用收敛的中点作为阈值。相同的确定性过程应用于 action 变化的转移。相同 action 对使用全局阈值，不同 action 对使用较小阈值。细粒度的 \texttt{(action, action\_detail)} 分支可能移除粗边界但永不添加；缺失或未见的 detail 回退到粗决策。
 
 \subsection{RQ1 Details}
 % RQ1 详细数据
@@ -1009,7 +1009,7 @@ The server does not request-seed its opaque-ID allocator, so the two methods
 encounter different numbers of raw invalid IDs; the 19.0\% reduction is the
 complete-run intention-to-treat effect, not a per-invalid-ID saving.
 % Agent-side model token 降低 19.0\%，model call、tool call 与 turn 同时下降；官方 similarity 从 .831 变为 .857，其 scenario-cluster 区间通过预设的 -0.05 质量阈值但跨越零，因此这是无质量损失的效率结果，而非显著 outcome improvement。
-% 服务器不按 request seed 控制 opaque-ID allocator，因此两臂遇到的 raw invalid ID 数不同；19.0\% 降低是完整运行的 intention-to-treat 效应，而非每个 invalid ID 的固定节省。
+% 服务器不按 request seed 控制 opaque-ID allocator，因此两种方法遇到的 raw invalid ID 数不同；19.0\% 降低是完整运行的 intention-to-treat 效应，而非每个 invalid ID 的固定节省。
 
 For the TraceElephant reading study, the Grok~4.5 CLI reader is invoked with
 tools and subagents disabled. Full-trace reading uses one single-turn call per
@@ -1036,10 +1036,10 @@ transition decisions. Paired task-cluster intervals preserve the benchmark's
 task grouping. Literal-name accuracy is evaluated separately on the complete
 AgentBoard and TraceView/ASE datasets.
 
-The 95\% paired task-cluster intervals for Codex-minus-baseline are [0.087, 0.116] for B$^3$ F1 and [0.193, 0.235] for boundary F1.
+The 95\% paired task-cluster intervals for Codex improvement over baseline are [0.087, 0.116] for B$^3$ F1 and [0.193, 0.235] for boundary F1.
 The stateful Qwen2.5-3B baseline that makes push/replace/stay/pop decisions reaches 0.650 B$^3$ F1 and 0.257 boundary F1.
 Boundary error breakdown: recall 0.626, precision 0.389.
-% CodeTraceBench 的 405 个标注在评分器加载 2,948 个人工 stage 前全部固定。Codex 只接收源可见输入，在 17,148 个步骤上发出 4,496 个 marks。B$^3$ 与 boundary 指标评估轨迹内时间分组，字面名称准确率另由完整 AgentBoard 与 TraceView/ASE 数据集评估。Codex-minus-baseline 的 95\% 配对任务簇区间：B$^3$ F1 [0.087, 0.116]，boundary F1 [0.193, 0.235]。有状态 Qwen2.5-3B baseline 达到 0.650 B$^3$ F1 / 0.257 boundary F1。边界误差分解：recall 0.626，precision 0.389。
+% CodeTraceBench 的 405 个标注在评分器加载 2,948 个人工 stage 前全部固定。Codex 只接收源可见输入，在 17,148 个步骤上发出 4,496 个 marks。B$^3$ 与 boundary 指标评估轨迹内时间分组，字面名称准确率另由完整 AgentBoard 与 TraceView/ASE 数据集评估。Codex improvement over baseline 的 95\% 配对任务簇区间：B$^3$ F1 [0.087, 0.116]，boundary F1 [0.193, 0.235]。有状态 Qwen2.5-3B baseline 达到 0.650 B$^3$ F1 / 0.257 boundary F1。边界误差分解：recall 0.626，precision 0.389。
 
 The OSWorld-Human study uses all 287 sessions, containing 3{,}978 operations,
 3{,}691 adjacent pairs, and 2{,}042 human groups. The supervised Bernoulli
@@ -1117,7 +1117,7 @@ SELECTIVE reduces tokens by 20.4\%, and the task-cluster ratio interval has an
 upper bound below one. Both methods retain 100\% operation coverage; SELECTIVE's
 B$^3$ and boundary F1 point estimates are higher, and their lower confidence
 bounds exceed the fixed $-.03$ quality threshold.
-% SELECTIVE 将 token 降低 20.4\%，task-cluster 比区间上界低于 1。两臂均保持 100\% operation 覆盖；SELECTIVE 的 B$^3$ 与 boundary F1 点估计更高，且其差值区间下界超过预设的 -0.03 质量阈值。
+% SELECTIVE 将 token 降低 20.4\%，task-cluster 比区间上界低于 1。两种方法均保持 100\% operation 覆盖；SELECTIVE 的 B$^3$ 与 boundary F1 点估计更高，且其差值区间下界超过预设的 -0.03 质量阈值。
 
 \subsection{Runs, Uncertainty, and Computing Environment}
 % 运行次数、不确定性与计算环境
