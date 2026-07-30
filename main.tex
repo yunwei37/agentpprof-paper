@@ -18,7 +18,7 @@
 /TemplateVersion (2027.1)
 }
 
-\newcommand{\sys}{\textsc{AgentProf}\xspace}
+\newcommand{\sys}{\textsc{AgentPProf}\xspace}
 \newcommand{\operation}{\texttt{operation}\xspace}
 \newcommand{\opstack}{\texttt{operation stack}\xspace}
 \providecommand{\Description}[1]{}
@@ -27,9 +27,26 @@
 
 \begin{document}
 
-\title{AgentProf: Semantic Profiler for Long Horizon AI Agents}
-\author{Anonymous Submission}
-\affiliations{}
+\title{AgentPProf: Semantic Profiler for Long Horizon AI Agents}
+\author{
+Yusheng Zheng$^{1,2}$,
+Chaokun Chang$^{3}$,
+Yu Mao$^{4}$,
+Tianyuan Wu$^{3}$,
+Yuxi Huang$^{2}$,
+Tao Ma$^{5}$,
+Wenan Mao$^{5}$,
+Shuyi Cheng$^{5}$,
+Andi Quinn$^{1}$,
+Wei Wang$^{3}$
+}
+\affiliations{
+$^{1}$UC Santa Cruz \quad
+$^{2}$Eunomia Labs \quad
+$^{3}$HKUST \quad
+$^{4}$Independent Researcher \quad
+$^{5}$Alibaba Group
+}
 
 \maketitle
 
@@ -600,8 +617,8 @@ We report per-query AP averaged over 614, 400, and 220 queries included in MAP. 
 The \emph{direct diagnostic} is the per-operation output of each benchmark's own judge, including LLM-as-judge methods; it reads the full trace and reference answer before naming the responsible agent and decisive step.
 % \emph{direct diagnostic} 是 benchmark 原生输出；它先读取完整 trace 与参考答案，再指出责任 agent 与决定性步骤。
 \emph{Direct-only} ranks by that diagnostic alone; \emph{Direct+\sys} breaks ties by group score (vote mean for AgentProcessBench; 95\% Wilson bound otherwise), with HINTBench field order fixed on 80 validation trajectories;
-\emph{AgentProf-only} uses only the profiler without the benchmark diagnostic (Figure~\ref{fig:rq2-map}).
-% Direct-only 仅按该诊断排序；Direct+\sys 用 profiler 的组分数打破并列；AgentProf-only 仅用 profiler 不用 benchmark 诊断（Figure~\ref{fig:rq2-map}）。
+\emph{\sys-only} uses only the profiler without the benchmark diagnostic (Figure~\ref{fig:rq2-map}).
+% Direct-only 仅按该诊断排序；Direct+\sys 用 profiler 的组分数打破并列；\sys-only 仅用 profiler 不用 benchmark 诊断（Figure~\ref{fig:rq2-map}）。
 
 \begin{figure}[tb]
 \centering
@@ -969,10 +986,10 @@ preserves all 21 protocol IDs, and leaves the responses and post-states of all
 16 valid-ID controls unchanged.
 After development on eight scenarios, the unchanged repair runs on 23 disjoint
 confirmation scenarios, each repeated three times. All 69 BEFORE/repair pairs
-complete with the official evaluator and enter the intention-to-treat analysis
+complete with the official evaluator and enter the full-run analysis
 (Table~\ref{tab:rq2-repair}).
 % 对全部 21 个 profiled operation 的 exact-state replay 重现每个原始 BEFORE response 与 post-state，消除全部 5 个受影响语法错误，保留 21 个 protocol ID，并使 16 个 valid-ID control 的 response 与 post-state 全部不变。
-% 在 8 个场景上完成开发后，未改变的修复在与开发集分离的 23 个确认场景上各重复三次；全部 69 个 BEFORE/repair pair 均由官方 evaluator 完成并进入 intention-to-treat 分析。
+% 在 8 个场景上完成开发后，未改变的修复在与开发集分离的 23 个确认场景上各重复三次；全部 69 个 BEFORE/repair pair 均由官方 evaluator 完成并进入 full-run 分析。
 
 \begin{table}[h]
 \centering\small
@@ -1007,9 +1024,9 @@ crosses zero, so this is an efficiency result without quality loss rather
 than a significant outcome-improvement claim.
 The server does not request-seed its opaque-ID allocator, so the two methods
 encounter different numbers of raw invalid IDs; the 19.0\% reduction is the
-complete-run intention-to-treat effect, not a per-invalid-ID saving.
+complete-run full-run effect, not a per-invalid-ID saving.
 % Agent-side model token 降低 19.0\%，model call、tool call 与 turn 同时下降；官方 similarity 从 .831 变为 .857，其 scenario-cluster 区间通过预设的 -0.05 质量阈值但跨越零，因此这是无质量损失的效率结果，而非显著 outcome improvement。
-% 服务器不按 request seed 控制 opaque-ID allocator，因此两种方法遇到的 raw invalid ID 数不同；19.0\% 降低是完整运行的 intention-to-treat 效应，而非每个 invalid ID 的固定节省。
+% 服务器不按 request seed 控制 opaque-ID allocator，因此两种方法遇到的 raw invalid ID 数不同；19.0\% 降低是完整运行的 full-run 效应，而非每个 invalid ID 的固定节省。
 
 For the TraceElephant reading study, the Grok~4.5 CLI reader is invoked with
 tools and subagents disabled. Full-trace reading uses one single-turn call per
