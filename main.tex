@@ -640,7 +640,7 @@ similarity (details in Appendix~\ref{app:rq2-repair}).
 % 前述实验建立对应关系和检查价值；本案例检验 profile 发现能否指导有效修复。
 % 一个覆盖 8 个 ToolSandbox 场景的标准 \sys profile 隔离出重复的 call-ID 语法失败（5/21 tool operation）。
 % 一个只接收 pprof 输出、不接触原始 trace 的 profile-only analyst 将 compatibility-layer 边界定为修复目标。
-% 导出的单行修复消除所有语法失败，并在 23 个 held-out 确认场景（69 个 BEFORE/repair pair）上将 agent-model token 降低 19.0%，同时通过预设的 -0.05 官方 similarity 非劣效界限（详见附录）。
+% 导出的单行修复消除所有语法失败，并在 23 个 held-out 确认场景（69 个 BEFORE/repair pair）上将 agent-model token 降低 19.0%，同时通过预设的 -0.05 官方 similarity 质量阈值（详见附录）。
 
 %% -------------------------------------------------------------------
 \subsection{RQ3: How Accurate Are the Identifiers?}
@@ -749,13 +749,13 @@ complete content (FULL) reduces provider tokens by 20.4\% on 32 held-out
 CodeTraceBench task clusters while retaining 100\% operation coverage and
 meeting a fixed $-.03$ quality threshold on B$^3$ and boundary F1
 (details in Appendix~\ref{app:rq4-selective}).
-% 自动标注主导 profile 构建成本。仅展示紧凑骨架加选中完整结果（SELECTIVE）而非每个 turn 的完整内容（FULL），在 32 个 held-out CodeTraceBench task cluster 上将 provider token 降低 20.4%，同时保持 100\% operation 覆盖并满足 B$^3$ 与 boundary F1 的 -0.03 非劣效界限（详见附录）。
+% 自动标注主导 profile 构建成本。仅展示紧凑骨架加选中完整结果（SELECTIVE）而非每个 turn 的完整内容（FULL），在 32 个 held-out CodeTraceBench task cluster 上将 provider token 降低 20.4%，同时保持 100\% operation 覆盖并满足 B$^3$ 与 boundary F1 的 -0.03 质量阈值（详见附录）。
 
 \emph{Takeaway.} Segmentation is a one-time pass (37 min for 405 trajectories);
 every later view, measure switch, and inspection costs about one second.
 Selective evidence reduces annotation tokens by 20.4\% with complete coverage
 and maintained structural quality.
-% 要点。切分是一次性 pass（405 条轨迹 37 分钟）；之后每次视图、度量切换与检视约一秒。选择性 evidence 在完整覆盖与结构质量非劣下将标注 token 降低 20.4%。
+% 要点。切分是一次性 pass（405 条轨迹 37 分钟）；之后每次视图、度量切换与检视约一秒。选择性 evidence 在完整覆盖与结构质量不降低下将标注 token 降低 20.4%。
 
 %% ===================================================================
 \section{Related Work}
@@ -786,7 +786,7 @@ complete public benchmarks, and one hierarchy replays across additive
 measures with exact conservation.
 % 相对独立标注，切分以 0.764 的 B$^3$ F1 恢复人工 stage 结构；profile 在三个完整公开 benchmark 上补充定位信号；同一层次跨可加度量精确守恒地重放。
 A repair guided by a single profile reduces agent-side model tokens by 19.0\% without material official-quality loss; selective annotation reduces provider tokens by 20.4\% with complete coverage and maintained structural quality.
-% 由单个 profile 指导的修复在官方质量无实质损失下减少 19.0\% agent-side model token；选择性标注在完整覆盖和结构质量非劣下减少 provider token 20.4\%。
+% 由单个 profile 指导的修复在官方质量无实质损失下减少 19.0\% agent-side model token；选择性标注在完整覆盖和结构质量不降低下减少 provider token 20.4\%。
 Profilers and debuggers are complementary. The profile answers cross-run questions and guides inspection to the content worth opening, reducing opened content by 12 percentage points while reaching similar ranking.
 % Profiler 与 debugger 互补。Profile 回答群体问题，并引导检视只打开值得打开的内容，将打开内容减少 12 个百分点且达到相近排序。
 Multi-project evaluation and tracing-ecosystem integration are the most impactful next steps.
@@ -1086,12 +1086,12 @@ same model, instruction, output schema, and retry limit; SELECTIVE still
 returns marks for the complete trajectory.
 % 我们对比两种标注方法：FULL 向 LLM agent 展示每个 turn 的完整内容，而 SELECTIVE 只展示每个 turn 的紧凑骨架（intent、action、progress）加上选中子集的完整结果。两者使用相同模型、instruction、输出 schema 和重试限制；SELECTIVE 仍为完整轨迹返回 mark。
 
-The confirmation population contains 32 exact \texttt{task\_name} clusters
-balanced across four agent frameworks, disjoint from the preflight and pilot
-exact \texttt{task\_name} clusters, and covers 1{,}639 operations.
+The confirmation dataset contains 32 exact \texttt{task\_name} clusters
+balanced across four agent frameworks, disjoint from development
+clusters, and covers 1{,}639 operations.
 Table~\ref{tab:rq4-selective} counts input plus output tokens from every
 attempt, including one format retry in each arm.
-% 确认 population 含 32 个 exact task\_name cluster，在四个 agent framework 间平衡，与 preflight/pilot 的 task\_name cluster 不重叠，共覆盖 1,639 个 operation。表格统计每次尝试的 input + output token，包括每臂一次格式重试。
+% 确认数据集含 32 个 exact task_name cluster，在四个 agent framework 间平衡，与开发用 cluster 不重叠，共覆盖 1,639 个 operation。表格统计每次尝试的 input + output token，包括每臂一次格式重试。
 
 \begin{table}[h]
 \centering\small
@@ -1118,10 +1118,8 @@ fixed $-.03$ quality threshold.}
 SELECTIVE reduces tokens by 20.4\%, and the task-cluster ratio interval has an
 upper bound below one. Both arms retain 100\% operation coverage; SELECTIVE's
 B$^3$ and boundary F1 point estimates are higher, and their lower confidence
-bounds exceed the fixed $-.03$ quality threshold. This is tokens rather
-than price-weighted dollar cost, and it is not a latency result: SELECTIVE's
-recorded aggregate wall time is higher.
-% SELECTIVE 将 token 降低 20.4\%，task-cluster 比区间上界低于 1。两臂均保持 100\% operation 覆盖；SELECTIVE 的 B$^3$ 与 boundary F1 点估计更高，且其差值区间下界超过预设的 -0.03 质量阈值。这是 token 而非按价格加权的美元成本，也不是 latency 结果：SELECTIVE 的记录聚合 wall time 更高。
+bounds exceed the fixed $-.03$ quality threshold.
+% SELECTIVE 将 token 降低 20.4\%，task-cluster 比区间上界低于 1。两臂均保持 100\% operation 覆盖；SELECTIVE 的 B$^3$ 与 boundary F1 点估计更高，且其差值区间下界超过预设的 -0.03 质量阈值。
 
 \subsection{Runs, Uncertainty, and Computing Environment}
 % 运行次数、不确定性与计算环境
@@ -1173,8 +1171,8 @@ independently of provider pricing.
 Agent histories can contain prompts, model responses, source code, file paths,
 commands, network targets, and system-effect records. The evaluation keeps
 local case-study histories local and reports aggregate measurements and
-task-level paths. The reproduction package uses the cited public populations.
-% Agent 历史可包含提示词、响应、源码、路径、命令、网络目标与系统记录。评估将本地案例历史保留在本地，只报告聚合测量与任务级路径；复现包使用已引用的公开 population。
+task-level paths. The reproduction package uses the cited public datasets.
+% Agent 历史可包含提示词、响应、源码、路径、命令、网络目标与系统记录。评估将本地案例历史保留在本地，只报告聚合测量与任务级路径；复现包使用已引用的公开数据集。
 
 Automatic annotation applies fixed preview bounds and supports field
 minimization, credential and personal-data filtering, and approved
@@ -1190,10 +1188,10 @@ they are authorized to observe, and human review remains part of operational
 access-control and safety decisions.
 % 预期用途是经授权的工程检查、资源分析与源链接调试。操作者将采集范围限制在获授权的系统与轨迹，并在访问控制和安全决策中保留人工审核。
 
-The reported benchmark results characterize the named populations. Reusing
+The reported benchmark results characterize the named datasets. Reusing
 fixed annotations avoids repeated inference, while the non-LLM backend offers
 a deterministic alternative.
-% 报告结果描述命名 population；复用固定标注可避免重复推理，非 LLM backend 提供确定性替代方案。
+% 报告结果描述命名数据集；复用固定标注可避免重复推理，非 LLM backend 提供确定性替代方案。
 
 \subsection{Selective Annotation Protocol}
 % 选择性标注协议
@@ -1205,11 +1203,11 @@ SELECTIVE annotation retains a compact skeleton for every turn: intent, planned 
 The selector uses only source-visible information: result length, error/pass/timeout status, test/build/verify actions, and progress changes. It does not read human stages, rewards, final outcomes, or existing model annotations. Both FULL and SELECTIVE use the same model (Codex GPT-5.6-sol-high), the same one-call output format, the same retry limit (one format retry), and the same downstream scorer.
 % 选择器只使用 source-visible 信息：结果长度、error/pass/timeout 状态、test/build/verify 动作及 progress 变化；它不读取人工 stage、reward、final outcome 或既有模型标注。FULL 和 SELECTIVE 使用相同模型（Codex GPT-5.6-sol-high）、相同一次调用输出格式、相同重试上限（一次格式重试）和相同下游评分器。
 
-The confirmation population contains 32 exact \texttt{task\_name} clusters balanced across four agent frameworks (AutoCodeRover, OpenHands, RepairAgent, CodeAct), disjoint from the preflight and pilot clusters, and covers 1{,}639 operations. Provider tokens are input plus output tokens from every attempt, including one format retry per arm.
-% 确认 population 含 32 个 exact task\_name cluster，在四个 agent framework 间平衡（AutoCodeRover、OpenHands、RepairAgent、CodeAct），与 preflight/pilot cluster 不重叠，共 1,639 个 operation。Provider token 计入每次 attempt 的 input + output token，包括每臂一次格式重试。
+The confirmation dataset contains 32 exact \texttt{task\_name} clusters balanced across four agent frameworks (AutoCodeRover, OpenHands, RepairAgent, CodeAct), disjoint from development clusters, and covers 1{,}639 operations. Provider tokens are input plus output tokens from every attempt, including one format retry per arm.
+% 确认数据集含 32 个 exact task_name cluster，在四个 agent framework 间平衡（AutoCodeRover、OpenHands、RepairAgent、CodeAct），与开发用 cluster 不重叠，共 1,639 个 operation。Provider token 计入每次 attempt 的 input + output token，包括每臂一次格式重试。
 
-The SELECTIVE/FULL token ratio is .796 (task-cluster bootstrap 95\% interval [.734,.863]). B$^3$ difference is +.026 and boundary F1 difference is +.024; both exceed the preset $-.03$ quality threshold. This is tokens, not price-weighted dollar cost or latency; SELECTIVE's recorded aggregate wall time is higher.
-% SELECTIVE/FULL token 比为 .796（task-cluster bootstrap 95\% 区间 [.734,.863]）。B$^3$ 差值 +.026，boundary F1 差值 +.024，均超过预设的 -.03 非劣效界限。这是 tokens 而非按价格加权的美元成本或 latency；SELECTIVE 的记录聚合 wall time 更高。
+The SELECTIVE/FULL token ratio is .796 (task-cluster bootstrap 95\% interval [.734,.863]). B$^3$ difference is +.026 and boundary F1 difference is +.024; both exceed the preset $-.03$ quality threshold.
+% SELECTIVE/FULL token 比为 .796（task-cluster bootstrap 95\% 区间 [.734,.863]）。B$^3$ 差值 +.026，boundary F1 差值 +.024，均超过预设的 -.03 质量阈值。
 
 \subsection{Reproducibility Checklist Notes}
 % 可复现性清单说明
