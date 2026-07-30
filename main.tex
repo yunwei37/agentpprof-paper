@@ -216,8 +216,8 @@ This paper makes three contributions:
 \item \textbf{Evaluation.}
   We evaluate profiler output against independent ground-truth
   annotations that stay hidden from the profiler, on eight public
-  benchmarks and three real trajectory populations.
-% 评估。将 profiler 输出与对 profiler 隐藏的独立真实标注评分，在八个公开 benchmark 与三个真实轨迹 population 上验证。
+  benchmarks and three real trajectory datasets.
+% 评估。将 profiler 输出与对 profiler 隐藏的独立真实标注评分，在八个公开 benchmark 与三个真实轨迹数据集上验证。
 \end{enumerate}
 
 %% ===================================================================
@@ -595,7 +595,7 @@ We run the complete AgentProcessBench, HINTBench (the complete released test
 snapshot, 536 of the paper-reported 629 trajectories), and TraceElephant
 workloads. All profiler outputs are computed before any fault annotations are revealed.
 % 我们在完整的 AgentProcessBench、HINTBench与 TraceElephant workload 上运行；所有 profiler 输出在故障标注揭示之前计算完成。
-We report per-query AP averaged over 614, 400, and 220 queries included in MAP. The 522 trajectories without an annotated faulty operation are consumed for population coverage but excluded from MAP.
+We report per-query AP averaged over 614, 400, and 220 queries included in MAP. The 522 trajectories without an annotated faulty operation are consumed for dataset coverage but excluded from MAP.
 % 我们报告 per-query AP，在 614、400 与 220 个进入 MAP 计算的 query 上取平均；522 条没有已标注故障 operation 的轨迹计入群体覆盖但从 MAP 中排除。
 The \emph{direct diagnostic} is the per-operation output of each benchmark's own judge, including LLM-as-judge methods; it reads the full trace and reference answer before naming the responsible agent and decisive step.
 % \emph{direct diagnostic} 是 benchmark 原生输出；它先读取完整 trace 与参考答案，再指出责任 agent 与决定性步骤。
@@ -606,7 +606,7 @@ The \emph{direct diagnostic} is the per-operation output of each benchmark's own
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig-rq2-map.pdf}
-\caption{MAP over the complete RQ2 populations (614, 400, and 220 queries included in MAP). Higher is better.}
+\caption{MAP over the complete RQ2 datasets (614, 400, and 220 queries included in MAP). Higher is better.}
 \Description{A grouped bar chart showing MAP scores for three methods across three workloads. Direct+\sys performs best on all workloads.}
 \label{fig:rq2-map}
 \end{figure}
@@ -635,7 +635,7 @@ A profile-only analyst---receiving only the pprof output, not raw
 traces---identifies the compatibility-layer boundary as the repair target.
 The derived one-line fix removes all syntax failures and, on 23 held-out
 confirmation scenarios (69 BEFORE/repair pairs), reduces agent-model tokens
-by 19.0\% while passing a fixed $-.05$ non-inferiority margin on official
+by 19.0\% while passing a fixed $-.05$ quality threshold on official
 similarity (details in Appendix~\ref{app:rq2-repair}).
 % 前述实验建立对应关系和检查价值；本案例检验 profile 发现能否指导有效修复。
 % 一个覆盖 8 个 ToolSandbox 场景的标准 \sys profile 隔离出重复的 call-ID 语法失败（5/21 tool operation）。
@@ -731,15 +731,15 @@ Union & 27{,}765 & 1.16 & 0.97 & 465.2 \\
 \caption{RQ4 profile-construction cost~\cite{safactory,agentnet}: three-run
 median times and largest semantic-profile peak RSS. The 729-operation
 AgentRewardBench row is the fixed public release sample used for cost
-measurement, distinct from RQ2's 7{,}229-operation mixed population.}
+measurement, distinct from RQ2's 7{,}229-operation mixed dataset.}
 \label{tab:rq4-cost}
 \end{table}
 \emph{Results.} Segmenting all 405 CodeTraceBench trajectories with Codex (GPT-5.6-sol-high) completes in 37 minutes with up to four workers, averaging 29{,}754 input and 573 output tokens per trajectory.
 % 结果。用 Codex（GPT-5.6-sol-high）切分全部 405 条 CodeTraceBench 轨迹，最多使用四个 worker，在 37 分钟内完成，平均每条轨迹消耗 29,754 个输入 token 与 573 个输出 token。
 With marks fixed, construction scales linearly across the five input sizes (Table~\ref{tab:rq4-cost}), adding only 5.25\,MiB (1.14\%) peak RSS over raw-action grouping at the union scale.
 % 标记固定后，构建开销在五个输入规模上线性扩展（Table~\ref{tab:rq4-cost}），在并集规模上比 raw-action 分组仅多 5.25 MiB（1.14\%）峰值 RSS。
-Deterministic materialization of the full 440-trajectory population takes 0.26\,s for operations and 0.25\,s for tokens, so construction cost is dominated by the segmentation step while materialization stays sub-second.
-% 完整 440 条轨迹 population 的确定性物化在 operation 上需 0.26 秒、在 token 上需 0.25 秒，因此构建成本由切分步骤主导，而物化保持在亚秒级。
+Deterministic construction of the full 440 trajectories takes 0.26\,s for operations and 0.25\,s for tokens, so construction cost is dominated by the segmentation step while construction stays sub-second.
+% 完整 440 条轨迹的确定性物化在 operation 上需 0.26 秒、在 token 上需 0.25 秒，因此构建成本由切分步骤主导，而物化保持在亚秒级。
 
 \paragraph{Reducing annotation cost.}
 % 降低标注成本。
@@ -747,14 +747,14 @@ Automatic annotation dominates profile construction. Showing only a compact
 skeleton plus selected full results (SELECTIVE) instead of every turn's
 complete content (FULL) reduces provider tokens by 20.4\% on 32 held-out
 CodeTraceBench task clusters while retaining 100\% operation coverage and
-meeting a fixed $-.03$ non-inferiority margin on B$^3$ and boundary F1
+meeting a fixed $-.03$ quality threshold on B$^3$ and boundary F1
 (details in Appendix~\ref{app:rq4-selective}).
 % 自动标注主导 profile 构建成本。仅展示紧凑骨架加选中完整结果（SELECTIVE）而非每个 turn 的完整内容（FULL），在 32 个 held-out CodeTraceBench task cluster 上将 provider token 降低 20.4%，同时保持 100\% operation 覆盖并满足 B$^3$ 与 boundary F1 的 -0.03 非劣效界限（详见附录）。
 
 \emph{Takeaway.} Segmentation is a one-time pass (37 min for 405 trajectories);
 every later view, measure switch, and inspection costs about one second.
 Selective evidence reduces annotation tokens by 20.4\% with complete coverage
-and non-inferior structural quality.
+and maintained structural quality.
 % 要点。切分是一次性 pass（405 条轨迹 37 分钟）；之后每次视图、度量切换与检视约一秒。选择性 evidence 在完整覆盖与结构质量非劣下将标注 token 降低 20.4%。
 
 %% ===================================================================
@@ -785,9 +785,9 @@ structure at 0.764 B$^3$ F1, profiles add localization signal on three
 complete public benchmarks, and one hierarchy replays across additive
 measures with exact conservation.
 % 相对独立标注，切分以 0.764 的 B$^3$ F1 恢复人工 stage 结构；profile 在三个完整公开 benchmark 上补充定位信号；同一层次跨可加度量精确守恒地重放。
-A repair guided by a single profile reduces agent-side model tokens by 19.0\% without material official-quality loss; selective annotation reduces provider tokens by 20.4\% with complete coverage and non-inferior structural quality.
+A repair guided by a single profile reduces agent-side model tokens by 19.0\% without material official-quality loss; selective annotation reduces provider tokens by 20.4\% with complete coverage and maintained structural quality.
 % 由单个 profile 指导的修复在官方质量无实质损失下减少 19.0\% agent-side model token；选择性标注在完整覆盖和结构质量非劣下减少 provider token 20.4\%。
-Profilers and debuggers are complementary. The profile answers population questions and guides inspection to the content worth opening, reducing opened content by 12 percentage points while reaching similar ranking.
+Profilers and debuggers are complementary. The profile answers cross-run questions and guides inspection to the content worth opening, reducing opened content by 12 percentage points while reaching similar ranking.
 % Profiler 与 debugger 互补。Profile 回答群体问题，并引导检视只打开值得打开的内容，将打开内容减少 12 个百分点且达到相近排序。
 Multi-project evaluation and tracing-ecosystem integration are the most impactful next steps.
 % 多项目评估和 tracing 生态系统集成是最有影响力的下一步。
@@ -850,7 +850,7 @@ available to the boundary-safe refinement. If canonicalization would make
 adjacent display paths equal, the refinement retains the minimum source words
 needed to distinguish them; unresolved collisions fail closed. Equal
 canonical names receive one stable operation ID across sessions. On the full
-CodeTraceBench population, the map covers all 3{,}895 free-form names, applies
+CodeTraceBench dataset, the map covers all 3{,}895 free-form names, applies
 503 name-specific refinements, and produces 783 stable names. Refinement
 reduces 329 initial adjacent collisions to zero, so the observed fail-closed
 count is zero, while preserving every temporal mark.
@@ -917,7 +917,7 @@ field orders before the 536 test trajectories are scored.
 
 The three localization workloads contain 1{,}756 trajectories. Their 1{,}234
 queries included in MAP contribute 614, 400, and 220 AP values, respectively,
-while the other 522 trajectories without an annotated faulty operation remain in the population
+while the other 522 trajectories without an annotated faulty operation remain in the dataset
 inputs. AP equals reciprocal rank for a query with one relevant operation and
 also handles queries with multiple relevant operations. MAP is the arithmetic
 mean over these queries because AP is undefined without a relevant
@@ -925,24 +925,29 @@ item. The reported Direct+\sys-minus-Direct-only intervals use 10{,}000 paired r
 trajectory clusters within benchmark-defined strata. AgentProcessBench uses
 seed 20260723, HINTBench uses 20260823, and
 TraceElephant uses 20260923.
-% 三个定位 workload 共 1,756 条轨迹；1,234 个进入 MAP 的 query 分别贡献 614、400、220 个 AP，其余 522 条无已标注故障 operation 的轨迹仍进入 population 输入。AP 对单一相关 operation 等于 reciprocal rank，也处理多相关 operation 查询。Direct+\sys-minus-Direct-only 区间使用层内轨迹聚类的 10,000 次配对重抽样。
+% 三个定位 workload 共 1,756 条轨迹；1,234 个进入 MAP 的 query 分别贡献 614、400、220 个 AP，其余 522 条无已标注故障 operation 的轨迹仍进入数据集输入。AP 对单一相关 operation 等于 reciprocal rank，也处理多相关 operation 查询。Direct+\sys-minus-Direct-only 区间使用层内轨迹聚类的 10,000 次配对重抽样。
 
 The 95\% confidence intervals for Direct+\sys-minus-Direct-only are [0.024, 0.039], [0.093, 0.120], and [0.088, 0.148] for the three workloads respectively.
 For the reading study, paired raw-minus-semantic differences are $+.010$ [$-.021$,$+.042$] MAP and $+.120$ [$+.103$,$+.137$] content fraction.
-% 三个定位 workload 共 1,756 条轨迹，其中 1,234 个进入 MAP 计算的 query 分别贡献 614、400、220 个 AP；其余 522 条没有已标注故障 operation 的轨迹仍进入 population 输入。单一相关 operation 时 AP 等于 reciprocal rank。Direct+\sys-minus-Direct-only 区间使用层内轨迹聚类的 10,000 次配对重抽样。
+% 三个定位 workload 共 1,756 条轨迹，其中 1,234 个进入 MAP 计算的 query 分别贡献 614、400、220 个 AP；其余 522 条没有已标注故障 operation 的轨迹仍进入数据集输入。单一相关 operation 时 AP 等于 reciprocal rank。Direct+\sys-minus-Direct-only 区间使用层内轨迹聚类的 10,000 次配对重抽样。
 
 \subsection{RQ2 Repair Case Details}
+% RQ2 修复案例详情
 \label{app:rq2-repair}
 
 \paragraph{Setup.}
+% 设置。
 We run ToolSandbox's official stateful scenarios and evaluator with a local
 tool-using agent~\cite{toolsandbox}.
 One standard \sys pprof over eight real no-policy BEFORE traces contains 21
 tool operations. Stock pprof shows that 5/21 carry \texttt{call\_id:invalid}
 and \texttt{result:invalid-call-id}; four of those failures are followed by an
 exact same-tool, same-argument recovery repeat.
+% 我们使用 ToolSandbox 的官方有状态场景与 evaluator 运行本地 tool-using agent。
+% 一个覆盖 8 条真实 no-policy BEFORE trace 的标准 \sys pprof 含 21 个 tool operation；stock pprof 显示其中 5/21 带有 call\_id:invalid 与 result:invalid-call-id，且四个失败之后出现同 tool、同参数的精确恢复重试。
 
 \paragraph{Analyst and repair.}
+% 分析与修复。
 An independent analyst---a profile-only Codex agent that receives only the
 pprof output and experiment plan, without access to the raw traces or
 ToolSandbox internals---prioritizes the compatibility-layer call-ID boundary
@@ -953,8 +958,11 @@ repair retains the original ID in assistant/tool protocol history but derives
 a separate Python-identifier-safe internal variable for execution; it does not
 change tool names, arguments, order, scenario state, user, agent policy, or
 evaluator.
+% 一个独立 analyst——只接收 pprof 输出与实验计划、不接触原始 trace 或 ToolSandbox 内部的 profile-only Codex agent——将 compatibility-layer call-ID 边界列为修复目标，而非禁止有用重试。
+% 检查该边界发现 compatibility converter 把 opaque protocol call ID 插入可执行 Python source。修复在 assistant/tool 协议历史中保留原 ID，但为执行推导独立的 Python-identifier-safe 内部变量；tool 名称、参数、顺序、场景状态、用户、agent policy 与 evaluator 均不变。
 
 \paragraph{Validation.}
+% 验证。
 Exact-state replay of all 21 profiled operations reproduces every original
 BEFORE response and post-state, removes all five affected syntax failures,
 preserves all 21 protocol IDs, and leaves the responses and post-states of all
@@ -963,6 +971,8 @@ After development on eight scenarios, the unchanged repair runs on 23 disjoint
 confirmation scenarios, each repeated three times. All 69 BEFORE/repair pairs
 complete with the official evaluator and enter the intention-to-treat analysis
 (Table~\ref{tab:rq2-repair}).
+% 对全部 21 个 profiled operation 的 exact-state replay 重现每个原始 BEFORE response 与 post-state，消除全部 5 个受影响语法错误，保留 21 个 protocol ID，并使 16 个 valid-ID control 的 response 与 post-state 全部不变。
+% 在 8 个场景上完成开发后，未改变的修复在与开发集分离的 23 个确认场景上各重复三次；全部 69 个 BEFORE/repair pair 均由官方 evaluator 完成并进入 intention-to-treat 分析。
 
 \begin{table}[h]
 \centering\small
@@ -980,22 +990,26 @@ Turns & 457 & \textbf{401} \\
 Official similarity & .831 & .857 \\
 \bottomrule
 \end{tabular}
-\caption{Profile-derived converter repair on 23 ToolSandbox confirmation
-scenarios with three repetitions each (69 pairs, 138 episodes). Agent-token
-AFTER/BEFORE ratio is .810 (scenario-cluster 95\% interval [.734,.921]); the
-official-similarity delta is +.026 [-.022,.076].}
+\caption{Profile-guided repair on 23 ToolSandbox confirmation scenarios with
+three repetitions each (69 pairs, 138 episodes). Agent-token AFTER/BEFORE ratio
+is .810 (scenario-cluster 95\% interval [.734,.921]); the official-similarity
+delta is +.026 [-.022,.076].}
+% 由 profile 指导的修复在 23 个 ToolSandbox 确认场景（每场景重复三次，共 69 对、138 个 episode）上的效果。Agent token AFTER/BEFORE 比为 .810（scenario-cluster 95\% 区间 [.734,.921]）；官方 similarity 变化为 +.026 [-.022,.076]。
 \label{tab:rq2-repair}
 \end{table}
 
 \paragraph{Interpretation.}
+% 解读。
 Agent-side model tokens fall by 19.0\%, and model calls, tool calls, and turns
 fall with them. Official similarity changes from .831 to .857; its
-scenario-cluster interval passes the fixed $-.05$ non-inferiority margin but
-crosses zero, so this is an efficiency-with-non-inferior-quality result rather
+scenario-cluster interval passes the fixed $-.05$ quality threshold but
+crosses zero, so this is an efficiency result without quality loss rather
 than a significant outcome-improvement claim.
 The server does not request-seed its opaque-ID allocator, so the two arms
 encounter different numbers of raw invalid IDs; the 19.0\% reduction is the
 complete-run intention-to-treat effect, not a per-invalid-ID saving.
+% Agent-side model token 降低 19.0\%，model call、tool call 与 turn 同时下降；官方 similarity 从 .831 变为 .857，其 scenario-cluster 区间通过预设的 -0.05 质量阈值但跨越零，因此这是无质量损失的效率结果，而非显著 outcome improvement。
+% 服务器不按 request seed 控制 opaque-ID allocator，因此两臂遇到的 raw invalid ID 数不同；19.0\% 降低是完整运行的 intention-to-treat 效应，而非每个 invalid ID 的固定节省。
 
 For the TraceElephant reading study, the Grok~4.5 CLI reader is invoked with
 tools and subagents disabled. Full-trace reading uses one single-turn call per
@@ -1020,12 +1034,12 @@ trajectory-local temporal groups, so B$^3$ scores the resulting operation
 partition and exact adjacent-boundary precision, recall, and F1 score the
 transition decisions. Paired task-cluster intervals preserve the benchmark's
 task grouping. Literal-name accuracy is evaluated separately on the complete
-AgentBoard and TraceView/ASE populations.
+AgentBoard and TraceView/ASE datasets.
 
 The 95\% paired task-cluster intervals for Codex-minus-baseline are [0.087, 0.116] for B$^3$ F1 and [0.193, 0.235] for boundary F1.
 The stateful Qwen2.5-3B baseline that makes push/replace/stay/pop decisions reaches 0.650 B$^3$ F1 and 0.257 boundary F1.
 Boundary error breakdown: recall 0.626, precision 0.389.
-% CodeTraceBench 的 405 个标注在评分器加载 2,948 个人工 stage 前全部固定。Codex 只接收源可见输入，在 17,148 个步骤上发出 4,496 个 marks。B$^3$ 与 boundary 指标评估轨迹内时间分组，字面名称准确率另由完整 AgentBoard 与 TraceView/ASE population 评估。Codex-minus-baseline 的 95\% 配对任务簇区间：B$^3$ F1 [0.087, 0.116]，boundary F1 [0.193, 0.235]。有状态 Qwen2.5-3B baseline 达到 0.650 B$^3$ F1 / 0.257 boundary F1。边界误差分解：recall 0.626，precision 0.389。
+% CodeTraceBench 的 405 个标注在评分器加载 2,948 个人工 stage 前全部固定。Codex 只接收源可见输入，在 17,148 个步骤上发出 4,496 个 marks。B$^3$ 与 boundary 指标评估轨迹内时间分组，字面名称准确率另由完整 AgentBoard 与 TraceView/ASE 数据集评估。Codex-minus-baseline 的 95\% 配对任务簇区间：B$^3$ F1 [0.087, 0.116]，boundary F1 [0.193, 0.235]。有状态 Qwen2.5-3B baseline 达到 0.650 B$^3$ F1 / 0.257 boundary F1。边界误差分解：recall 0.626，precision 0.389。
 
 The OSWorld-Human study uses all 287 sessions, containing 3{,}978 operations,
 3{,}691 adjacent pairs, and 2{,}042 human groups. The supervised Bernoulli
@@ -1062,6 +1076,7 @@ both RAM cache and prompt reuse disabled.
 % 仅评估的 Qwen3.6-27B llama.cpp 后端从目标文本和九个声明的 family 描述分类全部 1,012 个 AgentBoard 目标。三次完整运行产生相同的分配。Action 标签适配器使用固定的八个 TraceView action 定义和当前 thought/action；对全部 2,737 个标签的两次完整运行产生相同分配。字面标签使用 accuracy 和 macro-F1，划分使用 V-measure 或普通 B$^3$，转移使用精确相邻边界 precision、recall 和 F1。固定运行时为 llama.cpp 版本 9870 修订 \texttt{2d973636e}，使用 Qwen3.6-27B Q4\_K\_M，单个 4,096 token 槽，全 GPU offload，禁用 reasoning、RAM cache 和 prompt 复用。
 
 \subsection{Reducing Annotation Cost}
+% 降低标注成本
 \label{app:rq4-selective}
 
 We compare two annotation methods: FULL shows every turn's complete content to
@@ -1069,12 +1084,14 @@ the LLM agent, while SELECTIVE shows only a compact skeleton (intent, action,
 progress) for each turn plus full results for a selected subset. Both use the
 same model, instruction, output schema, and retry limit; SELECTIVE still
 returns marks for the complete trajectory.
+% 我们对比两种标注方法：FULL 向 LLM agent 展示每个 turn 的完整内容，而 SELECTIVE 只展示每个 turn 的紧凑骨架（intent、action、progress）加上选中子集的完整结果。两者使用相同模型、instruction、输出 schema 和重试限制；SELECTIVE 仍为完整轨迹返回 mark。
 
 The confirmation population contains 32 exact \texttt{task\_name} clusters
 balanced across four agent frameworks, disjoint from the preflight and pilot
 exact \texttt{task\_name} clusters, and covers 1{,}639 operations.
 Table~\ref{tab:rq4-selective} counts input plus output tokens from every
 attempt, including one format retry in each arm.
+% 确认 population 含 32 个 exact task\_name cluster，在四个 agent framework 间平衡，与 preflight/pilot 的 task\_name cluster 不重叠，共覆盖 1,639 个 operation。表格统计每次尝试的 input + output token，包括每臂一次格式重试。
 
 \begin{table}[h]
 \centering\small
@@ -1093,16 +1110,18 @@ Provider calls & 33 & 33 & 0 \\
 \caption{Paired annotation cost on 32 CodeTraceBench confirmation exact
 \texttt{task\_name} clusters. The SELECTIVE/FULL token ratio is .796
 (task-cluster 95\% interval [.734,.863]); B$^3$ and boundary deltas meet the
-fixed $-.03$ non-inferiority margin.}
+fixed $-.03$ quality threshold.}
+% 在 32 个 CodeTraceBench 确认 exact task\_name cluster 上的配对标注成本。SELECTIVE/FULL token 比为 .796（task-cluster 95\% 区间 [.734,.863]）；B$^3$ 与 boundary 差值满足预设的 -0.03 质量阈值。
 \label{tab:rq4-selective}
 \end{table}
 
 SELECTIVE reduces tokens by 20.4\%, and the task-cluster ratio interval has an
 upper bound below one. Both arms retain 100\% operation coverage; SELECTIVE's
 B$^3$ and boundary F1 point estimates are higher, and their lower confidence
-bounds exceed the fixed $-.03$ non-inferiority margin. This is tokens rather
+bounds exceed the fixed $-.03$ quality threshold. This is tokens rather
 than price-weighted dollar cost, and it is not a latency result: SELECTIVE's
 recorded aggregate wall time is higher.
+% SELECTIVE 将 token 降低 20.4\%，task-cluster 比区间上界低于 1。两臂均保持 100\% operation 覆盖；SELECTIVE 的 B$^3$ 与 boundary F1 点估计更高，且其差值区间下界超过预设的 -0.03 质量阈值。这是 token 而非按价格加权的美元成本，也不是 latency 结果：SELECTIVE 的记录聚合 wall time 更高。
 
 \subsection{Runs, Uncertainty, and Computing Environment}
 % 运行次数、不确定性与计算环境
@@ -1141,7 +1160,7 @@ outcome-blind batches on a fixed two-worker schedule. It completes in
 3{,}521.621\,s of end-to-end wall time and consumes 12{,}039{,}417 input
 tokens, including 10{,}929{,}408 cached tokens, and 312{,}433 output tokens.
 These totals average 27{,}362 input and 710 output tokens per trajectory. All
-12 batches pass profile validation. Deterministic materialization then takes
+12 batches pass profile validation. Deterministic construction then takes
 0.26\,s for operation weights and 0.25\,s for token weights. The token
 counters separate cached input, uncached input, output, and reasoning output
 independently of provider pricing.
@@ -1189,30 +1208,8 @@ The selector uses only source-visible information: result length, error/pass/tim
 The confirmation population contains 32 exact \texttt{task\_name} clusters balanced across four agent frameworks (AutoCodeRover, OpenHands, RepairAgent, CodeAct), disjoint from the preflight and pilot clusters, and covers 1{,}639 operations. Provider tokens are input plus output tokens from every attempt, including one format retry per arm.
 % 确认 population 含 32 个 exact task\_name cluster，在四个 agent framework 间平衡（AutoCodeRover、OpenHands、RepairAgent、CodeAct），与 preflight/pilot cluster 不重叠，共 1,639 个 operation。Provider token 计入每次 attempt 的 input + output token，包括每臂一次格式重试。
 
-The SELECTIVE/FULL token ratio is .796 (task-cluster bootstrap 95\% interval [.734,.863]). B$^3$ difference is +.026 and boundary F1 difference is +.024; both exceed the predeclared $-.03$ non-inferiority margin. This is tokens, not price-weighted dollar cost or latency; SELECTIVE's recorded aggregate wall time is higher.
+The SELECTIVE/FULL token ratio is .796 (task-cluster bootstrap 95\% interval [.734,.863]). B$^3$ difference is +.026 and boundary F1 difference is +.024; both exceed the preset $-.03$ quality threshold. This is tokens, not price-weighted dollar cost or latency; SELECTIVE's recorded aggregate wall time is higher.
 % SELECTIVE/FULL token 比为 .796（task-cluster bootstrap 95\% 区间 [.734,.863]）。B$^3$ 差值 +.026，boundary F1 差值 +.024，均超过预设的 -.03 非劣效界限。这是 tokens 而非按价格加权的美元成本或 latency；SELECTIVE 的记录聚合 wall time 更高。
-
-\subsection{Repair Case Protocol}
-% 修复案例协议
-\label{app:repair}
-
-This case tests whether acting on a profile finding changes later real agent executions. It uses ToolSandbox~\cite{toolsandbox} official stateful scenarios and evaluator with a local tool-using agent.
-% 该案例测试依据 profile 发现采取行动是否改变后续真实 agent 执行。它使用 ToolSandbox 官方有状态场景与 evaluator 运行本地 tool-using agent。
-
-\emph{Profile generation.} One standard \sys pprof over eight real no-policy BEFORE traces contains 21 tool operations. Stock pprof shows 5/21 carry \texttt{call\_id:invalid} and \texttt{result:invalid-call-id}; four failures are followed by exact same-tool, same-argument recovery repeats.
-% Profile 生成。覆盖 8 条真实 no-policy BEFORE trace 的标准 \sys pprof 含 21 个 tool operation；stock pprof 显示 5/21 带有 call\_id:invalid 与 result:invalid-call-id，且四个失败之后出现同 tool、同参数的精确恢复重试。
-
-\emph{Independent analyst.} A profile-only Codex agent receives only the pprof output and experiment plan, without access to raw traces or ToolSandbox internals. It independently prioritizes the compatibility-layer call-ID boundary as the repair target.
-% 独立 analyst。一个 profile-only Codex agent 只接收 pprof 输出与实验计划，不接触原始 trace 或 ToolSandbox 内部；它独立将 compatibility-layer call-ID boundary 列为修复目标。
-
-\emph{Repair mechanism.} The compatibility converter interpolates an opaque protocol call ID into executable Python source. If the ID starts with a digit or contains invalid characters, Python raises a syntax error. The repair retains the original ID in assistant/tool protocol history but derives a separate Python-identifier-safe internal variable for execution. Tool names, arguments, order, scenario state, user, agent policy, and evaluator remain unchanged.
-% 修复机制。Compatibility converter 将 opaque protocol call ID 插入可执行 Python source；若 ID 以数字开头或含非法字符，Python 产生语法错误。修复在协议历史中保留原 ID，但为执行推导独立的 Python-identifier-safe 内部变量；tool 名称、arguments、顺序、scenario 状态、user、agent policy 与 evaluator 不变。
-
-\emph{Exact-state replay.} Replay of all 21 profiled operations reproduces every original BEFORE response and post-state, removes all five syntax failures, preserves all 21 protocol IDs, and leaves all 16 valid-ID controls unchanged.
-% Exact-state replay。21 个 profiled operation 的重放重现每个原始 BEFORE response 与 post-state，消除全部 5 个语法错误，保留 21 个 protocol ID，使 16 个 valid-ID control 全部不变。
-
-\emph{Confirmation runs.} After development on eight scenarios, the unchanged repair runs on 23 disjoint confirmation scenarios, each repeated three times (69 pairs, 138 episodes). All pairs complete with the official evaluator and enter intention-to-treat analysis. Agent-token AFTER/BEFORE ratio is .810 (scenario-cluster 95\% interval [.734,.921]); official-similarity delta is +.026 [-.022,.076], passing the $-.05$ non-inferiority margin but not establishing significant outcome improvement.
-% 确认运行。在 8 个场景上开发后，未改变的修复在 23 个分离的确认场景上各重复三次（69 对、138 个 episode），全部由官方 evaluator 完成并进入 intention-to-treat 分析。Agent-token AFTER/BEFORE 比为 .810（scenario-cluster 95\% 区间 [.734,.921]）；official-similarity 差值为 +.026 [-.022,.076]，通过 -.05 非劣效界限但不能声称显著 outcome improvement。
 
 \subsection{Reproducibility Checklist Notes}
 % 可复现性清单说明
