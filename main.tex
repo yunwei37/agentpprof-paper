@@ -27,7 +27,7 @@
 
 \begin{document}
 
-\title{AgentPProf: Semantic Profiler for Long Horizon AI Agents}
+\title{AgentPProf: Semantic Profiler for Long Horizon AI Agents Behavior}
 \author{
 Yusheng Zheng$^{1,2}$,
 Chaokun Chang$^{3}$,
@@ -53,13 +53,13 @@ $^{5}$Alibaba Group
 \begin{abstract}
 AI agents increasingly orchestrate long-running, multi-step activities involving thousands to millions of interactions with users, tools, and system resources.
 % AI 智能体日益编排涉及与用户、工具和系统资源数千到数百万次交互的长时间多步骤活动。
-To improve quality, safety, and cost efficiency of AI agents, developers need to determine where failures happen, what triggers unsafe effects, and what tasks consume the most budget. They can then target those tasks for optimization to reduce token and time cost and improve success rate.
+To improve quality, safety, and cost efficiency of AI agents, developers need to determine where failures happen, what triggers unsafe effects, and what tasks consume the most budget. They can then target those tasks for optimization to reduce token and time cost and improve agents.
 % 为提高智能体的质量、安全性和成本效率，开发者需确定故障发生在哪里、什么触发不安全副作用、哪类任务消耗最多预算。然后针对这些任务进行优化，降低 token 和时间成本，提高成功率。
 In traditional systems software, profiling answers similar questions by aggregating resource consumption and attributing it to responsible code paths, identifying hotspots for optimization.
 % 在传统系统软件中，profiling 通过聚合资源消耗并归因到负责的代码路径来回答类似问题，识别出需要优化的热点。
-Yet existing agent observability tools focus on per-execution debugging and tracing rather than profiling, making these questions difficult to answer as trajectories grow long and complex.
+Yet existing agent observability tools focus on per-execution debugging and tracing rather than cross-run, long term profiling, making these questions difficult to answer.
 % 然而现有智能体可观测性工具聚焦于单次执行的调试和 tracing 而非 profiling，使这些问题在轨迹变长变复杂时难以回答。
-Agent behavior differs from code execution, which makes profiling challenging. The responsible entities are task intent and workflow phase like \emph{diagnose authentication}, \emph{compare branches} rather than code paths, and lack the stable identifiers that make aggregation possible.
+Agent observability needs profiling, not only debugging, which is challenging. The responsible entities are task intent and workflow phase like \emph{diagnose authentication}, \emph{compare branches} rather than code paths, and lack the stable identifiers that make aggregation possible.
 % 智能体行为与代码执行不同，这使 profiling 具有挑战性。负责实体是任务意图和工作流阶段（如诊断认证、比较分支）而非代码路径，且缺乏使聚合成为可能的稳定标识符。
 
 We propose a \emph{semantic operation stack model} that adapts profiling to agent trajectories.
@@ -68,7 +68,7 @@ Uniform \emph{operations} represent all agent activities, and \emph{operation st
 % 统一的 operation 表示所有智能体活动，operation stack 替代运行时调用栈，使同一数据支持不同粒度的分层归因。
 We observe that an agent's task occupies a contiguous span of a trajectory and decomposes into contiguous subtasks, so we introduce \emph{recursive operation segmentation}, which splits a trajectory where the agent's responsibility changes, names the intervals on both sides, and recurses to supply the missing stack.
 % 我们观察到智能体的任务占据轨迹上一段连续区间并可分解为连续子任务，因此我们设计递归 operation 切分，在责任变化处切开轨迹，为两侧区间命名并递归，提供缺失的栈。
-\sys implements this in a profiler that compiles local agent trajectories into pprof-compatible profiles, enabling standard flame graph visualization and analysis.
+\sys is a profiler that aggregates local agent trajectories into pprof-compatible profiles, enabling standard flame graph visualization and analysis.
 % \sys 将其实现为一个 profiler，把本地智能体轨迹编译为 pprof 兼容的 profile，支持标准火焰图可视化与分析。
 On CodeTraceBench trajectories, \sys reaches 0.764 B$^3$ F1 against human stage annotations; on three problem-localization benchmarks, the profile improves MAP by 0.031--0.117. These results show that \sys effectively attributes resources, locates problems, surfaces optimization targets, and guides token-cost reduction at practical cost. \sys is available at \url{https://github.com/eunomia-bpf/agentsight}.
 % 在 CodeTraceBench 轨迹上，\sys 与人工 stage 标注的 B$^3$ F1 达到 0.764；在三个问题定位 benchmark 上，profile 将 MAP 提高了 0.031--0.117。这些结果表明 \sys 能够有效归因资源、定位问题、暴露优化目标并帮助优化 token 开销，且成本实用。\sys 开源于 https://github.com/eunomia-bpf/agentsight。
@@ -989,7 +989,7 @@ confirmation scenarios, each repeated three times. All 69 BEFORE/repair pairs
 complete with the official evaluator and enter the full-run analysis
 (Table~\ref{tab:rq2-repair}).
 % 对全部 21 个 profiled operation 的 exact-state replay 重现每个原始 BEFORE response 与 post-state，消除全部 5 个受影响语法错误，保留 21 个 protocol ID，并使 16 个 valid-ID control 的 response 与 post-state 全部不变。
-% 在 8 个场景上完成开发后，未改变的修复在与开发集分离的 23 个确认场景上各重复三次；全部 69 个 BEFORE/repair pair 均由官方 evaluator 完成并进入 full-run 分析。
+% 在 8 个场景上完成开发后，未改变的修复在 23 个确认场景上各重复三次；全部 69 个 BEFORE/repair pair 均由官方 evaluator 完成并进入完整运行分析。
 
 \begin{table}[h]
 \centering\small
@@ -1024,9 +1024,9 @@ crosses zero, so this is an efficiency result without quality loss rather
 than a significant outcome-improvement claim.
 The server does not request-seed its opaque-ID allocator, so the two methods
 encounter different numbers of raw invalid IDs; the 19.0\% reduction is the
-complete-run full-run effect, not a per-invalid-ID saving.
+full-run effect, not a per-invalid-ID saving.
 % Agent-side model token 降低 19.0\%，model call、tool call 与 turn 同时下降；官方 similarity 从 .831 变为 .857，其 scenario-cluster 区间通过预设的 -0.05 质量阈值但跨越零，因此这是无质量损失的效率结果，而非显著 outcome improvement。
-% 服务器不按 request seed 控制 opaque-ID allocator，因此两种方法遇到的 raw invalid ID 数不同；19.0\% 降低是完整运行的 full-run 效应，而非每个 invalid ID 的固定节省。
+% 服务器不按 request seed 控制 opaque-ID allocator，因此两种方法遇到的 raw invalid ID 数不同；19.0\% 降低是完整运行效应，而非每个 invalid ID 的固定节省。
 
 For the TraceElephant reading study, the Grok~4.5 CLI reader is invoked with
 tools and subagents disabled. Full-trace reading uses one single-turn call per

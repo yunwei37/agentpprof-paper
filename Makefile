@@ -18,10 +18,10 @@ all: $(MAIN).pdf
 # arXiv submission: include .bbl (pre-built), source, figures, style files
 arxiv: $(MAIN).bbl
 	rm -rf arxiv-submit arxiv-submit.tar.gz
-	mkdir -p arxiv-submit
+	mkdir -p arxiv-submit/figures
 	cp $(MAIN).tex $(MAIN).bbl references.bib arxiv-submit/
 	cp aaai2027.sty aaai2027.bst arxiv-submit/
-	cp -r figures arxiv-submit/
+	cp figures/*.pdf figures/*.png figures/*.tex arxiv-submit/figures/
 	cd arxiv-submit && tar -czvf ../arxiv-submit.tar.gz .
 	rm -rf arxiv-submit
 	@echo "Created arxiv-submit.tar.gz"
