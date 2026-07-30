@@ -922,7 +922,7 @@ inputs. AP equals reciprocal rank for a query with one relevant operation and
 also handles queries with multiple relevant operations. MAP is the arithmetic
 mean over these queries because AP is undefined without a relevant
 item. The reported Direct+\sys-minus-Direct-only intervals use 10{,}000 paired resamples of
-trajectory clusters within benchmark-defined strata. AgentProcessBench uses
+trajectory clusters within benchmark-defined groups. AgentProcessBench uses
 seed 20260723, HINTBench uses 20260823, and
 TraceElephant uses 20260923.
 % 三个定位 workload 共 1,756 条轨迹；1,234 个进入 MAP 的 query 分别贡献 614、400、220 个 AP，其余 522 条无已标注故障 operation 的轨迹仍进入数据集输入。AP 对单一相关 operation 等于 reciprocal rank，也处理多相关 operation 查询。Direct+\sys-minus-Direct-only 区间使用层内轨迹聚类的 10,000 次配对重抽样。
@@ -1005,7 +1005,7 @@ fall with them. Official similarity changes from .831 to .857; its
 scenario-cluster interval passes the fixed $-.05$ quality threshold but
 crosses zero, so this is an efficiency result without quality loss rather
 than a significant outcome-improvement claim.
-The server does not request-seed its opaque-ID allocator, so the two arms
+The server does not request-seed its opaque-ID allocator, so the two methods
 encounter different numbers of raw invalid IDs; the 19.0\% reduction is the
 complete-run intention-to-treat effect, not a per-invalid-ID saving.
 % Agent-side model token 降低 19.0\%，model call、tool call 与 turn 同时下降；官方 similarity 从 .831 变为 .857，其 scenario-cluster 区间通过预设的 -0.05 质量阈值但跨越零，因此这是无质量损失的效率结果，而非显著 outcome improvement。
@@ -1086,12 +1086,11 @@ same model, instruction, output schema, and retry limit; SELECTIVE still
 returns marks for the complete trajectory.
 % 我们对比两种标注方法：FULL 向 LLM agent 展示每个 turn 的完整内容，而 SELECTIVE 只展示每个 turn 的紧凑骨架（intent、action、progress）加上选中子集的完整结果。两者使用相同模型、instruction、输出 schema 和重试限制；SELECTIVE 仍为完整轨迹返回 mark。
 
-The confirmation dataset contains 32 exact \texttt{task\_name} clusters
-balanced across four agent frameworks, disjoint from development
-clusters, and covers 1{,}639 operations.
+The confirmation dataset contains 32 \texttt{task\_name} clusters
+balanced across four agent frameworks, covering 1{,}639 operations.
 Table~\ref{tab:rq4-selective} counts input plus output tokens from every
-attempt, including one format retry in each arm.
-% 确认数据集含 32 个 exact task_name cluster，在四个 agent framework 间平衡，与开发用 cluster 不重叠，共覆盖 1,639 个 operation。表格统计每次尝试的 input + output token，包括每臂一次格式重试。
+attempt, including one format retry per method.
+% 确认数据集含 32 个 task_name cluster，在四个 agent framework 间平衡，共覆盖 1,639 个 operation。表格统计每次尝试的 input + output token，包括每种方法一次格式重试。
 
 \begin{table}[h]
 \centering\small
@@ -1107,16 +1106,15 @@ Covered operations & 1{,}639 & 1{,}639 & 0 \\
 Provider calls & 33 & 33 & 0 \\
 \bottomrule
 \end{tabular}
-\caption{Paired annotation cost on 32 CodeTraceBench confirmation exact
-\texttt{task\_name} clusters. The SELECTIVE/FULL token ratio is .796
+\caption{Paired annotation cost on 32 CodeTraceBench \texttt{task\_name} clusters. The SELECTIVE/FULL token ratio is .796
 (task-cluster 95\% interval [.734,.863]); B$^3$ and boundary deltas meet the
 fixed $-.03$ quality threshold.}
-% 在 32 个 CodeTraceBench 确认 exact task\_name cluster 上的配对标注成本。SELECTIVE/FULL token 比为 .796（task-cluster 95\% 区间 [.734,.863]）；B$^3$ 与 boundary 差值满足预设的 -0.03 质量阈值。
+% 在 32 个 CodeTraceBench task_name cluster 上的配对标注成本。SELECTIVE/FULL token 比为 .796（task-cluster 95\% 区间 [.734,.863]）；B$^3$ 与 boundary 差值满足预设的 -0.03 质量阈值。
 \label{tab:rq4-selective}
 \end{table}
 
 SELECTIVE reduces tokens by 20.4\%, and the task-cluster ratio interval has an
-upper bound below one. Both arms retain 100\% operation coverage; SELECTIVE's
+upper bound below one. Both methods retain 100\% operation coverage; SELECTIVE's
 B$^3$ and boundary F1 point estimates are higher, and their lower confidence
 bounds exceed the fixed $-.03$ quality threshold.
 % SELECTIVE 将 token 降低 20.4\%，task-cluster 比区间上界低于 1。两臂均保持 100\% operation 覆盖；SELECTIVE 的 B$^3$ 与 boundary F1 点估计更高，且其差值区间下界超过预设的 -0.03 质量阈值。
@@ -1203,8 +1201,8 @@ SELECTIVE annotation retains a compact skeleton for every turn: intent, planned 
 The selector uses only source-visible information: result length, error/pass/timeout status, test/build/verify actions, and progress changes. It does not read human stages, rewards, final outcomes, or existing model annotations. Both FULL and SELECTIVE use the same model (Codex GPT-5.6-sol-high), the same one-call output format, the same retry limit (one format retry), and the same downstream scorer.
 % 选择器只使用 source-visible 信息：结果长度、error/pass/timeout 状态、test/build/verify 动作及 progress 变化；它不读取人工 stage、reward、final outcome 或既有模型标注。FULL 和 SELECTIVE 使用相同模型（Codex GPT-5.6-sol-high）、相同一次调用输出格式、相同重试上限（一次格式重试）和相同下游评分器。
 
-The confirmation dataset contains 32 exact \texttt{task\_name} clusters balanced across four agent frameworks (AutoCodeRover, OpenHands, RepairAgent, CodeAct), disjoint from development clusters, and covers 1{,}639 operations. Provider tokens are input plus output tokens from every attempt, including one format retry per arm.
-% 确认数据集含 32 个 exact task_name cluster，在四个 agent framework 间平衡（AutoCodeRover、OpenHands、RepairAgent、CodeAct），与开发用 cluster 不重叠，共 1,639 个 operation。Provider token 计入每次 attempt 的 input + output token，包括每臂一次格式重试。
+The confirmation dataset contains 32 \texttt{task\_name} clusters balanced across four agent frameworks (AutoCodeRover, OpenHands, RepairAgent, CodeAct), covering 1{,}639 operations. Provider tokens are input plus output tokens from every attempt, including one format retry per method.
+% 确认数据集含 32 个 task_name cluster，在四个 agent framework 间平衡（AutoCodeRover、OpenHands、RepairAgent、CodeAct），共 1,639 个 operation。Provider token 计入每次 attempt 的 input + output token，包括每种方法一次格式重试。
 
 The SELECTIVE/FULL token ratio is .796 (task-cluster bootstrap 95\% interval [.734,.863]). B$^3$ difference is +.026 and boundary F1 difference is +.024; both exceed the preset $-.03$ quality threshold.
 % SELECTIVE/FULL token 比为 .796（task-cluster bootstrap 95\% 区间 [.734,.863]）。B$^3$ 差值 +.026，boundary F1 差值 +.024，均超过预设的 -.03 质量阈值。
