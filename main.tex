@@ -1,5 +1,5 @@
 \documentclass[letterpaper]{article}
-\usepackage[submission]{aaai2027}
+\usepackage{aaai2027}
 
 \usepackage[hyphens]{url}
 \urlstyle{rm}
@@ -728,33 +728,13 @@ For closed-label literal tags, a Qwen3.6-27B~\cite{qwen36} classifier labels 1{,
 \subsection{RQ4: What Is the Profiling Cost?}
 % RQ4：分析开销是多少？
 
-\emph{Setup.} To evaluate whether profiling cost is practical, we measure segmentation time and tokens and profile replay speed. Cost separates into a one-time automatic segmentation pass per corpus and deterministic construction/replay afterwards (Table~\ref{tab:rq4-cost}).
-% 设置。为评估 profiling 开销是否实用，我们测量切分的时间与 token 以及 profile 重放速度。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放（Table~\ref{tab:rq4-cost}）。
+\emph{Setup.} To evaluate whether profiling cost is practical, we measure segmentation time and tokens and profile replay speed. Cost separates into a one-time automatic segmentation pass per corpus and deterministic construction/replay afterwards.
+% 设置。为评估 profiling 开销是否实用，我们测量切分的时间与 token 以及 profile 重放速度。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放。
 
-\begin{table}[tb]
-\centering\small
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}lrrrr@{}}
-\toprule
-Workload & Ops & \shortstack{Semantic\\(s)} & \shortstack{Raw action\\(s)} & \shortstack{Peak RSS\\(MiB)} \\
-\midrule
-AgentRewardBench & 729 & 0.04 & 0.03 & 19.3 \\
-SATraj-OS & 4{,}285 & 0.17 & 0.14 & 73.9 \\
-OSWorld-Human & 6{,}010 & 0.24 & 0.21 & 109.1 \\
-AgentNet & 16{,}741 & 0.70 & 0.58 & 279.3 \\
-Union & 27{,}765 & 1.16 & 0.97 & 465.2 \\
-\bottomrule
-\end{tabular}
-\caption{RQ4 profile-construction cost~\cite{safactory,agentnet}: three-run
-median times and largest semantic-profile peak RSS. The 729-operation
-AgentRewardBench row is the fixed public release sample used for cost
-measurement, distinct from RQ2's 7{,}229-operation mixed dataset.}
-\label{tab:rq4-cost}
-\end{table}
 \emph{Results.} Segmenting all 405 CodeTraceBench trajectories with Codex (GPT-5.6-sol-high) completes in 37 minutes with up to four workers, averaging 29{,}754 input and 573 output tokens per trajectory.
 % 结果。用 Codex（GPT-5.6-sol-high）切分全部 405 条 CodeTraceBench 轨迹，最多使用四个 worker，在 37 分钟内完成，平均每条轨迹消耗 29,754 个输入 token 与 573 个输出 token。
-With marks fixed, construction scales linearly across the five input sizes (Table~\ref{tab:rq4-cost}), adding only 5.25\,MiB (1.14\%) peak RSS over raw-action grouping at the union scale.
-% 标记固定后，构建开销在五个输入规模上线性扩展（Table~\ref{tab:rq4-cost}），在并集规模上比 raw-action 分组仅多 5.25 MiB（1.14\%）峰值 RSS。
+With marks fixed, construction scales linearly: the 27{,}765-operation union completes in 1.16\,s at 465\,MiB peak RSS, adding only 5.25\,MiB (1.14\%) over raw-action grouping (details in Appendix~\ref{app:rq4-cost}).
+% 标记固定后，构建开销线性扩展：27,765-operation 并集在 1.16 秒 / 465 MiB 峰值 RSS 完成，比 raw-action 分组仅多 5.25 MiB（1.14\%）（详见附录）。
 Deterministic construction of the full 440 trajectories takes 0.26\,s for operations and 0.25\,s for tokens, so construction cost is dominated by the segmentation step while construction stays sub-second.
 % 完整 440 条轨迹的确定性物化在 operation 上需 0.26 秒、在 token 上需 0.25 秒，因此构建成本由切分步骤主导，而物化保持在亚秒级。
 
@@ -1091,6 +1071,32 @@ The fixed runtime is llama.cpp version 9870 at revision
 4{,}096-token slot, full GPU offload, Jinja templates, reasoning disabled, and
 both RAM cache and prompt reuse disabled.
 % 仅评估的 Qwen3.6-27B llama.cpp 后端从目标文本和九个声明的 family 描述分类全部 1,012 个 AgentBoard 目标。三次完整运行产生相同的分配。Action 标签适配器使用固定的八个 TraceView action 定义和当前 thought/action；对全部 2,737 个标签的两次完整运行产生相同分配。字面标签使用 accuracy 和 macro-F1，划分使用 V-measure 或普通 B$^3$，转移使用精确相邻边界 precision、recall 和 F1。固定运行时为 llama.cpp 版本 9870 修订 \texttt{2d973636e}，使用 Qwen3.6-27B Q4\_K\_M，单个 4,096 token 槽，全 GPU offload，禁用 reasoning、RAM cache 和 prompt 复用。
+
+\subsection{RQ4 Construction Cost}
+% RQ4 构建成本
+\label{app:rq4-cost}
+
+\begin{table}[h]
+\centering\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Workload & Ops & \shortstack{Semantic\\(s)} & \shortstack{Raw action\\(s)} & \shortstack{Peak RSS\\(MiB)} \\
+\midrule
+AgentRewardBench & 729 & 0.04 & 0.03 & 19.3 \\
+SATraj-OS & 4{,}285 & 0.17 & 0.14 & 73.9 \\
+OSWorld-Human & 6{,}010 & 0.24 & 0.21 & 109.1 \\
+AgentNet & 16{,}741 & 0.70 & 0.58 & 279.3 \\
+Union & 27{,}765 & 1.16 & 0.97 & 465.2 \\
+\bottomrule
+\end{tabular}
+\caption{RQ4 profile-construction cost~\cite{safactory,agentnet}: three-run
+median times and largest semantic-profile peak RSS. The 729-operation
+AgentRewardBench row is the fixed public release sample used for cost
+measurement, distinct from RQ2's 7{,}229-operation mixed dataset.}
+% RQ4 profile 构建成本：三次运行的中位时间与最大语义 profile 峰值 RSS。729-operation AgentRewardBench 行是用于成本测量的固定公开发布样本，与 RQ2 的 7,229-operation 混合数据集不同。
+\label{tab:rq4-cost}
+\end{table}
 
 \subsection{Reducing Annotation Cost}
 % 降低标注成本
