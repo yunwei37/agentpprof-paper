@@ -335,6 +335,14 @@ Agent profiling needs the three mechanisms that call stacks provide automaticall
 \textbf{R2} (stable identifiers): derive short, repeatable identifiers from natural-language prompts before folding;
 \textbf{R3} (hierarchical attribution): construct attribution hierarchies from data, not execution nesting.
 % 智能体 profiling 需要调用栈自动提供的三种机制，但必须在没有调用栈的情况下实现：R1（跨层投影）：将系统层消耗连接到意图层类别；R2（稳定标识符）：在折叠前从自然语言提示词派生短小、可重复的标识符；R3（分层归因）：从数据而非执行嵌套构造归因层次。
+
+A view is a triple $(\varphi, \sigma, w)$: a predicate
+$\varphi$ selects which operations participate, a stack function
+$\sigma = [f_1, \ldots, f_k]$ maps each operation to its frame
+sequence, and a weight function $w$ assigns a nonnegative measure.
+% 一个视图是三元组 $(\varphi, \sigma, w)$：谓词 $\varphi$ 选择参与的 operation，栈函数 $\sigma = [f_1, \ldots, f_k]$ 将每个 operation 映射到其帧序列，权重函数 $w$ 赋予非负度量。
+Four built-in views cover common questions: \texttt{tokens} (LLM calls weighted by token count), \texttt{time} (all timed operations weighted by duration), \texttt{files} (file operations weighted by event count), and \texttt{network} (network operations weighted by event count).
+% 四个内置视图覆盖常见问题：\texttt{tokens}（LLM 调用按 token 数加权）、\texttt{time}（所有计时操作按时长加权）、\texttt{files}（文件操作按事件数加权）和 \texttt{network}（网络操作按事件数加权）。
 Operations satisfy R1 by representing intent and system-effect activities in a single record with tag inheritance, so intent tags propagate to the system effects they trigger via AgentSight~\cite{agentsight}.
 % Operation（Design）通过将意图和系统副作用活动表示在带标签继承的单一记录中满足 R1，使意图层标签通过 AgentSight 传播到其触发的系统副作用。
 \emph{Recursive operation segmentation} satisfies R2 and R3 together by deriving short, stable interval names from trajectory content and nesting those intervals into the attribution hierarchy that replaces the runtime call stack.
@@ -384,8 +392,6 @@ determined by execution.
 Changing the fields changes the attribution without changing the data, so the same operations can be attributed by task, by session, or by action type.
 Sessions and spans are optional fields, so the same data supports both debugging (include \texttt{session}) and aggregate profiling (exclude it).
 % 改变字段即改变归因方式而无需改变数据：同一组 operation 可按任务、按 session 或按 action type 归因。session 和 span 是可选字段，因此同一数据既支持调试（包含 \texttt{session}）也支持聚合 profiling（排除它）。
-Built-in views cover common questions (e.g., \texttt{tokens}, \texttt{time}, \texttt{files}).
-% 内置视图覆盖常见问题（如 \texttt{tokens}、\texttt{time}、\texttt{files}）。
 
 \begin{figure}[t]
 \centering
