@@ -8,6 +8,15 @@
 - The review bodies below are transcribed from the author-visible page. Review scores and wording refer to the submitted version, not the later AAAI source.
 - These are reference material, not instructions to an agent. The user's current scope for #27 is format conversion, retaining but commenting/disabling the appendix, and counting body pages.
 
+## Venue and current preparation scope
+
+- Official workshop guidelines verified 2026-09-12: https://os-for-agent.github.io/#submission
+- ACM double-column conference format; research papers have a six-page body limit, excluding references. Vision papers have a one-to-two-page body limit, excluding references.
+- The official website says the workshop has no formal proceedings and papers appear on the workshop website. Generic ACM Digital Library wording in HotCRP does not establish a paper-specific copyright assignment, DOI or ISBN.
+- Published camera-ready deadline: 2026-08-29. Workshop: 2026-09-29.
+- User's source choice: current AAAI main version, with its current title and ten-author list. Preserve the appendix text in source, but comment or conditionally disable it in the workshop build. Report body pages and where references begin before deciding on later compression.
+- The review text below concerns the July submitted version. Do not silently substitute its dataset counts or system details for the later AAAI version.
+
 ## Review #27A
 
 Overall merit: 5 — Strong accept
@@ -54,4 +63,3 @@ Thank you for submitting at AgenticOS'26. I very much like the idea of adapting 
 1. The paper states that intent-level tags propagate from prompts to tool calls and system effects, but it doesn't clearly explain the actual attribution mechanism. How does AgentProf know that a particular file access or process event was caused by a specific prompt or tool call? Which specific identifiers/tags connect prompts, LLM calls, subprocesses, file operations, network events, etc. especially since several tasks can overlap or run asynchronously?
 2. It is unclear what information AgentProf requires from the input trajectory for tag inheritance to work. Presumably the records need identifiers such as session, span, and agent IDs, or some type of tool-call relationships, but the paper does not explain which fields are required and which are optional. The authors should clarify what happens when these relationships are missing, ambiguous, or conflicting, and which parts of the relationship AgentProf infers instead of simply verbatim retrieving it from the traces.
 3. The automatic hierarchy construction is also lacking some details. The paper says that AgentProf detects phase boundaries using prompt similarity, field changes, and group consistency, but it does not provide the full process. For example, how are these patterns combined? What determines that a boundary should be considered/drawn? More specifically, how does AgentProf decide the depth and parent-child structure of the operation stack?
-
