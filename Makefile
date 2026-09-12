@@ -20,7 +20,7 @@ arxiv: $(MAIN).bbl
 	rm -rf arxiv-submit arxiv-submit.tar.gz
 	mkdir -p arxiv-submit/figures
 	cp $(MAIN).tex $(MAIN).bbl references.bib arxiv-submit/
-	cp aaai2027.sty aaai2027.bst arxiv-submit/
+	cp acmart.cls ACM-Reference-Format.bst arxiv-submit/
 	cp figures/*.pdf figures/*.png figures/*.tex arxiv-submit/figures/
 	cd arxiv-submit && tar -czvf ../arxiv-submit.tar.gz .
 	rm -rf arxiv-submit
