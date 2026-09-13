@@ -36,7 +36,8 @@
 
 \begin{document}
 
-\title{AgentPProf: Semantic Profiler for Long Horizon AI Agents}
+% \title{AgentPProf: Semantic Profiler for Long Horizon AI Agents}
+\title{AgentPProf: Semantic Profiler for AI Agents}
 
 %% Compact author block: one shared block with superscript affiliation
 %% markers instead of acmart's per-author affiliation stacks.
@@ -574,7 +575,7 @@ The hierarchy decomposes recovery into verification challenges, repeated searche
 % 层次结构把 recovery 责任分解为验证挑战、重复搜索、误导航和记录重试，source label 指明哪些 session 贡献了各宽度。
 Failing agents thus get stuck in retry loops instead of backing out to try another approach.
 % 洞察是失败的 agent 陷入重试循环，而不是回退尝试不同方法。
-This structure matches independent expert looping labels on 435 trajectories at AP .634 versus a .398 random baseline (difference interval [.181, .293]), confirming a real behavioral pattern. A fixed-chain repeated/error control reaches similar detection quality (AP .656), but only the recursive profile provides this decomposition and source navigation.
+This structure matches independent expert looping labels on 435 trajectories at AP .634 versus a .398 random baseline (difference interval [.181, .293]), confirming a real behavioral pattern. A fixed-chain repeated/error control reaches the same detection quality (AP .656), but only the recursive profile provides this decomposition and source navigation.
 % 该结构在 435 条轨迹上与独立专家 looping 标注的一致性为 AP .634（随机基线 .398；差异区间 [.181,.293]），确认 profile 呈现的是真实行为模式；fixed-chain repeated/error 对照达到相同检测质量（AP .656），但只有递归 profile 提供上述可导航到 source 的分解。
 
 \paragraph{Supplementing benchmark's own diagnostics.}
@@ -589,7 +590,7 @@ profiler outputs precede fault-annotation disclosure.
 % 我们在完整的 AgentProcessBench、HINTBench与 TraceElephant workload 上运行；所有 profiler 输出在故障标注揭示之前计算完成。
 We average per-query AP over the 614, 400, and 220 MAP queries; 522 trajectories without annotated faulty operations provide dataset coverage but are excluded from MAP.
 % 我们报告 per-query AP，在 614、400 与 220 个进入 MAP 计算的 query 上取平均；522 条没有已标注故障 operation 的轨迹计入数据集覆盖但从 MAP 中排除。
-The \emph{direct diagnostic} is each benchmark's per-operation judge output, including LLM-as-judge methods, which reads the full trace and reference answer before naming the responsible agent and step.
+The \emph{direct diagnostic} is each benchmark's per-operation judge output, including LLM-as-judge methods, which reads the full trace and reference answer before naming the responsible agent and decisive step.
 % \emph{direct diagnostic} 是 benchmark 原生输出；它先读取完整 trace 与参考答案，再指出责任 agent 与决定性步骤。
 \emph{Direct-only} uses only that diagnostic; \emph{Direct+\sys} breaks ties by group score (vote mean for AgentProcessBench; otherwise 95\% Wilson bound), with HINTBench field order fixed on 80 validation trajectories;
 \emph{\sys-only} uses only the profiler (Figure~\ref{fig:rq2-map}).
@@ -603,7 +604,7 @@ The \emph{direct diagnostic} is each benchmark's per-operation judge output, inc
 \label{fig:rq2-map}
 \end{figure}
 
-\emph{Results.} Direct+\sys beats Direct-only by 0.031, 0.107, and 0.117 MAP on the three workloads (all statistically significant\appnote{; 95\% intervals in Appendix~\ref{app:rq2}}; Figure~\ref{fig:rq2-map}).
+\emph{Results.} Direct+\sys beats Direct-only by 0.031, 0.107, and 0.117 MAP across three workloads (all statistically significant\appnote{; 95\% intervals in Appendix~\ref{app:rq2}}; Figure~\ref{fig:rq2-map}).
 % 结果。Direct+\sys 在三个 workload 上比 Direct-only 分别高 0.031、0.107、0.117 MAP（均统计显著；95\% 区间见 Appendix~\ref{app:rq2}；Figure~\ref{fig:rq2-map}）。
 Evidence-preserving grouping drives the localization gain. Semantic naming enables cross-run attribution (RQ1) and concentrates attention (measured below).
 % 分组加保留证据驱动定位增益。语义命名支持跨运行归因（RQ1）并集中读者注意力（下文测量）。
@@ -619,7 +620,7 @@ Full-trace reading reaches MAP .502 at 12.6K tokens/query. A profile-guided read
 \paragraph{Use case 4: guiding a real repair.}
 % 用例 4：指导实际修复。
 This case tests whether a profile finding can guide effective repair.
-A standard \sys profile of eight ToolSandbox scenarios isolates a recurring
+A standard \sys profile of eight ToolSandbox scenarios isolates recurring
 call-ID syntax failure (5/21 tool operations).
 A profile-only analyst---given pprof output but no raw traces---identifies the
 compatibility-layer boundary as the repair target.
@@ -676,7 +677,7 @@ Source-native step & 0.983 & 0.221 & 0.361 & 0.246 \\
 \end{table}
 
 \emph{Results.} Codex segmentation reaches 0.764 B$^3$ F1 and 0.480
-boundary F1, beating the strongest automatic baseline (multi-resolution recurrence) by +0.101 and +0.214\appnote{intervals in Appendix~\ref{app:rq3}}.
+boundary F1, beating the strongest automatic baseline (multi-resolution recurrence) by +0.101 and +0.214\appnote{Appendix~\ref{app:rq3} intervals}.
 A stateful per-turn Qwen2.5-3B baseline reaches 0.650 B$^3$ F1, showing meaningful segmentation by smaller models.
 The marks exactly conserve 20{,}866 operations and
 494{,}862{,}929 tokens.
@@ -709,10 +710,10 @@ Deterministic construction of all 440 trajectories takes 0.26\,s (operations) an
 
 \paragraph{Reducing annotation cost.}
 % 降低标注成本。
-Automatic annotation dominates profile construction. A compact skeleton plus
+Automatic annotation dominates construction. A compact skeleton plus
 selected full results (SELECTIVE), instead of every turn's
-complete content (FULL) reduces provider tokens by 20.4\% on 32 held-out
-CodeTraceBench task clusters while retaining 100\% operation coverage and
+complete content (FULL) reduces provider tokens 20.4\% on 32 held-out
+CodeTraceBench task clusters while retaining full operation coverage and
 meeting a fixed $-.03$ quality threshold on B$^3$ and boundary F1
 \appnote{details in Appendix~\ref{app:rq4-selective}}.
 % 自动标注主导 profile 构建成本。仅展示紧凑骨架加选中完整结果（SELECTIVE）而非每个 turn 的完整内容（FULL），在 32 个 held-out CodeTraceBench task cluster 上将 provider token 降低 20.4%，同时保持 100\% operation 覆盖并满足 B$^3$ 与 boundary F1 的 -0.03 质量阈值（详见附录）。
@@ -744,11 +745,7 @@ Agent observability needs profiling, not only debugging.
 % 智能体可观测性需要性能分析，不仅仅是调试。
 \sys shows that the semantic operation stack model, driven by
 recursive operation segmentation, brings hierarchical attribution to
-agent trajectories: segmentation recovers human stage structure at
-0.764 B$^3$ F1, profiles add localization signal on three public
-benchmarks, and a profile-guided repair cuts agent-side model tokens
-by 19.0\% without quality loss, while selective annotation cuts
-provider tokens by 20.4\%.
+agent trajectories, effectively attributes resources, locates problems, and helps optimize token cost at practical profiling cost.
 % \sys 表明，由递归 operation 切分驱动的语义 operation stack 模型为智能体轨迹带来了分层归因能力：切分以 0.764 的 B$^3$ F1 恢复人工 stage 结构，profile 在三个公开 benchmark 上补充定位信号，profile 指导的修复在不损失质量下减少 19.0\% agent-side model token，选择性标注减少 provider token 20.4\%。
 Adaptive triggering, intent-level state-transition models,
 profile-driven runtime control, and multi-project evaluation with
