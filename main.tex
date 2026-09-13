@@ -491,55 +491,54 @@ Benchmark trajectories average 8--52 operations (short to medium); the 42-sessio
 \subsection{RQ1: Does Semantic Profiling Improve Resource Attribution?}
 % RQ1：语义 profiling 是否改善资源归因？
 
-\emph{Setup.} If semantic profiling improves resource attribution, then the same fixed hierarchy should (1) reunite cross-run responsibility that alternative organizations scatter, and (2) reveal materially different bottlenecks when the additive measure changes.
-We test both on 41 real long-horizon agent trajectories (3{,}146 user turns, 5{,}750 operations), including three independent executions of one Git-deployment task whose 735 steps receive 96 recursive annotations reaching semantic depth five.
+\emph{Setup.} Improved resource attribution should (1) reunite cross-run responsibility scattered by alternative organizations and (2) reveal different bottlenecks across additive measures.
+We test both on 41 real long-horizon agent trajectories (3{,}146 user turns, 5{,}750 operations), including three independent runs of one Git-deployment task whose 735 steps receive 96 recursive annotations to semantic depth five.
 % 设置。若语义 profiling 改善资源归因，则同一固定层次应 (1) 重聚被其他组织方式分散的跨运行责任，(2) 在切换可加度量时暴露实质不同的瓶颈。我们在 41 条真实 long-horizon agent 轨迹（3,146 个用户 turn、5,750 个 operation）上测试两者，其中包括同一 Git 部署任务的三次独立执行——其 735 个步骤获得 96 个递归标注，语义深度达五层。
 
 \paragraph{The motivating case revisited.}
 % 动机案例回顾。
-The Git-deployment case from Section~\ref{sec:background} demonstrates that semantic organization reunites cross-run responsibility that alternative organizations scatter; here we add a third measure (elapsed time).
+The Git-deployment case in Section~\ref{sec:background} shows semantic organization reuniting responsibility scattered by alternative organizations; here we add elapsed time as a third measure.
 % 第~\ref{sec:background} 节的 Git 部署案例展示了语义组织能重聚跨运行责任、而替代组织会将其分散；这里我们增加第三种度量（elapsed time）以展示度量敏感性。
-The same hierarchy replays under all three measures with exact conservation, and the \texttt{diagnose authentication} subtree's share rises from 21\% (count) through 37\% (time) to 46\% (tokens). Changing only the measure moves the attributed share by more than a factor of two.
+The hierarchy replays under all three measures with exact conservation, while \texttt{diagnose authentication}'s share rises from 21\% (count) through 37\% (time) to 46\% (tokens). Changing only the measure more than doubles the attributed share.
 % 同一层次在三种度量下精确守恒地重放，\texttt{diagnose authentication} 子树的份额从 21\%（count）经 37\%（time）升至 46\%（token）。仅改变度量就使归因份额变化超过两倍。
 A quantitative control shows why both alternatives fail.
-\emph{Raw-action grouping} (by literal action-type, e.g., \texttt{run}, \texttt{edit}) fails: of 105 authentication operations, 102 carry only the label \texttt{run}, and that same bucket mixes in 97 unrelated operations. A coarser action-kind grouping scatters the work across six kinds (execute 39\%, version-control 22\%, edit 19\%, inspect 12\%, search 7\%, install 1\%).
-\emph{Native call trees} (each operation under its source LLM or tool call) place each operation under a distinct source call with no shared responsibility node.
-Only the semantic hierarchy reunites authentication into one focusable cross-run path while preserving all call/tool evidence as leaf nodes.
+\emph{Raw-action grouping} (by literal action-type, e.g., \texttt{run}, \texttt{edit}) fails: 102 of 105 authentication operations are labeled only \texttt{run}, whose bucket includes 97 unrelated operations. Coarser action-kind grouping scatters them across six kinds (execute 39\%, version-control 22\%, edit 19\%, inspect 12\%, search 7\%, install 1\%).
+\emph{Native call trees} place every operation under its distinct source LLM/tool call, without a shared responsibility node.
+Only the semantic hierarchy reunites authentication into one focusable cross-run path while preserving all call/tool evidence as leaves.
 % 定量对照显示为什么两种替代方式都失败。Raw-action 分组（按字面 action-type）失败：105 个认证 operation 中 102 个只带标签 \texttt{run}，而同一 bucket 还混入 97 个无关 operation。更粗的 action-kind 分组把工作散落到六种 kind（execute 39\%、version-control 22\%、edit 19\%、inspect 12\%、search 7\%、install 1\%）。Native call tree（每个 operation 在其源 LLM 或 tool call 下）把每个 operation 放在不同 source call 下，没有共享责任节点。只有语义层次将认证重聚为一条可聚焦的跨运行路径，同时保留所有 call/tool 证据作为叶节点。
-Separately, real AgentSight~\cite{agentsight} eBPF recordings replay the
-same way, and all 1{,}520 captured process spawns and file operations fold
-under task responsibilities with exact conservation, demonstrating the system-effect layer end to end.
+Separately, real AgentSight~\cite{agentsight} eBPF recordings likewise fold
+all 1{,}520 captured process spawns and file operations under task
+responsibilities with exact conservation, demonstrating end-to-end system effects.
 % 此外，真实的 AgentSight eBPF recording 以相同方式重放，全部 1,520 个捕获的进程创建与文件操作折叠到 task responsibility 之下，精确守恒，端到端展示了 system-effect 层。
 
 \paragraph{Use case 2: where did this project's agent budget go?}
 % 用例 2：这个项目的 agent 预算去哪了？
-A developer spent weeks building \sys{} and this paper with coding agents, accumulating a local session history whose long-horizon portion (42 sessions, 18 Codex and 24 Claude Code, with 1{,}252 prompts, 5{,}620 LLM calls, and 1.38 billion tokens) is annotated here.
+A developer spent weeks building \sys{} and this paper with coding agents; we annotate the history's long-horizon portion (42 sessions: 18 Codex and 24 Claude Code; 1{,}252 prompts, 5{,}620 LLM calls, and 1.38 billion tokens).
 % 一位开发者花数周用 coding agent 构建 \sys{} 与本文，累积了一份本地 session 历史，这里标注的是其中的 long-horizon 部分（42 个 session，18 Codex、24 Claude Code，含 1,252 个 prompt、5,620 次 LLM 调用和 13.8 亿 token）。
 The question is \emph{what did the agents actually spend tokens doing?}
 % 问题：agent 到底把 token 花在了什么事上？
-The profile shows the answer is not one dominant sink but a broad distribution, and the largest path (\texttt{refine paper > align evaluation}) holds only 1.7\% of tokens.
+The profile shows a broad distribution without a dominant sink; the largest path (\texttt{refine paper > align evaluation}) holds only 1.7\% of tokens.
 % profile（Figure~\ref{fig:selfprofile}）显示答案不是单一大头而是宽分布：最大路径（\texttt{refine paper > align evaluation}）仅占 1.7\% 的 token。
-The three longest sessions (spanning tens of hours each) keep distinct dominant responsibilities (evaluation alignment, evidence inspection, and merge resolution).
+The three longest sessions (each tens of hours) have distinct dominant responsibilities: evaluation alignment, evidence inspection, and merge resolution.
 % 三条最长 session（各跨越数十小时）各有不同的主导责任（evaluation alignment、evidence inspection、merge resolution）
-Switching to operation count shifts where mass concentrates. Token mass stays at prompt depth (70\%), while operation mass resolves deeper (44\% at depths three and four).
+Switching to operation count shifts the concentration. Token mass stays at prompt depth (70\%), whereas operation mass resolves deeper (44\% at depths three and four).
 % 切换到 operation 数改变了质量集中处：token 质量停在 prompt 深度（70\%），而 operation 质量解析更深（44\% 在深度三和四）。
-The history also demonstrates multi-agent composition at scale, with 98 subagent delegations across 14 sessions where each delegation contains all downstream subagent operations and composes with annotated semantic levels.
+The history also demonstrates scaled multi-agent composition: 98 subagent delegations across 14 sessions, each containing all downstream subagent operations and composing with annotated semantic levels.
 % 该历史还展示了规模化的多智能体组合：跨 14 个 session 的 98 次 subagent 委托，每次委托包含所有下游 subagent 操作，并与标注的语义层级组合。
 
-The same hierarchy replays under FILE-READ, FILE-WRITE, and NETWORK-target
-widths, making side effects auditable by responsibility.
+The hierarchy replays under FILE-READ, FILE-WRITE, and NETWORK-target widths, making side effects auditable by responsibility.
 % 同一层次按 FILE-READ、FILE-WRITE 与 NETWORK-target 宽度重放，使副作用可按责任审计。
 
-Skill invocations appear literally in the session log and cost no annotation, so they cover the developer's complete history (1{,}394 sessions, 6.9B tokens).
-Under that level, \texttt{paper-writing-style} leads both measures (29M tokens, 99.47\% cache reads), highlighting its repeated-context workflow as the first thing to inspect. The largest single session holds only 31\% of that mass, so the priority appears only after folding.
-The 99.47\% cache-read ratio suggests the workflow repeatedly rebuilds similar context. Restructuring it to reuse context across invocations could reduce token cost.
+Literal skill invocations require no annotation, thus covering the complete history (1{,}394 sessions, 6.9B tokens).
+There, \texttt{paper-writing-style} leads both measures (29M tokens, 99.47\% cache reads), making its repeated-context workflow the first inspection target. The largest session holds only 31\% of that mass, so this priority appears only after folding.
+The 99.47\% cache-read ratio suggests repeated rebuilding of similar context. Reusing context across invocations could reduce token cost.
 % skill 调用在 session log 中被字面记录、无需标注，因此覆盖开发者完整历史（1,394 session、69 亿 token）。在该层级下，\texttt{paper-writing-style} 在两种度量上居首（2900 万 token、99.47\% 为 cache read），凸显它反复拉长上下文的工作流是首先该检查的对象；最大单 session 仅持有 31\%，因此优先级只有折叠后才显现。99.47\% 的 cache read 比例表明该工作流反复重建相似上下文；重构它以跨调用复用上下文可降低 token 成本。
 
-Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tokens, both conserved exactly), ranking operations by count versus tokens yields high agreement (mean tau-b 0.886).
-The 13\% of tasks where agreement falls below 0.7 are exactly where multi-measure profiling adds value\appnote{details in Appendix~\ref{app:rq1}}.
+Across 440 AgentRewardBench trajectories (7{,}229 operations, 51{,}904{,}621 tokens, both exactly conserved), count- versus token-based rankings agree strongly (mean tau-b 0.886).
+Multi-measure profiling adds value precisely for the 13\% of tasks below 0.7 agreement\appnote{details in Appendix~\ref{app:rq1}}.
 % 跨 440 条 AgentRewardBench 轨迹（7,229 个 operation、51,904,621 个 token，均精确守恒），按 count 与 token 排序的一致性高（平均 Kendall tau-b 0.886）。一致性低于 0.7 的 13\% 任务正是多度量 profiling 增加价值的地方。
 
-\emph{Takeaway.} Both conditions hold: the semantic hierarchy reunites cross-run responsibility that raw-action and native organizations scatter (the authentication case), and switching the measure on that fixed hierarchy moves attributed share by more than 2$\times$ (21\% to 46\%), revealing bottlenecks that operation count alone would hide. These bottlenecks are optimization targets: tasks consuming disproportionate budget can be restructured to reduce cost.
+\emph{Takeaway.} Both hold: the semantic hierarchy reunites responsibility scattered by raw-action and native organizations (authentication), while switching measures on that hierarchy changes attributed share by over 2$\times$ (21\% to 46\%), exposing bottlenecks hidden by operation count. These optimization targets can be restructured to reduce disproportionate task costs.
 % 要点。两个条件都成立：语义层次重聚了 raw-action 和 native 组织所分散的跨运行责任（认证案例），且在该固定层次上切换度量使归因份额变化超过 2 倍（21\% 到 46\%），暴露出仅靠 operation 数会掩盖的瓶颈。这些瓶颈就是优化目标：消耗不成比例预算的任务可被重构以降低成本。
 
 
@@ -547,7 +546,7 @@ The 13\% of tasks where agreement falls below 0.7 are exactly where multi-measur
 \subsection{RQ2: Does Profiler Output Correspond to Real Problems?}
 % RQ2：分析器输出是否对应真实问题？
 
-\emph{Setup.} To evaluate whether profiler output corresponds to independently annotated real problems, we apply three tests: (1) \emph{differential analysis} checks whether the profile's failure structure matches expert behavioral labels across 440 runs; (2) \emph{localization} checks whether adding profile scores to existing benchmark judges improves fault ranking; (3) \emph{reading study} checks whether semantic names help an LLM agent reach the same ranking while inspecting less content.
+\emph{Setup.} To test whether profiler output corresponds to independently annotated real problems, we apply three tests: (1) \emph{differential analysis} checks whether the profile's failure structure matches expert behavioral labels across 440 runs; (2) \emph{localization} checks whether adding profile scores to existing benchmark judges improves fault ranking; (3) \emph{reading study} checks whether semantic names help an LLM agent reach the same ranking while inspecting less content.
 % 设置。为评估 profiler 输出是否对应独立标注的真实问题，我们用三个测试：(1) 差分分析检验 profile 的失败结构是否在 440 次运行上与专家行为标注一致；(2) 定位检验在既有 benchmark judge 上添加 profile 分数是否改善故障排序；(3) 阅读研究检验语义名称是否帮助 LLM agent 在检视更少内容的情况下达到相近排序。
 
 \begin{figure}[t]
@@ -591,7 +590,7 @@ workloads; all profiler outputs are computed before any fault annotations are re
 % 我们在完整的 AgentProcessBench、HINTBench与 TraceElephant workload 上运行；所有 profiler 输出在故障标注揭示之前计算完成。
 We report per-query AP averaged over the 614, 400, and 220 queries included in MAP; the 522 trajectories without an annotated faulty operation are consumed for dataset coverage but excluded from MAP.
 % 我们报告 per-query AP，在 614、400 与 220 个进入 MAP 计算的 query 上取平均；522 条没有已标注故障 operation 的轨迹计入数据集覆盖但从 MAP 中排除。
-The \emph{direct diagnostic} is each benchmark's own per-operation judge output, including LLM-as-judge methods, which reads the full trace and reference answer before naming the responsible agent and decisive step.
+The \emph{direct diagnostic} is each benchmark's per-operation judge output, including LLM-as-judge methods, which reads the full trace and reference answer before naming the responsible agent and decisive step.
 % \emph{direct diagnostic} 是 benchmark 原生输出；它先读取完整 trace 与参考答案，再指出责任 agent 与决定性步骤。
 \emph{Direct-only} ranks by that diagnostic alone; \emph{Direct+\sys} breaks ties by group score (vote mean for AgentProcessBench; 95\% Wilson bound otherwise), with HINTBench field order fixed on 80 validation trajectories;
 \emph{\sys-only} uses only the profiler without the benchmark diagnostic (Figure~\ref{fig:rq2-map}).
@@ -638,15 +637,15 @@ similarity\appnote{details in Appendix~\ref{app:rq2-repair}}.
 \subsection{RQ3: How Accurate Are the Identifiers?}
 % RQ3：标识符有多准确？
 
-\emph{Setup.} To evaluate whether recursive segmentation recovers task structure that humans would recognize, we compare segmentation output against 2{,}948 human-annotated stages over all 405 CodeTraceBench trajectories.
+\emph{Setup.} To test whether recursive segmentation recovers task structure humans would recognize, we compare segmentation output against 2{,}948 human-annotated stages over all 405 CodeTraceBench trajectories.
 % 设置。为评估递归切分是否恢复出人类会认可的任务结构，我们把切分输出与全部 405 条 CodeTraceBench 轨迹上的 2,948 个人工标注 stage 进行比较。
 F1~\cite{bagga-baldwin-1998-entity-based} asks whether operations that
-belong together end up grouped together; exact adjacent-boundary
+belong together are grouped together; exact adjacent-boundary
 F1~\cite{ruokolainen2016segmentation} asks whether cuts land exactly
 where humans cut. Baselines receive identical inputs
 (Table~\ref{tab:rq3-codetrace}).
 % F1 度量"应当在一起的 operation 是否被分到一起"；精确相邻边界 F1 度量"切点是否恰好落在人工切点处"。基线获得完全相同的输入（Table~\ref{tab:rq3-codetrace}）。
-Each method output is evaluated at the level it predicts: literal names use
+Each method output is evaluated at its predicted level: literal names use
 accuracy and macro-F1~\cite{lewis2004rcv1}, permutation-invariant partitions
 V-measure~\cite{rosenberg-hirschberg-2007-v-measure} or ordinary B$^3$,
 and adjacent interval boundaries exact precision, recall, and F1. For
@@ -656,7 +655,7 @@ original additive weights.
 % 每个方法的输出按其预测的层级评估：字面名称用 accuracy 与 macro-F1，置换不变的 partition 用 V-measure 或普通 B$^3$，相邻区间边界用精确的 precision、recall 与 F1；对字段值型的既有数据集，转换步骤先把每个预测 group 映射为同一份区间标注格式，再由 \sys 折叠原始可加权重。
 Codex~\cite{codex} receives each trajectory (prompts, commands, and output summaries, with no labels or scores visible) and emits sparse interval marks over 17{,}148 steps without access to stage annotations (loaded after all 405 outputs were fixed): 4{,}496 marks at semantic depth one (3), two (2{,}873), three (1{,}588), or four (32), with no prompt requesting a specific depth.
 % Codex 接收轨迹（提示词、命令与输出摘要，不含标签或分数），在 17,148 个步骤上发出稀疏区间标记，不接触官方 stage 标注：共 4,496 个标记，语义深度为一层（3 个）、两层（2,873 个）、三层（1,588 个）与四层（32 个），且没有任何 prompt 指定深度。
-Name normalization then maps the 3{,}895 free-form interval names to 783 stable short names (e.g., \texttt{diagnose authentication}) with zero adjacent display-path collisions, rejecting unresolved ones. Identical names across sessions merge so that identical paths fold in the final profile.
+Name normalization maps the 3{,}895 free-form interval names to 783 stable short names (e.g., \texttt{diagnose authentication}) with zero adjacent display-path collisions, rejecting unresolved ones. Identical names across sessions merge so identical paths fold in the final profile.
 % 名称归一化把 3,895 个自由形式的区间名映射为 783 个稳定短名称（如 \texttt{diagnose authentication}），不产生任何相邻显示路径冲突、无法消解时拒绝；跨 session 的相同名称合并，使相同路径在最终 profile 中折叠。
 
 \begin{table}[tb]
@@ -700,7 +699,7 @@ For closed-label literal tags, a Qwen3.6-27B~\cite{qwen36} classifier labels 1{,
 \subsection{RQ4: What Is the Profiling Cost?}
 % RQ4：分析开销是多少？
 
-\emph{Setup.} To evaluate whether profiling cost is practical, we measure segmentation time and tokens and profile replay speed. Cost separates into a one-time automatic segmentation pass per corpus and deterministic construction/replay afterwards.
+\emph{Setup.} To test whether profiling cost is practical, we measure segmentation time and tokens and profile replay speed. Cost separates into a one-time automatic segmentation pass per corpus and deterministic construction/replay thereafter.
 % 设置。为评估 profiling 开销是否实用，我们测量切分的时间与 token 以及 profile 重放速度。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放。
 
 \emph{Results.} Segmenting all 405 CodeTraceBench trajectories with Codex (GPT-5.6-sol-high) completes in 37 minutes with up to four workers, averaging 29{,}754 input and 573 output tokens per trajectory.
