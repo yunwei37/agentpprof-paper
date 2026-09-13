@@ -546,7 +546,7 @@ Multi-measure profiling adds value precisely for the 13\% of tasks below 0.7 agr
 \subsection{RQ2: Does Profiler Output Correspond to Real Problems?}
 % RQ2：分析器输出是否对应真实问题？
 
-\emph{Setup.} To test whether profiler output corresponds to independently annotated real problems, we apply three tests: (1) \emph{differential analysis} checks whether the profile's failure structure matches expert behavioral labels across 440 runs; (2) \emph{localization} checks whether adding profile scores to existing benchmark judges improves fault ranking; (3) \emph{reading study} checks whether semantic names help an LLM agent reach the same ranking while inspecting less content.
+\emph{Setup.} Three tests assess correspondence between profiler output and independently annotated real problems: (1) \emph{differential analysis} compares profile failure structure with expert behavioral labels across 440 runs; (2) \emph{localization} tests whether profile scores improve existing benchmark judges' fault rankings; (3) \emph{reading study} tests whether semantic names preserve an LLM agent's ranking with less inspection.
 % 设置。为评估 profiler 输出是否对应独立标注的真实问题，我们用三个测试：(1) 差分分析检验 profile 的失败结构是否在 440 次运行上与专家行为标注一致；(2) 定位检验在既有 benchmark judge 上添加 profile 分数是否改善故障排序；(3) 阅读研究检验语义名称是否帮助 LLM agent 在检视更少内容的情况下达到相近排序。
 
 \begin{figure}[t]
@@ -566,34 +566,33 @@ send-message paths.}
 
 \paragraph{Use case 3: what do failing runs do differently?}
 % 用例 3：失败的运行到底做了什么不同？
-A team has 440 web-agent runs~\cite{agentrewardbench} over 125 tasks, every task with both successful and failed attempts (202 successful, 238 failed); reading 440 transcripts (7{,}229 operations) is infeasible.
+A team has 440 web-agent runs~\cite{agentrewardbench} over 125 tasks, each with successful and failed attempts (202 successful, 238 failed); reading all transcripts (7{,}229 operations) is infeasible.
 % 一个团队有 125 个任务的 440 次 web-agent 运行（202 成功、238 失败），每个任务都同时有成功与失败的尝试；阅读 440 份转录（7,229 个 operation）以了解什么行为区分成功与失败不现实。
-We pair failed and successful runs within each task (338 pair occurrences), build a profile for each group, and subtract (failed minus successful) to get a signed difference profile (Figure~\ref{fig:diff-flamegraph}). The answer is immediate: failed runs spend 44.6\% of their steps in \texttt{recover interaction} (retrying, re-searching, re-navigating) versus only 12.0\% for successful runs.
+We pair failed and successful runs per task (338 occurrences), profile each group, and subtract them (failed minus successful) into a signed difference profile (Figure~\ref{fig:diff-flamegraph}). The result is immediate: failed runs spend 44.6\% of steps in \texttt{recover interaction} (retrying, re-searching, re-navigating) versus 12.0\% for successful runs.
 % 我们在每个任务内配对失败与成功运行（338 个配对 occurrence），分别构建 profile 并相减（失败减成功）得到带符号差分 profile（Figure~\ref{fig:diff-flamegraph}）。答案立即呈现：失败运行在恢复上消耗了不成比例的更多精力——44.6\% 的步骤在 \texttt{recover interaction}（重试、重搜索、重导航），而成功运行只有 12.0\%。
-The hierarchy decomposes the recovery responsibility into verification challenges, repeated searches, mistaken navigation, and record retries, with source labels identifying which sessions contributed each width.
+The hierarchy decomposes recovery into verification challenges, repeated searches, mistaken navigation, and record retries; source labels identify sessions contributing each width.
 % 层次结构把 recovery 责任分解为验证挑战、重复搜索、误导航和记录重试，source label 指明哪些 session 贡献了各宽度。
-The insight is that failing agents get stuck in retry loops rather than backing out and trying a different approach.
+Failing agents thus get stuck in retry loops instead of backing out to try another approach.
 % 洞察是失败的 agent 陷入重试循环，而不是回退尝试不同方法。
-This structure matches independent expert looping labels on 435 trajectories at AP .634 versus random baseline .398 (difference interval [.181, .293]), confirming the profile surfaces a real behavioral pattern. A fixed-chain repeated/error control reaches the same detection quality (AP .656), but only the recursive profile provides the decomposition above with navigation to source.
+This structure matches independent expert looping labels on 435 trajectories at AP .634 versus a .398 random baseline (difference interval [.181, .293]), confirming a real behavioral pattern. A fixed-chain repeated/error control reaches similar detection quality (AP .656), but only the recursive profile provides this decomposition and source navigation.
 % 该结构在 435 条轨迹上与独立专家 looping 标注的一致性为 AP .634（随机基线 .398；差异区间 [.181,.293]），确认 profile 呈现的是真实行为模式；fixed-chain repeated/error 对照达到相同检测质量（AP .656），但只有递归 profile 提供上述可导航到 source 的分解。
 
 \paragraph{Supplementing benchmark's own diagnostics.}
 % 补充 benchmark 原生诊断。
-\emph{Setup.} Each query included in MAP has one or more annotated faulty operations.
-A method outputs a ranking of that query's operations, scored by
-average precision (AP equals reciprocal rank for one faulty operation) and
-averaged as MAP~\cite{robertson2008ap}.
+\emph{Setup.} Each MAP query has one or more annotated faulty operations.
+A method ranks its operations, scored by average precision (AP equals
+reciprocal rank for one faulty operation) and averaged as MAP~\cite{robertson2008ap}.
 % 设置。每个进入 MAP 计算的 query 有一个或多个已标注的故障 operation；方法输出对该 query 中 operation 的排序，以 average precision 评分（单个故障 operation 时 AP 等于其排名的倒数），并平均为 MAP。
-We run the complete AgentProcessBench, HINTBench (the complete released test
-snapshot, 536 of the paper-reported 629 trajectories), and TraceElephant
-workloads; all profiler outputs are computed before any fault annotations are revealed.
+We run complete AgentProcessBench, TraceElephant, and HINTBench workloads (the
+complete released test snapshot, 536 of 629 paper-reported trajectories); all
+profiler outputs precede fault-annotation disclosure.
 % 我们在完整的 AgentProcessBench、HINTBench与 TraceElephant workload 上运行；所有 profiler 输出在故障标注揭示之前计算完成。
-We report per-query AP averaged over the 614, 400, and 220 queries included in MAP; the 522 trajectories without an annotated faulty operation are consumed for dataset coverage but excluded from MAP.
+We average per-query AP over the 614, 400, and 220 MAP queries; 522 trajectories without annotated faulty operations provide dataset coverage but are excluded from MAP.
 % 我们报告 per-query AP，在 614、400 与 220 个进入 MAP 计算的 query 上取平均；522 条没有已标注故障 operation 的轨迹计入数据集覆盖但从 MAP 中排除。
-The \emph{direct diagnostic} is each benchmark's per-operation judge output, including LLM-as-judge methods, which reads the full trace and reference answer before naming the responsible agent and decisive step.
+The \emph{direct diagnostic} is each benchmark's per-operation judge output, including LLM-as-judge methods, which reads the full trace and reference answer before naming the responsible agent and step.
 % \emph{direct diagnostic} 是 benchmark 原生输出；它先读取完整 trace 与参考答案，再指出责任 agent 与决定性步骤。
-\emph{Direct-only} ranks by that diagnostic alone; \emph{Direct+\sys} breaks ties by group score (vote mean for AgentProcessBench; 95\% Wilson bound otherwise), with HINTBench field order fixed on 80 validation trajectories;
-\emph{\sys-only} uses only the profiler without the benchmark diagnostic (Figure~\ref{fig:rq2-map}).
+\emph{Direct-only} uses only that diagnostic; \emph{Direct+\sys} breaks ties by group score (vote mean for AgentProcessBench; otherwise 95\% Wilson bound), with HINTBench field order fixed on 80 validation trajectories;
+\emph{\sys-only} uses only the profiler (Figure~\ref{fig:rq2-map}).
 % Direct-only 仅按该诊断排序；Direct+\sys 用 profiler 的组分数打破并列；\sys-only 仅用 profiler 不用 benchmark 诊断（Figure~\ref{fig:rq2-map}）。
 
 \begin{figure}[tb]
@@ -606,28 +605,28 @@ The \emph{direct diagnostic} is each benchmark's per-operation judge output, inc
 
 \emph{Results.} Direct+\sys beats Direct-only by 0.031, 0.107, and 0.117 MAP on the three workloads (all statistically significant\appnote{; 95\% intervals in Appendix~\ref{app:rq2}}; Figure~\ref{fig:rq2-map}).
 % 结果。Direct+\sys 在三个 workload 上比 Direct-only 分别高 0.031、0.107、0.117 MAP（均统计显著；95\% 区间见 Appendix~\ref{app:rq2}；Figure~\ref{fig:rq2-map}）。
-Grouping with retained evidence drives the localization gain. Semantic naming enables cross-run attribution (RQ1) and concentrates the reader's attention (measured below).
+Evidence-preserving grouping drives the localization gain. Semantic naming enables cross-run attribution (RQ1) and concentrates attention (measured below).
 % 分组加保留证据驱动定位增益。语义命名支持跨运行归因（RQ1）并集中读者注意力（下文测量）。
 
 \paragraph{Profile-guided reading on TraceElephant.}
 % TraceElephant 上的 profile 引导阅读。
-On 220 queries, a Grok 4.5~\cite{grok45} agent-as-judge ranks operations by likely fault.
-Full-trace reading reaches MAP .502 at 12.6K tokens/query. A profile-guided reader selects at most five groups and reaches .455 while opening 53\% of the source, versus .465 and 65\% with raw-action names\appnote{intervals in Appendix~\ref{app:rq2}}. A per-query full read is also bounded by the model context window.
+On 220 queries, a Grok 4.5~\cite{grok45} agent-as-judge ranks operations by fault likelihood.
+Full-trace reading reaches MAP .502 at 12.6K tokens/query. A profile-guided reader selects at most five groups, reaching .455 while opening 53\% of source, versus .465 and 65\% with raw-action names\appnote{intervals in Appendix~\ref{app:rq2}}. Per-query full reading is also context-window bounded.
 % 在 220 个 query 上，Grok 4.5 agent-as-judge 按可能出错排序 operation。全 trace 阅读以 12.6K token/query 达到 MAP .502；profile 引导的 reader 用语义名达到 .455 且只打开 53\% 的源字符（用 raw-action 名需打开 65\%）。单 query 全读取亦受模型上下文窗口限制。
-\emph{Takeaway.} Profilers and debuggers are complementary: the profile answers cross-run questions and guides inspection to the content worth opening. Failure structure surfaced by the profile matches independent human labels across 435 trajectories. Profiles add localization signal on top of existing judges, and semantic names concentrate the agent's attention, reducing source characters opened from 65\% to 53\%.
+\emph{Takeaway.} Profilers complement debuggers: profiles answer cross-run questions and guide inspection to relevant content. Profiled failure structure matches independent human labels across 435 trajectories. Profiles supplement existing judges' localization signal, while semantic names concentrate agent attention, reducing opened source characters from 65\% to 53\%.
 % 要点。Profiler 与 debugger 互补：profile 回答跨运行问题，并引导检视只打开值得打开的内容。profile 呈现的失败结构在 435 条轨迹上与独立人工标注一致；profile 在既有 judge 之上补充定位信号；语义名称集中 agent 注意力，将需要打开的源字符从 65\% 降至 53\%。
 
 \paragraph{Use case 4: guiding a real repair.}
 % 用例 4：指导实际修复。
-This case tests whether a profile finding can guide an effective repair.
-A standard \sys profile over eight ToolSandbox scenarios isolates a recurring
+This case tests whether a profile finding can guide effective repair.
+A standard \sys profile of eight ToolSandbox scenarios isolates a recurring
 call-ID syntax failure (5/21 tool operations).
-A profile-only analyst---receiving only the pprof output, not raw
-traces---identifies the compatibility-layer boundary as the repair target.
-The derived one-line fix removes all syntax failures and, on 23 held-out
+A profile-only analyst---given pprof output but no raw traces---identifies the
+compatibility-layer boundary as the repair target.
+The resulting one-line fix removes all syntax failures and, on 23 held-out
 confirmation scenarios (69 BEFORE/repair pairs), reduces agent-model tokens
-by 19.0\% while passing a fixed $-.05$ quality threshold on official
-similarity\appnote{details in Appendix~\ref{app:rq2-repair}}.
+by 19.0\% while passing a fixed $-.05$ official-similarity quality threshold
+\appnote{details in Appendix~\ref{app:rq2-repair}}.
 % 本案例检验 profile 发现能否指导有效修复。
 % 一个覆盖 8 个 ToolSandbox 场景的标准 \sys profile 隔离出重复的 call-ID 语法失败（5/21 tool operation）。
 % 一个只接收 pprof 输出、不接触原始 trace 的 profile-only analyst 将 compatibility-layer 边界定为修复目标。
@@ -637,25 +636,24 @@ similarity\appnote{details in Appendix~\ref{app:rq2-repair}}.
 \subsection{RQ3: How Accurate Are the Identifiers?}
 % RQ3：标识符有多准确？
 
-\emph{Setup.} To test whether recursive segmentation recovers task structure humans would recognize, we compare segmentation output against 2{,}948 human-annotated stages over all 405 CodeTraceBench trajectories.
+\emph{Setup.} We test whether recursive segmentation recovers human-recognizable task structure against 2{,}948 human-annotated stages from all 405 CodeTraceBench trajectories.
 % 设置。为评估递归切分是否恢复出人类会认可的任务结构，我们把切分输出与全部 405 条 CodeTraceBench 轨迹上的 2,948 个人工标注 stage 进行比较。
-F1~\cite{bagga-baldwin-1998-entity-based} asks whether operations that
-belong together are grouped together; exact adjacent-boundary
-F1~\cite{ruokolainen2016segmentation} asks whether cuts land exactly
-where humans cut. Baselines receive identical inputs
+F1~\cite{bagga-baldwin-1998-entity-based} asks whether related operations
+are grouped; exact adjacent-boundary F1~\cite{ruokolainen2016segmentation}
+asks whether cuts match human cuts. Baselines receive identical inputs
 (Table~\ref{tab:rq3-codetrace}).
 % F1 度量"应当在一起的 operation 是否被分到一起"；精确相邻边界 F1 度量"切点是否恰好落在人工切点处"。基线获得完全相同的输入（Table~\ref{tab:rq3-codetrace}）。
-Each method output is evaluated at its predicted level: literal names use
+Each output is evaluated at its predicted level: literal names use
 accuracy and macro-F1~\cite{lewis2004rcv1}, permutation-invariant partitions
 V-measure~\cite{rosenberg-hirschberg-2007-v-measure} or ordinary B$^3$,
 and adjacent interval boundaries exact precision, recall, and F1. For
-legacy field-valued datasets a conversion step maps each predicted
-group into the same interval-annotation format before \sys folds the
+legacy field-valued datasets, conversion maps each predicted group into
+the same interval-annotation format before \sys folds the
 original additive weights.
 % 每个方法的输出按其预测的层级评估：字面名称用 accuracy 与 macro-F1，置换不变的 partition 用 V-measure 或普通 B$^3$，相邻区间边界用精确的 precision、recall 与 F1；对字段值型的既有数据集，转换步骤先把每个预测 group 映射为同一份区间标注格式，再由 \sys 折叠原始可加权重。
-Codex~\cite{codex} receives each trajectory (prompts, commands, and output summaries, with no labels or scores visible) and emits sparse interval marks over 17{,}148 steps without access to stage annotations (loaded after all 405 outputs were fixed): 4{,}496 marks at semantic depth one (3), two (2{,}873), three (1{,}588), or four (32), with no prompt requesting a specific depth.
+Codex~\cite{codex} receives each trajectory (prompts, commands, and output summaries; no visible labels or scores) and emits sparse interval marks over 17{,}148 steps without stage annotations (loaded after fixing all 405 outputs): 4{,}496 marks at semantic depths one (3), two (2{,}873), three (1{,}588), or four (32), with no requested depth.
 % Codex 接收轨迹（提示词、命令与输出摘要，不含标签或分数），在 17,148 个步骤上发出稀疏区间标记，不接触官方 stage 标注：共 4,496 个标记，语义深度为一层（3 个）、两层（2,873 个）、三层（1,588 个）与四层（32 个），且没有任何 prompt 指定深度。
-Name normalization maps the 3{,}895 free-form interval names to 783 stable short names (e.g., \texttt{diagnose authentication}) with zero adjacent display-path collisions, rejecting unresolved ones. Identical names across sessions merge so identical paths fold in the final profile.
+Name normalization maps 3{,}895 free-form interval names to 783 stable short names (e.g., \texttt{diagnose authentication}) with zero adjacent display-path collisions, rejecting unresolved names. Identical cross-session names merge, folding identical paths in the final profile.
 % 名称归一化把 3,895 个自由形式的区间名映射为 783 个稳定短名称（如 \texttt{diagnose authentication}），不产生任何相邻显示路径冲突、无法消解时拒绝；跨 session 的相同名称合并，使相同路径在最终 profile 中折叠。
 
 \begin{table}[tb]
@@ -679,50 +677,50 @@ Source-native step & 0.983 & 0.221 & 0.361 & 0.246 \\
 
 \emph{Results.} Codex segmentation reaches 0.764 B$^3$ F1 and 0.480
 boundary F1, beating the strongest automatic baseline (multi-resolution recurrence) by +0.101 and +0.214\appnote{intervals in Appendix~\ref{app:rq3}}.
-A stateful per-turn Qwen2.5-3B baseline reaches 0.650 B$^3$ F1, showing smaller models can also segment meaningfully.
-The marks conserve exactly 20{,}866 operations and
+A stateful per-turn Qwen2.5-3B baseline reaches 0.650 B$^3$ F1, showing meaningful segmentation by smaller models.
+The marks exactly conserve 20{,}866 operations and
 494{,}862{,}929 tokens.
 % 结果。Codex 切分达到 0.764 B$^3$ F1 与 0.480 边界 F1，分别以 +0.101 与 +0.214 超过最强自动基线（multi-resolution recurrence）。有状态的 per-turn Qwen2.5-3B baseline 达到 0.650 B$^3$ F1，表明较小模型也能产生有意义的切分。标记精确守恒 20,866 个 operation 与 494,862,929 个 token。
-Predicted groups remain largely pure subsets of gold stages
-(B$^3$ precision 0.793), and the residual error is over-segmentation
-rather than missed transitions: disagreements subdivide work rather than merging unrelated responsibilities,
+Predicted groups remain largely pure gold-stage subsets
+(B$^3$ precision 0.793), with residual error from over-segmentation
+rather than missed transitions: disagreements subdivide work instead of merging unrelated responsibilities,
 preserving per-group coherence\appnote{breakdown in Appendix~\ref{app:rq3}}.
 % 预测 group 仍是 gold stage 中较纯的子集（B$^3$ precision 0.793），残余边界误差来自过分割而非漏切：当切分与人工 stage 不一致时，它是把工作细分而非合并无关责任，从而为下游检视保留每个 group 的连贯性。
-The interface generalizes across method families and segmentation scales: on OSWorld-Human~\cite{osworldhuman}, a supervised Naive Bayes predictor reaches 0.816 B$^3$ F1, a no-LLM recurrence segmenter reaches 0.786, and the unchanged Codex instruction uses coarser task-level boundaries (0.448 B$^3$ F1). %\appnote{details in Appendix~\ref{app:rq3}}
+The interface generalizes across method families and segmentation scales: on OSWorld-Human~\cite{osworldhuman}, supervised Naive Bayes reaches 0.816 B$^3$ F1, a no-LLM recurrence segmenter 0.786, and the unchanged Codex instruction uses coarser task-level boundaries (0.448 B$^3$ F1). %\appnote{details in Appendix~\ref{app:rq3}}
 % 该接口在不同方法家族和切分尺度间泛化：在 OSWorld-Human 上，监督 Naive Bayes 达到 0.816 B$^3$ F1，无 LLM recurrence segmenter 达到 0.786，未调整的 Codex instruction 使用更粗的 task-level 边界（0.448 B$^3$ F1）。
-For closed-label literal tags, a Qwen3.6-27B~\cite{qwen36} classifier labels 1{,}012 AgentBoard goals~\cite{agentboard} at 0.695 macro-F1, and 2{,}737 action labels from AutoCodeRover, OpenHands, and RepairAgent trajectories~\cite{traceview-2026,bouzenia-pradel-2025-trajectories} at 0.498 macro-F1. %\appnote{details in Appendix~\ref{app:rq3}}
+For closed-label literal tags, Qwen3.6-27B~\cite{qwen36} labels 1{,}012 AgentBoard goals~\cite{agentboard} at 0.695 macro-F1 and 2{,}737 AutoCodeRover, OpenHands, and RepairAgent trajectory actions~\cite{traceview-2026,bouzenia-pradel-2025-trajectories} at 0.498 macro-F1. %\appnote{details in Appendix~\ref{app:rq3}}
 % 对闭标签的字面标签，Qwen3.6-27B 分类器把 1,012 个 AgentBoard goal 标注到 0.695 macro-F1，并把来自 AutoCodeRover、OpenHands 与 RepairAgent 轨迹的 2,737 个公开 action 标签分类到 0.498 macro-F1。
-\emph{Takeaway.} Recursive segmentation recovers human-recognizable task structure: 0.764 B$^3$ F1 against human stages, beating the strongest automatic baseline by +0.101. Non-LLM methods implementing the same interface remain viable when no model is available.
+\emph{Takeaway.} Recursive segmentation recovers human-recognizable task structure: 0.764 B$^3$ F1 against human stages, +0.101 over the strongest automatic baseline. Non-LLM implementations of the same interface remain viable without a model.
 % 要点。递归切分恢复出人类可识别的任务结构：相对人工 stage 达到 0.764 B$^3$ F1，比最强自动基线高 +0.101。实现同一接口的非 LLM 方法在没有模型可用时依然可行。
 
 %% -------------------------------------------------------------------
 \subsection{RQ4: What Is the Profiling Cost?}
 % RQ4：分析开销是多少？
 
-\emph{Setup.} To test whether profiling cost is practical, we measure segmentation time and tokens and profile replay speed. Cost separates into a one-time automatic segmentation pass per corpus and deterministic construction/replay thereafter.
+\emph{Setup.} We test profiling practicality through segmentation time and tokens plus profile replay speed. Cost comprises one automatic segmentation pass per corpus, then deterministic construction/replay.
 % 设置。为评估 profiling 开销是否实用，我们测量切分的时间与 token 以及 profile 重放速度。开销分为每语料一次性的自动切分 pass 与其后的确定性构建/重放。
 
-\emph{Results.} Segmenting all 405 CodeTraceBench trajectories with Codex (GPT-5.6-sol-high) completes in 37 minutes with up to four workers, averaging 29{,}754 input and 573 output tokens per trajectory.
+\emph{Results.} Codex (GPT-5.6-sol-high) segments all 405 CodeTraceBench trajectories in 37 minutes with up to four workers, averaging 29{,}754 input and 573 output tokens per trajectory.
 % 结果。用 Codex（GPT-5.6-sol-high）切分全部 405 条 CodeTraceBench 轨迹，最多使用四个 worker，在 37 分钟内完成，平均每条轨迹消耗 29,754 个输入 token 与 573 个输出 token。
-With marks fixed, construction scales linearly: the 27{,}765-operation union completes in 1.16\,s at 465\,MiB peak RSS, adding only 5.25\,MiB (1.14\%) over raw-action grouping\appnote{details in Appendix~\ref{app:rq4-cost}}.
+With fixed marks, construction scales linearly: the 27{,}765-operation union completes in 1.16\,s at 465\,MiB peak RSS, only 5.25\,MiB (1.14\%) above raw-action grouping\appnote{details in Appendix~\ref{app:rq4-cost}}.
 % 标记固定后，构建开销线性扩展：27,765-operation 并集在 1.16 秒 / 465 MiB 峰值 RSS 完成，比 raw-action 分组仅多 5.25 MiB（1.14\%）（详见附录）。
-Deterministic construction of the full 440 trajectories takes 0.26\,s (operations) and 0.25\,s (tokens): cost is dominated by the segmentation step, while construction stays sub-second.
+Deterministic construction of all 440 trajectories takes 0.26\,s (operations) and 0.25\,s (tokens): segmentation dominates cost, while construction remains sub-second.
 % 完整 440 条轨迹的确定性物化在 operation 上需 0.26 秒、在 token 上需 0.25 秒，因此构建成本由切分步骤主导，而物化保持在亚秒级。
 
 \paragraph{Reducing annotation cost.}
 % 降低标注成本。
-Automatic annotation dominates profile construction. Showing only a compact
-skeleton plus selected full results (SELECTIVE) instead of every turn's
+Automatic annotation dominates profile construction. A compact skeleton plus
+selected full results (SELECTIVE), instead of every turn's
 complete content (FULL) reduces provider tokens by 20.4\% on 32 held-out
 CodeTraceBench task clusters while retaining 100\% operation coverage and
 meeting a fixed $-.03$ quality threshold on B$^3$ and boundary F1
 \appnote{details in Appendix~\ref{app:rq4-selective}}.
 % 自动标注主导 profile 构建成本。仅展示紧凑骨架加选中完整结果（SELECTIVE）而非每个 turn 的完整内容（FULL），在 32 个 held-out CodeTraceBench task cluster 上将 provider token 降低 20.4%，同时保持 100\% operation 覆盖并满足 B$^3$ 与 boundary F1 的 -0.03 质量阈值（详见附录）。
 
-\emph{Takeaway.} Segmentation is a one-time pass (37 min for 405 trajectories);
-every later view, measure switch, and inspection costs about one second.
-Selective evidence reduces annotation tokens by 20.4\% with complete coverage
-and maintained structural quality.
+\emph{Takeaway.} Segmentation is one-time (37 min for 405 trajectories);
+each later view, measure switch, and inspection costs about one second.
+Selective evidence cuts annotation tokens 20.4\% with complete coverage
+and preserved structural quality.
 % 要点。切分是一次性 pass（405 条轨迹 37 分钟）；之后每次视图、度量切换与检视约一秒。选择性 evidence 在完整覆盖与结构质量不降低下将标注 token 降低 20.4%。
 
 %% ===================================================================
